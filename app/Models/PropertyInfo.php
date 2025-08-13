@@ -47,7 +47,7 @@ class PropertyInfo extends Model
     // Accessor for formatted amount
     public function getFormattedAmountAttribute(): string
     {
-        return '$' . number_format($this->amount, 2);
+        return '$' . number_format((float) ($this->amount ?? 0), 2);
     }
 
     // Check if policy is expired
