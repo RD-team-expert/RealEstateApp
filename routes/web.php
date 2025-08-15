@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PropertyInfoController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\VendorInfoController;
+use App\Http\Controllers\TenantController;
+use App\Http\Controllers\UnitController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -39,6 +41,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Additional routes for filtering
     Route::get('vendors/city/{city}', [VendorInfoController::class, 'byCity'])->name('vendors.by-city');
+
+    Route::resource('tenants', controller: TenantController::class);
+
+    // Units dashboard
+    Route::get('/units/dashboard', [UnitController::class, 'dashboard'])->name('units.dashboard');
+
+    // Units CRUD routes
+    Route::resource('units', UnitController::class);
 });
 
 // Property Info CRUD routes

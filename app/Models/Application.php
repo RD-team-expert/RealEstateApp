@@ -60,5 +60,28 @@ class Application extends Model
         return $query;
     }
 
-    // Remove the getStatuses() and getStages() methods since we're not using predefined options
+    protected static function boot()
+{
+    parent::boot();
+
+    static::created(function ($application) {
+        Unit::updateApplicationCountForUnit($application->unit);
+    });
+
+    static::updated(function ($application) {
+        Unit::updateApplicationCountForUnit($application->unit);
+
+        // If unit name changed, update both old and new units
+        if ($application->isDirty('unit')) {
+            $originalUnit = $application->getOriginal('unit');
+            if ($originalUnit) {
+                Unit::updateApplicationCountForUnit($originalUnit);
+            }
+        }
+    });
+
+    static::deleted(function ($application) {
+        Unit::updateApplicationCountForUnit($application->unit);
+    });
+}
 }
