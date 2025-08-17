@@ -1,10 +1,12 @@
 <?php
+// app/Http/Controllers/TenantController.php
 
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTenantRequest;
 use App\Http\Requests\UpdateTenantRequest;
 use App\Models\Tenant;
+use App\Models\Unit; // Add this import
 use App\Services\TenantService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,7 +35,23 @@ class TenantController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Tenants/Create');
+        // Get units data for dropdowns
+        $units = Unit::select('property', 'unit_name')
+            ->orderBy('property')
+            ->orderBy('unit_name')
+            ->get();
+
+        // Create arrays for dropdowns
+        $properties = $units->pluck('property')->unique()->values();
+        $unitsByProperty = $units->groupBy('property')->map(function ($propertyUnits) {
+            return $propertyUnits->pluck('unit_name')->unique()->values();
+        });
+
+        return Inertia::render('Tenants/Create', [
+            'units' => $units,
+            'properties' => $properties,
+            'unitsByProperty' => $unitsByProperty,
+        ]);
     }
 
     public function store(StoreTenantRequest $request): RedirectResponse
@@ -54,8 +72,23 @@ class TenantController extends Controller
 
     public function edit(Tenant $tenant): Response
     {
+        // Get units data for dropdowns
+        $units = Unit::select('property', 'unit_name')
+            ->orderBy('property')
+            ->orderBy('unit_name')
+            ->get();
+
+        // Create arrays for dropdowns
+        $properties = $units->pluck('property')->unique()->values();
+        $unitsByProperty = $units->groupBy('property')->map(function ($propertyUnits) {
+            return $propertyUnits->pluck('unit_name')->unique()->values();
+        });
+
         return Inertia::render('Tenants/Edit', [
-            'tenant' => $tenant
+            'tenant' => $tenant,
+            'units' => $units,
+            'properties' => $properties,
+            'unitsByProperty' => $unitsByProperty,
         ]);
     }
 
@@ -75,5 +108,19 @@ class TenantController extends Controller
         return redirect()
             ->route('tenants.index')
             ->with('success', 'Tenant deleted successfully.');
+    }
+
+    // API endpoint for getting units by property
+    public function getUnitsByProperty(Request $request)
+    {
+        $property = $request->get('property');
+
+        $units = Unit::where('property', $property)
+            ->select('unit_name')
+            ->distinct()
+            ->orderBy('unit_name')
+            ->pluck('unit_name');
+
+        return response()->json($units);
     }
 }

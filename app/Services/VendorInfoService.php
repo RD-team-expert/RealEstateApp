@@ -6,6 +6,7 @@ namespace App\Services;
 use App\Models\VendorInfo;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as SupportCollection;
 
 class VendorInfoService
 {
@@ -92,13 +93,13 @@ class VendorInfoService
             ->get();
     }
 
-    public function getCities(): Collection
+    public function getCities(): SupportCollection
     {
-        return VendorInfo::select('city')
+        return VendorInfo::query()
+            ->whereNotNull('city')
             ->distinct()
             ->orderBy('city', 'asc')
-            ->get()
-            ->pluck('city');
+            ->pluck('city'); // returns Illuminate\Support\Collection
     }
 
     private function cleanEmptyStringsForNullableFields(array $data): array

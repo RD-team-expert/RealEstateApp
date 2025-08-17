@@ -2,10 +2,10 @@
 
 export interface Application {
     id: number;
-    property: string; // Not nullable
-    name: string; // Not nullable
-    co_signer: string; // Not nullable
-    unit: string; // Not nullable
+    property: string; // This will now be the property name from Units table
+    name: string;
+    co_signer: string;
+    unit: string; // This will now be the unit_name from Units table
     status: string | null;
     date: string | null;
     stage_in_progress: string | null;
@@ -26,16 +26,20 @@ export interface ApplicationFormData {
     notes: string;
 }
 
-export interface ApplicationFilters {
-    property?: string;
-    name?: string;
-    co_signer?: string;
-    unit?: string;
-    status?: string;
-    stage_in_progress?: string;
-    date_from?: string;
-    date_to?: string;
+// Add new interfaces for dropdown data
+export interface UnitData {
+    city: string;
+    property: string;
+    unit_name: string;
 }
+
+export interface DropdownData {
+    units: UnitData[];
+    cities: string[];
+    properties: Record<string, string[]>;
+    unitsByProperty: Record<string, Record<string, string[]>>;
+}
+
 
 export interface ApplicationStatistics {
     total: number;

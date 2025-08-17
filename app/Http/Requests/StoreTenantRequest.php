@@ -1,8 +1,10 @@
 <?php
+// app/Http/Requests/StoreTenantRequest.php
 
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Unit;
 
 class StoreTenantRequest extends FormRequest
 {
@@ -14,8 +16,29 @@ class StoreTenantRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'property_name' => 'required|string|max:255',
-            'unit_number' => 'required|string|max:255',
+            'property_name' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    // Check if the property exists in the Units table
+                    if (!Unit::where('property', $value)->exists()) {
+                        $fail('The selected property does not exist.');
+                    }
+                }
+            ],
+            'unit_number' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    // Check if the unit exists for the selected property
+                    $property = $this->input('property_name');
+                    if ($property && !Unit::where('property', $property)->where('unit_name', $value)->exists()) {
+                        $fail('The selected unit does not exist for the selected property.');
+                    }
+                }
+            ],
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'street_address_line' => 'nullable|string|max:255',

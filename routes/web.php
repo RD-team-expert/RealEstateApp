@@ -6,6 +6,10 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\VendorInfoController;
 use App\Http\Controllers\TenantController;
 use App\Http\Controllers\UnitController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\VendorTaskTrackerController;
+use App\Http\Controllers\MoveInController;
+use App\Http\Controllers\MoveOutController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -33,6 +37,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('applications/status/{status}', [ApplicationController::class, 'byStatus'])->name('applications.by-status');
     Route::get('applications/stage/{stage}', [ApplicationController::class, 'byStage'])->name('applications.by-stage');
 
+    // API routes for dynamic dropdown loading
+    Route::get('/api/properties-by-city', [ApplicationController::class, 'getPropertiesByCity'])->name('api.properties-by-city');
+    Route::get('/api/units-by-property', [ApplicationController::class, 'getUnitsByProperty'])->name('api.units-by-property');
     // Vendors dashboard
     Route::get('/vendors/dashboard', [VendorInfoController::class, 'dashboard'])->name('vendors.dashboard');
 
@@ -44,11 +51,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('tenants', controller: TenantController::class);
 
+    // API route for dynamic unit loading
+    Route::get('/api/units-by-property', [TenantController::class, 'getUnitsByProperty'])->name('api.units-by-property');
     // Units dashboard
     Route::get('/units/dashboard', [UnitController::class, 'dashboard'])->name('units.dashboard');
 
     // Units CRUD routes
     Route::resource('units', UnitController::class);
+
+    Route::resource('payments', PaymentController::class);
+
+    Route::resource('vendor-task-tracker', VendorTaskTrackerController::class);
+
+    Route::resource('move-in', MoveInController::class);
+
+    Route::resource('move-out', MoveOutController::class);
 });
 
 // Property Info CRUD routes

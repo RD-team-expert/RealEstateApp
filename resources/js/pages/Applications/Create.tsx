@@ -1,12 +1,20 @@
 // resources/js/Pages/Applications/Create.tsx
 
-import React from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, useForm, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/app-layout';
-import { ApplicationFormData } from '@/types/application';
+import { ApplicationFormData, UnitData } from '@/types/application';
 import { PageProps } from '@/types/application';
+import axios from 'axios';
 
-export default function Create({ auth }: PageProps) {
+interface Props extends PageProps {
+    units: UnitData[];
+    cities: string[];
+    properties: Record<string, string[]>;
+    unitsByProperty: Record<string, Record<string, string[]>>;
+}
+
+export default function Create({ auth, units, cities, properties, unitsByProperty }: Props) {
     const { data, setData, post, processing, errors } = useForm<ApplicationFormData>({
         property: '',
         name: '',
@@ -16,7 +24,37 @@ export default function Create({ auth }: PageProps) {
         date: '',
         stage_in_progress: '',
         notes: '',
-    }); 
+    });
+
+    const [selectedCity, setSelectedCity] = useState('');
+    const [availableProperties, setAvailableProperties] = useState<string[]>([]);
+    const [availableUnits, setAvailableUnits] = useState<string[]>([]);
+
+    // Handle city selection
+    const handleCityChange = (city: string) => {
+        setSelectedCity(city);
+        setData('property', ''); // Reset property
+        setData('unit', ''); // Reset unit
+
+        if (city && properties[city]) {
+            setAvailableProperties(properties[city]);
+        } else {
+            setAvailableProperties([]);
+        }
+        setAvailableUnits([]);
+    };
+
+    // Handle property selection
+    const handlePropertyChange = (property: string) => {
+        setData('property', property);
+        setData('unit', ''); // Reset unit
+
+        if (selectedCity && property && unitsByProperty[selectedCity]?.[property]) {
+            setAvailableUnits(unitsByProperty[selectedCity][property]);
+        } else {
+            setAvailableUnits([]);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -36,22 +74,78 @@ export default function Create({ auth }: PageProps) {
                         <div className="p-6 text-gray-900">
                             <form onSubmit={handleSubmit}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* City Selection */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            City *
+                                        </label>
+                                        <select
+                                            value={selectedCity}
+                                            onChange={(e) => handleCityChange(e.target.value)}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            required
+                                        >
+                                            <option value="">Select City</option>
+                                            {cities.map((city) => (
+                                                <option key={city} value={city}>
+                                                    {city}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.property && (
+                                            <p className="text-red-600 text-sm mt-1">Please select a valid city and property</p>
+                                        )}
+                                    </div>
+
+                                    {/* Property Selection */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Property *
                                         </label>
-                                        <input
-                                            type="text"
+                                        <select
                                             value={data.property}
-                                            onChange={(e) => setData('property', e.target.value)}
+                                            onChange={(e) => handlePropertyChange(e.target.value)}
                                             className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             required
-                                        />
+                                            disabled={!selectedCity}
+                                        >
+                                            <option value="">Select Property</option>
+                                            {availableProperties.map((property) => (
+                                                <option key={property} value={property}>
+                                                    {property}
+                                                </option>
+                                            ))}
+                                        </select>
                                         {errors.property && (
                                             <p className="text-red-600 text-sm mt-1">{errors.property}</p>
                                         )}
                                     </div>
 
+                                    {/* Unit Selection */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Unit *
+                                        </label>
+                                        <select
+                                            value={data.unit}
+                                            onChange={(e) => setData('unit', e.target.value)}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            required
+                                            disabled={!data.property}
+                                        >
+                                            <option value="">Select Unit</option>
+                                            {availableUnits.map((unit) => (
+                                                <option key={unit} value={unit}>
+                                                    {unit}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.unit && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.unit}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Name */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Name *
@@ -68,6 +162,7 @@ export default function Create({ auth }: PageProps) {
                                         )}
                                     </div>
 
+                                    {/* Co-signer */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Co-signer *
@@ -84,22 +179,7 @@ export default function Create({ auth }: PageProps) {
                                         )}
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Unit *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={data.unit}
-                                            onChange={(e) => setData('unit', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                        />
-                                        {errors.unit && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.unit}</p>
-                                        )}
-                                    </div>
-
+                                    {/* Status */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Status
@@ -116,6 +196,7 @@ export default function Create({ auth }: PageProps) {
                                         )}
                                     </div>
 
+                                    {/* Date */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Date
@@ -131,6 +212,7 @@ export default function Create({ auth }: PageProps) {
                                         )}
                                     </div>
 
+                                    {/* Stage in Progress */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             Stage in Progress
@@ -148,6 +230,7 @@ export default function Create({ auth }: PageProps) {
                                     </div>
                                 </div>
 
+                                {/* Notes */}
                                 <div className="mt-6">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Notes

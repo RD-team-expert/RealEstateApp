@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreApplicationRequest;
 use App\Http\Requests\UpdateApplicationRequest;
 use App\Models\Application;
+use App\Models\Unit; // Add this import
 use App\Services\ApplicationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -30,14 +31,35 @@ class ApplicationController extends Controller
             'applications' => $applications,
             'statistics' => $statistics,
             'filters' => $filters,
-            // Remove the statuses and stages arrays
         ]);
     }
 
     public function create(): Response
     {
-        return Inertia::render('Applications/Create');
-        // Remove the statuses and stages arrays
+        // Get units data for dropdowns
+        $units = Unit::select('city', 'property', 'unit_name')
+            ->orderBy('city')
+            ->orderBy('property')
+            ->orderBy('unit_name')
+            ->get();
+
+        // Create separate arrays for each dropdown
+        $cities = $units->pluck('city')->unique()->values();
+        $properties = $units->groupBy('city')->map(function ($cityUnits) {
+            return $cityUnits->pluck('property')->unique()->values();
+        });
+        $unitsByProperty = $units->groupBy(['city', 'property'])->map(function ($cityGroup) {
+            return $cityGroup->map(function ($propertyGroup) {
+                return $propertyGroup->pluck('unit_name')->unique()->values();
+            });
+        });
+
+        return Inertia::render('Applications/Create', [
+            'units' => $units,
+            'cities' => $cities,
+            'properties' => $properties,
+            'unitsByProperty' => $unitsByProperty,
+        ]);
     }
 
     public function store(StoreApplicationRequest $request): RedirectResponse
@@ -55,84 +77,99 @@ class ApplicationController extends Controller
     }
 
     public function show(string $id): Response
-{
-    $application = $this->applicationService->findById((int) $id);
-
-    return Inertia::render('Applications/Show', [
-        'application' => $application,
-    ]);
-}
-
-public function edit(string $id): Response
-{
-    $application = $this->applicationService->findById((int) $id);
-
-    return Inertia::render('Applications/Edit', [
-        'application' => $application,
-    ]);
-}
-
-public function update(UpdateApplicationRequest $request, string $id): RedirectResponse
-{
-    try {
+    {
         $application = $this->applicationService->findById((int) $id);
-        $this->applicationService->update($application, $request->validated());
 
-        return redirect()->route('applications.index')
-            ->with('success', 'Application updated successfully');
-    } catch (\Exception $e) {
-        return redirect()->back()
-            ->with('error', 'Failed to update application: ' . $e->getMessage())
-            ->withInput();
+        return Inertia::render('Applications/Show', [
+            'application' => $application,
+        ]);
     }
-}
 
-public function destroy(string $id): RedirectResponse
-{
-    try {
+    public function edit(string $id): Response
+    {
         $application = $this->applicationService->findById((int) $id);
-        $this->applicationService->delete($application);
 
-        return redirect()->route('applications.index')
-            ->with('success', 'Application deleted successfully');
-    } catch (\Exception $e) {
-        return redirect()->back()
-            ->with('error', 'Failed to delete application: ' . $e->getMessage());
-    }
-}
+        // Get units data for dropdowns
+        $units = Unit::select('city', 'property', 'unit_name')
+            ->orderBy('city')
+            ->orderBy('property')
+            ->orderBy('unit_name')
+            ->get();
 
-    public function dashboard(): Response
-    {
-        $statistics = $this->applicationService->getStatistics();
-        $recentApplications = $this->applicationService->getRecentApplications(10);
-        $thisMonthApplications = $this->applicationService->getApplicationsThisMonth();
+        // Create separate arrays for each dropdown
+        $cities = $units->pluck('city')->unique()->values();
+        $properties = $units->groupBy('city')->map(function ($cityUnits) {
+            return $cityUnits->pluck('property')->unique()->values();
+        });
+        $unitsByProperty = $units->groupBy(['city', 'property'])->map(function ($cityGroup) {
+            return $cityGroup->map(function ($propertyGroup) {
+                return $propertyGroup->pluck('unit_name')->unique()->values();
+            });
+        });
 
-        return Inertia::render('Applications/Dashboard', [
-            'statistics' => $statistics,
-            'recentApplications' => $recentApplications,
-            'thisMonthApplications' => $thisMonthApplications,
+        return Inertia::render('Applications/Edit', [
+            'application' => $application,
+            'units' => $units,
+            'cities' => $cities,
+            'properties' => $properties,
+            'unitsByProperty' => $unitsByProperty,
         ]);
     }
 
-    public function byStatus(string $status): Response
+    public function update(UpdateApplicationRequest $request, string $id): RedirectResponse
     {
-        $applications = $this->applicationService->getByStatus($status);
+        try {
+            $application = $this->applicationService->findById((int) $id);
+            $this->applicationService->update($application, $request->validated());
 
-        return Inertia::render('Applications/ByStatus', [
-            'applications' => $applications,
-            'status' => $status,
-            'statusName' => $status, // Use the status as-is since no predefined mapping
-        ]);
+            return redirect()->route('applications.index')
+                ->with('success', 'Application updated successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to update application: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
-    public function byStage(string $stage): Response
+    public function destroy(string $id): RedirectResponse
     {
-        $applications = $this->applicationService->getByStage($stage);
+        try {
+            $application = $this->applicationService->findById((int) $id);
+            $this->applicationService->delete($application);
 
-        return Inertia::render('Applications/ByStage', [
-            'applications' => $applications,
-            'stage' => $stage,
-            'stageName' => $stage, // Use the stage as-is since no predefined mapping
-        ]);
+            return redirect()->route('applications.index')
+                ->with('success', 'Application deleted successfully');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to delete application: ' . $e->getMessage());
+        }
+    }
+
+    // Add API endpoint for dynamic property/unit loading
+    public function getPropertiesByCity(Request $request): Response
+    {
+        $city = $request->get('city');
+        $properties = Unit::where('city', $city)
+            ->select('property')
+            ->distinct()
+            ->orderBy('property')
+            ->pluck('property');
+
+        return response()->json($properties);
+    }
+
+    public function getUnitsByProperty(Request $request): Response
+    {
+        $city = $request->get('city');
+        $property = $request->get('property');
+
+        $units = Unit::where('city', $city)
+            ->where('property', $property)
+            ->select('unit_name')
+            ->distinct()
+            ->orderBy('unit_name')
+            ->pluck('unit_name');
+
+        return response()->json($units);
     }
 }

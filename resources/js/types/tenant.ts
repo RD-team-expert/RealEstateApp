@@ -1,3 +1,5 @@
+// resources/js/types/tenant.ts
+
 export interface Tenant {
     id: number;
     property_name: string;
@@ -35,4 +37,16 @@ export interface TenantFormData {
     has_assistance: string;
     assistance_amount: string;
     assistance_company: string;
+}
+
+// Add new interfaces for dropdown data
+export interface UnitData {
+    property: string;
+    unit_name: string;
+}
+
+export interface TenantDropdownData {
+    units: UnitData[];
+    properties: string[];
+    unitsByProperty: Record<string, string[]>;
 }

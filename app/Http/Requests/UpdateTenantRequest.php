@@ -1,9 +1,11 @@
 <?php
+// app/Http/Requests/UpdateTenantRequest.php
 
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Models\Unit;
 
 class UpdateTenantRequest extends FormRequest
 {
@@ -14,9 +16,32 @@ class UpdateTenantRequest extends FormRequest
 
     public function rules(): array
     {
+        $tenantId = $this->route('tenant')->id;
+
         return [
-            'property_name' => 'required|string|max:255',
-            'unit_number' => 'required|string|max:255',
+            'property_name' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    // Check if the property exists in the Units table
+                    if (!Unit::where('property', $value)->exists()) {
+                        $fail('The selected property does not exist.');
+                    }
+                }
+            ],
+            'unit_number' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    // Check if the unit exists for the selected property
+                    $property = $this->input('property_name');
+                    if ($property && !Unit::where('property', $property)->where('unit_name', $value)->exists()) {
+                        $fail('The selected unit does not exist for the selected property.');
+                    }
+                }
+            ],
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'street_address_line' => 'nullable|string|max:255',
@@ -24,7 +49,7 @@ class UpdateTenantRequest extends FormRequest
                 'nullable',
                 'email',
                 'max:255',
-                Rule::unique('tenants', 'login_email')->ignore($this->tenant->id),
+                Rule::unique('tenants', 'login_email')->ignore($tenantId)
             ],
             'alternate_email' => 'nullable|email|max:255',
             'mobile' => 'nullable|string|max:20',

@@ -1,7 +1,9 @@
-import React from 'react';
+// resources/js/Pages/Tenants/Create.tsx
+
+import React, { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
-import { TenantFormData } from '@/types/tenant';
+import { TenantFormData, UnitData } from '@/types/tenant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +16,13 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function Create() {
+interface Props {
+    units: UnitData[];
+    properties: string[];
+    unitsByProperty: Record<string, string[]>;
+}
+
+export default function Create({ units, properties, unitsByProperty }: Props) {
     const { data, setData, post, processing, errors } = useForm<TenantFormData>({
         property_name: '',
         unit_number: '',
@@ -32,6 +40,20 @@ export default function Create() {
         assistance_amount: '',
         assistance_company: '',
     });
+
+    const [availableUnits, setAvailableUnits] = useState<string[]>([]);
+
+    // Handle property selection
+    const handlePropertyChange = (property: string) => {
+        setData('property_name', property);
+        setData('unit_number', ''); // Reset unit
+
+        if (property && unitsByProperty[property]) {
+            setAvailableUnits(unitsByProperty[property]);
+        } else {
+            setAvailableUnits([]);
+        }
+    };
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -56,33 +78,52 @@ export default function Create() {
                         <CardContent>
                             <form onSubmit={submit} className="space-y-6">
                                 <div className="grid md:grid-cols-2 gap-4">
+                                    {/* Property Name Dropdown */}
                                     <div>
                                         <Label htmlFor="property_name">Property Name *</Label>
-                                        <Input
-                                            id="property_name"
-                                            value={data.property_name}
-                                            onChange={(e) => setData('property_name', e.target.value)}
-                                            error={errors.property_name}
-                                        />
+                                        <Select onValueChange={handlePropertyChange} value={data.property_name}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select property" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {properties.map((property) => (
+                                                    <SelectItem key={property} value={property}>
+                                                        {property}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         {errors.property_name && (
                                             <p className="text-red-600 text-sm mt-1">{errors.property_name}</p>
                                         )}
                                     </div>
 
+                                    {/* Unit Number Dropdown */}
                                     <div>
                                         <Label htmlFor="unit_number">Unit Number *</Label>
-                                        <Input
-                                            id="unit_number"
+                                        <Select
+                                            onValueChange={(value) => setData('unit_number', value)}
                                             value={data.unit_number}
-                                            onChange={(e) => setData('unit_number', e.target.value)}
-                                            error={errors.unit_number}
-                                        />
+                                            disabled={!data.property_name}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select unit" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {availableUnits.map((unit) => (
+                                                    <SelectItem key={unit} value={unit}>
+                                                        {unit}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         {errors.unit_number && (
                                             <p className="text-red-600 text-sm mt-1">{errors.unit_number}</p>
                                         )}
                                     </div>
                                 </div>
 
+                                {/* Rest of the form fields remain the same */}
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <Label htmlFor="first_name">First Name *</Label>
