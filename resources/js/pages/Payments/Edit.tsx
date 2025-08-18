@@ -153,12 +153,19 @@ export default function Edit({ payment, units, cities, unitsByCity }: Props) {
                                     </div>
                                     <div>
                                         <Label htmlFor="status">Status</Label>
-                                        <Input
-                                            id="status"
-                                            value={data.status}
-                                            onChange={(e) => setData('status', e.target.value)}
-                                            error={errors.status}
-                                        />
+                                        <Select
+                                                                                    onValueChange={(value) => setData('status', value)}
+                                                                                    value={data.status}
+                                                                                >
+                                                                                    <SelectTrigger>
+                                                                                        <SelectValue placeholder="Select status" />
+                                                                                    </SelectTrigger>
+                                                                                    <SelectContent>
+                                                                                        <SelectItem value="Paid">Paid</SelectItem>
+                                                                                        <SelectItem value="Didn't Pay">Didn't Pay</SelectItem>
+                                                                                        <SelectItem value="Paid Partly">Paid Partly</SelectItem>
+                                                                                    </SelectContent>
+                                                                                </Select>
                                         {errors.status && <p className="text-red-600 text-sm mt-1">{errors.status}</p>}
                                     </div>
                                 </div>

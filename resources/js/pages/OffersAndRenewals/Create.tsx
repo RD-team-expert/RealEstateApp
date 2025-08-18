@@ -112,14 +112,19 @@ const Create: React.FC = () => {
             <label className="block mb-1 font-semibold" htmlFor="status">
               Status
             </label>
-            <input
-              type="text"
-              name="status"
-              id="status"
-              value={data.status}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
+            <select
+                name="status"
+                id="lease_sent"
+                value={data.status}
+                onChange={handleChange}
+                className="w-full border p-2 rounded"
+
+            >
+                <option value="">Select...</option>
+                <option value="Accepted">Accepted</option>
+                <option value="Didn't Accept">Didn't Accept</option>
+                <option value="Didn't respond">Didn't respond</option>
+            </select>
             {errors.status && <div className="text-red-500 text-sm">{errors.status}</div>}
           </div>
 
@@ -207,17 +212,17 @@ const Create: React.FC = () => {
               Lease Signed?
             </label>
             <select
-    name="lease_signed"
-    id="lease_signed"
-    value={data.lease_signed}
-    onChange={handleChange}
-    className="w-full border p-2 rounded"
+                name="lease_signed"
+                id="lease_signed"
+                value={data.lease_signed}
+                onChange={handleChange}
+                className="w-full border p-2 rounded"
 
-  >
-    <option value="">Select...</option>
-    <option value="Yes">Yes</option>
-    <option value="No">No</option>
-  </select>
+            >
+                <option value="">Select...</option>
+                <option value="Signed">Signed</option>
+                <option value="Unsigned">Unsigned</option>
+            </select>
             {errors.lease_signed && <div className="text-red-500 text-sm">{errors.lease_signed}</div>}
           </div>
 

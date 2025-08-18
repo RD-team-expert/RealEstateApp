@@ -181,20 +181,25 @@ export default function Create({ auth, units, cities, properties, unitsByPropert
 
                                     {/* Status */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Status
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={data.status}
-                                            onChange={(e) => setData('status', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder="e.g., Pending, Approved, etc."
-                                        />
-                                        {errors.status && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.status}</p>
-                                        )}
-                                    </div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Status <span className="text-red-500">*</span>
+  </label>
+  <select
+    name="status"
+    value={data.status}
+    onChange={e => setData('status', e.target.value)}
+    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    required
+  >
+
+    <option value="New">New</option>
+    <option value="Approved">Approved</option>
+    <option value="Undecided">Undecided</option>
+  </select>
+  {errors.status && (
+    <p className="text-red-600 text-sm mt-1">{errors.status}</p>
+  )}
+</div>
 
                                     {/* Date */}
                                     <div>

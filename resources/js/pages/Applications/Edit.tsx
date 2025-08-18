@@ -1,5 +1,3 @@
-// resources/js/Pages/Applications/Edit.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/app-layout';
@@ -153,13 +151,112 @@ export default function Edit({ auth, application, units, cities, properties, uni
                                         )}
                                     </div>
 
-                                    {/* Rest of the form fields remain the same as Create component */}
-                                    {/* Name, Co-signer, Status, Date, Stage in Progress */}
-                                    {/* ... (copy from Create component) ... */}
+                                    {/* Name */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Name *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.name}
+                                            onChange={(e) => setData('name', e.target.value)}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            required
+                                        />
+                                        {errors.name && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.name}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Co-signer */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Co-signer *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.co_signer}
+                                            onChange={(e) => setData('co_signer', e.target.value)}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            required
+                                        />
+                                        {errors.co_signer && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.co_signer}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Status */}
+                                    <div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Status <span className="text-red-500">*</span>
+  </label>
+  <select
+    name="status"
+    value={data.status}
+    onChange={e => setData('status', e.target.value)}
+    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    required
+  >
+
+    <option value="New">New</option>
+    <option value="Approved">Approved</option>
+    <option value="Undecided">Undecided</option>
+  </select>
+  {errors.status && (
+    <p className="text-red-600 text-sm mt-1">{errors.status}</p>
+  )}
+</div>
+
+                                    {/* Date */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Date
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={data.date}
+                                            onChange={(e) => setData('date', e.target.value)}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        {errors.date && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.date}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Stage in Progress */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Stage in Progress
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={data.stage_in_progress}
+                                            onChange={(e) => setData('stage_in_progress', e.target.value)}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="e.g., Document Review, Background Check, etc."
+                                        />
+                                        {errors.stage_in_progress && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.stage_in_progress}</p>
+                                        )}
+                                    </div>
                                 </div>
 
-                                {/* Notes section */}
-                                {/* ... (copy from Create component) ... */}
+                                {/* Notes */}
+                                <div className="mt-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Notes
+                                    </label>
+                                    <textarea
+                                        value={data.notes}
+                                        onChange={(e) => setData('notes', e.target.value)}
+                                        rows={4}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Add any additional notes..."
+                                    />
+                                    {errors.notes && (
+                                        <p className="text-red-600 text-sm mt-1">{errors.notes}</p>
+                                    )}
+                                </div>
 
                                 <div className="mt-6 flex justify-end space-x-3">
                                     <a

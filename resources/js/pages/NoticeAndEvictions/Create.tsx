@@ -78,9 +78,16 @@ const Create = () => {
           {/* Status */}
           <div>
             <label className="font-semibold">Status</label>
-            <input type="text" name="status" value={data.status ?? ''} onChange={handleChange}
-              className="w-full border p-2 rounded" />
-            {errors.status && <div className="text-red-500 text-sm">{errors.status}</div>}
+            <select
+              name="status"
+              value={data.status}
+              onChange={handleChange}
+              className="w-full border p-2 rounded"
+            >
+              <option value="">Posted</option>
+              <option value="Yes">Sent to representative </option>
+
+            </select>
           </div>
           {/* Date */}
           <div>

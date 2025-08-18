@@ -193,13 +193,19 @@ export default function Create({ units, cities, unitsByCity, vendors }: Props) {
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <Label htmlFor="status">Status</Label>
-                                        <Input
-                                            id="status"
+                                        <Select
+                                            onValueChange={(value) => setData('status', value)}
                                             value={data.status}
-                                            onChange={(e) => setData('status', e.target.value)}
-                                            error={errors.status}
-                                            placeholder="e.g., Pending, In Progress, Completed"
-                                        />
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="New">New</SelectItem>
+                                                <SelectItem value="Inprogress">Inprogress</SelectItem>
+                                                <SelectItem value="Completed ">Completed </SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                         {errors.status && <p className="text-red-600 text-sm mt-1">{errors.status}</p>}
                                     </div>
                                     <div>

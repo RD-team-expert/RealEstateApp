@@ -95,13 +95,16 @@ const Edit = () => {
           {/* Status */}
           <div>
             <label className="block mb-1 font-semibold">Status</label>
-            <input
-              type="text"
+            <select
               name="status"
               value={data.status}
               onChange={handleChange}
               className="w-full border p-2 rounded"
-            />
+            >
+              <option value="">Posted</option>
+              <option value="Yes">Sent to representative </option>
+
+            </select>
             {errors.status && <div className="text-red-500 text-sm">{errors.status}</div>}
           </div>
 
