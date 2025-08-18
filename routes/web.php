@@ -10,6 +10,8 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\VendorTaskTrackerController;
 use App\Http\Controllers\MoveInController;
 use App\Http\Controllers\MoveOutController;
+
+use App\Http\Controllers\OffersAndRenewalController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -66,6 +68,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('move-in', MoveInController::class);
 
     Route::resource('move-out', MoveOutController::class);
+    
+    Route::resource('offers_and_renewals', OffersAndRenewalController::class);
 });
 
 // Property Info CRUD routes
