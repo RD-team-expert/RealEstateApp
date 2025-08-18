@@ -12,6 +12,7 @@ use App\Http\Controllers\MoveInController;
 use App\Http\Controllers\MoveOutController;
 use App\Http\Controllers\NoticeController;
 use App\Http\Controllers\OffersAndRenewalController;
+use App\Http\Controllers\NoticeAndEvictionController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -72,6 +73,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('offers_and_renewals', OffersAndRenewalController::class);
 
     Route::resource('notices', NoticeController::class);
+
+    Route::resource('notice_and_evictions', NoticeAndEvictionController::class);
 
 });
 
