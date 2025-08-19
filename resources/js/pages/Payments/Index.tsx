@@ -101,6 +101,8 @@ export default function Index({ payments, search }: Props) {
                                             <TableHead className="text-right">Paid</TableHead>
                                             <TableHead className="text-right">Left to Pay</TableHead>
                                             <TableHead>Status</TableHead>
+                                            <TableHead>Note</TableHead>
+                                            <TableHead>Reversed Payments</TableHead>
                                             <TableHead>Permanent</TableHead>
                                             <TableHead>Actions</TableHead>
                                         </TableRow>
@@ -125,6 +127,8 @@ export default function Index({ payments, search }: Props) {
                                                 <TableCell>
                                                     {getStatusBadge(payment.status)}
                                                 </TableCell>
+                                                <TableCell>{payment.notes}</TableCell>
+                                                <TableCell>{payment.reversed_payments}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={payment.permanent === 'Yes' ? 'default' : 'secondary'}>
                                                         {payment.permanent}

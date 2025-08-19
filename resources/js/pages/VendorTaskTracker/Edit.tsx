@@ -64,7 +64,9 @@ export default function Edit({ task, units, cities, unitsByCity, vendors }: Prop
                     <Card>
                         <CardHeader>
                             <div className="flex justify-between items-center">
-                                <CardTitle className="text-2xl">Edit Vendor Task</CardTitle>
+                                <CardTitle className="text-2xl">
+                                    Edit Vendor Task #{task.id}
+                                </CardTitle>
                                 <Link href={route('vendor-task-tracker.index')}>
                                     <Button variant="outline">Back to List</Button>
                                 </Link>
@@ -73,10 +75,11 @@ export default function Edit({ task, units, cities, unitsByCity, vendors }: Prop
 
                         <CardContent>
                             <form onSubmit={submit} className="space-y-6">
+                                {/* --- Basic Information --- */}
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <Label htmlFor="city">City *</Label>
-                                        <Select onValueChange={handleCityChange} value={data.city}>
+                                        <Select onValueChange={handleCityChange} value={data.city || undefined}>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select city" />
                                             </SelectTrigger>
@@ -88,8 +91,11 @@ export default function Edit({ task, units, cities, unitsByCity, vendors }: Prop
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        {errors.city && <p className="text-red-600 text-sm mt-1">{errors.city}</p>}
+                                        {errors.city && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.city}</p>
+                                        )}
                                     </div>
+
                                     <div>
                                         <Label htmlFor="task_submission_date">Task Submission Date *</Label>
                                         <Input
@@ -99,14 +105,16 @@ export default function Edit({ task, units, cities, unitsByCity, vendors }: Prop
                                             onChange={(e) => setData('task_submission_date', e.target.value)}
                                             error={errors.task_submission_date}
                                         />
-                                        {errors.task_submission_date && <p className="text-red-600 text-sm mt-1">{errors.task_submission_date}</p>}
+                                        {errors.task_submission_date && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.task_submission_date}</p>
+                                        )}
                                     </div>
                                 </div>
 
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <Label htmlFor="vendor_name">Vendor Name *</Label>
-                                        <Select onValueChange={(value) => setData('vendor_name', value)} value={data.vendor_name}>
+                                        <Select onValueChange={(value) => setData('vendor_name', value)} value={data.vendor_name || undefined}>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select vendor" />
                                             </SelectTrigger>
@@ -118,13 +126,16 @@ export default function Edit({ task, units, cities, unitsByCity, vendors }: Prop
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        {errors.vendor_name && <p className="text-red-600 text-sm mt-1">{errors.vendor_name}</p>}
+                                        {errors.vendor_name && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.vendor_name}</p>
+                                        )}
                                     </div>
+
                                     <div>
                                         <Label htmlFor="unit_name">Unit Name *</Label>
                                         <Select
                                             onValueChange={(value) => setData('unit_name', value)}
-                                            value={data.unit_name}
+                                            value={data.unit_name || undefined}
                                             disabled={!data.city}
                                         >
                                             <SelectTrigger>
@@ -138,23 +149,29 @@ export default function Edit({ task, units, cities, unitsByCity, vendors }: Prop
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        {errors.unit_name && <p className="text-red-600 text-sm mt-1">{errors.unit_name}</p>}
+                                        {errors.unit_name && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.unit_name}</p>
+                                        )}
                                     </div>
                                 </div>
 
+                                {/* --- Task Details --- */}
                                 <div>
                                     <Label htmlFor="assigned_tasks">Assigned Tasks *</Label>
                                     <textarea
                                         id="assigned_tasks"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                         value={data.assigned_tasks}
                                         onChange={(e) => setData('assigned_tasks', e.target.value)}
                                         rows={3}
                                         placeholder="Describe the assigned tasks..."
+                                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     />
-                                    {errors.assigned_tasks && <p className="text-red-600 text-sm mt-1">{errors.assigned_tasks}</p>}
+                                    {errors.assigned_tasks && (
+                                        <p className="text-red-600 text-sm mt-1">{errors.assigned_tasks}</p>
+                                    )}
                                 </div>
 
+                                {/* --- Scheduling --- */}
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <Label htmlFor="any_scheduled_visits">Any Scheduled Visits</Label>
@@ -165,8 +182,11 @@ export default function Edit({ task, units, cities, unitsByCity, vendors }: Prop
                                             onChange={(e) => setData('any_scheduled_visits', e.target.value)}
                                             error={errors.any_scheduled_visits}
                                         />
-                                        {errors.any_scheduled_visits && <p className="text-red-600 text-sm mt-1">{errors.any_scheduled_visits}</p>}
+                                        {errors.any_scheduled_visits && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.any_scheduled_visits}</p>
+                                        )}
                                     </div>
+
                                     <div>
                                         <Label htmlFor="task_ending_date">Task Ending Date</Label>
                                         <Input
@@ -176,46 +196,39 @@ export default function Edit({ task, units, cities, unitsByCity, vendors }: Prop
                                             onChange={(e) => setData('task_ending_date', e.target.value)}
                                             error={errors.task_ending_date}
                                         />
-                                        {errors.task_ending_date && <p className="text-red-600 text-sm mt-1">{errors.task_ending_date}</p>}
+                                        {errors.task_ending_date && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.task_ending_date}</p>
+                                        )}
                                     </div>
                                 </div>
 
-                                <div>
-                                    <Label htmlFor="notes">Notes</Label>
-                                    <textarea
-                                        id="notes"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        value={data.notes}
-                                        onChange={(e) => setData('notes', e.target.value)}
-                                        rows={3}
-                                        placeholder="Enter any additional notes..."
-                                    />
-                                    {errors.notes && <p className="text-red-600 text-sm mt-1">{errors.notes}</p>}
-                                </div>
-
+                                {/* --- Status & Priority --- */}
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <Label htmlFor="status">Status</Label>
                                         <Select
                                             onValueChange={(value) => setData('status', value)}
-                                            value={data.status}
+                                            value={data.status || undefined}
                                         >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select status" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="New">New</SelectItem>
-                                                <SelectItem value="Inprogress">Inprogress</SelectItem>
-                                                <SelectItem value="Completed ">Completed </SelectItem>
+                                                <SelectItem value="Inprogress">In Progress</SelectItem>
+                                                <SelectItem value="Completed">Completed</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        {errors.status && <p className="text-red-600 text-sm mt-1">{errors.status}</p>}
+                                        {errors.status && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.status}</p>
+                                        )}
                                     </div>
+
                                     <div>
                                         <Label htmlFor="urgent">Urgent? *</Label>
                                         <Select
                                             onValueChange={(value) => setData('urgent', value)}
-                                            value={data.urgent}
+                                            value={data.urgent || undefined}
                                         >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select urgency" />
@@ -225,16 +238,35 @@ export default function Edit({ task, units, cities, unitsByCity, vendors }: Prop
                                                 <SelectItem value="No">No</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        {errors.urgent && <p className="text-red-600 text-sm mt-1">{errors.urgent}</p>}
+                                        {errors.urgent && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.urgent}</p>
+                                        )}
                                     </div>
                                 </div>
 
+                                {/* --- Notes --- */}
+                                <div>
+                                    <Label htmlFor="notes">Notes</Label>
+                                    <textarea
+                                        id="notes"
+                                        value={data.notes}
+                                        onChange={(e) => setData('notes', e.target.value)}
+                                        rows={3}
+                                        placeholder="Enter any additional notes..."
+                                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    />
+                                    {errors.notes && (
+                                        <p className="text-red-600 text-sm mt-1">{errors.notes}</p>
+                                    )}
+                                </div>
+
+                                {/* --- Action Buttons --- */}
                                 <div className="flex justify-end gap-2">
                                     <Link href={route('vendor-task-tracker.show', task.id)}>
                                         <Button type="button" variant="outline">Cancel</Button>
                                     </Link>
                                     <Button type="submit" disabled={processing}>
-                                        {processing ? 'Updating...' : 'Update Task'}
+                                        {processing ? 'Updating…' : 'Update Task'}
                                     </Button>
                                 </div>
                             </form>

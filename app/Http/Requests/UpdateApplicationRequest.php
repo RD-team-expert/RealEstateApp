@@ -4,6 +4,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Unit;
 
 class UpdateApplicationRequest extends FormRequest
 {
@@ -15,10 +16,41 @@ class UpdateApplicationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'property' => 'required|string|max:255',
+            'city' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if (!Unit::where('city', $value)->exists()) {
+                        $fail('The selected city does not exist.');
+                    }
+                }
+            ],
+            'property' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    $city = $this->input('city');
+                    if ($city && !Unit::where('city', $city)->where('property', $value)->exists()) {
+                        $fail('The selected property does not exist for the selected city.');
+                    }
+                }
+            ],
             'name' => 'required|string|max:255',
             'co_signer' => 'required|string|max:255',
-            'unit' => 'required|string|max:255',
+            'unit' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    $city = $this->input('city');
+                    $property = $this->input('property');
+                    if ($city && $property && !Unit::where('city', $city)->where('property', $property)->where('unit_name', $value)->exists()) {
+                        $fail('The selected unit does not exist for the selected city and property.');
+                    }
+                }
+            ],
             'status' => 'nullable|string|max:255',
             'date' => 'nullable|date',
             'stage_in_progress' => 'nullable|string|max:255',
@@ -29,18 +61,11 @@ class UpdateApplicationRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'city.required' => 'City is required.',
             'property.required' => 'Property is required.',
-            'property.max' => 'Property name cannot exceed 255 characters.',
             'name.required' => 'Name is required.',
-            'name.max' => 'Name cannot exceed 255 characters.',
             'co_signer.required' => 'Co-signer is required.',
-            'co_signer.max' => 'Co-signer name cannot exceed 255 characters.',
             'unit.required' => 'Unit is required.',
-            'unit.max' => 'Unit cannot exceed 255 characters.',
-            'status.max' => 'Status cannot exceed 255 characters.',
-            'date.date' => 'Please provide a valid date.',
-            'stage_in_progress.max' => 'Stage in progress cannot exceed 255 characters.',
-            'notes.max' => 'Notes cannot exceed 65535 characters.',
         ];
     }
 }

@@ -5,7 +5,6 @@ import { MoveIn } from '@/types/move-in';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 
 interface Props {
     moveIn: MoveIn;
@@ -46,28 +45,64 @@ export default function Show({ moveIn }: Props) {
                                 </div>
                             </div>
                         </CardHeader>
-
-                        <CardContent className="space-y-6">
-                            {/* Basic Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
-                                <div className="grid md:grid-cols-2 gap-4">
+                        <CardContent>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {/* Basic Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Basic Information</h3>
                                     <div>
                                         <p className="text-sm text-gray-600">Unit Name</p>
-                                        <p className="font-medium text-lg">{moveIn.unit_name}</p>
+                                        <p className="font-medium">{moveIn.unit_name}</p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Signed Lease</p>
-                                        {getYesNoBadge(moveIn.signed_lease)}
+                                        <div className="mt-1">{getYesNoBadge(moveIn.signed_lease)}</div>
+                                    </div>
+                                </div>
+
+                                {/* Payment & Financial Status */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Payment & Financial Status</h3>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Paid Security Deposit & First Month Rent</p>
+                                        <div className="mt-1">{getYesNoBadge(moveIn.paid_security_deposit_first_month_rent)}</div>
+                                    </div>
+                                </div>
+
+                                {/* Process Status */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Process Status</h3>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Handled Keys</p>
+                                        <div className="mt-1">{getYesNoBadge(moveIn.handled_keys)}</div>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Filled Move-In Form</p>
+                                        <div className="mt-1">{getYesNoBadge(moveIn.filled_move_in_form)}</div>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Submitted Insurance</p>
+                                        <div className="mt-1">{getYesNoBadge(moveIn.submitted_insurance)}</div>
+                                    </div>
+                                </div>
+
+                                {/* Form Processing */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Form Processing</h3>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Move-In Form Sent Date</p>
+                                        <p className="font-medium">{formatDate(moveIn.move_in_form_sent_date)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Date of Move-In Form Filled</p>
+                                        <p className="font-medium">{formatDate(moveIn.date_of_move_in_form_filled)}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <Separator />
-
-                            {/* Date Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Important Dates</h3>
+                            {/* Important Dates Section */}
+                            <div className="mt-6 space-y-4">
+                                <h3 className="text-lg font-semibold">Important Dates</h3>
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div className="bg-blue-50 p-4 rounded-lg">
                                         <p className="text-sm text-blue-600">Lease Signing Date</p>
@@ -96,68 +131,13 @@ export default function Show({ moveIn }: Props) {
                                 </div>
                             </div>
 
-                            <Separator />
-
-                            {/* Payment & Financial Status */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Payment & Financial Status</h3>
-                                <div className="grid md:grid-cols-1 gap-4">
-                                    <div>
-                                        <p className="text-sm text-gray-600">Paid Security Deposit & First Month Rent</p>
-                                        {getYesNoBadge(moveIn.paid_security_deposit_first_month_rent)}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* Process Status */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Process Status</h3>
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-sm text-gray-600">Handled Keys</p>
-                                        {getYesNoBadge(moveIn.handled_keys)}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-600">Filled Move-In Form</p>
-                                        {getYesNoBadge(moveIn.filled_move_in_form)}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-600">Submitted Insurance</p>
-                                        {getYesNoBadge(moveIn.submitted_insurance)}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* Form Dates */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Form Processing Dates</h3>
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-sm text-gray-600">Move-In Form Sent Date</p>
-                                        <p className="font-medium">{formatDate(moveIn.move_in_form_sent_date)}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-600">Date of Move-In Form Filled</p>
-                                        <p className="font-medium">{formatDate(moveIn.date_of_move_in_form_filled)}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* Record Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Record Information</h3>
+                            <div className="mt-8 pt-6 border-t">
                                 <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
                                     <div>
-                                        <p>Created: {new Date(moveIn.created_at).toLocaleString()}</p>
+                                        <p>Created: {new Date(moveIn.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <div>
-                                        <p>Last Updated: {new Date(moveIn.updated_at).toLocaleString()}</p>
+                                        <p>Updated: {new Date(moveIn.updated_at).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                             </div>

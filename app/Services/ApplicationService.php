@@ -14,6 +14,10 @@ class ApplicationService
         $query = Application::query();
 
         // Apply filters
+
+        if (!empty($filters['city'])) {
+        $query->where('city', 'like', '%' . $filters['city'] . '%');
+        }
         if (!empty($filters['property'])) {
             $query->where('property', 'like', '%' . $filters['property'] . '%');
         }

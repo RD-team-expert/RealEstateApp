@@ -1,8 +1,19 @@
-// resources/js/Pages/Units/Index.tsx
-
 import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/app-layout';
+import AppLayout from '@/Layouts/app-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { Unit, PaginatedUnits, UnitFilters, UnitStatistics } from '@/types/unit';
 import { PageProps } from '@/types/unit';
 
@@ -19,42 +30,48 @@ export default function Index({ auth, units, statistics, filters }: Props) {
     const handleFilterChange = (key: keyof UnitFilters, value: string) => {
         const newFilters = { ...searchFilters, [key]: value };
         setSearchFilters(newFilters);
-
         router.get(route('units.index'), newFilters, {
             preserveState: true,
             preserveScroll: true,
         });
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = (unit: Unit) => {
         if (confirm('Are you sure you want to delete this unit?')) {
-            router.delete(route('units.destroy', id));
+            router.delete(route('units.destroy', unit.id));
         }
     };
 
     const getVacantBadge = (vacant: string) => {
-        const colorClass = vacant === 'Yes' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
-        return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${colorClass}`}>{vacant}</span>;
+        if (!vacant) return <Badge variant="outline">-</Badge>;
+        return (
+            <Badge variant={vacant === 'Yes' ? 'destructive' : 'default'}>
+                {vacant}
+            </Badge>
+        );
     };
 
     const getListedBadge = (listed: string) => {
-        const colorClass = listed === 'Yes' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800';
-        return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${colorClass}`}>{listed}</span>;
+        if (!listed) return <Badge variant="outline">-</Badge>;
+        return (
+            <Badge variant={listed === 'Yes' ? 'default' : 'secondary'}>
+                {listed}
+            </Badge>
+        );
     };
 
     const getInsuranceBadge = (insurance: string | null) => {
-        if (!insurance) return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">-</span>;
-        const colorClass = insurance === 'Yes' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-        return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${colorClass}`}>{insurance}</span>;
+        if (!insurance || insurance === '-') return <Badge variant="outline">N/A</Badge>;
+        return (
+            <Badge variant={insurance === 'Yes' ? 'default' : 'destructive'}>
+                {insurance}
+            </Badge>
+        );
     };
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Units</h2>}
-        >
+        <AppLayout>
             <Head title="Units" />
-
             <div className="py-12">
                 <div className="max-w-full mx-auto sm:px-6 lg:px-8">
                     {/* Flash Messages */}
@@ -71,68 +88,73 @@ export default function Index({ auth, units, statistics, filters }: Props) {
 
                     {/* Statistics Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">Total Units</h3>
-                            <p className="text-3xl font-bold text-blue-600">{statistics.total}</p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">Vacant</h3>
-                            <p className="text-3xl font-bold text-red-600">{statistics.vacant}</p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">Occupied</h3>
-                            <p className="text-3xl font-bold text-green-600">{statistics.occupied}</p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">Listed</h3>
-                            <p className="text-3xl font-bold text-purple-600">{statistics.listed}</p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">Total Applications</h3>
-                            <p className="text-3xl font-bold text-orange-600">{statistics.total_applications}</p>
-                        </div>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">Total Units</h3>
+                                <p className="text-3xl font-bold text-blue-600">{statistics.total}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">Vacant</h3>
+                                <p className="text-3xl font-bold text-red-600">{statistics.vacant}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">Occupied</h3>
+                                <p className="text-3xl font-bold text-green-600">{statistics.occupied}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">Listed</h3>
+                                <p className="text-3xl font-bold text-purple-600">{statistics.listed}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">Total Applications</h3>
+                                <p className="text-3xl font-bold text-orange-600">{statistics.total_applications}</p>
+                            </CardContent>
+                        </Card>
                     </div>
 
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            {/* Header and Add Button */}
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-semibold">Units List</h3>
-                                <Link
-                                    href={route('units.create')}
-                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                                >
-                                    Add Unit
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="text-2xl">Units List</CardTitle>
+                                <Link href={route('units.create')}>
+                                    <Button>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Unit
+                                    </Button>
                                 </Link>
                             </div>
-
                             {/* Filters */}
-                            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-6">
-                                <input
+                            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mt-4">
+                                <Input
                                     type="text"
                                     placeholder="City"
                                     value={searchFilters.city || ''}
                                     onChange={(e) => handleFilterChange('city', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
                                 />
-                                <input
+                                <Input
                                     type="text"
                                     placeholder="Property"
                                     value={searchFilters.property || ''}
                                     onChange={(e) => handleFilterChange('property', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
                                 />
-                                <input
+                                <Input
                                     type="text"
                                     placeholder="Unit Name"
                                     value={searchFilters.unit_name || ''}
                                     onChange={(e) => handleFilterChange('unit_name', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
                                 />
                                 <select
                                     value={searchFilters.vacant || ''}
                                     onChange={(e) => handleFilterChange('vacant', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
+                                    className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
                                 >
                                     <option value="">All Vacant Status</option>
                                     <option value="Yes">Vacant</option>
@@ -141,7 +163,7 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                                 <select
                                     value={searchFilters.listed || ''}
                                     onChange={(e) => handleFilterChange('listed', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
+                                    className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
                                 >
                                     <option value="">All Listed Status</option>
                                     <option value="Yes">Listed</option>
@@ -150,177 +172,127 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                                 <select
                                     value={searchFilters.insurance || ''}
                                     onChange={(e) => handleFilterChange('insurance', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
+                                    className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
                                 >
                                     <option value="">All Insurance</option>
                                     <option value="Yes">Has Insurance</option>
                                     <option value="No">No Insurance</option>
                                 </select>
                             </div>
+                        </CardHeader>
 
-                            {/* Units Table - ALL COLUMNS */}
+                        <CardContent>
                             <div className="overflow-x-auto">
-                                <table className="min-w-full bg-white border border-gray-300">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">City</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Name</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenants</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lease Start</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lease End</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Beds</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Baths</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lease Status</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monthly Rent</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recurring Transaction</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Utility Status</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account Number</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Insurance</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Insurance Exp.</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vacant</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Listed</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applications</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>City</TableHead>
+                                            <TableHead>Property</TableHead>
+                                            <TableHead>Unit Name</TableHead>
+                                            <TableHead>Tenants</TableHead>
+                                            <TableHead>Lease Start</TableHead>
+                                            <TableHead>Lease End</TableHead>
+                                            <TableHead>Beds</TableHead>
+                                            <TableHead>Baths</TableHead>
+                                            <TableHead>Lease Status</TableHead>
+                                            <TableHead>Monthly Rent</TableHead>
+                                            <TableHead>Recurring Transaction</TableHead>
+                                            <TableHead>Utility Status</TableHead>
+                                            <TableHead>Account Number</TableHead>
+                                            <TableHead>Insurance</TableHead>
+                                            <TableHead>Insurance Exp.</TableHead>
+                                            <TableHead>Vacant</TableHead>
+                                            <TableHead>Listed</TableHead>
+                                            <TableHead>Applications</TableHead>
+                                            <TableHead>Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
                                         {units.data.map((unit) => (
-                                            <tr key={unit.id} className="hover:bg-gray-50">
-                                                {/* City */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {unit.city}
-                                                </td>
-
-                                                {/* Property */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {unit.property}
-                                                </td>
-
-                                                {/* Unit Name */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <TableRow key={unit.id} className="hover:bg-gray-50">
+                                                <TableCell className="font-medium">{unit.city}</TableCell>
+                                                <TableCell>{unit.property}</TableCell>
+                                                <TableCell>
                                                     <span className="font-medium">{unit.unit_name}</span>
-                                                </td>
-
-                                                {/* Tenants */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {unit.tenants || '-'}
-                                                </td>
-
-                                                {/* Lease Start */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                </TableCell>
+                                                <TableCell>{unit.tenants || '-'}</TableCell>
+                                                <TableCell>
                                                     {unit.lease_start ? new Date(unit.lease_start).toLocaleDateString() : '-'}
-                                                </td>
-
-                                                {/* Lease End */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                </TableCell>
+                                                <TableCell>
                                                     {unit.lease_end ? new Date(unit.lease_end).toLocaleDateString() : '-'}
-                                                </td>
-
-                                                {/* Count Beds */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {unit.count_beds || '-'}
-                                                </td>
-
-                                                {/* Count Baths */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {unit.count_baths || '-'}
-                                                </td>
-
-                                                {/* Lease Status */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {unit.lease_status || '-'}
-                                                </td>
-
-                                                {/* Monthly Rent */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                </TableCell>
+                                                <TableCell>{unit.count_beds || '-'}</TableCell>
+                                                <TableCell>{unit.count_baths || '-'}</TableCell>
+                                                <TableCell>{unit.lease_status || '-'}</TableCell>
+                                                <TableCell>
                                                     <span className="font-medium">{unit.formatted_monthly_rent}</span>
-                                                </td>
-
-                                                {/* Recurring Transaction */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                </TableCell>
+                                                <TableCell>
                                                     <div className="max-w-32 truncate" title={unit.recurring_transaction || ''}>
                                                         {unit.recurring_transaction || '-'}
                                                     </div>
-                                                </td>
-
-                                                {/* Utility Status */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                </TableCell>
+                                                <TableCell>
                                                     <div className="max-w-24 truncate" title={unit.utility_status || ''}>
                                                         {unit.utility_status || '-'}
                                                     </div>
-                                                </td>
-
-                                                {/* Account Number */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                </TableCell>
+                                                <TableCell>
                                                     <div className="max-w-24 truncate" title={unit.account_number || ''}>
                                                         {unit.account_number || '-'}
                                                     </div>
-                                                </td>
-
-                                                {/* Insurance */}
-                                                <td className="px-4 py-4 whitespace-nowrap">
+                                                </TableCell>
+                                                <TableCell>
                                                     {getInsuranceBadge(unit.insurance)}
-                                                </td>
-
-                                                {/* Insurance Expiration Date */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {unit.insurance_expiration_date ? new Date(unit.insurance_expiration_date).toLocaleDateString() : '-'}
-                                                </td>
-
-                                                {/* Vacant (Calculated) */}
-                                                <td className="px-4 py-4 whitespace-nowrap">
+                                                </TableCell>
+                                                <TableCell>
+                                                    {unit.insurance_expiration_date ?
+                                                        new Date(unit.insurance_expiration_date).toLocaleDateString() : '-'}
+                                                </TableCell>
+                                                <TableCell>
                                                     {getVacantBadge(unit.vacant)}
-                                                </td>
-
-                                                {/* Listed (Calculated) */}
-                                                <td className="px-4 py-4 whitespace-nowrap">
+                                                </TableCell>
+                                                <TableCell>
                                                     {getListedBadge(unit.listed)}
-                                                </td>
-
-                                                {/* Total Applications (Calculated) */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    <span className="bg-orange-100 text-orange-800 px-2 py-1 text-xs font-semibold rounded-full">
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="secondary" className="bg-orange-100 text-orange-800">
                                                         {unit.total_applications}
-                                                    </span>
-                                                </td>
-
-                                                {/* Actions */}
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <div className="flex space-x-2">
-                                                        <Link
-                                                            href={route('units.show', unit.id)}
-                                                            className="text-indigo-600 hover:text-indigo-900"
-                                                            title="View"
-                                                        >
-                                                            View
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex gap-1">
+                                                        <Link href={route('units.show', unit.id)}>
+                                                            <Button variant="outline" size="sm">
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
                                                         </Link>
-                                                        <Link
-                                                            href={route('units.edit', unit.id)}
-                                                            className="text-yellow-600 hover:text-yellow-900"
-                                                            title="Edit"
-                                                        >
-                                                            Edit
+                                                        <Link href={route('units.edit', unit.id)}>
+                                                            <Button variant="outline" size="sm">
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
                                                         </Link>
-                                                        <button
-                                                            onClick={() => handleDelete(unit.id)}
-                                                            className="text-red-600 hover:text-red-900"
-                                                            title="Delete"
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(unit)}
+                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                         >
-                                                            Delete
-                                                        </button>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
                                                     </div>
-                                                </td>
-                                            </tr>
+                                                </TableCell>
+                                            </TableRow>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </TableBody>
+                                </Table>
                             </div>
 
-                            {/* No results message */}
                             {units.data.length === 0 && (
-                                <div className="text-center py-8">
-                                    <p className="text-gray-500">No units found matching your criteria.</p>
+                                <div className="text-center py-8 text-gray-500">
+                                    <p className="text-lg">No units found matching your criteria.</p>
+                                    <p className="text-sm">Try adjusting your search filters.</p>
                                 </div>
                             )}
 
@@ -349,12 +321,12 @@ export default function Index({ auth, units, statistics, filters }: Props) {
 
                             {/* Total count */}
                             <div className="mt-4 text-sm text-gray-600 text-center">
-                                Showing {units.from} to {units.to} of {units.total} units
+                                Showing {units.from || 0} to {units.to || 0} of {units.total || 0} units
                             </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

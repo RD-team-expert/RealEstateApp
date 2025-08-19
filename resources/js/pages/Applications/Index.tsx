@@ -2,7 +2,20 @@
 
 import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/app-layout';
+import AppLayout from '@/Layouts/app-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { Application, PaginatedApplications, ApplicationFilters, ApplicationStatistics } from '@/types/application';
 import { PageProps } from '@/types/application';
 
@@ -26,24 +39,19 @@ export default function Index({ auth, applications, statistics, filters }: Props
         });
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = (application: Application) => {
         if (confirm('Are you sure you want to delete this application?')) {
-            router.delete(route('applications.destroy', id));
+            router.delete(route('applications.destroy', application.id));
         }
     };
 
     const getStatusBadge = (status: string | null) => {
-        if (!status) return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">No Status</span>;
-
-        // Simple styling without predefined status mapping
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">{status}</span>;
+        if (!status) return <Badge variant="outline">No Status</Badge>;
+        return <Badge variant="default">{status}</Badge>;
     };
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Applications</h2>}
-        >
+        <AppLayout>
             <Head title="Applications" />
 
             <div className="py-12">
@@ -62,174 +70,181 @@ export default function Index({ auth, applications, statistics, filters }: Props
 
                     {/* Statistics Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">Total Applications</h3>
-                            <p className="text-3xl font-bold text-blue-600">{statistics.total}</p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">By Status</h3>
-                            <div className="mt-2 space-y-1">
-                                {Object.entries(statistics.status_counts).map(([status, count]) => (
-                                    <div key={status} className="flex justify-between text-sm">
-                                        <span>{status || 'No Status'}:</span>
-                                        <span className="font-semibold">{count}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">By Stage</h3>
-                            <div className="mt-2 space-y-1">
-                                {Object.entries(statistics.stage_counts).slice(0, 5).map(([stage, count]) => (
-                                    <div key={stage} className="flex justify-between text-sm">
-                                        <span>{stage || 'No Stage'}:</span>
-                                        <span className="font-semibold">{count}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">Total Applications</h3>
+                                <p className="text-3xl font-bold text-blue-600">{statistics.total}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">By Status</h3>
+                                <div className="mt-2 space-y-1">
+                                    {Object.entries(statistics.status_counts).map(([status, count]) => (
+                                        <div key={status} className="flex justify-between text-sm">
+                                            <span>{status || 'No Status'}:</span>
+                                            <span className="font-semibold">{count}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">By Stage</h3>
+                                <div className="mt-2 space-y-1">
+                                    {Object.entries(statistics.stage_counts).slice(0, 5).map(([stage, count]) => (
+                                        <div key={stage} className="flex justify-between text-sm">
+                                            <span>{stage || 'No Stage'}:</span>
+                                            <span className="font-semibold">{count}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
 
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            {/* Header and Add Button */}
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-semibold">Applications List</h3>
-                                <Link
-                                    href={route('applications.create')}
-                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                                >
-                                    Add Application
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="text-2xl">Applications</CardTitle>
+                                <Link href={route('applications.create')}>
+                                    <Button>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Application
+                                    </Button>
                                 </Link>
                             </div>
 
                             {/* Filters */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                                <input
-                                    type="text"
-                                    placeholder="Property"
-                                    value={searchFilters.property || ''}
-                                    onChange={(e) => handleFilterChange('property', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Name"
-                                    value={searchFilters.name || ''}
-                                    onChange={(e) => handleFilterChange('name', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Unit"
-                                    value={searchFilters.unit || ''}
-                                    onChange={(e) => handleFilterChange('unit', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Status"
-                                    value={searchFilters.status || ''}
-                                    onChange={(e) => handleFilterChange('status', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
-                                />
+                            <div className="space-y-4 mt-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <Input
+                                        type="text"
+                                        placeholder="Property"
+                                        value={searchFilters.property || ''}
+                                        onChange={(e) => handleFilterChange('property', e.target.value)}
+                                    />
+                                    <Input
+                                        type="text"
+                                        placeholder="Name"
+                                        value={searchFilters.name || ''}
+                                        onChange={(e) => handleFilterChange('name', e.target.value)}
+                                    />
+                                    <Input
+                                        type="text"
+                                        placeholder="Unit"
+                                        value={searchFilters.unit || ''}
+                                        onChange={(e) => handleFilterChange('unit', e.target.value)}
+                                    />
+                                    <Input
+                                        type="text"
+                                        placeholder="Status"
+                                        value={searchFilters.status || ''}
+                                        onChange={(e) => handleFilterChange('status', e.target.value)}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <Input
+                                        type="text"
+                                        placeholder="Co-signer"
+                                        value={searchFilters.co_signer || ''}
+                                        onChange={(e) => handleFilterChange('co_signer', e.target.value)}
+                                    />
+                                    <Input
+                                        type="text"
+                                        placeholder="Stage in Progress"
+                                        value={searchFilters.stage_in_progress || ''}
+                                        onChange={(e) => handleFilterChange('stage_in_progress', e.target.value)}
+                                    />
+                                    <Input
+                                        type="date"
+                                        placeholder="Date From"
+                                        value={searchFilters.date_from || ''}
+                                        onChange={(e) => handleFilterChange('date_from', e.target.value)}
+                                    />
+                                    <Input
+                                        type="date"
+                                        placeholder="Date To"
+                                        value={searchFilters.date_to || ''}
+                                        onChange={(e) => handleFilterChange('date_to', e.target.value)}
+                                    />
+                                </div>
                             </div>
+                        </CardHeader>
 
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                                <input
-                                    type="text"
-                                    placeholder="Co-signer"
-                                    value={searchFilters.co_signer || ''}
-                                    onChange={(e) => handleFilterChange('co_signer', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Stage in Progress"
-                                    value={searchFilters.stage_in_progress || ''}
-                                    onChange={(e) => handleFilterChange('stage_in_progress', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
-                                />
-                                <input
-                                    type="date"
-                                    placeholder="Date From"
-                                    value={searchFilters.date_from || ''}
-                                    onChange={(e) => handleFilterChange('date_from', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
-                                />
-                                <input
-                                    type="date"
-                                    placeholder="Date To"
-                                    value={searchFilters.date_to || ''}
-                                    onChange={(e) => handleFilterChange('date_to', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
-                                />
-                            </div>
-
-                            {/* Applications Table */}
+                        <CardContent>
                             <div className="overflow-x-auto">
-                                <table className="min-w-full bg-white border border-gray-300">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Co-signer</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stage</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>City</TableHead>
+                                            <TableHead>Property</TableHead>
+                                            <TableHead>Name</TableHead>
+                                            <TableHead>Co-signer</TableHead>
+                                            <TableHead>Unit</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Stage</TableHead>
+                                            <TableHead>Note</TableHead>
+                                            <TableHead>Actions</TableHead>
+
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
                                         {applications.data.map((application) => (
-                                            <tr key={application.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {application.property}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {application.name}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {application.co_signer}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {application.unit}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                            <TableRow key={application.id} className="hover:bg-gray-50">
+                                                <TableCell className="font-medium">{application.city}</TableCell>
+                                                <TableCell className="font-medium">{application.property}</TableCell>
+                                                <TableCell>{application.name}</TableCell>
+                                                <TableCell>{application.co_signer}</TableCell>
+                                                <TableCell>{application.unit}</TableCell>
+                                                <TableCell>
                                                     {getStatusBadge(application.status)}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {application.date ? new Date(application.date).toLocaleDateString() : '-'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {application.stage_in_progress || '-'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <Link
-                                                        href={route('applications.show', application.id)}
-                                                        className="text-indigo-600 hover:text-indigo-900 mr-3"
-                                                    >
-                                                        View
-                                                    </Link>
-                                                    <Link
-                                                        href={route('applications.edit', application.id)}
-                                                        className="text-yellow-600 hover:text-yellow-900 mr-3"
-                                                    >
-                                                        Edit
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => handleDelete(application.id)}
-                                                        className="text-red-600 hover:text-red-900"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </td>
-                                            </tr>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {application.date
+                                                        ? new Date(application.date).toLocaleDateString()
+                                                        : 'N/A'
+                                                    }
+                                                </TableCell>
+                                                <TableCell>{application.stage_in_progress || 'N/A'}</TableCell>
+                                                <TableCell>{application.notes || 'N/A'}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex gap-1">
+                                                        <Link href={route('applications.show', application.id)}>
+                                                            <Button variant="outline" size="sm">
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        </Link>
+                                                        <Link href={route('applications.edit', application.id)}>
+                                                            <Button variant="outline" size="sm">
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        </Link>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(application)}
+                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+
+                                            </TableRow>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </TableBody>
+                                </Table>
                             </div>
+
+                            {applications.data.length === 0 && (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p className="text-lg">No applications found.</p>
+                                    <p className="text-sm">Try adjusting your search criteria.</p>
+                                </div>
+                            )}
 
                             {/* Pagination */}
                             {applications.last_page > 1 && (
@@ -253,10 +268,19 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                     </nav>
                                 </div>
                             )}
-                        </div>
-                    </div>
+
+                            {/* Pagination info */}
+                            {applications.meta && (
+                                <div className="mt-6 flex justify-between items-center">
+                                    <div className="text-sm text-gray-600">
+                                        Showing {applications.meta.from || 0} to {applications.meta.to || 0} of {applications.meta.total || 0} results
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

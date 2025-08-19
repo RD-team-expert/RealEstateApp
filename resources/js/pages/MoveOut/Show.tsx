@@ -5,7 +5,6 @@ import { MoveOut } from '@/types/move-out';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 
 interface Props {
     moveOut: MoveOut;
@@ -49,7 +48,7 @@ export default function Show({ moveOut }: Props) {
             <Head title={`Move-Out Details #${moveOut.id}`} />
 
             <div className="py-12">
-                <div className="max-w-6xl mx-auto sm:px-6 lg:px-8">
+                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                     <Card>
                         <CardHeader>
                             <div className="flex justify-between items-center">
@@ -64,33 +63,87 @@ export default function Show({ moveOut }: Props) {
                                 </div>
                             </div>
                         </CardHeader>
-
-                        <CardContent className="space-y-6">
-                            {/* Basic Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
-                                <div className="grid md:grid-cols-3 gap-4">
+                        <CardContent>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {/* Basic Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Basic Information</h3>
                                     <div>
                                         <p className="text-sm text-gray-600">Tenant Name</p>
-                                        <p className="font-medium text-lg">{moveOut.tenants_name}</p>
+                                        <p className="font-medium">{moveOut.tenants_name}</p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Unit Name</p>
-                                        <p className="font-medium text-lg">{moveOut.units_name}</p>
+                                        <p className="font-medium">{moveOut.units_name}</p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Lease Status</p>
                                         <p className="font-medium">{moveOut.lease_status || 'N/A'}</p>
                                     </div>
                                 </div>
+
+                                {/* Location & Utilities */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Location & Utilities</h3>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Keys Location</p>
+                                        <p className="font-medium">{moveOut.keys_location || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Utilities Under Our Name</p>
+                                        <div className="mt-1">{getYesNoBadge(moveOut.utilities_under_our_name)}</div>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">List the Unit</p>
+                                        <p className="font-medium">{moveOut.list_the_unit || 'N/A'}</p>
+                                    </div>
+                                </div>
+
+                                {/* Status Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Status Information</h3>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Cleaning Status</p>
+                                        <div className="mt-1">{getCleaningBadge(moveOut.cleaning)}</div>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Move-Out Form</p>
+                                        <div className="mt-1">{getFormBadge(moveOut.move_out_form)}</div>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Send Back Security Deposit</p>
+                                        <p className="font-medium">{moveOut.send_back_security_deposit || 'N/A'}</p>
+                                    </div>
+                                </div>
+
+                                {/* Additional Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Additional Information</h3>
+                                    {moveOut.walkthrough && (
+                                        <div>
+                                            <p className="text-sm text-gray-600">Walkthrough</p>
+                                            <p className="font-medium">{moveOut.walkthrough}</p>
+                                        </div>
+                                    )}
+                                    {moveOut.repairs && (
+                                        <div>
+                                            <p className="text-sm text-gray-600">Repairs</p>
+                                            <p className="font-medium">{moveOut.repairs}</p>
+                                        </div>
+                                    )}
+                                    {moveOut.notes && (
+                                        <div>
+                                            <p className="text-sm text-gray-600">Notes</p>
+                                            <p className="font-medium">{moveOut.notes}</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            <Separator />
-
-                            {/* Date Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Important Dates</h3>
-                                <div className="grid md:grid-cols-3 gap-4">
+                            {/* Important Dates Section */}
+                            <div className="mt-6 space-y-4">
+                                <h3 className="text-lg font-semibold">Important Dates</h3>
+                                <div className="grid md:grid-cols-2 gap-4">
                                     <div className="bg-red-50 p-4 rounded-lg">
                                         <p className="text-sm text-red-600">Move-Out Date</p>
                                         <p className="text-lg font-semibold text-red-700">
@@ -112,183 +165,15 @@ export default function Show({ moveOut }: Props) {
                                 </div>
                             </div>
 
-                            <Separator />
 
-                            {/* Location and Utilities */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Location & Utilities Information</h3>
-                                <div className="grid md:grid-cols-3 gap-4">
-                                    <div>
-                                        <p className="text-sm text-gray-600">Keys Location</p>
-                                        <p className="font-medium">{moveOut.keys_location || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-600">Utilities Under Our Name</p>
-                                        <div className="mt-1">
-                                            {getYesNoBadge(moveOut.utilities_under_our_name)}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-600">List the Unit</p>
-                                        <p className="font-medium">{moveOut.list_the_unit || 'N/A'}</p>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <Separator />
-
-                            {/* Status Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Status Information</h3>
-                                <div className="grid md:grid-cols-3 gap-4">
-                                    <div>
-                                        <p className="text-sm text-gray-600">Cleaning Status</p>
-                                        <div className="mt-1">
-                                            {getCleaningBadge(moveOut.cleaning)}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-600">Move-Out Form</p>
-                                        <div className="mt-1">
-                                            {getFormBadge(moveOut.move_out_form)}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-gray-600">Send Back Security Deposit</p>
-                                        <p className="font-medium">{moveOut.send_back_security_deposit || 'N/A'}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* Detailed Text Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Detailed Information</h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <p className="text-sm text-gray-600 mb-2">Walkthrough</p>
-                                        <div className="bg-gray-50 p-4 rounded-lg min-h-[100px]">
-                                            <p className="whitespace-pre-wrap text-gray-800">
-                                                {moveOut.walkthrough || 'No walkthrough information provided.'}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-sm text-gray-600 mb-2">Repairs</p>
-                                        <div className="bg-gray-50 p-4 rounded-lg min-h-[100px]">
-                                            <p className="whitespace-pre-wrap text-gray-800">
-                                                {moveOut.repairs || 'No repair information provided.'}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-sm text-gray-600 mb-2">Notes</p>
-                                        <div className="bg-gray-50 p-4 rounded-lg min-h-[100px]">
-                                            <p className="whitespace-pre-wrap text-gray-800">
-                                                {moveOut.notes || 'No additional notes provided.'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* Complete Data Overview Table */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Complete Record Overview</h3>
-                                <div className="bg-white border rounded-lg overflow-hidden">
-                                    <table className="w-full">
-                                        <tbody className="divide-y divide-gray-200">
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">ID</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">{moveOut.id}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Tenant Name</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">{moveOut.tenants_name}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Unit Name</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">{moveOut.units_name}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Move Out Date</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">{formatDate(moveOut.move_out_date)}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Lease Status</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">{moveOut.lease_status || 'N/A'}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Date Lease Ending on Buildium</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">{formatDate(moveOut.date_lease_ending_on_buildium)}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Keys Location</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">{moveOut.keys_location || 'N/A'}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Utilities Under Our Name</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">
-                                                    {getYesNoBadge(moveOut.utilities_under_our_name)}
-                                                </td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Date Utility Put Under Our Name</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">{formatDate(moveOut.date_utility_put_under_our_name)}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Walkthrough</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700 whitespace-pre-wrap max-w-md break-words">{moveOut.walkthrough || 'N/A'}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Repairs</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700 whitespace-pre-wrap max-w-md break-words">{moveOut.repairs || 'N/A'}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Send Back Security Deposit</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">{moveOut.send_back_security_deposit || 'N/A'}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Notes</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700 whitespace-pre-wrap max-w-md break-words">{moveOut.notes || 'N/A'}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Cleaning</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">
-                                                    {getCleaningBadge(moveOut.cleaning)}
-                                                </td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">List the Unit</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">{moveOut.list_the_unit || 'N/A'}</td>
-                                            </tr>
-                                            <tr className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm font-medium text-gray-900 bg-gray-50">Move Out Form</td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">
-                                                    {getFormBadge(moveOut.move_out_form)}
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <Separator />
-
-                            {/* Record Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Record Information</h3>
+                            <div className="mt-8 pt-6 border-t">
                                 <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
                                     <div>
-                                        <p><strong>Created:</strong> {new Date(moveOut.created_at).toLocaleString()}</p>
+                                        <p>Created: {new Date(moveOut.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <div>
-                                        <p><strong>Last Updated:</strong> {new Date(moveOut.updated_at).toLocaleString()}</p>
+                                        <p>Updated: {new Date(moveOut.updated_at).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                             </div>

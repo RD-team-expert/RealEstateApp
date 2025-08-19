@@ -16,7 +16,10 @@ class StoreUnitRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'city' => 'required|string|max:255',
+            'city' => [
+                'required',
+                'string',
+                Rule::exists('cities', 'city')],
             'property' => 'required|string|max:255',
             'unit_name' => 'required|string|max:255|unique:units,unit_name',
             'tenants' => 'nullable|string|max:255',

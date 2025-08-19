@@ -1,10 +1,20 @@
-// resources/js/Pages/Applications/Create.tsx
-
 import React, { useState, useEffect } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/app-layout';
+import { Head, useForm, router, Link } from '@inertiajs/react';
+import AppLayout from '@/Layouts/app-layout';
 import { ApplicationFormData, UnitData } from '@/types/application';
 import { PageProps } from '@/types/application';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import axios from 'axios';
 
 interface Props extends PageProps {
@@ -16,6 +26,7 @@ interface Props extends PageProps {
 
 export default function Create({ auth, units, cities, properties, unitsByProperty }: Props) {
     const { data, setData, post, processing, errors } = useForm<ApplicationFormData>({
+        city: '',
         property: '',
         name: '',
         co_signer: '',
@@ -33,8 +44,9 @@ export default function Create({ auth, units, cities, properties, unitsByPropert
     // Handle city selection
     const handleCityChange = (city: string) => {
         setSelectedCity(city);
-        setData('property', ''); // Reset property
-        setData('unit', ''); // Reset unit
+        setData('city', city);
+        setData('property', '');
+        setData('unit', '');
 
         if (city && properties[city]) {
             setAvailableProperties(properties[city]);
@@ -62,84 +74,88 @@ export default function Create({ auth, units, cities, properties, unitsByPropert
     };
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Add New Application</h2>}
-        >
-            <Head title="Add New Application" />
+        <AppLayout>
+            <Head title="Create Application" />
 
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            <form onSubmit={handleSubmit}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="text-2xl">Create New Application</CardTitle>
+                                <Link href={route('applications.index')}>
+                                    <Button variant="outline">Back to List</Button>
+                                </Link>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div className="grid md:grid-cols-2 gap-4">
                                     {/* City Selection */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            City *
-                                        </label>
-                                        <select
-                                            value={selectedCity}
-                                            onChange={(e) => handleCityChange(e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                        >
-                                            <option value="">Select City</option>
-                                            {cities.map((city) => (
-                                                <option key={city} value={city}>
-                                                    {city}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {errors.property && (
-                                            <p className="text-red-600 text-sm mt-1">Please select a valid city and property</p>
+                                        <Label htmlFor="city">City *</Label>
+                                        <Select onValueChange={handleCityChange} value={selectedCity}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select city" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {cities.map((city) => (
+                                                    <SelectItem key={city} value={city}>
+                                                        {city}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.city && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.city}</p>
                                         )}
                                     </div>
 
                                     {/* Property Selection */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Property *
-                                        </label>
-                                        <select
+                                        <Label htmlFor="property">Property *</Label>
+                                        <Select
+                                            onValueChange={handlePropertyChange}
                                             value={data.property}
-                                            onChange={(e) => handlePropertyChange(e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
                                             disabled={!selectedCity}
                                         >
-                                            <option value="">Select Property</option>
-                                            {availableProperties.map((property) => (
-                                                <option key={property} value={property}>
-                                                    {property}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select property" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {availableProperties.map((property) => (
+                                                    <SelectItem key={property} value={property}>
+                                                        {property}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         {errors.property && (
                                             <p className="text-red-600 text-sm mt-1">{errors.property}</p>
                                         )}
                                     </div>
+                                </div>
 
+                                <div className="grid md:grid-cols-2 gap-4">
                                     {/* Unit Selection */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Unit *
-                                        </label>
-                                        <select
+                                        <Label htmlFor="unit">Unit *</Label>
+                                        <Select
+                                            onValueChange={(value) => setData('unit', value)}
                                             value={data.unit}
-                                            onChange={(e) => setData('unit', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
                                             disabled={!data.property}
                                         >
-                                            <option value="">Select Unit</option>
-                                            {availableUnits.map((unit) => (
-                                                <option key={unit} value={unit}>
-                                                    {unit}
-                                                </option>
-                                            ))}
-                                        </select>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select unit" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {availableUnits.map((unit) => (
+                                                    <SelectItem key={unit} value={unit}>
+                                                        {unit}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         {errors.unit && (
                                             <p className="text-red-600 text-sm mt-1">{errors.unit}</p>
                                         )}
@@ -147,32 +163,28 @@ export default function Create({ auth, units, cities, properties, unitsByPropert
 
                                     {/* Name */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Name *
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="name">Name *</Label>
+                                        <Input
+                                            id="name"
                                             value={data.name}
                                             onChange={(e) => setData('name', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
+                                            error={errors.name}
                                         />
                                         {errors.name && (
                                             <p className="text-red-600 text-sm mt-1">{errors.name}</p>
                                         )}
                                     </div>
+                                </div>
 
+                                <div className="grid md:grid-cols-2 gap-4">
                                     {/* Co-signer */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Co-signer *
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="co_signer">Co-signer *</Label>
+                                        <Input
+                                            id="co_signer"
                                             value={data.co_signer}
                                             onChange={(e) => setData('co_signer', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
+                                            error={errors.co_signer}
                                         />
                                         {errors.co_signer && (
                                             <p className="text-red-600 text-sm mt-1">{errors.co_signer}</p>
@@ -181,36 +193,33 @@ export default function Create({ auth, units, cities, properties, unitsByPropert
 
                                     {/* Status */}
                                     <div>
-  <label className="block text-sm font-medium text-gray-700 mb-2">
-    Status <span className="text-red-500">*</span>
-  </label>
-  <select
-    name="status"
-    value={data.status}
-    onChange={e => setData('status', e.target.value)}
-    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-    required
-  >
+                                        <Label htmlFor="status">Status *</Label>
+                                        <Select onValueChange={(value) => setData('status', value)} value={data.status}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="New">New</SelectItem>
+                                                <SelectItem value="Approved">Approved</SelectItem>
+                                                <SelectItem value="Undecided">Undecided</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.status && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.status}</p>
+                                        )}
+                                    </div>
+                                </div>
 
-    <option value="New">New</option>
-    <option value="Approved">Approved</option>
-    <option value="Undecided">Undecided</option>
-  </select>
-  {errors.status && (
-    <p className="text-red-600 text-sm mt-1">{errors.status}</p>
-  )}
-</div>
-
+                                <div className="grid md:grid-cols-2 gap-4">
                                     {/* Date */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Date
-                                        </label>
-                                        <input
+                                        <Label htmlFor="date">Date</Label>
+                                        <Input
+                                            id="date"
                                             type="date"
                                             value={data.date}
                                             onChange={(e) => setData('date', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            error={errors.date}
                                         />
                                         {errors.date && (
                                             <p className="text-red-600 text-sm mt-1">{errors.date}</p>
@@ -219,15 +228,13 @@ export default function Create({ auth, units, cities, properties, unitsByPropert
 
                                     {/* Stage in Progress */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Stage in Progress
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="stage_in_progress">Stage in Progress</Label>
+                                        <Input
+                                            id="stage_in_progress"
                                             value={data.stage_in_progress}
                                             onChange={(e) => setData('stage_in_progress', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             placeholder="e.g., Document Review, Background Check, etc."
+                                            error={errors.stage_in_progress}
                                         />
                                         {errors.stage_in_progress && (
                                             <p className="text-red-600 text-sm mt-1">{errors.stage_in_progress}</p>
@@ -236,42 +243,37 @@ export default function Create({ auth, units, cities, properties, unitsByPropert
                                 </div>
 
                                 {/* Notes */}
-                                <div className="mt-6">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Notes
-                                    </label>
-                                    <textarea
-                                        value={data.notes}
-                                        onChange={(e) => setData('notes', e.target.value)}
-                                        rows={4}
-                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Add any additional notes..."
-                                    />
-                                    {errors.notes && (
-                                        <p className="text-red-600 text-sm mt-1">{errors.notes}</p>
-                                    )}
-                                </div>
+<div>
+    <Label htmlFor="notes">Notes</Label>
+    <textarea
+        id="notes"
+        value={data.notes}
+        onChange={(e) => setData('notes', e.target.value)}
+        rows={4}
+        placeholder="Add any additional notes..."
+        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-vertical"
+    />
+    {errors.notes && (
+        <p className="text-red-600 text-sm mt-1">{errors.notes}</p>
+    )}
+</div>
 
-                                <div className="mt-6 flex justify-end space-x-3">
-                                    <a
-                                        href={route('applications.index')}
-                                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
-                                    >
-                                        Cancel
-                                    </a>
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-                                    >
+
+                                <div className="flex justify-end gap-2">
+                                    <Link href={route('applications.index')}>
+                                        <Button type="button" variant="outline">
+                                            Cancel
+                                        </Button>
+                                    </Link>
+                                    <Button type="submit" disabled={processing}>
                                         {processing ? 'Creating...' : 'Create Application'}
-                                    </button>
+                                    </Button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

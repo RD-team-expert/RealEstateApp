@@ -5,7 +5,6 @@ import { Payment } from '@/types/payments';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 
 interface Props {
     payment: Payment;
@@ -22,10 +21,8 @@ export default function Show({ payment }: Props) {
 
     const getStatusBadge = (status: string | null) => {
         if (!status) return <Badge variant="outline">No Status</Badge>;
-
         const variant = status.toLowerCase().includes('paid') ? 'default' :
                       status.toLowerCase().includes('pending') ? 'secondary' : 'outline';
-
         return <Badge variant={variant}>{status}</Badge>;
     };
 
@@ -49,12 +46,11 @@ export default function Show({ payment }: Props) {
                                 </div>
                             </div>
                         </CardHeader>
-
-                        <CardContent className="space-y-6">
-                            {/* Basic Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
-                                <div className="grid md:grid-cols-2 gap-4">
+                        <CardContent>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {/* Basic Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Basic Information</h3>
                                     <div>
                                         <p className="text-sm text-gray-600">Date</p>
                                         <p className="font-medium">{new Date(payment.date).toLocaleDateString()}</p>
@@ -69,18 +65,33 @@ export default function Show({ payment }: Props) {
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Permanent</p>
-                                        <Badge variant={payment.permanent === 'Yes' ? 'default' : 'secondary'}>
-                                            {payment.permanent}
-                                        </Badge>
+                                        <div className="mt-1">
+                                            <Badge variant={payment.permanent === 'Yes' ? 'default' : 'secondary'}>
+                                                {payment.permanent}
+                                            </Badge>
+                                        </div>
                                     </div>
+                                </div>
+
+                                {/* Status Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Status Information</h3>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Status</p>
+                                        <div className="mt-1">{getStatusBadge(payment.status)}</div>
+                                    </div>
+                                    {payment.reversed_payments && (
+                                        <div>
+                                            <p className="text-sm text-gray-600">Reversed Payments</p>
+                                            <p className="font-medium">{payment.reversed_payments}</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            <Separator />
-
                             {/* Financial Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Financial Details</h3>
+                            <div className="mt-6 space-y-4">
+                                <h3 className="text-lg font-semibold">Financial Details</h3>
                                 <div className="grid md:grid-cols-3 gap-4">
                                     <div className="bg-red-50 p-4 rounded-lg">
                                         <p className="text-sm text-red-600">Amount Owed</p>
@@ -97,46 +108,23 @@ export default function Show({ payment }: Props) {
                                 </div>
                             </div>
 
-                            <Separator />
-
-                            {/* Additional Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Additional Information</h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <p className="text-sm text-gray-600">Status</p>
-                                        {getStatusBadge(payment.status)}
+                            {/* Notes Section */}
+                            {payment.notes && (
+                                <div className="mt-6 space-y-4">
+                                    <h3 className="text-lg font-semibold">Notes</h3>
+                                    <div className="bg-gray-50 rounded-lg p-4">
+                                        <p className="text-gray-900 whitespace-pre-wrap">{payment.notes}</p>
                                     </div>
-
-                                    {payment.notes && (
-                                        <div>
-                                            <p className="text-sm text-gray-600">Notes</p>
-                                            <div className="bg-gray-50 p-3 rounded-lg">
-                                                <p>{payment.notes}</p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {payment.reversed_payments && (
-                                        <div>
-                                            <p className="text-sm text-gray-600">Reversed Payments</p>
-                                            <p className="font-medium">{payment.reversed_payments}</p>
-                                        </div>
-                                    )}
                                 </div>
-                            </div>
+                            )}
 
-                            <Separator />
-
-                            {/* Timestamps */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Record Information</h3>
+                            <div className="mt-8 pt-6 border-t">
                                 <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
                                     <div>
-                                        <p>Created: {new Date(payment.created_at).toLocaleString()}</p>
+                                        <p>Created: {new Date(payment.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <div>
-                                        <p>Last Updated: {new Date(payment.updated_at).toLocaleString()}</p>
+                                        <p>Updated: {new Date(payment.updated_at).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                             </div>

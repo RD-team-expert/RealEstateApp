@@ -16,6 +16,7 @@ class Application extends Model
     use HasFactory;
 
     protected $fillable = [
+        'city',
         'property',
         'name',
         'co_signer',

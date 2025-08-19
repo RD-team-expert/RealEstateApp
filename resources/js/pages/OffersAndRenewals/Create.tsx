@@ -2,6 +2,17 @@ import React from 'react';
 import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import { OfferRenewal, Tenant } from '@/types/OfferRenewal';
 import AppLayout from '@/Layouts/app-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Create: React.FC = () => {
   const { tenants } = usePage().props as { tenants: Tenant[] };
@@ -21,12 +32,8 @@ const Create: React.FC = () => {
     last_notice_sent_2: '',
     notice_kind_2: '',
     notes: '',
+    how_many_days_left: '',
   });
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
-    const { name, value } = e.target;
-    setData(name as keyof OfferRenewal, value);
-  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,270 +52,297 @@ const Create: React.FC = () => {
   return (
     <AppLayout>
       <Head title="Create Offer" />
-      <div className="container mx-auto mt-6">
-        <div className="mb-4">
-          <Link href="/offers_and_renewals" className="text-blue-600">&larr; Back</Link>
+
+      <div className="py-12">
+        <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-2xl">Create New Offer/Renewal</CardTitle>
+                <Link href="/offers_and_renewals">
+                  <Button variant="outline">Back to List</Button>
+                </Link>
+              </div>
+            </CardHeader>
+
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Unit */}
+                  <div>
+                    <Label htmlFor="unit">Unit *</Label>
+                    <Select onValueChange={(value) => setData('unit', value)} value={data.unit}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {units.map((unit) => (
+                          <SelectItem key={unit} value={unit}>
+                            {unit}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.unit && (
+                      <p className="text-red-600 text-sm mt-1">{errors.unit}</p>
+                    )}
+                  </div>
+
+                  {/* Tenant */}
+                  <div>
+                    <Label htmlFor="tenant">Tenant *</Label>
+                    <Select onValueChange={(value) => setData('tenant', value)} value={data.tenant}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select tenant" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tenantNames.map((tenant) => (
+                          <SelectItem key={tenant.value} value={tenant.value}>
+                            {tenant.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.tenant && (
+                      <p className="text-red-600 text-sm mt-1">{errors.tenant}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Date Sent Offer */}
+                  <div>
+                    <Label htmlFor="date_sent_offer">Date Sent Offer *</Label>
+                    <Input
+                      id="date_sent_offer"
+                      type="date"
+                      value={data.date_sent_offer ?? ''}
+                      onChange={(e) => setData('date_sent_offer', e.target.value)}
+                      error={errors.date_sent_offer}
+                    />
+                    {errors.date_sent_offer && (
+                      <p className="text-red-600 text-sm mt-1">{errors.date_sent_offer}</p>
+                    )}
+                  </div>
+
+                  {/* Status */}
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select onValueChange={(value) => setData('status', value)} value={data.status}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Accepted">Accepted</SelectItem>
+                        <SelectItem value="Didn't Accept">Didn't Accept</SelectItem>
+                        <SelectItem value="Didn't respond">Didn't respond</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.status && (
+                      <p className="text-red-600 text-sm mt-1">{errors.status}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Date of Acceptance */}
+                  <div>
+                    <Label htmlFor="date_of_acceptance">Date of Acceptance</Label>
+                    <Input
+                      id="date_of_acceptance"
+                      type="date"
+                      value={data.date_of_acceptance ?? ''}
+                      onChange={(e) => setData('date_of_acceptance', e.target.value)}
+                      error={errors.date_of_acceptance}
+                    />
+                    {errors.date_of_acceptance && (
+                      <p className="text-red-600 text-sm mt-1">{errors.date_of_acceptance}</p>
+                    )}
+                  </div>
+
+                  {/* Offer Last Notice Sent */}
+                  <div>
+                    <Label htmlFor="last_notice_sent">Offer Last Notice Sent</Label>
+                    <Input
+                      id="last_notice_sent"
+                      type="date"
+                      value={data.last_notice_sent ?? ''}
+                      onChange={(e) => setData('last_notice_sent', e.target.value)}
+                      error={errors.last_notice_sent}
+                    />
+                    {errors.last_notice_sent && (
+                      <p className="text-red-600 text-sm mt-1">{errors.last_notice_sent}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Offer Notice Kind */}
+                  <div>
+                    <Label htmlFor="notice_kind">Offer Notice Kind</Label>
+                    <Select onValueChange={(value) => setData('notice_kind', value)} value={data.notice_kind}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Email">Email</SelectItem>
+                        <SelectItem value="Call">Call</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.notice_kind && (
+                      <p className="text-red-600 text-sm mt-1">{errors.notice_kind}</p>
+                    )}
+                  </div>
+
+                  {/* Lease Sent */}
+                  <div>
+                    <Label htmlFor="lease_sent">Lease Sent?</Label>
+                    <Select onValueChange={(value) => setData('lease_sent', value)} value={data.lease_sent}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.lease_sent && (
+                      <p className="text-red-600 text-sm mt-1">{errors.lease_sent}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Date Sent Lease */}
+                  <div>
+                    <Label htmlFor="date_sent_lease">Date Sent Lease</Label>
+                    <Input
+                      id="date_sent_lease"
+                      type="date"
+                      value={data.date_sent_lease ?? ''}
+                      onChange={(e) => setData('date_sent_lease', e.target.value)}
+                      error={errors.date_sent_lease}
+                    />
+                    {errors.date_sent_lease && (
+                      <p className="text-red-600 text-sm mt-1">{errors.date_sent_lease}</p>
+                    )}
+                  </div>
+
+                  {/* Lease Signed */}
+                  <div>
+                    <Label htmlFor="lease_signed">Lease Signed?</Label>
+                    <Select onValueChange={(value) => setData('lease_signed', value)} value={data.lease_signed}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Signed">Signed</SelectItem>
+                        <SelectItem value="Unsigned">Unsigned</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.lease_signed && (
+                      <p className="text-red-600 text-sm mt-1">{errors.lease_signed}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Date Signed */}
+                  <div>
+                    <Label htmlFor="date_signed">Date Signed</Label>
+                    <Input
+                      id="date_signed"
+                      type="date"
+                      value={data.date_signed ?? ''}
+                      onChange={(e) => setData('date_signed', e.target.value)}
+                      error={errors.date_signed}
+                    />
+                    {errors.date_signed && (
+                      <p className="text-red-600 text-sm mt-1">{errors.date_signed}</p>
+                    )}
+                  </div>
+
+                  {/* Renewal Last Notice Sent */}
+                  <div>
+                    <Label htmlFor="last_notice_sent_2">Renewal Last Notice Sent</Label>
+                    <Input
+                      id="last_notice_sent_2"
+                      type="date"
+                      value={data.last_notice_sent_2 ?? ''}
+                      onChange={(e) => setData('last_notice_sent_2', e.target.value)}
+                      error={errors.last_notice_sent_2}
+                    />
+                    {errors.last_notice_sent_2 && (
+                      <p className="text-red-600 text-sm mt-1">{errors.last_notice_sent_2}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Renewal Notice Kind */}
+                  <div>
+                    <Label htmlFor="notice_kind_2">Renewal Notice Kind</Label>
+                    <Select onValueChange={(value) => setData('notice_kind_2', value)} value={data.notice_kind_2}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Email">Email</SelectItem>
+                        <SelectItem value="Call">Call</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.notice_kind_2 && (
+                      <p className="text-red-600 text-sm mt-1">{errors.notice_kind_2}</p>
+                    )}
+                  </div>
+
+                  {/* How Many Days Left */}
+                  <div>
+                    <Label htmlFor="how_many_days_left">How Many Days Left</Label>
+                    <Input
+                      id="how_many_days_left"
+                      type="number"
+                      step={1}
+                      value={data.how_many_days_left ?? ''}
+                      onChange={(e) => setData('how_many_days_left', e.target.value)}
+                      error={errors.how_many_days_left}
+                    />
+                    {errors.how_many_days_left && (
+                      <p className="text-red-600 text-sm mt-1">{errors.how_many_days_left}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <Label htmlFor="notes">Notes</Label>
+                  <textarea
+                    id="notes"
+                    value={data.notes ?? ''}
+                    onChange={(e) => setData('notes', e.target.value)}
+                    rows={3}
+                    placeholder="Enter any notes..."
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-vertical"
+                  />
+                  {errors.notes && (
+                    <p className="text-red-600 text-sm mt-1">{errors.notes}</p>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Link href="/offers_and_renewals">
+                    <Button type="button" variant="outline">
+                      Cancel
+                    </Button>
+                  </Link>
+                  <Button type="submit" disabled={processing}>
+                    {processing ? 'Creating...' : 'Create Offer'}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         </div>
-        <h2 className="text-xl mb-4">Create New Offer/Renewal</h2>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="unit">
-              Unit <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="unit"
-              id="unit"
-              value={data.unit}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            >
-              <option value="">Select unit...</option>
-              {units.map(unit => (
-                <option key={unit} value={unit}>{unit}</option>
-              ))}
-            </select>
-            {errors.unit && <div className="text-red-500 text-sm">{errors.unit}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="tenant">
-              Tenant <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="tenant"
-              id="tenant"
-              value={data.tenant}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            >
-              <option value="">Select tenant...</option>
-              {tenantNames.map(tn => (
-                <option key={tn.value} value={tn.value}>{tn.label}</option>
-              ))}
-            </select>
-            {errors.tenant && <div className="text-red-500 text-sm">{errors.tenant}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="date_sent_offer">
-              Date Sent Offer <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              name="date_sent_offer"
-              id="date_sent_offer"
-              value={data.date_sent_offer}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            />
-            {errors.date_sent_offer && <div className="text-red-500 text-sm">{errors.date_sent_offer}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="status">
-              Status
-            </label>
-            <select
-                name="status"
-                id="lease_sent"
-                value={data.status}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-
-            >
-                <option value="">Select...</option>
-                <option value="Accepted">Accepted</option>
-                <option value="Didn't Accept">Didn't Accept</option>
-                <option value="Didn't respond">Didn't respond</option>
-            </select>
-            {errors.status && <div className="text-red-500 text-sm">{errors.status}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="date_of_acceptance">
-              Date of Acceptance
-            </label>
-            <input
-              type="date"
-              name="date_of_acceptance"
-              id="date_of_acceptance"
-              value={data.date_of_acceptance}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
-            {errors.date_of_acceptance && <div className="text-red-500 text-sm">{errors.date_of_acceptance}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="last_notice_sent">
-              Last Notice Sent
-            </label>
-            <input
-              type="date"
-              name="last_notice_sent"
-              id="last_notice_sent"
-              value={data.last_notice_sent}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
-            {errors.last_notice_sent && <div className="text-red-500 text-sm">{errors.last_notice_sent}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="notice_kind">
-              Notice Kind
-            </label>
-            <input
-              type="text"
-              name="notice_kind"
-              id="notice_kind"
-              value={data.notice_kind}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
-            {errors.notice_kind && <div className="text-red-500 text-sm">{errors.notice_kind}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="lease_sent">
-              Lease Sent?
-            </label>
-            <select
-    name="lease_sent"
-    id="lease_sent"
-    value={data.lease_sent}
-    onChange={handleChange}
-    className="w-full border p-2 rounded"
-
-  >
-    <option value="">Select...</option>
-    <option value="Yes">Yes</option>
-    <option value="No">No</option>
-  </select>
-            {errors.lease_sent && <div className="text-red-500 text-sm">{errors.lease_sent}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="date_sent_lease">
-              Date Sent Lease
-            </label>
-            <input
-              type="date"
-              name="date_sent_lease"
-              id="date_sent_lease"
-              value={data.date_sent_lease}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
-            {errors.date_sent_lease && <div className="text-red-500 text-sm">{errors.date_sent_lease}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="lease_signed">
-              Lease Signed?
-            </label>
-            <select
-                name="lease_signed"
-                id="lease_signed"
-                value={data.lease_signed}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-
-            >
-                <option value="">Select...</option>
-                <option value="Signed">Signed</option>
-                <option value="Unsigned">Unsigned</option>
-            </select>
-            {errors.lease_signed && <div className="text-red-500 text-sm">{errors.lease_signed}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="date_signed">
-              Date Signed
-            </label>
-            <input
-              type="date"
-              name="date_signed"
-              id="date_signed"
-              value={data.date_signed}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
-            {errors.date_signed && <div className="text-red-500 text-sm">{errors.date_signed}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="last_notice_sent_2">
-              2nd Last Notice Sent
-            </label>
-            <input
-              type="date"
-              name="last_notice_sent_2"
-              id="last_notice_sent_2"
-              value={data.last_notice_sent_2}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
-            {errors.last_notice_sent_2 && <div className="text-red-500 text-sm">{errors.last_notice_sent_2}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="notice_kind_2">
-              2nd Notice Kind
-            </label>
-            <input
-              type="text"
-              name="notice_kind_2"
-              id="notice_kind_2"
-              value={data.notice_kind_2}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
-            {errors.notice_kind_2 && <div className="text-red-500 text-sm">{errors.notice_kind_2}</div>}
-          </div>
-
-          <div>
-            <label className="block mb-1 font-semibold" htmlFor="notes">
-              Notes
-            </label>
-            <textarea
-              name="notes"
-              id="notes"
-              rows={3}
-              value={data.notes}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
-            {errors.notes && <div className="text-red-500 text-sm">{errors.notes}</div>}
-          </div>
-          <div>
-  <label className="block mb-1 font-semibold" htmlFor="how_many_days_left">
-    How Many Days Left
-  </label>
-  <input
-    type="number"
-    name="how_many_days_left"
-    id="how_many_days_left"
-    value={data.how_many_days_left ?? ''}
-    onChange={handleChange}
-    className="w-full border p-2 rounded"
-    step={1}
-  />
-  {errors.how_many_days_left && <div className="text-red-500 text-sm">{errors.how_many_days_left}</div>}
-</div>
-
-          <button
-            type="submit"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            disabled={processing}
-          >
-            Create Offer
-          </button>
-        </form>
       </div>
     </AppLayout>
   );

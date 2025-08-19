@@ -11,6 +11,7 @@ return new class extends Migration
     {
         Schema::create('applications', function (Blueprint $table) {
             $table->id();
+            $table->string( 'city');
             $table->string('property');
             $table->string('name');
             $table->string('co_signer');

@@ -37,6 +37,7 @@ class VendorTaskTracker extends Model
         return $this->belongsTo(Unit::class, ['city', 'unit_name'], ['city', 'unit_name']);
     }
 
+
     public function vendorInfo()
     {
         return $this->belongsTo(VendorInfo::class, 'vendor_name', 'vendor_name');

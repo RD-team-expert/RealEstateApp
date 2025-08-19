@@ -1,10 +1,14 @@
 // resources/js/Pages/Units/Create.tsx
 
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import AppLayout from '@/Layouts/app-layout';
+import { PageProps, UnitFormData } from '@/types/unit';
+import { Head, Link, useForm } from '@inertiajs/react';
 import React from 'react';
-import { Head, useForm } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/app-layout';
-import { UnitFormData } from '@/types/unit';
-import { PageProps } from '@/types/unit';
 
 export default function Create({ auth }: PageProps) {
     const { data, setData, post, processing, errors } = useForm<UnitFormData>({
@@ -31,274 +35,249 @@ export default function Create({ auth }: PageProps) {
     };
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Add New Unit</h2>}
-        >
-            <Head title="Add New Unit" />
+        <AppLayout>
+            <Head title="Create Unit" />
 
             <div className="py-12">
-                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            <form onSubmit={handleSubmit}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-2xl">Create New Unit</CardTitle>
+                                <div className="flex items-center justify-between gap-2">
+                                <Link href={route('units.index')}>
+                                    <Button variant="outline">Back to List</Button>
+                                </Link>
+                                <Link href={'/cities'}>
+                                    <Button variant="outline">View Cities</Button>
+                                </Link>
+                                </div>
+                            </div>
+                        </CardHeader>
+
+                        <CardContent>
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {/* City */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            City *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={data.city}
-                                            onChange={(e) => setData('city', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                        />
-                                        {errors.city && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.city}</p>
-                                        )}
+                                        <Label htmlFor="city">City *</Label>
+                                        <Input id="city" value={data.city} onChange={(e) => setData('city', e.target.value)} error={errors.city} />
+                                        {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
                                     </div>
 
+                                    {/* Property */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Property *
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="property">Property *</Label>
+                                        <Input
+                                            id="property"
                                             value={data.property}
                                             onChange={(e) => setData('property', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
+                                            error={errors.property}
                                         />
-                                        {errors.property && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.property}</p>
-                                        )}
+                                        {errors.property && <p className="mt-1 text-sm text-red-600">{errors.property}</p>}
                                     </div>
+                                </div>
 
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {/* Unit Name */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Unit Name *
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="unit_name">Unit Name *</Label>
+                                        <Input
+                                            id="unit_name"
                                             value={data.unit_name}
                                             onChange={(e) => setData('unit_name', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
+                                            error={errors.unit_name}
                                         />
-                                        {errors.unit_name && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.unit_name}</p>
-                                        )}
+                                        {errors.unit_name && <p className="mt-1 text-sm text-red-600">{errors.unit_name}</p>}
                                     </div>
 
+                                    {/* Tenants */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Tenants
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="tenants">Tenants</Label>
+                                        <Input
+                                            id="tenants"
                                             value={data.tenants}
                                             onChange={(e) => setData('tenants', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            error={errors.tenants}
                                         />
-                                        {errors.tenants && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.tenants}</p>
-                                        )}
+                                        {errors.tenants && <p className="mt-1 text-sm text-red-600">{errors.tenants}</p>}
                                     </div>
+                                </div>
 
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {/* Lease Start */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Lease Start
-                                        </label>
-                                        <input
+                                        <Label htmlFor="lease_start">Lease Start</Label>
+                                        <Input
+                                            id="lease_start"
                                             type="date"
                                             value={data.lease_start}
                                             onChange={(e) => setData('lease_start', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            error={errors.lease_start}
                                         />
-                                        {errors.lease_start && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.lease_start}</p>
-                                        )}
+                                        {errors.lease_start && <p className="mt-1 text-sm text-red-600">{errors.lease_start}</p>}
                                     </div>
 
+                                    {/* Lease End */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Lease End
-                                        </label>
-                                        <input
+                                        <Label htmlFor="lease_end">Lease End</Label>
+                                        <Input
+                                            id="lease_end"
                                             type="date"
                                             value={data.lease_end}
                                             onChange={(e) => setData('lease_end', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            error={errors.lease_end}
                                         />
-                                        {errors.lease_end && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.lease_end}</p>
-                                        )}
+                                        {errors.lease_end && <p className="mt-1 text-sm text-red-600">{errors.lease_end}</p>}
                                     </div>
+                                </div>
 
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {/* Count Beds */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Count Beds
-                                        </label>
-                                        <input
+                                        <Label htmlFor="count_beds">Count Beds</Label>
+                                        <Input
+                                            id="count_beds"
                                             type="number"
                                             min="0"
                                             value={data.count_beds}
                                             onChange={(e) => setData('count_beds', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            error={errors.count_beds}
                                         />
-                                        {errors.count_beds && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.count_beds}</p>
-                                        )}
+                                        {errors.count_beds && <p className="mt-1 text-sm text-red-600">{errors.count_beds}</p>}
                                     </div>
 
+                                    {/* Count Baths */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Count Baths
-                                        </label>
-                                        <input
+                                        <Label htmlFor="count_baths">Count Baths</Label>
+                                        <Input
+                                            id="count_baths"
                                             type="number"
                                             min="0"
                                             value={data.count_baths}
                                             onChange={(e) => setData('count_baths', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            error={errors.count_baths}
                                         />
-                                        {errors.count_baths && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.count_baths}</p>
-                                        )}
+                                        {errors.count_baths && <p className="mt-1 text-sm text-red-600">{errors.count_baths}</p>}
                                     </div>
+                                </div>
 
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {/* Lease Status */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Lease Status
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="lease_status">Lease Status</Label>
+                                        <Input
+                                            id="lease_status"
                                             value={data.lease_status}
                                             onChange={(e) => setData('lease_status', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            error={errors.lease_status}
                                         />
-                                        {errors.lease_status && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.lease_status}</p>
-                                        )}
+                                        {errors.lease_status && <p className="mt-1 text-sm text-red-600">{errors.lease_status}</p>}
                                     </div>
 
+                                    {/* Monthly Rent */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Monthly Rent
-                                        </label>
-                                        <input
+                                        <Label htmlFor="monthly_rent">Monthly Rent</Label>
+                                        <Input
+                                            id="monthly_rent"
                                             type="number"
                                             step="0.01"
                                             min="0"
                                             value={data.monthly_rent}
                                             onChange={(e) => setData('monthly_rent', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            error={errors.monthly_rent}
                                         />
-                                        {errors.monthly_rent && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.monthly_rent}</p>
-                                        )}
+                                        {errors.monthly_rent && <p className="mt-1 text-sm text-red-600">{errors.monthly_rent}</p>}
                                     </div>
+                                </div>
 
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {/* Recurring Transaction */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Recurring Transaction
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="recurring_transaction">Recurring Transaction</Label>
+                                        <Input
+                                            id="recurring_transaction"
                                             value={data.recurring_transaction}
                                             onChange={(e) => setData('recurring_transaction', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            error={errors.recurring_transaction}
                                         />
-                                        {errors.recurring_transaction && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.recurring_transaction}</p>
-                                        )}
+                                        {errors.recurring_transaction && <p className="mt-1 text-sm text-red-600">{errors.recurring_transaction}</p>}
                                     </div>
 
+                                    {/* Utility Status */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Utility Status
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="utility_status">Utility Status</Label>
+                                        <Input
+                                            id="utility_status"
                                             value={data.utility_status}
                                             onChange={(e) => setData('utility_status', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            error={errors.utility_status}
                                         />
-                                        {errors.utility_status && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.utility_status}</p>
-                                        )}
+                                        {errors.utility_status && <p className="mt-1 text-sm text-red-600">{errors.utility_status}</p>}
                                     </div>
+                                </div>
 
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {/* Account Number */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Account Number
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="account_number">Account Number</Label>
+                                        <Input
+                                            id="account_number"
                                             value={data.account_number}
                                             onChange={(e) => setData('account_number', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            error={errors.account_number}
                                         />
-                                        {errors.account_number && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.account_number}</p>
-                                        )}
+                                        {errors.account_number && <p className="mt-1 text-sm text-red-600">{errors.account_number}</p>}
                                     </div>
 
+                                    {/* Insurance */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Insurance
-                                        </label>
-                                        <select
-                                            value={data.insurance}
-                                            onChange={(e) => setData('insurance', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">Select Insurance Status</option>
-                                            <option value="Yes">Yes</option>
-                                            <option value="No">No</option>
-                                        </select>
-                                        {errors.insurance && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.insurance}</p>
-                                        )}
+                                        <Label htmlFor="insurance">Insurance</Label>
+                                        <Select onValueChange={(value) => setData('insurance', value)} value={data.insurance}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select insurance status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Yes">Yes</SelectItem>
+                                                <SelectItem value="No">No</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.insurance && <p className="mt-1 text-sm text-red-600">{errors.insurance}</p>}
                                     </div>
+                                </div>
 
+                                {/* Insurance Expiration Date */}
+                                <div className="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Insurance Expiration Date
-                                        </label>
-                                        <input
+                                        <Label htmlFor="insurance_expiration_date">Insurance Expiration Date</Label>
+                                        <Input
+                                            id="insurance_expiration_date"
                                             type="date"
                                             value={data.insurance_expiration_date}
                                             onChange={(e) => setData('insurance_expiration_date', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            error={errors.insurance_expiration_date}
                                         />
                                         {errors.insurance_expiration_date && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.insurance_expiration_date}</p>
+                                            <p className="mt-1 text-sm text-red-600">{errors.insurance_expiration_date}</p>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="mt-6 flex justify-end space-x-3">
-                                    <a
-                                        href={route('units.index')}
-                                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
-                                    >
-                                        Cancel
-                                    </a>
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-                                    >
+                                <div className="flex justify-end gap-2">
+                                    <Link href={route('units.index')}>
+                                        <Button type="button" variant="outline">
+                                            Cancel
+                                        </Button>
+                                    </Link>
+                                    <Button type="submit" disabled={processing}>
                                         {processing ? 'Creating...' : 'Create Unit'}
-                                    </button>
+                                    </Button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

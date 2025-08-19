@@ -101,6 +101,7 @@ export default function Index({ tasks, search }: Props) {
                                             <TableHead>Assigned Tasks</TableHead>
                                             <TableHead>Scheduled Visits</TableHead>
                                             <TableHead>Task End Date</TableHead>
+                                            <TableHead>Note</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead>Urgent</TableHead>
                                             <TableHead>Actions</TableHead>
@@ -130,6 +131,7 @@ export default function Index({ tasks, search }: Props) {
                                                         : 'N/A'
                                                     }
                                                 </TableCell>
+                                                <TableCell className="font-medium">{task.notes}</TableCell>
                                                 <TableCell>
                                                     {getStatusBadge(task.status)}
                                                 </TableCell>

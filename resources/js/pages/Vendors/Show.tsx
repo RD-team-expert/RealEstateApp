@@ -5,6 +5,8 @@ import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/app-layout';
 import { VendorInfo } from '@/types/vendor';
 import { PageProps } from '@/types/vendor';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Props extends PageProps {
     vendor: VendorInfo;
@@ -20,51 +22,43 @@ export default function Show({ auth, vendor }: Props) {
 
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-2xl font-bold">
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="text-2xl">
                                     {vendor.vendor_name} - {vendor.city}
-                                </h3>
-                                <div className="flex space-x-2">
-                                    <Link
-                                        href={route('vendors.edit', vendor.id)}
-                                        className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
-                                    >
-                                        Edit
+                                </CardTitle>
+                                <div className="flex gap-2">
+                                    <Link href={route('vendors.edit', vendor.id)}>
+                                        <Button>Edit</Button>
                                     </Link>
-                                    <Link
-                                        href={route('vendors.index')}
-                                        className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-                                    >
-                                        Back to List
+                                    <Link href={route('vendors.index')}>
+                                        <Button variant="outline">Back to List</Button>
                                     </Link>
                                 </div>
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {/* Basic Information */}
                                 <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Basic Information</h3>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            City
-                                        </label>
-                                        <p className="text-lg text-gray-900">{vendor.city}</p>
+                                        <p className="text-sm text-gray-600">City</p>
+                                        <p className="font-medium">{vendor.city}</p>
                                     </div>
-
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Vendor Name
-                                        </label>
-                                        <p className="text-lg text-gray-900">{vendor.vendor_name}</p>
+                                        <p className="text-sm text-gray-600">Vendor Name</p>
+                                        <p className="font-medium">{vendor.vendor_name}</p>
                                     </div>
                                 </div>
 
+                                {/* Contact Information */}
                                 <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Contact Information</h3>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Number
-                                        </label>
-                                        <p className="text-lg text-gray-900">
+                                        <p className="text-sm text-gray-600">Number</p>
+                                        <p className="font-medium">
                                             {vendor.number ? (
                                                 <a href={`tel:${vendor.number}`} className="text-blue-600 hover:text-blue-900">
                                                     {vendor.number}
@@ -72,12 +66,9 @@ export default function Show({ auth, vendor }: Props) {
                                             ) : 'Not provided'}
                                         </p>
                                     </div>
-
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Email
-                                        </label>
-                                        <p className="text-lg text-gray-900">
+                                        <p className="text-sm text-gray-600">Email</p>
+                                        <p className="font-medium">
                                             {vendor.email ? (
                                                 <a href={`mailto:${vendor.email}`} className="text-blue-600 hover:text-blue-900">
                                                     {vendor.email}
@@ -88,18 +79,18 @@ export default function Show({ auth, vendor }: Props) {
                                 </div>
                             </div>
 
-                            <div className="mt-8 pt-6 border-t border-gray-200">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                            <div className="mt-8 pt-6 border-t">
+                                <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
                                     <div>
-                                        <span className="font-medium">Created:</span> {new Date(vendor.created_at).toLocaleDateString()}
+                                        <p>Created: {new Date(vendor.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <div>
-                                        <span className="font-medium">Last Updated:</span> {new Date(vendor.updated_at).toLocaleDateString()}
+                                        <p>Updated: {new Date(vendor.updated_at).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </AuthenticatedLayout>

@@ -2,6 +2,7 @@
 
 export interface Application {
     id: number;
+    city: string;
     property: string; // This will now be the property name from Units table
     name: string;
     co_signer: string;
@@ -16,6 +17,8 @@ export interface Application {
 }
 
 export interface ApplicationFormData {
+
+    city: string;
     property: string;
     name: string;
     co_signer: string;

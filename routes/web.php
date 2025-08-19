@@ -13,6 +13,7 @@ use App\Http\Controllers\MoveOutController;
 use App\Http\Controllers\NoticeController;
 use App\Http\Controllers\OffersAndRenewalController;
 use App\Http\Controllers\NoticeAndEvictionController;
+use App\Http\Controllers\CityController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -24,17 +25,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
-    Route::resource('properties-info', PropertyInfoController::class);
 
     // Additional routes for filtering
     Route::get('properties/expiring-soon', [PropertyInfoController::class, 'expiringSoon'])->name('properties.expiring-soon');
     Route::get('properties/expired', [PropertyInfoController::class, 'expired'])->name('properties.expired');
 
-    // Applications dashboard
-    Route::get('/applications/dashboard', [ApplicationController::class, 'dashboard'])->name('applications.dashboard');
-
-    // Applications CRUD routes
-    Route::resource('applications', ApplicationController::class);
 
     // Additional routes for filtering
     Route::get('applications/status/{status}', [ApplicationController::class, 'byStatus'])->name('applications.by-status');
@@ -43,11 +38,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // API routes for dynamic dropdown loading
     Route::get('/api/properties-by-city', [ApplicationController::class, 'getPropertiesByCity'])->name('api.properties-by-city');
     Route::get('/api/units-by-property', [ApplicationController::class, 'getUnitsByProperty'])->name('api.units-by-property');
-    // Vendors dashboard
-    Route::get('/vendors/dashboard', [VendorInfoController::class, 'dashboard'])->name('vendors.dashboard');
-
-    // Vendors CRUD routes
-    Route::resource('vendors', VendorInfoController::class);
 
     // Additional routes for filtering
     Route::get('vendors/city/{city}', [VendorInfoController::class, 'byCity'])->name('vendors.by-city');
@@ -56,10 +46,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // API route for dynamic unit loading
     Route::get('/api/units-by-property', [TenantController::class, 'getUnitsByProperty'])->name('api.units-by-property');
-    // Units dashboard
-    Route::get('/units/dashboard', [UnitController::class, 'dashboard'])->name('units.dashboard');
 
-    // Units CRUD routes
+    Route::resource('properties-info', PropertyInfoController::class);
+
     Route::resource('units', UnitController::class);
 
     Route::resource('payments', PaymentController::class);
@@ -76,6 +65,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('notice_and_evictions', NoticeAndEvictionController::class);
 
+    Route::resource('applications', ApplicationController::class);
+
+    Route::resource('vendors', VendorInfoController::class);
+
+    Route::get('cities', [CityController::class, 'index'])->name('cities.index');
+    Route::post('cities', [CityController::class, 'store'])->name('cities.store');
+    Route::delete('cities/{city}', [CityController::class, 'destroy'])->name('cities.destroy');
 });
 
 // Property Info CRUD routes

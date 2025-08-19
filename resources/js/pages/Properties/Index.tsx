@@ -1,8 +1,20 @@
 // resources/js/Pages/Properties/Index.tsx
-
 import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/app-layout';
+import AppLayout from '@/Layouts/app-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { Property, PaginatedProperties, PropertyFilters, PropertyStatistics } from '@/types/property';
 import type { PageProps } from '@/types/property';
 
@@ -26,27 +38,24 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
         });
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = (property: Property) => {
         if (confirm('Are you sure you want to delete this property?')) {
-            router.delete(route('properties-info.destroy', id));
+            router.delete(route('properties-info.destroy', property.id));
         }
     };
 
     const getStatusBadge = (property: Property) => {
         if (property.is_expired) {
-            return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Expired</span>;
+            return <Badge variant="destructive">Expired</Badge>;
         }
         if (property.is_expiring_soon) {
-            return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Expiring Soon</span>;
+            return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Expiring Soon</Badge>;
         }
-        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>;
+        return <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>;
     };
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Properties Insurance</h2>}
-        >
+        <AppLayout>
             <Head title="Properties Insurance" />
 
             <div className="py-12">
@@ -65,64 +74,68 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
 
                     {/* Statistics Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">Total Properties</h3>
-                            <p className="text-3xl font-bold text-blue-600">{statistics.total}</p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">Active</h3>
-                            <p className="text-3xl font-bold text-green-600">{statistics.active}</p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">Expiring Soon</h3>
-                            <p className="text-3xl font-bold text-yellow-600">{statistics.expiring_soon}</p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">Expired</h3>
-                            <p className="text-3xl font-bold text-red-600">{statistics.expired}</p>
-                        </div>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">Total Properties</h3>
+                                <p className="text-3xl font-bold text-blue-600">{statistics.total}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">Active</h3>
+                                <p className="text-3xl font-bold text-green-600">{statistics.active}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">Expiring Soon</h3>
+                                <p className="text-3xl font-bold text-yellow-600">{statistics.expiring_soon}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">Expired</h3>
+                                <p className="text-3xl font-bold text-red-600">{statistics.expired}</p>
+                            </CardContent>
+                        </Card>
                     </div>
 
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            {/* Header and Add Button */}
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-semibold">Property Insurance List</h3>
-                                <Link
-                                    href={route('properties-info.create')}
-                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                                >
-                                    Add Property
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="text-2xl">Property Insurance List</CardTitle>
+                                <Link href={route('properties-info.create')}>
+                                    <Button>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Property
+                                    </Button>
                                 </Link>
                             </div>
 
                             {/* Filters */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                                <input
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                                <Input
                                     type="text"
                                     placeholder="Property Name"
                                     value={searchFilters.property_name || ''}
                                     onChange={(e) => handleFilterChange('property_name', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
                                 />
-                                <input
+                                <Input
                                     type="text"
                                     placeholder="Insurance Company"
                                     value={searchFilters.insurance_company_name || ''}
                                     onChange={(e) => handleFilterChange('insurance_company_name', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
                                 />
-                                <input
+                                <Input
                                     type="text"
                                     placeholder="Policy Number"
                                     value={searchFilters.policy_number || ''}
                                     onChange={(e) => handleFilterChange('policy_number', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
                                 />
                                 <select
                                     value={searchFilters.status || ''}
                                     onChange={(e) => handleFilterChange('status', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
+                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <option value="">All Status</option>
                                     <option value="active">Active</option>
@@ -130,71 +143,71 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
                                     <option value="expired">Expired</option>
                                 </select>
                             </div>
+                        </CardHeader>
 
-                            {/* Properties Table */}
+                        <CardContent>
                             <div className="overflow-x-auto">
-                                <table className="min-w-full bg-white border border-gray-300">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property Name</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Insurance Company</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Policy Number</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiration Date</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days Left</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Property Name</TableHead>
+                                            <TableHead>Insurance Company</TableHead>
+                                            <TableHead>Amount</TableHead>
+                                            <TableHead>Policy Number</TableHead>
+                                            <TableHead>Expiration Date</TableHead>
+                                            <TableHead>Days Left</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead>Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
                                         {properties.data.map((property) => (
-                                            <tr key={property.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {property.property_name}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {property.insurance_company_name}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {property.formatted_amount}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {property.policy_number}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <TableRow key={property.id} className="hover:bg-gray-50">
+                                                <TableCell className="font-medium">{property.property_name}</TableCell>
+                                                <TableCell>{property.insurance_company_name}</TableCell>
+                                                <TableCell>{property.formatted_amount}</TableCell>
+                                                <TableCell>{property.policy_number}</TableCell>
+                                                <TableCell>
                                                     {new Date(property.expiration_date).toLocaleDateString()}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {property.days_left}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                </TableCell>
+                                                <TableCell>{property.days_left}</TableCell>
+                                                <TableCell>
                                                     {getStatusBadge(property)}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <Link
-                                                        href={route('properties-info.show', property.id)}
-                                                        className="text-indigo-600 hover:text-indigo-900 mr-3"
-                                                    >
-                                                        View
-                                                    </Link>
-                                                    <Link
-                                                        href={route('properties-info.edit', property.id)}
-                                                        className="text-yellow-600 hover:text-yellow-900 mr-3"
-                                                    >
-                                                        Edit
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => handleDelete(property.id)}
-                                                        className="text-red-600 hover:text-red-900"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </td>
-                                            </tr>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex gap-1">
+                                                        <Link href={route('properties-info.show', property.id)}>
+                                                            <Button variant="outline" size="sm">
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        </Link>
+                                                        <Link href={route('properties-info.edit', property.id)}>
+                                                            <Button variant="outline" size="sm">
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        </Link>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(property)}
+                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </TableBody>
+                                </Table>
                             </div>
+
+                            {properties.data.length === 0 && (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p className="text-lg">No properties found.</p>
+                                    <p className="text-sm">Try adjusting your search criteria.</p>
+                                </div>
+                            )}
 
                             {/* Pagination */}
                             {properties.last_page > 1 && (
@@ -218,10 +231,19 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
                                     </nav>
                                 </div>
                             )}
-                        </div>
-                    </div>
+
+                            {/* Pagination info */}
+                            {properties.meta && (
+                                <div className="mt-6 flex justify-between items-center">
+                                    <div className="text-sm text-gray-600">
+                                        Showing {properties.meta.from || 0} to {properties.meta.to || 0} of {properties.meta.total || 0} results
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

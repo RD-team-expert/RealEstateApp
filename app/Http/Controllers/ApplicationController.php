@@ -22,7 +22,7 @@ class ApplicationController extends Controller
     public function index(Request $request): Response
     {
         $perPage = $request->get('per_page', 15);
-        $filters = $request->only(['property', 'name', 'co_signer', 'unit', 'status', 'stage_in_progress', 'date_from', 'date_to']);
+        $filters = $request->only(['city','property', 'name', 'co_signer', 'unit', 'status', 'stage_in_progress', 'date_from', 'date_to']);
 
         $applications = $this->applicationService->getAllPaginated($perPage, $filters);
         $statistics = $this->applicationService->getStatistics();

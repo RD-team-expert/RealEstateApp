@@ -13,6 +13,61 @@ const mainNavItems: NavItem[] = [
         href: '/dashboard',
         icon: LayoutGrid,
     },
+    {
+        title: 'Units',
+        href: '/units',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Tenants',
+        href: '/tenants',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Vendors',
+        href: '/vendors',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Properties',
+        href: '/properties-info',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Payments',
+        href: '/payments',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Vendor TaskTracker',
+        href: '/vendor-task-tracker',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Move In',
+        href: '/move-in',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Move Out',
+        href: '/move-out',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Offers And Renewals',
+        href: '/offers_and_renewals',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Notice And Evictions',
+        href: '/notice_and_evictions',
+        icon: LayoutGrid,
+    },
+    {
+        title: 'Applications',
+        href: '/applications',
+        icon: LayoutGrid,
+    },
 ];
 
 const footerNavItems: NavItem[] = [

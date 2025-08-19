@@ -33,10 +33,7 @@ class NoticeController extends Controller
         return redirect()->route('notices.index')->with('success', 'Notice created successfully.');
     }
 
-    public function show(Notice $notice)
-    {
-        return Inertia::render('Notices/Show', ['notice' => $notice]);
-    }
+
 
     public function edit(Notice $notice)
     {
@@ -46,7 +43,7 @@ class NoticeController extends Controller
     public function update(NoticeRequest $request, Notice $notice)
     {
         $this->service->update($notice, $request->validated());
-        return redirect()->route('notices.show', $notice->id)->with('success', 'Notice updated successfully.');
+        return redirect()->route('notices.index', $notice->id)->with('success', 'Notice updated successfully.');
     }
 
     public function destroy(Notice $notice)

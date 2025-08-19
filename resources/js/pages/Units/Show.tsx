@@ -1,10 +1,11 @@
 // resources/js/Pages/Units/Show.tsx
-
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/app-layout';
 import { Unit } from '@/types/unit';
 import { PageProps } from '@/types/unit';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Props extends PageProps {
     unit: Unit;
@@ -36,135 +37,105 @@ export default function Show({ auth, unit }: Props) {
 
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-2xl font-bold">
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="text-2xl">
                                     {unit.unit_name} - {unit.property}, {unit.city}
-                                </h3>
-                                <div className="flex space-x-2">
-                                    <Link
-                                        href={route('units.edit', unit.id)}
-                                        className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
-                                    >
-                                        Edit
+                                </CardTitle>
+                                <div className="flex gap-2">
+                                    <Link href={route('units.edit', unit.id)}>
+                                        <Button>Edit</Button>
                                     </Link>
-                                    <Link
-                                        href={route('units.index')}
-                                        className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-                                    >
-                                        Back to List
+                                    <Link href={route('units.index')}>
+                                        <Button variant="outline">Back to List</Button>
                                     </Link>
                                 </div>
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid md:grid-cols-2 gap-6">
                                 {/* Basic Information */}
                                 <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Basic Information</h3>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            City
-                                        </label>
-                                        <p className="text-lg text-gray-900">{unit.city}</p>
+                                        <p className="text-sm text-gray-600">City</p>
+                                        <p className="font-medium">{unit.city}</p>
                                     </div>
-
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Property
-                                        </label>
-                                        <p className="text-lg text-gray-900">{unit.property}</p>
+                                        <p className="text-sm text-gray-600">Property</p>
+                                        <p className="font-medium">{unit.property}</p>
                                     </div>
-
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Unit Name
-                                        </label>
-                                        <p className="text-lg text-gray-900">{unit.unit_name}</p>
+                                        <p className="text-sm text-gray-600">Unit Name</p>
+                                        <p className="font-medium">{unit.unit_name}</p>
                                     </div>
-
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Tenants
-                                        </label>
-                                        <p className="text-lg text-gray-900">{unit.tenants || 'No tenants'}</p>
+                                        <p className="text-sm text-gray-600">Tenants</p>
+                                        <p className="font-medium">{unit.tenants || 'No tenants'}</p>
                                     </div>
-
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Lease Period
-                                        </label>
-                                        <p className="text-lg text-gray-900">
+                                        <p className="text-sm text-gray-600">Bedrooms & Bathrooms</p>
+                                        <p className="font-medium">
+                                            {unit.count_beds || 0} bed{(unit.count_beds || 0) !== 1 ? 's' : ''}, {unit.count_baths || 0} bath{(unit.count_baths || 0) !== 1 ? 's' : ''}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Financial & Status Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Financial & Status Information</h3>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Monthly Rent</p>
+                                        <p className="font-medium">{unit.formatted_monthly_rent}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Lease Status</p>
+                                        <p className="font-medium">{unit.lease_status || 'Not specified'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Vacant Status</p>
+                                        <div className="mt-1">{getVacantBadge(unit.vacant)}</div>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Listed Status</p>
+                                        <div className="mt-1">{getListedBadge(unit.listed)}</div>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Total Applications</p>
+                                        <div className="mt-1">
+                                            <span className="bg-orange-100 text-orange-800 px-3 py-1 text-sm font-semibold rounded-full">
+                                                {unit.total_applications}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Lease Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Lease Information</h3>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Lease Period</p>
+                                        <p className="font-medium">
                                             {unit.lease_start && unit.lease_end
                                                 ? `${new Date(unit.lease_start).toLocaleDateString()} - ${new Date(unit.lease_end).toLocaleDateString()}`
                                                 : 'Not specified'
                                             }
                                         </p>
                                     </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Bedrooms & Bathrooms
-                                        </label>
-                                        <p className="text-lg text-gray-900">
-                                            {unit.count_beds || 0} bed{(unit.count_beds || 0) !== 1 ? 's' : ''}, {unit.count_baths || 0} bath{(unit.count_baths || 0) !== 1 ? 's' : ''}
-                                        </p>
-                                    </div>
                                 </div>
 
-                                {/* Status and Financial Information */}
+                                {/* Insurance Information */}
                                 <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Insurance Information</h3>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Monthly Rent
-                                        </label>
-                                        <p className="text-lg text-gray-900 font-semibold">{unit.formatted_monthly_rent}</p>
+                                        <p className="text-sm text-gray-600">Insurance</p>
+                                        <div className="mt-1">{getInsuranceBadge(unit.insurance)}</div>
                                     </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Lease Status
-                                        </label>
-                                        <p className="text-lg text-gray-900">{unit.lease_status || 'Not specified'}</p>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Vacant Status
-                                        </label>
-                                        <div>{getVacantBadge(unit.vacant)}</div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Listed Status
-                                        </label>
-                                        <div>{getListedBadge(unit.listed)}</div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Total Applications
-                                        </label>
-                                        <p className="text-lg text-gray-900">
-                                            <span className="bg-orange-100 text-orange-800 px-3 py-1 text-sm font-semibold rounded-full">
-                                                {unit.total_applications}
-                                            </span>
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Insurance
-                                        </label>
-                                        <div>{getInsuranceBadge(unit.insurance)}</div>
-                                    </div>
-
                                     {unit.insurance_expiration_date && (
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Insurance Expiration
-                                            </label>
-                                            <p className="text-lg text-gray-900">
+                                            <p className="text-sm text-gray-600">Insurance Expiration</p>
+                                            <p className="font-medium">
                                                 {new Date(unit.insurance_expiration_date).toLocaleDateString()}
                                             </p>
                                         </div>
@@ -173,44 +144,36 @@ export default function Show({ auth, unit }: Props) {
                             </div>
 
                             {/* Additional Information */}
-                            <div className="mt-8 pt-6 border-t border-gray-200">
-                                <h4 className="text-lg font-semibold mb-4">Additional Information</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="mt-6 space-y-4">
+                                <h3 className="text-lg font-semibold">Additional Information</h3>
+                                <div className="grid md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Recurring Transaction
-                                        </label>
-                                        <p className="text-gray-900">{unit.recurring_transaction || 'Not specified'}</p>
+                                        <p className="text-sm text-gray-600">Recurring Transaction</p>
+                                        <p className="font-medium">{unit.recurring_transaction || 'Not specified'}</p>
                                     </div>
-
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Utility Status
-                                        </label>
-                                        <p className="text-gray-900">{unit.utility_status || 'Not specified'}</p>
+                                        <p className="text-sm text-gray-600">Utility Status</p>
+                                        <p className="font-medium">{unit.utility_status || 'Not specified'}</p>
                                     </div>
-
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Account Number
-                                        </label>
-                                        <p className="text-gray-900">{unit.account_number || 'Not specified'}</p>
+                                        <p className="text-sm text-gray-600">Account Number</p>
+                                        <p className="font-medium">{unit.account_number || 'Not specified'}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="mt-8 pt-6 border-t border-gray-200">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                            <div className="mt-8 pt-6 border-t">
+                                <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
                                     <div>
-                                        <span className="font-medium">Created:</span> {new Date(unit.created_at).toLocaleDateString()}
+                                        <p>Created: {new Date(unit.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <div>
-                                        <span className="font-medium">Last Updated:</span> {new Date(unit.updated_at).toLocaleDateString()}
+                                        <p>Updated: {new Date(unit.updated_at).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </AuthenticatedLayout>

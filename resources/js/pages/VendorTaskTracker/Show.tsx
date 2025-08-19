@@ -5,7 +5,6 @@ import { VendorTaskTracker } from '@/types/vendor-task-tracker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 
 interface Props {
     task: VendorTaskTracker;
@@ -49,12 +48,11 @@ export default function Show({ task }: Props) {
                                 </div>
                             </div>
                         </CardHeader>
-
-                        <CardContent className="space-y-6">
-                            {/* Basic Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
-                                <div className="grid md:grid-cols-2 gap-4">
+                        <CardContent>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {/* Basic Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Basic Information</h3>
                                     <div>
                                         <p className="text-sm text-gray-600">City</p>
                                         <p className="font-medium">{task.city}</p>
@@ -67,18 +65,25 @@ export default function Show({ task }: Props) {
                                         <p className="text-sm text-gray-600">Vendor Name</p>
                                         <p className="font-medium">{task.vendor_name}</p>
                                     </div>
+                                </div>
+
+                                {/* Status Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold">Status Information</h3>
                                     <div>
                                         <p className="text-sm text-gray-600">Urgent</p>
-                                        {getUrgentBadge(task.urgent)}
+                                        <div className="mt-1">{getUrgentBadge(task.urgent)}</div>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Status</p>
+                                        <div className="mt-1">{getStatusBadge(task.status)}</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <Separator />
-
-                            {/* Date Information */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Timeline</h3>
+                            {/* Timeline Section */}
+                            <div className="mt-6 space-y-4">
+                                <h3 className="text-lg font-semibold">Timeline</h3>
                                 <div className="grid md:grid-cols-3 gap-4">
                                     <div className="bg-blue-50 p-4 rounded-lg">
                                         <p className="text-sm text-blue-600">Task Submission Date</p>
@@ -107,46 +112,33 @@ export default function Show({ task }: Props) {
                                 </div>
                             </div>
 
-                            <Separator />
-
-                            {/* Task Details */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Task Details</h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <p className="text-sm text-gray-600">Status</p>
-                                        {getStatusBadge(task.status)}
+                            {/* Task Details Section */}
+                            <div className="mt-6 space-y-4">
+                                <h3 className="text-lg font-semibold">Task Details</h3>
+                                <div>
+                                    <p className="text-sm text-gray-600">Assigned Tasks</p>
+                                    <div className="bg-gray-50 rounded-lg p-4 mt-2">
+                                        <p className="text-gray-900 whitespace-pre-wrap">{task.assigned_tasks}</p>
                                     </div>
-
-                                    <div>
-                                        <p className="text-sm text-gray-600">Assigned Tasks</p>
-                                        <div className="bg-gray-50 p-3 rounded-lg">
-                                            <p className="whitespace-pre-wrap">{task.assigned_tasks}</p>
-                                        </div>
-                                    </div>
-
-                                    {task.notes && (
-                                        <div>
-                                            <p className="text-sm text-gray-600">Notes</p>
-                                            <div className="bg-gray-50 p-3 rounded-lg">
-                                                <p className="whitespace-pre-wrap">{task.notes}</p>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
+
+                                {task.notes && (
+                                    <div>
+                                        <p className="text-sm text-gray-600">Notes</p>
+                                        <div className="bg-gray-50 rounded-lg p-4 mt-2">
+                                            <p className="text-gray-900 whitespace-pre-wrap">{task.notes}</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            <Separator />
-
-                            {/* Timestamps */}
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Record Information</h3>
+                            <div className="mt-8 pt-6 border-t">
                                 <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
                                     <div>
-                                        <p>Created: {new Date(task.created_at).toLocaleString()}</p>
+                                        <p>Created: {new Date(task.created_at).toLocaleDateString()}</p>
                                     </div>
                                     <div>
-                                        <p>Last Updated: {new Date(task.updated_at).toLocaleString()}</p>
+                                        <p>Updated: {new Date(task.updated_at).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                             </div>

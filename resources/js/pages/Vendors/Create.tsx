@@ -1,10 +1,14 @@
 // resources/js/Pages/Vendors/Create.tsx
 
 import React from 'react';
-import { Head, useForm } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/app-layout';
+import { Head, useForm, Link } from '@inertiajs/react';
+import AppLayout from '@/Layouts/app-layout';
 import { VendorFormData } from '@/types/vendor';
 import { PageProps } from '@/types/vendor';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Create({ auth }: PageProps) {
     const { data, setData, post, processing, errors } = useForm<VendorFormData>({
@@ -20,76 +24,84 @@ export default function Create({ auth }: PageProps) {
     };
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Add New Vendor</h2>}
-        >
-            <Head title="Add New Vendor" />
+        <AppLayout>
+            <Head title="Create Vendor" />
 
             <div className="py-12">
-                <div className="max-w-3xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            <form onSubmit={handleSubmit}>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="text-2xl">Create New Vendor</CardTitle>
+                                <div className="flex justify-between items-center gap-2">
+                                <Link href={route('vendors.index')}>
+                                    <Button variant="outline">Back to List</Button>
+                                </Link>
+                                <Link href={'/cities'}>
+                                    <Button variant="outline">View Cities</Button>
+                                </Link>
+                                </div>
+                            </div>
+                        </CardHeader>
+
+                        <CardContent>
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {/* City */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            City *
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="city">City *</Label>
+                                        <Input
+                                            id="city"
                                             value={data.city}
                                             onChange={(e) => setData('city', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
+                                            error={errors.city}
                                         />
                                         {errors.city && (
                                             <p className="text-red-600 text-sm mt-1">{errors.city}</p>
                                         )}
                                     </div>
 
+                                    {/* Vendor Name */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Vendor Name *
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="vendor_name">Vendor Name *</Label>
+                                        <Input
+                                            id="vendor_name"
                                             value={data.vendor_name}
                                             onChange={(e) => setData('vendor_name', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
+                                            error={errors.vendor_name}
                                         />
                                         {errors.vendor_name && (
                                             <p className="text-red-600 text-sm mt-1">{errors.vendor_name}</p>
                                         )}
                                     </div>
+                                </div>
 
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {/* Number */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Number
-                                        </label>
-                                        <input
-                                            type="text"
+                                        <Label htmlFor="number">Number</Label>
+                                        <Input
+                                            id="number"
                                             value={data.number}
                                             onChange={(e) => setData('number', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             placeholder="Phone number"
+                                            error={errors.number}
                                         />
                                         {errors.number && (
                                             <p className="text-red-600 text-sm mt-1">{errors.number}</p>
                                         )}
                                     </div>
 
+                                    {/* Email */}
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Email
-                                        </label>
-                                        <input
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input
+                                            id="email"
                                             type="email"
                                             value={data.email}
                                             onChange={(e) => setData('email', e.target.value)}
-                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             placeholder="vendor@example.com"
+                                            error={errors.email}
                                         />
                                         {errors.email && (
                                             <p className="text-red-600 text-sm mt-1">{errors.email}</p>
@@ -97,26 +109,21 @@ export default function Create({ auth }: PageProps) {
                                     </div>
                                 </div>
 
-                                <div className="mt-6 flex justify-end space-x-3">
-                                    <a
-                                        href={route('vendors.index')}
-                                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
-                                    >
-                                        Cancel
-                                    </a>
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-                                    >
+                                <div className="flex justify-end gap-2">
+                                    <Link href={route('vendors.index')}>
+                                        <Button type="button" variant="outline">
+                                            Cancel
+                                        </Button>
+                                    </Link>
+                                    <Button type="submit" disabled={processing}>
                                         {processing ? 'Creating...' : 'Create Vendor'}
-                                    </button>
+                                    </Button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

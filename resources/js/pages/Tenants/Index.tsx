@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { Tenant } from '@/types/tenant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import {
     Table,
     TableBody,
@@ -19,15 +22,11 @@ interface Props {
 }
 
 export default function Index({ tenants, search }: Props) {
-    const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const search = formData.get('search') as string;
+    const [searchTerm, setSearchTerm] = useState(search || '');
 
-        router.get(route('tenants.index'), { search }, {
-            preserveState: true,
-            replace: true,
-        });
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.get(route('tenants.index'), { search: searchTerm }, { preserveState: true });
     };
 
     const handleDelete = (tenant: Tenant) => {
@@ -44,191 +43,198 @@ export default function Index({ tenants, search }: Props) {
         return String(value);
     };
 
+    const getYesNoBadge = (value: 'Yes' | 'No' | string | null) => {
+        if (value === null || value === undefined || value === '') return <Badge variant="outline">N/A</Badge>;
+        return (
+            <Badge variant={value === 'Yes' ? 'default' : 'secondary'}>
+                {value}
+            </Badge>
+        );
+    };
+
+    const getInsuranceBadge = (value: 'Yes' | 'No' | string | null) => {
+        if (value === null || value === undefined || value === '') return <Badge variant="outline">N/A</Badge>;
+        return (
+            <Badge variant={value === 'Yes' ? 'default' : 'destructive'}>
+                {value}
+            </Badge>
+        );
+    };
+
+    const getSensitiveBadge = (value: 'Yes' | 'No' | string | null) => {
+        if (value === null || value === undefined || value === '') return <Badge variant="outline">N/A</Badge>;
+        return (
+            <Badge variant={value === 'Yes' ? 'destructive' : 'default'}>
+                {value}
+            </Badge>
+        );
+    };
+
+    const getAssistanceBadge = (value: 'Yes' | 'No' | string | null) => {
+        if (value === null || value === undefined || value === '') return <Badge variant="outline">N/A</Badge>;
+        return (
+            <Badge variant={value === 'Yes' ? 'default' : 'secondary'}>
+                {value}
+            </Badge>
+        );
+    };
+
     return (
         <AppLayout>
             <Head title="Tenants" />
 
             <div className="py-12">
-                <div className="max-w-full mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6">
-                            <div className="flex justify-between items-center mb-6">
-                                <h1 className="text-2xl font-semibold">Tenants</h1>
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="text-2xl">Tenants</CardTitle>
                                 <Link href={route('tenants.create')}>
-                                    <Button>Add New Tenant</Button>
+                                    <Button>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add New Tenant
+                                    </Button>
                                 </Link>
                             </div>
-
-                            <form onSubmit={handleSearch} className="mb-4">
-                                <div className="flex gap-2">
+                            <form onSubmit={handleSearch} className="flex gap-2 mt-4">
+                                <div className="flex-1">
                                     <Input
-                                        name="search"
+                                        type="text"
                                         placeholder="Search tenants..."
-                                        defaultValue={search}
-                                        className="max-w-sm"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
                                     />
-                                    <Button type="submit" variant="outline">
-                                        Search
-                                    </Button>
-                                    {search && (
-                                        <Link href={route('tenants.index')}>
-                                            <Button type="button" variant="outline">
-                                                Clear
-                                            </Button>
-                                        </Link>
-                                    )}
                                 </div>
+                                <Button type="submit">
+                                    <Search className="h-4 w-4" />
+                                </Button>
                             </form>
-
-                            {/* Responsive table wrapper */}
+                        </CardHeader>
+                        <CardContent>
                             <div className="overflow-x-auto">
-                                <Table className="min-w-max">
+                                <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="whitespace-nowrap">Property Name</TableHead>
-                                            <TableHead className="whitespace-nowrap">Unit Number</TableHead>
-                                            <TableHead className="whitespace-nowrap">First Name</TableHead>
-                                            <TableHead className="whitespace-nowrap">Last Name</TableHead>
-                                            <TableHead className="whitespace-nowrap">Street Address</TableHead>
-                                            <TableHead className="whitespace-nowrap">Login Email</TableHead>
-                                            <TableHead className="whitespace-nowrap">Alternate Email</TableHead>
-                                            <TableHead className="whitespace-nowrap">Mobile</TableHead>
-                                            <TableHead className="whitespace-nowrap">Emergency Phone</TableHead>
-                                            <TableHead className="whitespace-nowrap">Payment Method</TableHead>
-                                            <TableHead className="whitespace-nowrap">Has Insurance</TableHead>
-                                            <TableHead className="whitespace-nowrap">Sensitive Communication</TableHead>
-                                            <TableHead className="whitespace-nowrap">Has Assistance</TableHead>
-                                            <TableHead className="whitespace-nowrap">Assistance Amount</TableHead>
-                                            <TableHead className="whitespace-nowrap">Assistance Company</TableHead>
-                                            <TableHead className="whitespace-nowrap">Created</TableHead>
-                                            <TableHead className="whitespace-nowrap">Actions</TableHead>
+                                            <TableHead>Property Name</TableHead>
+                                            <TableHead>Unit Number</TableHead>
+                                            <TableHead>First Name</TableHead>
+                                            <TableHead>Last Name</TableHead>
+                                            <TableHead>Street Address</TableHead>
+                                            <TableHead>Login Email</TableHead>
+                                            <TableHead>Alternate Email</TableHead>
+                                            <TableHead>Mobile</TableHead>
+                                            <TableHead>Emergency Phone</TableHead>
+                                            <TableHead>Payment Method</TableHead>
+                                            <TableHead>Has Insurance</TableHead>
+                                            <TableHead>Sensitive Communication</TableHead>
+                                            <TableHead>Has Assistance</TableHead>
+                                            <TableHead>Assistance Amount</TableHead>
+                                            <TableHead>Assistance Company</TableHead>
+                                            <TableHead>Created</TableHead>
+                                            <TableHead>Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {tenants.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={17} className="text-center py-4">
-                                                    {search ? 'No tenants found matching your search.' : 'No tenants found.'}
+                                        {tenants.map((tenant) => (
+                                            <TableRow key={tenant.id} className="hover:bg-gray-50">
+                                                <TableCell className="font-medium">
+                                                    {displayValue(tenant.property_name)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {displayValue(tenant.unit_number)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {displayValue(tenant.first_name)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {displayValue(tenant.last_name)}
+                                                </TableCell>
+                                                <TableCell className="max-w-[200px]">
+                                                    <div className="truncate" title={tenant.street_address_line || 'N/A'}>
+                                                        {displayValue(tenant.street_address_line)}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="max-w-[200px]">
+                                                    <div className="truncate" title={tenant.login_email || 'N/A'}>
+                                                        {displayValue(tenant.login_email)}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="max-w-[200px]">
+                                                    <div className="truncate" title={tenant.alternate_email || 'N/A'}>
+                                                        {displayValue(tenant.alternate_email)}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {displayValue(tenant.mobile)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {displayValue(tenant.emergency_phone)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {displayValue(tenant.cash_or_check)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {getInsuranceBadge(tenant.has_insurance)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {getSensitiveBadge(tenant.sensitive_communication)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {getAssistanceBadge(tenant.has_assistance)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {tenant.assistance_amount ? `$${tenant.assistance_amount}` : 'N/A'}
+                                                </TableCell>
+                                                <TableCell className="max-w-[150px]">
+                                                    <div className="truncate" title={tenant.assistance_company || 'N/A'}>
+                                                        {displayValue(tenant.assistance_company)}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {new Date(tenant.created_at).toLocaleDateString()}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex gap-1">
+                                                        <Link href={route('tenants.show', tenant.id)}>
+                                                            <Button variant="outline" size="sm">
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        </Link>
+                                                        <Link href={route('tenants.edit', tenant.id)}>
+                                                            <Button variant="outline" size="sm">
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        </Link>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(tenant)}
+                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
-                                        ) : (
-                                            tenants.map((tenant) => (
-                                                <TableRow key={tenant.id}>
-                                                    <TableCell className="whitespace-nowrap font-medium">
-                                                        {displayValue(tenant.property_name)}
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        {displayValue(tenant.unit_number)}
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        {displayValue(tenant.first_name)}
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        {displayValue(tenant.last_name)}
-                                                    </TableCell>
-                                                    <TableCell className="max-w-[200px] truncate">
-                                                        <span title={tenant.street_address_line || 'N/A'}>
-                                                            {displayValue(tenant.street_address_line)}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className="max-w-[200px] truncate">
-                                                        <span title={tenant.login_email || 'N/A'}>
-                                                            {displayValue(tenant.login_email)}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className="max-w-[200px] truncate">
-                                                        <span title={tenant.alternate_email || 'N/A'}>
-                                                            {displayValue(tenant.alternate_email)}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        {displayValue(tenant.mobile)}
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        {displayValue(tenant.emergency_phone)}
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        {displayValue(tenant.cash_or_check)}
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                            tenant.has_insurance === 'Yes'
-                                                                ? 'bg-green-100 text-green-800'
-                                                                : tenant.has_insurance === 'No'
-                                                                ? 'bg-red-100 text-red-800'
-                                                                : 'bg-gray-100 text-gray-800'
-                                                        }`}>
-                                                            {displayValue(tenant.has_insurance)}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                            tenant.sensitive_communication === 'Yes'
-                                                                ? 'bg-yellow-100 text-yellow-800'
-                                                                : tenant.sensitive_communication === 'No'
-                                                                ? 'bg-green-100 text-green-800'
-                                                                : 'bg-gray-100 text-gray-800'
-                                                        }`}>
-                                                            {displayValue(tenant.sensitive_communication)}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                            tenant.has_assistance === 'Yes'
-                                                                ? 'bg-blue-100 text-blue-800'
-                                                                : tenant.has_assistance === 'No'
-                                                                ? 'bg-gray-100 text-gray-800'
-                                                                : 'bg-gray-100 text-gray-800'
-                                                        }`}>
-                                                            {displayValue(tenant.has_assistance)}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        {tenant.assistance_amount ? `$${tenant.assistance_amount}` : 'N/A'}
-                                                    </TableCell>
-                                                    <TableCell className="max-w-[150px] truncate">
-                                                        <span title={tenant.assistance_company || 'N/A'}>
-                                                            {displayValue(tenant.assistance_company)}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        {new Date(tenant.created_at).toLocaleDateString()}
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        <div className="flex gap-1">
-                                                            <Link href={route('tenants.show', tenant.id)}>
-                                                                <Button variant="outline" size="sm">
-                                                                    View
-                                                                </Button>
-                                                            </Link>
-                                                            <Link href={route('tenants.edit', tenant.id)}>
-                                                                <Button variant="outline" size="sm">
-                                                                    Edit
-                                                                </Button>
-                                                            </Link>
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="sm"
-                                                                onClick={() => handleDelete(tenant)}
-                                                            >
-                                                                Delete
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
+                                        ))}
                                     </TableBody>
                                 </Table>
                             </div>
-
+                            {tenants.length === 0 && (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p className="text-lg">No tenants found.</p>
+                                    <p className="text-sm">Try adjusting your search criteria.</p>
+                                </div>
+                            )}
                             {/* Summary information */}
-                            <div className="mt-4 text-sm text-gray-600">
-                                Showing {tenants.length} tenant{tenants.length !== 1 ? 's' : ''}
-                                {search && ` matching "${search}"`}
+                            <div className="mt-6 flex justify-between items-center">
+                                <div className="text-sm text-gray-600">
+                                    Showing {tenants.length} tenant{tenants.length !== 1 ? 's' : ''}
+                                    {search && ` matching "${search}"`}
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </AppLayout>

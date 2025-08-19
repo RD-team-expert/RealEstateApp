@@ -1,8 +1,18 @@
-// resources/js/Pages/Vendors/Index.tsx
-
 import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/app-layout';
+import AppLayout from '@/Layouts/app-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { VendorInfo, PaginatedVendors, VendorFilters, VendorStatistics } from '@/types/vendor';
 import { PageProps } from '@/types/vendor';
 
@@ -20,24 +30,20 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
     const handleFilterChange = (key: keyof VendorFilters, value: string) => {
         const newFilters = { ...searchFilters, [key]: value };
         setSearchFilters(newFilters);
-
         router.get(route('vendors.index'), newFilters, {
             preserveState: true,
             preserveScroll: true,
         });
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = (vendor: VendorInfo) => {
         if (confirm('Are you sure you want to delete this vendor?')) {
-            router.delete(route('vendors.destroy', id));
+            router.delete(route('vendors.destroy', vendor.id));
         }
     };
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Vendors</h2>}
-        >
+        <AppLayout>
             <Head title="Vendors" />
 
             <div className="py-12">
@@ -55,140 +61,148 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                     )}
 
                     {/* Statistics Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">Total Vendors</h3>
-                            <p className="text-3xl font-bold text-blue-600">{statistics.total}</p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">With Email</h3>
-                            <p className="text-3xl font-bold text-green-600">{statistics.with_email}</p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">With Phone</h3>
-                            <p className="text-3xl font-bold text-purple-600">{statistics.with_number}</p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">Cities</h3>
-                            <p className="text-3xl font-bold text-orange-600">{Object.keys(statistics.city_counts).length}</p>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">Total Vendors</h3>
+                                <p className="text-3xl font-bold text-blue-600">{statistics.total}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">With Email</h3>
+                                <p className="text-3xl font-bold text-green-600">{statistics.with_email}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">With Phone</h3>
+                                <p className="text-3xl font-bold text-purple-600">{statistics.with_number}</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="p-6">
+                                <h3 className="text-lg font-semibold text-gray-900">Cities</h3>
+                                <p className="text-3xl font-bold text-orange-600">{Object.keys(statistics.city_counts).length}</p>
+                            </CardContent>
+                        </Card>
+                        {/* Vendors by City */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Vendors by City</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                {Object.entries(statistics.city_counts).map(([city, count]) => (
+                                    <div key={city} className="text-center">
+                                        <p className="text-sm text-gray-600">{city}</p>
+                                        <p className="text-xl font-bold text-blue-600">{count}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
                     </div>
 
-                    {/* Cities Stats */}
-                    <div className="bg-white p-6 rounded-lg shadow mb-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Vendors by City</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                            {Object.entries(statistics.city_counts).map(([city, count]) => (
-                                <div key={city} className="text-center">
-                                    <p className="text-sm text-gray-600">{city}</p>
-                                    <p className="text-xl font-bold text-blue-600">{count}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
 
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            {/* Header and Add Button */}
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-semibold">Vendors List</h3>
-                                <Link
-                                    href={route('vendors.create')}
-                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                                >
-                                    Add Vendor
+
+                    <Card className="mt-6">
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="text-2xl">Vendors List</CardTitle>
+                                <Link href={route('vendors.create')}>
+                                    <Button>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add Vendor
+                                    </Button>
                                 </Link>
                             </div>
-
                             {/* Filters */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                                <input
-                                    type="text"
-                                    placeholder="City"
-                                    value={searchFilters.city || ''}
-                                    onChange={(e) => handleFilterChange('city', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Vendor Name"
-                                    value={searchFilters.vendor_name || ''}
-                                    onChange={(e) => handleFilterChange('vendor_name', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Number"
-                                    value={searchFilters.number || ''}
-                                    onChange={(e) => handleFilterChange('number', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
-                                />
-                                <input
-                                    type="email"
-                                    placeholder="Email"
-                                    value={searchFilters.email || ''}
-                                    onChange={(e) => handleFilterChange('email', e.target.value)}
-                                    className="border border-gray-300 rounded px-3 py-2"
-                                />
+                            <div className="mt-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <Input
+                                        type="text"
+                                        placeholder="City"
+                                        value={searchFilters.city || ''}
+                                        onChange={(e) => handleFilterChange('city', e.target.value)}
+                                    />
+                                    <Input
+                                        type="text"
+                                        placeholder="Vendor Name"
+                                        value={searchFilters.vendor_name || ''}
+                                        onChange={(e) => handleFilterChange('vendor_name', e.target.value)}
+                                    />
+                                    <Input
+                                        type="text"
+                                        placeholder="Number"
+                                        value={searchFilters.number || ''}
+                                        onChange={(e) => handleFilterChange('number', e.target.value)}
+                                    />
+                                    <Input
+                                        type="email"
+                                        placeholder="Email"
+                                        value={searchFilters.email || ''}
+                                        onChange={(e) => handleFilterChange('email', e.target.value)}
+                                    />
+                                </div>
                             </div>
-
-                            {/* Vendors Table */}
+                        </CardHeader>
+                        <CardContent>
                             <div className="overflow-x-auto">
-                                <table className="min-w-full bg-white border border-gray-300">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">City</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor Name</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Number</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>City</TableHead>
+                                            <TableHead>Vendor Name</TableHead>
+                                            <TableHead>Number</TableHead>
+                                            <TableHead>Email</TableHead>
+                                            <TableHead>Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
                                         {vendors.data.map((vendor) => (
-                                            <tr key={vendor.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {vendor.city}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {vendor.vendor_name}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {vendor.number || '-'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {vendor.email ? (
-                                                        <a href={`mailto:${vendor.email}`} className="text-blue-600 hover:text-blue-900">
-                                                            {vendor.email}
-                                                        </a>
-                                                    ) : '-'}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <Link
-                                                        href={route('vendors.show', vendor.id)}
-                                                        className="text-indigo-600 hover:text-indigo-900 mr-3"
-                                                    >
-                                                        View
-                                                    </Link>
-                                                    <Link
-                                                        href={route('vendors.edit', vendor.id)}
-                                                        className="text-yellow-600 hover:text-yellow-900 mr-3"
-                                                    >
-                                                        Edit
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => handleDelete(vendor.id)}
-                                                        className="text-red-600 hover:text-red-900"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </td>
-                                            </tr>
+                                            <TableRow key={vendor.id} className="hover:bg-gray-50">
+                                                <TableCell className="font-medium">{vendor.city}</TableCell>
+                                                <TableCell>{vendor.vendor_name}</TableCell>
+                                                <TableCell>{vendor.number || '-'}</TableCell>
+                                                <TableCell>
+                                                    {vendor.email
+                                                        ? <a href={`mailto:${vendor.email}`} className="text-blue-600 hover:text-blue-900">{vendor.email}</a>
+                                                        : '-'}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex gap-1">
+                                                        <Link href={route('vendors.show', vendor.id)}>
+                                                            <Button variant="outline" size="sm">
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        </Link>
+                                                        <Link href={route('vendors.edit', vendor.id)}>
+                                                            <Button variant="outline" size="sm">
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        </Link>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(vendor)}
+                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </TableBody>
+                                </Table>
                             </div>
-
+                            {vendors.data.length === 0 && (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p className="text-lg">No vendors found.</p>
+                                    <p className="text-sm">Try adjusting your search filters.</p>
+                                </div>
+                            )}
                             {/* Pagination */}
                             {vendors.last_page > 1 && (
                                 <div className="mt-6 flex justify-center">
@@ -211,10 +225,14 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                     </nav>
                                 </div>
                             )}
-                        </div>
-                    </div>
+                            {/* Record count */}
+                            <div className="mt-4 text-sm text-gray-600 text-center">
+                                Showing {vendors.from || 0} to {vendors.to || 0} of {vendors.total || 0} vendors
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }
