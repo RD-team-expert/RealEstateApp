@@ -20,6 +20,24 @@ class NoticeAndEvictionController extends Controller
 
     public function index()
     {
+        $records = NoticeAndEviction::all();
+        foreach ($records as $record) {
+            if ($record->have_an_exception === 'Yes') {
+                $record->evictions = 'Have An Exception';
+            } elseif ($record->type_of_notice && $record->date) {
+                $notice = Notice::where('notice_name', $record->type_of_notice)->first();
+                if ($notice) {
+                    $days = $notice->days;
+                    $alertDate = \Carbon\Carbon::parse($record->date)->addDays($days);
+                    if ($alertDate->lessThanOrEqualTo(now())) {
+                        $record->evictions = 'Alert';
+                    } else {
+                        $record->evictions = '';
+                    }
+                }
+            }
+            $record->save();
+        }
         $records = $this->service->listAll();
         return Inertia::render('NoticeAndEvictions/Index', ['records' => $records]);
     }

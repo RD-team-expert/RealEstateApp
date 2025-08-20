@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreVendorInfoRequest;
 use App\Http\Requests\UpdateVendorInfoRequest;
-use App\Models\VendorInfo;
+use App\Models\Cities;
 use App\Services\VendorInfoService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -37,7 +37,10 @@ class VendorInfoController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Vendors/Create');
+        $cities = Cities::all();
+        return Inertia::render('Vendors/Create',[
+        'cities' => $cities
+    ]);
     }
 
     public function store(StoreVendorInfoRequest $request): RedirectResponse
@@ -66,9 +69,10 @@ class VendorInfoController extends Controller
     public function edit(string $id): Response
     {
         $vendor = $this->vendorInfoService->findById((int) $id);
-
+        $cities = Cities::all();
         return Inertia::render('Vendors/Edit', [
             'vendor' => $vendor,
+            'cities'  => $cities
         ]);
     }
 

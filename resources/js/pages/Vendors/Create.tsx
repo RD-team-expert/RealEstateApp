@@ -1,5 +1,3 @@
-// resources/js/Pages/Vendors/Create.tsx
-
 import React from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
@@ -8,9 +6,20 @@ import { PageProps } from '@/types/vendor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function Create({ auth }: PageProps) {
+interface CreatePageProps extends PageProps {
+    cities: Array<{ id: number; city: string }>;
+}
+
+export default function Create({ auth, cities }: CreatePageProps) {
     const { data, setData, post, processing, errors } = useForm<VendorFormData>({
         city: '',
         vendor_name: '',
@@ -26,7 +35,6 @@ export default function Create({ auth }: PageProps) {
     return (
         <AppLayout>
             <Head title="Create Vendor" />
-
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                     <Card>
@@ -34,28 +42,36 @@ export default function Create({ auth }: PageProps) {
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Create New Vendor</CardTitle>
                                 <div className="flex justify-between items-center gap-2">
-                                <Link href={route('vendors.index')}>
-                                    <Button variant="outline">Back to List</Button>
-                                </Link>
-                                <Link href={'/cities'}>
-                                    <Button variant="outline">View Cities</Button>
-                                </Link>
+                                    <Link href={route('vendors.index')}>
+                                        <Button variant="outline">Back to List</Button>
+                                    </Link>
+                                    <Link href={'/cities'}>
+                                        <Button variant="outline">View Cities</Button>
+                                    </Link>
                                 </div>
                             </div>
                         </CardHeader>
-
                         <CardContent>
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid md:grid-cols-2 gap-4">
                                     {/* City */}
                                     <div>
                                         <Label htmlFor="city">City *</Label>
-                                        <Input
-                                            id="city"
+                                        <Select
+                                            onValueChange={(value) => setData('city', value)}
                                             value={data.city}
-                                            onChange={(e) => setData('city', e.target.value)}
-                                            error={errors.city}
-                                        />
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a city" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {cities.map((city) => (
+                                                    <SelectItem key={city.id} value={city.city}>
+                                                        {city.city}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         {errors.city && (
                                             <p className="text-red-600 text-sm mt-1">{errors.city}</p>
                                         )}

@@ -4,7 +4,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-
+use Illuminate\Validation\Rule;
 class StoreVendorInfoRequest extends FormRequest
 {
     public function authorize(): bool
@@ -15,7 +15,10 @@ class StoreVendorInfoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'city' => 'required|string|max:255',
+            'city' => [
+                'required',
+                'string',
+                Rule::exists('cities', 'city')],
             'vendor_name' => 'required|string|max:255',
             'number' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
@@ -25,7 +28,7 @@ class StoreVendorInfoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'city.required' => 'City is required.',
+            'city.exists' => 'The selected city is not valid. Please choose from available cities.',
             'city.max' => 'City cannot exceed 255 characters.',
             'vendor_name.required' => 'Vendor name is required.',
             'vendor_name.max' => 'Vendor name cannot exceed 255 characters.',

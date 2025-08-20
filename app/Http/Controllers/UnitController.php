@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUnitRequest;
 use App\Http\Requests\UpdateUnitRequest;
-use App\Models\Unit;
+use App\Models\Cities;
 use App\Services\UnitService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -35,7 +35,10 @@ class UnitController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Units/Create');
+        $cities = Cities::all();
+        return Inertia::render('Units/Create',[
+        'cities' => $cities
+    ]);
     }
 
     public function store(StoreUnitRequest $request): RedirectResponse
@@ -51,6 +54,25 @@ class UnitController extends Controller
                 ->withInput();
         }
     }
+    // public function create(): Response
+    // {
+    //     $cities = \App\Models\Cities::all(); // or use a service method
+
+    //     return Inertia::render('Units/Create', [
+    //         'cities' => $cities
+    //     ]);
+    // }
+
+    // public function edit(string $id): Response
+    // {
+    //     $unit = $this->unitService->findById((int) $id);
+    //     $cities = \App\Models\Cities::all(); // or use a service method
+
+    //     return Inertia::render('Units/Edit', [
+    //         'unit' => $unit,
+    //         'cities' => $cities
+    //     ]);
+    // }
 
     public function show(string $id): Response
     {
@@ -64,9 +86,10 @@ class UnitController extends Controller
     public function edit(string $id): Response
     {
         $unit = $this->unitService->findById((int) $id);
-
+        $cities = Cities::all();
         return Inertia::render('Units/Edit', [
             'unit' => $unit,
+            'cities' => $cities
         ]);
     }
 

@@ -19,8 +19,24 @@ class OffersAndRenewalController extends Controller
 
     public function index()
     {
+          OffersAndRenewal::whereNotNull('how_many_days_left')->get()->each(function ($offer) {
+        if ($offer->how_many_days_left > 0) {
+            $offer->how_many_days_left -= 1;
+            $offer->expired = $offer->how_many_days_left <= 0 ? 'expired' : null;
+            $offer->save();
+        } elseif ($offer->how_many_days_left <= 0 && $offer->expired !== 'expired') {
+            $offer->expired = 'expired';
+            $offer->save();
+        }
+        });
+        OffersAndRenewal::whereNull('how_many_days_left')->whereNotNull('date_sent_lease')->get()->each(function ($offer) {
+            $offer->calculateExpiry();
+            $offer->save();
+        });
         $offers = $this->service->listAll();
         return Inertia::render('OffersAndRenewals/Index', ['offers' => $offers]);
+
+
     }
 
     public function create()

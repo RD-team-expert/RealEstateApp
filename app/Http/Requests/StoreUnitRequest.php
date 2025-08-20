@@ -40,7 +40,7 @@ class StoreUnitRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'city.required' => 'City is required.',
+            'city.exists' => 'The selected city is not valid. Please choose from available cities.',
             'property.required' => 'Property is required.',
             'unit_name.required' => 'Unit name is required.',
             'unit_name.unique' => 'Unit name already exists.',

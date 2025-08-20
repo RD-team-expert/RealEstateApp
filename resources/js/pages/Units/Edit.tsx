@@ -1,10 +1,8 @@
 // resources/js/Pages/Units/Edit.tsx
-
 import React from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
-import { Unit, UnitFormData } from '@/types/unit';
-import { PageProps } from '@/types/unit';
+import { Unit, UnitFormData, PageProps } from '@/types/unit';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,11 +15,12 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface Props extends PageProps {
+interface EditPageProps extends PageProps {
     unit: Unit;
+    cities: Array<{ id: number; city: string }>;
 }
 
-export default function Edit({ auth, unit }: Props) {
+export default function Edit({ auth, unit, cities }: EditPageProps) {
     const { data, setData, put, processing, errors } = useForm<UnitFormData>({
         city: unit.city,
         property: unit.property,
@@ -48,7 +47,6 @@ export default function Edit({ auth, unit }: Props) {
     return (
         <AppLayout>
             <Head title={`Edit Unit - ${unit.unit_name}`} />
-
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
                     <Card>
@@ -58,16 +56,15 @@ export default function Edit({ auth, unit }: Props) {
                                     Edit Unit - {unit.unit_name}
                                 </CardTitle>
                                 <div className="flex justify-between items-center gap-2">
-                                <Link href={route('units.index')}>
-                                    <Button variant="outline">Back to List</Button>
-                                </Link>
-                                <Link href={'/cities'}>
-                                    <Button variant="outline">View Cities</Button>
-                                </Link>
+                                    <Link href={route('units.index')}>
+                                        <Button variant="outline">Back to List</Button>
+                                    </Link>
+                                    <Link href={'/cities'}>
+                                        <Button variant="outline">View Cities</Button>
+                                    </Link>
                                 </div>
                             </div>
                         </CardHeader>
-
                         <CardContent>
                             {/* Note about calculated fields */}
                             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -75,23 +72,29 @@ export default function Edit({ auth, unit }: Props) {
                                     <strong>Note:</strong> Vacant, Listed, and Total Applications are automatically calculated based on your inputs.
                                 </p>
                             </div>
-
                             <form onSubmit={submit} className="space-y-6">
-                                {/* --- Basic Information --- */}
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
                                         <Label htmlFor="city">City *</Label>
-                                        <Input
-                                            id="city"
+                                        <Select
+                                            onValueChange={(value) => setData('city', value)}
                                             value={data.city}
-                                            onChange={(e) => setData('city', e.target.value)}
-                                            error={errors.city}
-                                        />
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a city" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {cities.map((city) => (
+                                                    <SelectItem key={city.id} value={city.city}>
+                                                        {city.city}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         {errors.city && (
                                             <p className="text-red-600 text-sm mt-1">{errors.city}</p>
                                         )}
                                     </div>
-
                                     <div>
                                         <Label htmlFor="property">Property *</Label>
                                         <Input

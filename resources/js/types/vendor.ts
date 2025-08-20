@@ -46,3 +46,10 @@ export interface PaginatedVendors {
         active: boolean;
     }>;
 }
+
+export interface PageProps {
+    auth: {
+        user: any; // Replace with your user type
+    };
+    cities?: Array<{ id: number; city: string }>;
+}

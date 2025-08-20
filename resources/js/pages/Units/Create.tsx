@@ -1,16 +1,24 @@
-// resources/js/Pages/Units/Create.tsx
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AppLayout from '@/Layouts/app-layout';
 import { PageProps, UnitFormData } from '@/types/unit';
 import { Head, Link, useForm } from '@inertiajs/react';
 import React from 'react';
 
-export default function Create({ auth }: PageProps) {
+interface CreatePageProps extends PageProps {
+    cities: Array<{ id: number; city: string }>;
+}
+
+export default function Create({ auth, cities }: CreatePageProps) {
     const { data, setData, post, processing, errors } = useForm<UnitFormData>({
         city: '',
         property: '',
@@ -37,7 +45,6 @@ export default function Create({ auth }: PageProps) {
     return (
         <AppLayout>
             <Head title="Create Unit" />
-
             <div className="py-12">
                 <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
                     <Card>
@@ -45,23 +52,36 @@ export default function Create({ auth }: PageProps) {
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-2xl">Create New Unit</CardTitle>
                                 <div className="flex items-center justify-between gap-2">
-                                <Link href={route('units.index')}>
-                                    <Button variant="outline">Back to List</Button>
-                                </Link>
-                                <Link href={'/cities'}>
-                                    <Button variant="outline">View Cities</Button>
-                                </Link>
+                                    <Link href={route('units.index')}>
+                                        <Button variant="outline">Back to List</Button>
+                                    </Link>
+                                    <Link href={'/cities'}>
+                                        <Button variant="outline">View Cities</Button>
+                                    </Link>
                                 </div>
                             </div>
                         </CardHeader>
-
                         <CardContent>
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 <div className="grid gap-4 md:grid-cols-2">
                                     {/* City */}
                                     <div>
                                         <Label htmlFor="city">City *</Label>
-                                        <Input id="city" value={data.city} onChange={(e) => setData('city', e.target.value)} error={errors.city} />
+                                        <Select
+                                            onValueChange={(value) => setData('city', value)}
+                                            value={data.city}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a city" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {cities.map((city) => (
+                                                    <SelectItem key={city.id} value={city.city}>
+                                                        {city.city}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
                                     </div>
 
@@ -233,7 +253,10 @@ export default function Create({ auth }: PageProps) {
                                     {/* Insurance */}
                                     <div>
                                         <Label htmlFor="insurance">Insurance</Label>
-                                        <Select onValueChange={(value) => setData('insurance', value)} value={data.insurance}>
+                                        <Select
+                                            onValueChange={(value) => setData('insurance', value)}
+                                            value={data.insurance}
+                                        >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select insurance status" />
                                             </SelectTrigger>
@@ -246,8 +269,8 @@ export default function Create({ auth }: PageProps) {
                                     </div>
                                 </div>
 
-                                {/* Insurance Expiration Date */}
                                 <div className="grid gap-4 md:grid-cols-2">
+                                    {/* Insurance Expiration Date */}
                                     <div>
                                         <Label htmlFor="insurance_expiration_date">Insurance Expiration Date</Label>
                                         <Input
