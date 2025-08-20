@@ -1,76 +1,128 @@
 import { NavFooter } from '@/components/nav-footer';
-import { NavMain } from '@/components/nav-main';
+import { NavMainCategorized } from '@/components/nav-main-categorized';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
+import { type NavCategory } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
+import {
+    BookOpen,
+    Folder,
+    LayoutGrid,
+    Home,
+    Building,
+    Users,
+    Wrench,
+    DollarSign,
+    FileText,
+    ArrowRightLeft,
+    UserCheck,
+    AlertTriangle,
+    Settings,
+    CreditCard,
+    ClipboardList
+} from 'lucide-react';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
+const mainNavCategories: NavCategory[] = [
     {
-        title: 'Dashboard',
-        href: '/dashboard',
-        icon: LayoutGrid,
+        title: 'Overview',
+        icon: Home,
+        items: [
+            {
+                title: 'Dashboard',
+                href: '/dashboard',
+                icon: LayoutGrid,
+            },
+        ],
     },
     {
-        title: 'Units',
-        href: '/units',
-        icon: LayoutGrid,
+        title: 'Property Management',
+        icon: Building,
+        items: [
+            {
+                title: 'Properties',
+                href: '/properties-info',
+                icon: Building,
+            },
+            {
+                title: 'Units',
+                href: '/units',
+                icon: LayoutGrid,
+            },
+        ],
     },
     {
-        title: 'Tenants',
-        href: '/tenants',
-        icon: LayoutGrid,
+        title: 'People',
+        icon: Users,
+        items: [
+            {
+                title: 'Tenants',
+                href: '/tenants',
+                icon: Users,
+            },
+            {
+                title: 'Vendors',
+                href: '/vendors',
+                icon: Wrench,
+            },
+        ],
     },
     {
-        title: 'Vendors',
-        href: '/vendors',
-        icon: LayoutGrid,
+        title: 'Operations',
+        icon: Settings,
+        items: [
+            {
+                title: 'Move In',
+                href: '/move-in',
+                icon: ArrowRightLeft,
+            },
+            {
+                title: 'Move Out',
+                href: '/move-out',
+                icon: ArrowRightLeft,
+            },
+            {
+                title: 'Vendor TaskTracker',
+                href: '/vendor-task-tracker',
+                icon: ClipboardList,
+            },
+        ],
     },
     {
-        title: 'Properties',
-        href: '/properties-info',
-        icon: LayoutGrid,
+        title: 'Financial',
+        icon: DollarSign,
+        items: [
+            {
+                title: 'Payments',
+                href: '/payments',
+                icon: CreditCard,
+            },
+        ],
     },
     {
-        title: 'Payments',
-        href: '/payments',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Vendor TaskTracker',
-        href: '/vendor-task-tracker',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Move In',
-        href: '/move-in',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Move Out',
-        href: '/move-out',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Offers And Renewals',
-        href: '/offers_and_renewals',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Notice And Evictions',
-        href: '/notice_and_evictions',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Applications',
-        href: '/applications',
-        icon: LayoutGrid,
+        title: 'Leasing',
+        icon: FileText,
+        items: [
+            {
+                title: 'Applications',
+                href: '/applications',
+                icon: FileText,
+            },
+            {
+                title: 'Offers And Renewals',
+                href: '/offers_and_renewals',
+                icon: UserCheck,
+            },
+            {
+                title: 'Notice And Evictions',
+                href: '/notice_and_evictions',
+                icon: AlertTriangle,
+            },
+        ],
     },
 ];
 
-const footerNavItems: NavItem[] = [
+const footerNavItems: NavCategory['items'] = [
     {
         title: 'Repository',
         href: 'https://github.com/laravel/react-starter-kit',
@@ -99,7 +151,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMainCategorized categories={mainNavCategories} />
             </SidebarContent>
 
             <SidebarFooter>

@@ -15,11 +15,22 @@ export interface NavGroup {
     items: NavItem[];
 }
 
+// export interface NavItem {
+//     title: string;
+//     href: string;
+//     icon?: LucideIcon | null;
+//     isActive?: boolean;
+// }
 export interface NavItem {
     title: string;
     href: string;
-    icon?: LucideIcon | null;
-    isActive?: boolean;
+    icon: React.ComponentType<{ className?: string }>;
+}
+
+export interface NavCategory {
+    title: string;
+    icon: React.ComponentType<{ className?: string }>; // Add this line
+    items: NavItem[];
 }
 
 export interface SharedData {
