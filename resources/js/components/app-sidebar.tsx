@@ -97,6 +97,11 @@ const mainNavCategories: NavCategory[] = [
                 href: '/payments',
                 icon: CreditCard,
             },
+            {
+                title: 'Payment Plan',
+                href: '/payment-plans',
+                icon: CreditCard,
+            },
         ],
     },
     {

@@ -14,6 +14,7 @@ use App\Http\Controllers\NoticeController;
 use App\Http\Controllers\OffersAndRenewalController;
 use App\Http\Controllers\NoticeAndEvictionController;
 use App\Http\Controllers\CityController;
+use App\Http\Controllers\PaymentPlanController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -68,6 +69,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('applications', ApplicationController::class);
 
     Route::resource('vendors', VendorInfoController::class);
+
+    Route::resource('payment-plans', PaymentPlanController::class);
 
     Route::get('cities', [CityController::class, 'index'])->name('cities.index');
     Route::post('cities', [CityController::class, 'store'])->name('cities.store');
