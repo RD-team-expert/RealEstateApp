@@ -51,6 +51,10 @@ export default function Show({ auth, vendor }: Props) {
                                         <p className="text-sm text-gray-600">Vendor Name</p>
                                         <p className="font-medium">{vendor.vendor_name}</p>
                                     </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Service Type</p>
+                                        <p className="font-medium">{vendor.service_type}</p>
+                                    </div>
                                 </div>
 
                                 {/* Contact Information */}
