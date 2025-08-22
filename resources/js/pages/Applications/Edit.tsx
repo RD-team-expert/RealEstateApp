@@ -35,6 +35,7 @@ export default function Edit({ auth, application, units, cities, properties, uni
         date: application.date || '',
         stage_in_progress: application.stage_in_progress || '',
         notes: application.notes || '',
+        attachment: null,
     });
 
     // Find the city for the current property - Use application.city first
@@ -271,6 +272,20 @@ export default function Edit({ auth, application, units, cities, properties, uni
                                     />
                                     {errors.notes && (
                                         <p className="text-red-600 text-sm mt-1">{errors.notes}</p>
+                                    )}
+                                </div>
+                                {/* Attachment */}
+                               <div>
+                                    <Label htmlFor="attachment">Attachment</Label>
+                                    <Input
+                                        id="attachment"
+                                        type="file"
+                                        accept="*"
+                                        onChange={(e) => setData('attachment', e.target.files?.[0] || null)}
+                                        className="cursor-pointer file:cursor-pointer file:border-0 file:bg-transparent file:text-sm file:font-medium"
+                                    />
+                                    {errors.attachment && (
+                                        <p className="text-red-600 text-sm mt-1">{errors.attachment}</p>
                                     )}
                                 </div>
 

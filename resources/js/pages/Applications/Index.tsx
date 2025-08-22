@@ -188,6 +188,7 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                             <TableHead>Date</TableHead>
                                             <TableHead>Stage</TableHead>
                                             <TableHead>Note</TableHead>
+                                            <TableHead>Attachment</TableHead>
                                             <TableHead>Actions</TableHead>
 
                                         </TableRow>
@@ -212,6 +213,19 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                                 </TableCell>
                                                 <TableCell>{application.stage_in_progress || 'N/A'}</TableCell>
                                                 <TableCell>{application.notes || 'N/A'}</TableCell>
+
+                                                <TableCell>
+                                                    {application.attachment_name ? (
+                                                        <a
+                                                            href={`/applications/${application.id}/download`}
+                                                            className="text-blue-600 hover:underline text-sm"
+                                                        >
+                                                            {application.attachment_name}
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-gray-400 text-sm">No attachment</span>
+                                                    )}
+                                                </TableCell>
                                                 <TableCell>
                                                     <div className="flex gap-1">
                                                         <Link href={route('applications.show', application.id)}>

@@ -65,7 +65,19 @@ class ApplicationController extends Controller
     public function store(StoreApplicationRequest $request): RedirectResponse
     {
         try {
-            $this->applicationService->create($request->validated());
+            $data = $request->validated();
+
+            // Handle file upload
+            if ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('applications', $filename, 'public');
+
+                $data['attachment_name'] = $file->getClientOriginalName();
+                $data['attachment_path'] = $path;
+            }
+
+            $this->applicationService->create($data);
 
             return redirect()->route('applications.index')
                 ->with('success', 'Application created successfully');
@@ -75,7 +87,6 @@ class ApplicationController extends Controller
                 ->withInput();
         }
     }
-
     public function show(string $id): Response
     {
         $application = $this->applicationService->findById((int) $id);
@@ -120,7 +131,24 @@ class ApplicationController extends Controller
     {
         try {
             $application = $this->applicationService->findById((int) $id);
-            $this->applicationService->update($application, $request->validated());
+            $data = $request->validated();
+
+            // Handle file upload
+            if ($request->hasFile('attachment')) {
+                // Delete old file if exists
+                if ($application->attachment_path) {
+                    Storage::disk('public')->delete($application->attachment_path);
+                }
+
+                $file = $request->file('attachment');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $path = $file->storeAs('applications', $filename, 'public');
+
+                $data['attachment_name'] = $file->getClientOriginalName();
+                $data['attachment_path'] = $path;
+            }
+
+            $this->applicationService->update($application, $data);
 
             return redirect()->route('applications.index')
                 ->with('success', 'Application updated successfully');
@@ -135,6 +163,12 @@ class ApplicationController extends Controller
     {
         try {
             $application = $this->applicationService->findById((int) $id);
+
+            // Delete attachment file if exists
+            if ($application->attachment_path) {
+                Storage::disk('public')->delete($application->attachment_path);
+            }
+
             $this->applicationService->delete($application);
 
             return redirect()->route('applications.index')
@@ -143,6 +177,24 @@ class ApplicationController extends Controller
             return redirect()->back()
                 ->with('error', 'Failed to delete application: ' . $e->getMessage());
         }
+    }
+
+    // Add download method
+    public function downloadAttachment(string $id)
+    {
+        $application = $this->applicationService->findById((int) $id);
+
+        if (!$application->attachment_path || !$application->attachment_name) {
+            abort(404, 'Attachment not found.');
+        }
+
+        $filePath = storage_path('app/public/' . $application->attachment_path);
+
+        if (!file_exists($filePath)) {
+            abort(404, 'File not found.');
+        }
+
+        return response()->download($filePath, $application->attachment_name);
     }
 
     // Add API endpoint for dynamic property/unit loading

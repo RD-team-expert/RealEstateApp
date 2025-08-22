@@ -55,6 +55,7 @@ class UpdateApplicationRequest extends FormRequest
             'date' => 'nullable|date',
             'stage_in_progress' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:65535',
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB max
         ];
     }
 
@@ -66,6 +67,8 @@ class UpdateApplicationRequest extends FormRequest
             'name.required' => 'Name is required.',
             'co_signer.required' => 'Co-signer is required.',
             'unit.required' => 'Unit is required.',
+            'attachment.mimes' => 'The attachment must be a PDF, Word document, or image file.',
+            'attachment.max' => 'The attachment must not be larger than 10MB.',
         ];
     }
 }

@@ -70,6 +70,31 @@ export default function Show({ auth, application }: Props) {
                                         <p className="text-sm text-gray-600">Unit</p>
                                         <p className="font-medium">{application.unit}</p>
                                     </div>
+                                    {/* Attachment Section */}
+                                {application.attachment_name && (
+                                    <div className="mt-6 space-y-4">
+                                        <h3 className="text-lg font-semibold">Attachment</h3>
+                                        <div className="bg-gray-50 rounded-lg p-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-blue-100 p-2 rounded-lg">
+                                                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-medium text-gray-900">{application.attachment_name}</p>
+                                                    <p className="text-sm text-gray-500">Click to download</p>
+                                                </div>
+                                                <a
+                                                    href={`/applications/${application.id}/download`}
+                                                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                                >
+                                                    Download
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 </div>
 
                                 <div className="space-y-4">

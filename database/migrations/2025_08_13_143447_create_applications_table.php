@@ -20,6 +20,8 @@ return new class extends Migration
             $table->date('date')->nullable();
             $table->string('stage_in_progress')->nullable();
             $table->text('notes')->nullable();
+            $table->string('attachment_name')->nullable();
+            $table->string('attachment_path')->nullable();
             $table->timestamps();
         });
     }

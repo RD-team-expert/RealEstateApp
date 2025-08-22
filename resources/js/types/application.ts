@@ -12,6 +12,8 @@ export interface Application {
     stage_in_progress: string | null;
     notes: string | null;
     formatted_date: string | null;
+    attachment_name?: string;
+    attachment_path?: string;
     created_at: string;
     updated_at: string;
 }
@@ -27,6 +29,7 @@ export interface ApplicationFormData {
     date: string;
     stage_in_progress: string;
     notes: string;
+    attachment?: File | null;
 }
 
 // Add new interfaces for dropdown data

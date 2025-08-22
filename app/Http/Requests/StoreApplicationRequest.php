@@ -51,6 +51,16 @@ public function rules(): array
         'date' => 'nullable|date',
         'stage_in_progress' => 'nullable|string|max:255',
         'notes' => 'nullable|string|max:65535',
+        'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB max
+
+    ];
+}
+
+public function messages(): array
+{
+    return [
+        'attachment.mimes' => 'The attachment must be a PDF, Word document, or image file.',
+        'attachment.max' => 'The attachment must not be larger than 10MB.',
     ];
 }
 }

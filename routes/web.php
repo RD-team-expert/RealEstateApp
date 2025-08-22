@@ -68,6 +68,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('applications', ApplicationController::class);
 
+    Route::get('/applications/{application}/download', [ApplicationController::class, 'downloadAttachment'])
+    ->name('applications.download');
+
     Route::resource('vendors', VendorInfoController::class);
 
     Route::resource('payment-plans', PaymentPlanController::class);

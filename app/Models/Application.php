@@ -24,7 +24,9 @@ class Application extends Model
         'status',
         'date',
         'stage_in_progress',
-        'notes'
+        'notes',
+        'attachment_name',
+        'attachment_path',
     ];
 
     protected $casts = [
@@ -84,5 +86,20 @@ class Application extends Model
     static::deleted(function ($application) {
         Unit::updateApplicationCountForUnit($application->unit);
     });
-}
+    }
+
+    // Helper method to get the full attachment URL
+    public function getAttachmentUrlAttribute()
+    {
+        if ($this->attachment_path) {
+            return asset('storage/' . $this->attachment_path);
+        }
+        return null;
+    }
+
+    // Helper method to check if attachment exists
+    public function hasAttachment(): bool
+    {
+        return !empty($this->attachment_path) && !empty($this->attachment_name);
+    }
 }

@@ -35,6 +35,7 @@ export default function Create({ auth, units, cities, properties, unitsByPropert
         date: '',
         stage_in_progress: '',
         notes: '',
+        attachment: null,
     });
 
     const [selectedCity, setSelectedCity] = useState('');
@@ -243,21 +244,35 @@ export default function Create({ auth, units, cities, properties, unitsByPropert
                                 </div>
 
                                 {/* Notes */}
-<div>
-    <Label htmlFor="notes">Notes</Label>
-    <textarea
-        id="notes"
-        value={data.notes}
-        onChange={(e) => setData('notes', e.target.value)}
-        rows={4}
-        placeholder="Add any additional notes..."
-        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-vertical"
-    />
-    {errors.notes && (
-        <p className="text-red-600 text-sm mt-1">{errors.notes}</p>
-    )}
-</div>
+                                <div>
+                                    <Label htmlFor="notes">Notes</Label>
+                                    <textarea
+                                        id="notes"
+                                        value={data.notes}
+                                        onChange={(e) => setData('notes', e.target.value)}
+                                        rows={4}
+                                        placeholder="Add any additional notes..."
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-vertical"
+                                    />
+                                    {errors.notes && (
+                                        <p className="text-red-600 text-sm mt-1">{errors.notes}</p>
+                                    )}
+                                </div>
 
+                                {/* Attachment */}
+                                <div>
+                                    <Label htmlFor="attachment">Attachment</Label>
+                                    <Input
+                                        id="attachment"
+                                        type="file"
+                                        accept="*"
+                                        onChange={(e) => setData('attachment', e.target.files?.[0] || null)}
+                                        className="cursor-pointer file:cursor-pointer file:border-0 file:bg-transparent file:text-sm file:font-medium"
+                                    />
+                                    {errors.attachment && (
+                                        <p className="text-red-600 text-sm mt-1">{errors.attachment}</p>
+                                    )}
+                                </div>
 
                                 <div className="flex justify-end gap-2">
                                     <Link href={route('applications.index')}>
