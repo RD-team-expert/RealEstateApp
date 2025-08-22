@@ -15,6 +15,7 @@ use App\Http\Controllers\OffersAndRenewalController;
 use App\Http\Controllers\NoticeAndEvictionController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\PaymentPlanController;
+use App\Http\Controllers\UserController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -78,6 +79,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('cities', [CityController::class, 'index'])->name('cities.index');
     Route::post('cities', [CityController::class, 'store'])->name('cities.store');
     Route::delete('cities/{city}', [CityController::class, 'destroy'])->name('cities.destroy');
+
+    Route::resource('users', UserController::class);
 });
 
 // Property Info CRUD routes

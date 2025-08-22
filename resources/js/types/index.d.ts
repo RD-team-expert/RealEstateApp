@@ -27,6 +27,16 @@ export interface NavItem {
     icon: React.ComponentType<{ className?: string }>;
 }
 
+export interface User {
+    id: number;
+    name: string;
+    email: string;
+    email_verified_at: string;
+    created_at: string;
+    updated_at: string;
+}
+
+
 export interface NavCategory {
     title: string;
     icon: React.ComponentType<{ className?: string }>; // Add this line
