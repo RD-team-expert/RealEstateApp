@@ -109,8 +109,9 @@ export default function Index({ moveOuts, search }: Props) {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="min-w-[150px]">Tenant Name</TableHead>
+
                                             <TableHead className="min-w-[120px]">Unit Name</TableHead>
+                                            <TableHead className="min-w-[150px]">Tenant Name</TableHead>
                                             <TableHead className="min-w-[120px]">Move Out Date</TableHead>
                                             <TableHead className="min-w-[120px]">Lease Status</TableHead>
                                             <TableHead className="min-w-[150px]">Lease Ending on Buildium</TableHead>
@@ -130,8 +131,8 @@ export default function Index({ moveOuts, search }: Props) {
                                     <TableBody>
                                         {moveOuts.data.map((moveOut) => (
                                             <TableRow key={moveOut.id} className="hover:bg-gray-50">
-                                                <TableCell className="font-medium">{moveOut.tenants_name}</TableCell>
                                                 <TableCell>{moveOut.units_name}</TableCell>
+                                                <TableCell className="font-medium">{moveOut.tenants_name}</TableCell>
                                                 <TableCell>{formatDate(moveOut.move_out_date)}</TableCell>
                                                 <TableCell>
                                                     {moveOut.lease_status ? (

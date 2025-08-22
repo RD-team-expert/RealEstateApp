@@ -40,7 +40,7 @@ const mainNavCategories: NavCategory[] = [
         icon: Building,
         items: [
             {
-                title: 'Properties',
+                title: 'properties Insurances',
                 href: '/properties-info',
                 icon: Building,
             },
@@ -82,7 +82,7 @@ const mainNavCategories: NavCategory[] = [
                 icon: ArrowRightLeft,
             },
             {
-                title: 'Vendor TaskTracker',
+                title: 'Tasks',
                 href: '/vendor-task-tracker',
                 icon: ClipboardList,
             },

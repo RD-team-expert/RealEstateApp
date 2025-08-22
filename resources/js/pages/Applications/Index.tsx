@@ -180,9 +180,10 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                         <TableRow>
                                             <TableHead>City</TableHead>
                                             <TableHead>Property</TableHead>
+                                            <TableHead>Unit</TableHead>
                                             <TableHead>Name</TableHead>
                                             <TableHead>Co-signer</TableHead>
-                                            <TableHead>Unit</TableHead>
+
                                             <TableHead>Status</TableHead>
                                             <TableHead>Date</TableHead>
                                             <TableHead>Stage</TableHead>
@@ -196,9 +197,10 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                             <TableRow key={application.id} className="hover:bg-gray-50">
                                                 <TableCell className="font-medium">{application.city}</TableCell>
                                                 <TableCell className="font-medium">{application.property}</TableCell>
+                                                <TableCell>{application.unit}</TableCell>
                                                 <TableCell>{application.name}</TableCell>
                                                 <TableCell>{application.co_signer}</TableCell>
-                                                <TableCell>{application.unit}</TableCell>
+
                                                 <TableCell>
                                                     {getStatusBadge(application.status)}
                                                 </TableCell>

@@ -186,12 +186,19 @@ export default function Create({ auth, cities }: CreatePageProps) {
                                     {/* Lease Status */}
                                     <div>
                                         <Label htmlFor="lease_status">Lease Status</Label>
-                                        <Input
-                                            id="lease_status"
+                                        <Select
+                                            onValueChange={(value) => setData('lease_status', value)}
                                             value={data.lease_status}
-                                            onChange={(e) => setData('lease_status', e.target.value)}
-                                            error={errors.lease_status}
-                                        />
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select lease status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Fixed">Fixed</SelectItem>
+                                                <SelectItem value="Fixed with roll over">Fixed with roll over</SelectItem>
+                                                <SelectItem value="At will">At will</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                         {errors.lease_status && <p className="mt-1 text-sm text-red-600">{errors.lease_status}</p>}
                                     </div>
 

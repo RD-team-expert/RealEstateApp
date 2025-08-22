@@ -97,7 +97,7 @@ const Index = ({ records, search }: Props) => {
                                             <TableHead>Evictions</TableHead>
                                             <TableHead>Sent to Attorney</TableHead>
                                             <TableHead>Hearing Dates</TableHead>
-                                            <TableHead>Evected/Payment Plan</TableHead>
+                                            <TableHead>Evicted/Payment Plan</TableHead>
                                             <TableHead>If Left?</TableHead>
                                             <TableHead>Writ Date</TableHead>
                                             <TableHead>Actions</TableHead>

@@ -91,9 +91,9 @@ export default function Index({ moveIns, search }: Props) {
                                             <TableHead>Lease Signing Date</TableHead>
                                             <TableHead>Move-In Date</TableHead>
                                             <TableHead>Paid Security & First Month</TableHead>
-                                            <TableHead>Scheduled Paid time</TableHead>
+                                            <TableHead>Scheduled Payment Date</TableHead>
                                             <TableHead>Handled Keys</TableHead>
-                                            <TableHead>Move in form sent date</TableHead>
+                                            <TableHead>Move in form sent On</TableHead>
                                             <TableHead>Filled Move-In Form</TableHead>
                                             <TableHead>Date of move in form filled in</TableHead>
                                             <TableHead>Submitted Insurance</TableHead>
