@@ -40,4 +40,57 @@ class Payment extends Model
             }
         });
     }
+
+    /**
+     * Calculate status based on left_to_pay and owes values
+     */
+    public function calculateStatus(): string
+    {
+        $leftToPay = (float) $this->left_to_pay;
+        $owes = (float) $this->owes;
+
+        if ($leftToPay == 0) {
+            return 'Paid';
+        } elseif ($leftToPay == $owes) {
+            return 'Didn\'t Pay';
+        } elseif ($leftToPay > 0 && $leftToPay < $owes) {
+            return 'Paid Partly';
+        }
+
+        // Default fallback
+        return 'Didn\'t Pay';
+    }
+
+    /**
+     * Update status based on current left_to_pay value
+     */
+    public function updateStatus(): void
+    {
+        $this->status = $this->calculateStatus();
+        $this->save();
+    }
+
+    /**
+     * Get formatted owes amount
+     */
+    public function getFormattedOwesAttribute(): string
+    {
+        return '$' . number_format((float) ($this->owes ?? 0), 2);
+    }
+
+    /**
+     * Get formatted paid amount
+     */
+    public function getFormattedPaidAttribute(): string
+    {
+        return '$' . number_format((float) ($this->paid ?? 0), 2);
+    }
+
+    /**
+     * Get formatted left_to_pay amount
+     */
+    public function getFormattedLeftToPayAttribute(): string
+    {
+        return '$' . number_format((float) ($this->left_to_pay ?? 0), 2);
+    }
 }

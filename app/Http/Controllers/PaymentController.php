@@ -21,6 +21,9 @@ class PaymentController extends Controller
     {
         $search = $request->get('search');
 
+        // Update all payment statuses before displaying
+        $this->paymentService->updateAllStatuses();
+        
         $payments = $search
             ? $this->paymentService->searchPayments($search)
             : $this->paymentService->getAllPayments();

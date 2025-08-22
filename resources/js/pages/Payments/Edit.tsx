@@ -133,7 +133,7 @@ export default function Edit({ payment, units, cities, unitsByCity }: Props) {
                                         )}
                                     </div>
 
-                                    <div>
+                                    {/* <div>
                                         <Label htmlFor="status">Status</Label>
                                         <Select
                                             onValueChange={(value) => setData('status', value)}
@@ -150,6 +150,24 @@ export default function Edit({ payment, units, cities, unitsByCity }: Props) {
                                         </Select>
                                         {errors.status && (
                                             <p className="text-red-600 text-sm mt-1">{errors.status}</p>
+                                        )}
+                                    </div> */}
+                                    <div>
+                                        <Label htmlFor="permanent">Permanent *</Label>
+                                        <Select
+                                            onValueChange={(value) => setData('permanent', value)}
+                                            value={data.permanent || undefined}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select permanent status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Yes">Yes</SelectItem>
+                                                <SelectItem value="No">No</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.permanent && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.permanent}</p>
                                         )}
                                     </div>
                                 </div>
@@ -204,24 +222,7 @@ export default function Edit({ payment, units, cities, unitsByCity }: Props) {
                                         )}
                                     </div>
 
-                                    <div>
-                                        <Label htmlFor="permanent">Permanent *</Label>
-                                        <Select
-                                            onValueChange={(value) => setData('permanent', value)}
-                                            value={data.permanent || undefined}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select permanent status" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Yes">Yes</SelectItem>
-                                                <SelectItem value="No">No</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {errors.permanent && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.permanent}</p>
-                                        )}
-                                    </div>
+                                    
                                 </div>
 
                                 {/* --- Notes --- */}

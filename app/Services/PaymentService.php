@@ -30,21 +30,13 @@ class PaymentService
 
     public function createPayment(array $data): Payment
     {
-        // Calculate left_to_pay if paid is provided
-        if (isset($data['paid']) && $data['paid'] !== null) {
-            $data['left_to_pay'] = $data['owes'] - $data['paid'];
-        }
-
+        // The model's boot method will automatically calculate left_to_pay and status
         return Payment::create($data);
     }
 
     public function updatePayment(Payment $payment, array $data): bool
     {
-        // Calculate left_to_pay if paid is provided
-        if (isset($data['paid']) && $data['paid'] !== null) {
-            $data['left_to_pay'] = $data['owes'] - $data['paid'];
-        }
-
+        // The model's boot method will automatically recalculate left_to_pay and status
         return $payment->update($data);
     }
 
@@ -66,6 +58,42 @@ class PaymentService
             'cities' => $cities,
             'unitsByCity' => $unitsByCity,
             'units' => $units
+        ];
+    }
+
+    /**
+     * Update all payment statuses based on current left_to_pay values
+     */
+    public function updateAllStatuses(): void
+    {
+        $payments = Payment::all();
+        
+        foreach ($payments as $payment) {
+            $newStatus = $payment->calculateStatus();
+            
+            // Only update if status has changed to avoid unnecessary database writes
+            if ($payment->status !== $newStatus) {
+                $payment->status = $newStatus;
+                $payment->save();
+            }
+        }
+    }
+
+    /**
+     * Get payment statistics
+     */
+    public function getStatistics(): array
+    {
+        $total = Payment::count();
+        $paid = Payment::where('status', 'Paid')->count();
+        $didntPay = Payment::where('status', 'Didn\'t Pay')->count();
+        $paidPartly = Payment::where('status', 'Paid Partly')->count();
+
+        return [
+            'total' => $total,
+            'paid' => $paid,
+            'didnt_pay' => $didntPay,
+            'paid_partly' => $paidPartly,
         ];
     }
 }

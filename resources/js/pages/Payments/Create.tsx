@@ -148,7 +148,7 @@ export default function Create({ units, cities, unitsByCity }: Props) {
                                         />
                                         {errors.paid && <p className="text-red-600 text-sm mt-1">{errors.paid}</p>}
                                     </div>
-                                    <div>
+                                    {/* <div>
                                         <Label htmlFor="status">Status</Label>
                                         <Select
                                             onValueChange={(value) => setData('status', value)}
@@ -164,33 +164,7 @@ export default function Create({ units, cities, unitsByCity }: Props) {
                                             </SelectContent>
                                         </Select>
                                         {errors.status && <p className="text-red-600 text-sm mt-1">{errors.status}</p>}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <Label htmlFor="notes">Notes</Label>
-                                    <textarea
-                                        id="notes"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        value={data.notes}
-                                        onChange={(e) => setData('notes', e.target.value)}
-                                        rows={3}
-                                        placeholder="Enter any additional notes..."
-                                    />
-                                    {errors.notes && <p className="text-red-600 text-sm mt-1">{errors.notes}</p>}
-                                </div>
-
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="reversed_payments">Reversed Payments?</Label>
-                                        <Input
-                                            id="reversed_payments"
-                                            value={data.reversed_payments}
-                                            onChange={(e) => setData('reversed_payments', e.target.value)}
-                                            error={errors.reversed_payments}
-                                        />
-                                        {errors.reversed_payments && <p className="text-red-600 text-sm mt-1">{errors.reversed_payments}</p>}
-                                    </div>
+                                    </div> */}
                                     <div>
                                         <Label htmlFor="permanent">Permanent *</Label>
                                         <Select
@@ -207,6 +181,34 @@ export default function Create({ units, cities, unitsByCity }: Props) {
                                         </Select>
                                         {errors.permanent && <p className="text-red-600 text-sm mt-1">{errors.permanent}</p>}
                                     </div>
+                                </div>
+
+                                
+
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="reversed_payments">Reversed Payments?</Label>
+                                        <Input
+                                            id="reversed_payments"
+                                            value={data.reversed_payments}
+                                            onChange={(e) => setData('reversed_payments', e.target.value)}
+                                            error={errors.reversed_payments}
+                                        />
+                                        {errors.reversed_payments && <p className="text-red-600 text-sm mt-1">{errors.reversed_payments}</p>}
+                                    </div>
+                                    
+                                </div>
+                                <div>
+                                    <Label htmlFor="notes">Notes</Label>
+                                    <textarea
+                                        id="notes"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        value={data.notes}
+                                        onChange={(e) => setData('notes', e.target.value)}
+                                        rows={3}
+                                        placeholder="Enter any additional notes..."
+                                    />
+                                    {errors.notes && <p className="text-red-600 text-sm mt-1">{errors.notes}</p>}
                                 </div>
 
                                 <div className="flex justify-end gap-2">

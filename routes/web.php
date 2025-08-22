@@ -17,7 +17,7 @@ use App\Http\Controllers\CityController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    return redirect()-> Route('login');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
