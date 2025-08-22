@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('policy_number');
             $table->date('effective_date');
             $table->date('expiration_date');
-            $table->integer('days_left')->nullable();
+            $table->enum('status', ['Active', 'Expired'])->default('Active');
             $table->timestamps();
         });
     }

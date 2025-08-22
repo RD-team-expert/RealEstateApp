@@ -23,6 +23,9 @@ class PropertyInfoController extends Controller
         $perPage = $request->get('per_page', 15);
         $filters = $request->only(['property_name', 'insurance_company_name', 'policy_number', 'status']);
 
+        // Update all property statuses before displaying
+        $this->propertyInfoService->updateAllStatuses();
+
         $properties = $this->propertyInfoService->getAllPaginated($perPage, $filters);
         $statistics = $this->propertyInfoService->getStatistics();
 
@@ -101,28 +104,23 @@ class PropertyInfoController extends Controller
 
     public function dashboard(): Response
     {
+        // Update all statuses before showing dashboard
+        $this->propertyInfoService->updateAllStatuses();
+        
         $statistics = $this->propertyInfoService->getStatistics();
-        $expiringSoon = $this->propertyInfoService->getExpiringSoon(30);
         $expired = $this->propertyInfoService->getExpired();
 
         return Inertia::render('Properties/Dashboard', [
             'statistics' => $statistics,
-            'expiringSoon' => $expiringSoon,
             'expired' => $expired,
-        ]);
-    }
-
-    public function expiringSoon(): Response
-    {
-        $properties = $this->propertyInfoService->getExpiringSoon();
-
-        return Inertia::render('Properties/ExpiringSoon', [
-            'properties' => $properties,
         ]);
     }
 
     public function expired(): Response
     {
+        // Update all statuses before showing expired properties
+        $this->propertyInfoService->updateAllStatuses();
+        
         $properties = $this->propertyInfoService->getExpired();
 
         return Inertia::render('Properties/Expired', [

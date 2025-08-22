@@ -8,10 +8,10 @@ export interface Property {
     policy_number: string;
     effective_date: string;
     expiration_date: string;
-    days_left: number;
+    status: 'Active' | 'Expired';
     formatted_amount: string;
     is_expired: boolean;
-    is_expiring_soon: boolean;
+    is_active: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -29,13 +29,12 @@ export interface PropertyFilters {
     property_name?: string;
     insurance_company_name?: string;
     policy_number?: string;
-    status?: 'active' | 'expiring_soon' | 'expired';
+    status?: 'Active' | 'Expired';
 }
 
 export interface PropertyStatistics {
     total: number;
     active: number;
-    expiring_soon: number;
     expired: number;
 }
 

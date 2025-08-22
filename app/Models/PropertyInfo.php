@@ -12,7 +12,7 @@ class PropertyInfo extends Model
     use HasFactory;
 
     protected $table = 'properties_info';
-
+    protected $appends = ['formatted_amount'];
     protected $fillable = [
         'property_name',
         'insurance_company_name',
@@ -20,7 +20,7 @@ class PropertyInfo extends Model
         'policy_number',
         'effective_date',
         'expiration_date',
-        'days_left'
+        'status'
     ];
 
     protected $casts = [
@@ -29,36 +29,35 @@ class PropertyInfo extends Model
         'amount' => 'decimal:2'
     ];
 
-    // Auto-calculate days_left when saving
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::saving(function ($propertyInfo) {
-            if ($propertyInfo->expiration_date) {
-                $propertyInfo->days_left = Carbon::now()->diffInDays(
-                    Carbon::parse($propertyInfo->expiration_date),
-                    false
-                );
-            }
-        });
-    }
-
     // Accessor for formatted amount
     public function getFormattedAmountAttribute(): string
-    {
-        return '$' . number_format((float) ($this->amount ?? 0), 2);
+{
+    if (is_null($this->amount)) {
+        return '$0.00';
     }
+    return '$' . number_format((float) $this->amount, 2);
+}
 
-    // Check if policy is expired
+    // Check if policy is expired based on expiration date
     public function getIsExpiredAttribute(): bool
     {
-        return $this->days_left < 0;
+        return Carbon::now()->gt(Carbon::parse($this->expiration_date));
     }
 
-    // Check if policy is expiring soon (within 30 days)
-    public function getIsExpiringSoonAttribute(): bool
+    // Get days left until expiration (for potential future use)
+    public function getDaysLeftAttribute(): int
     {
-        return $this->days_left >= 0 && $this->days_left <= 30;
+        return Carbon::now()->diffInDays(
+            Carbon::parse($this->expiration_date),
+            false
+        );
     }
+
+    // Update status based on expiration date
+    public function updateStatus(): void
+    {
+        $this->status = $this->is_expired ? 'Expired' : 'Active';
+        $this->save();
+    }
+
 }

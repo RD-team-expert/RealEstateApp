@@ -45,13 +45,18 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
     };
 
     const getStatusBadge = (property: Property) => {
-        if (property.is_expired) {
+        if (property.status === 'Expired') {
             return <Badge variant="destructive">Expired</Badge>;
         }
-        if (property.is_expiring_soon) {
-            return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Expiring Soon</Badge>;
-        }
         return <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>;
+    };
+
+    const calculateDaysLeft = (expirationDate: string): number => {
+        const today = new Date();
+        const expDate = new Date(expirationDate);
+        const diffTime = expDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
     };
 
     return (
@@ -73,7 +78,7 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
                     )}
 
                     {/* Statistics Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <Card>
                             <CardContent className="p-6">
                                 <h3 className="text-lg font-semibold text-gray-900">Total Properties</h3>
@@ -84,12 +89,6 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
                             <CardContent className="p-6">
                                 <h3 className="text-lg font-semibold text-gray-900">Active</h3>
                                 <p className="text-3xl font-bold text-green-600">{statistics.active}</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">Expiring Soon</h3>
-                                <p className="text-3xl font-bold text-yellow-600">{statistics.expiring_soon}</p>
                             </CardContent>
                         </Card>
                         <Card>
@@ -138,9 +137,8 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
                                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <option value="">All Status</option>
-                                    <option value="active">Active</option>
-                                    <option value="expiring_soon">Expiring Soon</option>
-                                    <option value="expired">Expired</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Expired">Expired</option>
                                 </select>
                             </div>
                         </CardHeader>
@@ -153,6 +151,7 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
                                             <TableHead>Property Name</TableHead>
                                             <TableHead>Insurance Company</TableHead>
                                             <TableHead>Amount</TableHead>
+                                            <TableHead>Effective Date</TableHead>
                                             <TableHead>Policy Number</TableHead>
                                             <TableHead>Expiration Date</TableHead>
                                             <TableHead>Days Left</TableHead>
@@ -166,11 +165,12 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
                                                 <TableCell className="font-medium">{property.property_name}</TableCell>
                                                 <TableCell>{property.insurance_company_name}</TableCell>
                                                 <TableCell>{property.formatted_amount}</TableCell>
+                                                <TableCell>{new Date(property.effective_date).toLocaleDateString()}</TableCell>
                                                 <TableCell>{property.policy_number}</TableCell>
                                                 <TableCell>
                                                     {new Date(property.expiration_date).toLocaleDateString()}
                                                 </TableCell>
-                                                <TableCell>{property.days_left}</TableCell>
+                                                <TableCell>{calculateDaysLeft(property.expiration_date)}</TableCell>
                                                 <TableCell>
                                                     {getStatusBadge(property)}
                                                 </TableCell>

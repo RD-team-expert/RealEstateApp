@@ -6,6 +6,7 @@ namespace App\Services;
 use App\Models\PropertyInfo;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Carbon\Carbon;
 
 class PropertyInfoService
 {
@@ -27,17 +28,7 @@ class PropertyInfoService
         }
 
         if (!empty($filters['status'])) {
-            switch ($filters['status']) {
-                case 'expired':
-                    $query->where('days_left', '<', 0);
-                    break;
-                case 'expiring_soon':
-                    $query->whereBetween('days_left', [0, 30]);
-                    break;
-                case 'active':
-                    $query->where('days_left', '>', 30);
-                    break;
-            }
+            $query->where('status', $filters['status']);
         }
 
         return $query->orderBy('expiration_date', 'asc')->paginate($perPage);
@@ -45,7 +36,10 @@ class PropertyInfoService
 
     public function create(array $data): PropertyInfo
     {
-        return PropertyInfo::create($data);
+        $property = PropertyInfo::create($data);
+        // Set initial status based on expiration date
+        $property->updateStatus();
+        return $property;
     }
 
     public function findById(int $id): PropertyInfo
@@ -56,6 +50,8 @@ class PropertyInfoService
     public function update(PropertyInfo $propertyInfo, array $data): PropertyInfo
     {
         $propertyInfo->update($data);
+        // Update status after updating the property
+        $propertyInfo->updateStatus();
         return $propertyInfo->fresh();
     }
 
@@ -64,32 +60,38 @@ class PropertyInfoService
         return $propertyInfo->delete();
     }
 
-    public function getExpiringSoon(int $days = 30): Collection
-    {
-        return PropertyInfo::whereBetween('days_left', [0, $days])
-            ->orderBy('days_left', 'asc')
-            ->get();
-    }
-
     public function getExpired(): Collection
     {
-        return PropertyInfo::where('days_left', '<', 0)
-            ->orderBy('days_left', 'asc')
+        return PropertyInfo::where('status', 'Expired')
+            ->orderBy('expiration_date', 'asc')
             ->get();
     }
 
     public function getStatistics(): array
     {
         $total = PropertyInfo::count();
-        $expired = PropertyInfo::where('days_left', '<', 0)->count();
-        $expiringSoon = PropertyInfo::whereBetween('days_left', [0, 30])->count();
-        $active = PropertyInfo::where('days_left', '>', 30)->count();
+        $expired = PropertyInfo::where('status', 'Expired')->count();
+        $active = PropertyInfo::where('status', 'Active')->count();
 
         return [
             'total' => $total,
             'expired' => $expired,
-            'expiring_soon' => $expiringSoon,
             'active' => $active,
         ];
+    }
+
+    public function updateAllStatuses(): void
+    {
+        $properties = PropertyInfo::all();
+        
+        foreach ($properties as $property) {
+            $newStatus = Carbon::now()->gt(Carbon::parse($property->expiration_date)) ? 'Expired' : 'Active';
+            
+            // Only update if status has changed to avoid unnecessary database writes
+            if ($property->status !== $newStatus) {
+                $property->status = $newStatus;
+                $property->save();
+            }
+        }
     }
 }

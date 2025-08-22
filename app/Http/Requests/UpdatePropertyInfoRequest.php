@@ -15,6 +15,8 @@ class UpdatePropertyInfoRequest extends FormRequest
 
     public function rules(): array
     {
+        $propertyId = $this->route('properties_info') ?? $this->route('id');
+        
         return [
             'property_name' => 'required|string|max:255',
             'insurance_company_name' => 'required|string|max:255',
@@ -23,7 +25,6 @@ class UpdatePropertyInfoRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('properties_info', 'policy_number')->ignore($this->route('property_info'))
             ],
             'effective_date' => 'required|date|before_or_equal:expiration_date',
             'expiration_date' => 'required|date|after:effective_date',
