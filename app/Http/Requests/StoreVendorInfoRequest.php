@@ -21,6 +21,8 @@ class StoreVendorInfoRequest extends FormRequest
                 Rule::exists('cities', 'city')],
             'vendor_name' => 'required|string|max:255',
             'number' => 'nullable|string|max:255',
+            'service_type' => ['nullable', Rule::in(['Maintenance', 'Appliances', 'Pest control', 'HVAC Repairs',
+                                                                'Plumping','Landscaping','Lock Smith','Garage door'])],
             'email' => 'nullable|email|max:255',
         ];
     }

@@ -6,6 +6,7 @@ export interface VendorInfo {
     vendor_name: string; // Not nullable
     number: string | null;
     email: string | null;
+    service_type: string | null;
     display_name: string;
     created_at: string;
     updated_at: string;
@@ -16,6 +17,7 @@ export interface VendorFormData {
     vendor_name: string;
     number: string;
     email: string;
+    service_type: string;
 }
 
 export interface VendorFilters {

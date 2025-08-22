@@ -119,6 +119,30 @@ export default function Edit({ auth, vendor, cities }: EditPageProps) {
                                             <p className="text-red-600 text-sm mt-1">{errors.email}</p>
                                         )}
                                     </div>
+                                    <div>
+                                        <Label htmlFor="service_type">Service Type</Label>
+                                        <Select
+                                            onValueChange={(value) => setData('service_type', value)}
+                                            value={data.service_type}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select service type" />
+                                            </SelectTrigger>
+                                            <SelectContent >
+                                                <SelectItem value="Maintenance">Maintenance</SelectItem>
+                                                <SelectItem value="Appliances">Appliances</SelectItem>
+                                                <SelectItem value="Pest control">Pest control</SelectItem>
+                                                <SelectItem value="HVAC Repairs">HVAC Repairs</SelectItem>
+                                                <SelectItem value="Plumping">Plumping</SelectItem>
+                                                <SelectItem value="Landscaping">Landscaping</SelectItem>
+                                                <SelectItem value="Lock Smith">Lock Smith</SelectItem>
+                                                <SelectItem value="Garage door">Garage door</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.service_type && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.service_type}</p>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="flex justify-end gap-2">
                                     <Link href={route('vendors.index')}>

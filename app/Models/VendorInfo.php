@@ -16,7 +16,8 @@ class VendorInfo extends Model
         'city',
         'vendor_name',
         'number',
-        'email'
+        'email',
+        'service_type'
     ];
 
     // Scope for filtering by city

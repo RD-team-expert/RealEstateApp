@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('vendor_name'); // Not nullable
             $table->string('number')->nullable();
             $table->string('email')->nullable();
+            $table->string('service_type')->nullable();
             $table->timestamps();
         });
     }

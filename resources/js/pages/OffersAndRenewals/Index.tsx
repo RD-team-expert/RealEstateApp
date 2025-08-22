@@ -162,7 +162,7 @@ const Index = ({ offers, search }: Props) => {
                                                         {offer.notes || 'N/A'}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>{offer.how_many_days_left || 'N/A'}</TableCell>
+                                                <TableCell>{offer.how_many_days_left || '0'}</TableCell>
                                                 <TableCell>
                                                     {getYesNoBadge(offer.expired)}
                                                 </TableCell>

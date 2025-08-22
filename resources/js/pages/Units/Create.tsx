@@ -196,7 +196,7 @@ export default function Create({ auth, cities }: CreatePageProps) {
                                             <SelectContent>
                                                 <SelectItem value="Fixed">Fixed</SelectItem>
                                                 <SelectItem value="Fixed with roll over">Fixed with roll over</SelectItem>
-                                                <SelectItem value="At will">At will</SelectItem>
+                                                <SelectItem value="At will">At will</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         {errors.lease_status && <p className="mt-1 text-sm text-red-600">{errors.lease_status}</p>}

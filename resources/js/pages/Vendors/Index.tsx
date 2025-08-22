@@ -156,6 +156,7 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                             <TableHead>Vendor Name</TableHead>
                                             <TableHead>Number</TableHead>
                                             <TableHead>Email</TableHead>
+                                            <TableHead>Service Type</TableHead>
                                             <TableHead>Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -170,6 +171,7 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                                         ? <a href={`mailto:${vendor.email}`} className="text-blue-600 hover:text-blue-900">{vendor.email}</a>
                                                         : '-'}
                                                 </TableCell>
+                                                <TableCell>{vendor.service_type}</TableCell>
                                                 <TableCell>
                                                     <div className="flex gap-1">
                                                         <Link href={route('vendors.show', vendor.id)}>
