@@ -12,12 +12,14 @@ return new class extends Migration
             $table->string('unit');
             $table->string('tenant');
             $table->date('date_sent_offer');
+            $table->date('date_offer_expires')->nullable();
             $table->string('status')->nullable();
             $table->date('date_of_acceptance')->nullable();
             $table->date('last_notice_sent')->nullable();
             $table->string('notice_kind')->nullable();
             $table->string('lease_sent')->nullable();
             $table->date('date_sent_lease')->nullable();
+            $table->date('date_lease_expires')->nullable();
             $table->string('lease_signed')->nullable();
             $table->date('date_signed')->nullable();
             $table->date('last_notice_sent_2')->nullable();
