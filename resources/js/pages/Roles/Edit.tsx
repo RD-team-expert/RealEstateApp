@@ -1,7 +1,14 @@
 import React from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/app-layout';
+import AppLayout from '@/Layouts/app-layout';
 import SittingsLayout from '@/Layouts/settings/layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 interface Permission {
     id: number;
@@ -97,63 +104,66 @@ export default function EditRole({ role, permissions, rolePermissions }: Props) 
         put(route('roles.update', role.id));
     };
 
-    return (
-        <AuthenticatedLayout
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Edit Role</h2>}
-        >
-            <SittingsLayout>
-            <Head title="Edit Role" />
+    const isSuperAdmin = role.name === 'Super-Admin';
 
-            <div className="py-12">
-                <div className="max-w-6xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6">
-                            {/* Super Admin Warning */}
-                            {role.name === 'Super-Admin' && (
-                                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                    <div className="flex items-start">
-                                        <div className="flex-shrink-0">
-                                            <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                            </svg>
-                                        </div>
-                                        <div className="ml-3">
-                                            <h3 className="text-sm font-medium text-yellow-800">
-                                                Protected Role
-                                            </h3>
-                                            <div className="mt-2 text-sm text-yellow-700">
-                                                <p>
-                                                    The Super-Admin role is protected and cannot be modified. It automatically has all permissions.
-                                                </p>
-                                            </div>
+    return (
+        <AppLayout>
+            <SittingsLayout>
+                <Head title={`Edit Role - ${role.name}`} />
+                <div className="py-12">
+                    <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-2xl">
+                                        Edit Role - {role.name}
+                                    </CardTitle>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex justify-between items-center gap-2">
+                                            <Link href={route('roles.index')}>
+                                                <Button variant="outline">Back to List</Button>
+                                            </Link>
+                                            <Link href={route('users.index')}>
+                                                <Button variant="outline">View Users</Button>
+                                            </Link>
                                         </div>
                                     </div>
                                 </div>
-                            )}
+                            </CardHeader>
+                            <CardContent>
+                                {/* Super Admin Warning */}
+                                {isSuperAdmin && (
+                                    <Alert className="mb-6 border-yellow-200 bg-yellow-50">
+                                        <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                                        <AlertDescription className="text-yellow-800">
+                                            <strong>Protected Role:</strong> The Super-Admin role is protected and cannot be modified. It automatically has all permissions.
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
 
-                            <form onSubmit={handleSubmit}>
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Role Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Enter role name"
-                                        required
-                                        disabled={role.name === 'Super-Admin'}
-                                    />
-                                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                                </div>
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    {/* --- Basic Information --- */}
+                                    <div className="grid gap-4">
+                                        {/* Role Name */}
+                                        <div>
+                                            <Label htmlFor="name">Role Name *</Label>
+                                            <Input
+                                                id="name"
+                                                value={data.name}
+                                                onChange={(e) => setData('name', e.target.value)}
+                                                placeholder="Enter role name"
+                                                error={errors.name}
+                                                required
+                                                disabled={isSuperAdmin}
+                                            />
+                                            {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+                                        </div>
+                                    </div>
 
-                                <div className="mb-6">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Permissions by Resource
-                                    </label>
-                                    <div className="mt-2 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
+                                    {/* --- Permission Statistics --- */}
+                                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                        <h4 className="text-sm font-medium text-gray-900 mb-3">Permission Overview:</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                             <div>
                                                 <span className="font-medium text-gray-700">Current Permissions:</span>
                                                 <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
@@ -169,73 +179,107 @@ export default function EditRole({ role, permissions, rolePermissions }: Props) 
                                         </div>
                                     </div>
 
-                                    <div className="max-h-96 overflow-y-auto border border-gray-200 p-4 rounded space-y-6 mt-4">
-                                        {Object.entries(groupedPermissions).map(([resource, resourcePermissions]) => (
-                                            <div key={resource} className="space-y-3">
-                                                <h4 className="font-semibold text-gray-900 capitalize border-b border-gray-200 pb-2 flex items-center justify-between">
-                                                    <span>{resource.replace('-', ' ')}</span>
-                                                    <span className="text-xs font-normal text-gray-500">
-                                                        {resourcePermissions.filter(p => data.permissions.includes(p.name)).length}/{resourcePermissions.length} selected
-                                                    </span>
-                                                </h4>
-                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 ml-4">
-                                                    {resourcePermissions.map(permission => {
-                                                        const action = permission.name.split('.')[1];
-                                                        // Skip store and update as they're paired with create and edit
-                                                        if (action === 'store' || action === 'update') return null;
+                                    {/* --- Permission Assignment --- */}
+                                    <div className="space-y-4">
+                                        <Label>Select Permissions by Resource</Label>
+                                        <div className="max-h-96 overflow-y-auto border border-gray-200 p-4 rounded space-y-6">
+                                            {Object.entries(groupedPermissions).map(([resource, resourcePermissions]) => (
+                                                <div key={resource} className="space-y-3">
+                                                    <h4 className="font-semibold text-gray-900 capitalize border-b border-gray-200 pb-2 flex items-center justify-between">
+                                                        <span>{resource.replace('-', ' ')}</span>
+                                                        <span className="text-xs font-normal text-gray-500">
+                                                            {resourcePermissions.filter(p => data.permissions.includes(p.name)).length}/{resourcePermissions.length} selected
+                                                        </span>
+                                                    </h4>
+                                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 ml-4">
+                                                        {resourcePermissions.map(permission => {
+                                                            const action = permission.name.split('.')[1];
+                                                            // Skip store and update as they're paired with create and edit
+                                                            if (action === 'store' || action === 'update') return null;
 
-                                                        return (
-                                                            <label key={permission.id} className="flex items-center space-x-2">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={isPermissionSelected(permission.name)}
-                                                                    onChange={(e) =>
-                                                                        handleSmartPermissionChange(resource, action, e.target.checked)
-                                                                    }
-                                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                                    disabled={role.name === 'Super-Admin'}
-                                                                />
-                                                                <span className="text-sm font-medium">
-                                                                    {getActionDisplayName(action)}
-                                                                </span>
-                                                            </label>
-                                                        );
-                                                    })}
+                                                            return (
+                                                                <div key={permission.id} className="flex items-center space-x-2">
+                                                                    <Checkbox
+                                                                        id={`permission-${permission.id}`}
+                                                                        checked={isPermissionSelected(permission.name)}
+                                                                        onCheckedChange={(checked) =>
+                                                                            handleSmartPermissionChange(resource, action, checked as boolean)
+                                                                        }
+                                                                        disabled={isSuperAdmin}
+                                                                    />
+                                                                    <label
+                                                                        htmlFor={`permission-${permission.id}`}
+                                                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                                    >
+                                                                        {getActionDisplayName(action)}
+                                                                    </label>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
+                                        {errors.permissions && <p className="mt-1 text-sm text-red-600">{errors.permissions}</p>}
                                     </div>
-                                    {errors.permissions && <p className="text-red-500 text-sm mt-1">{errors.permissions}</p>}
 
-                                    {/* Permission Info */}
-                                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    {/* Information note */}
+                                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                                         <p className="text-sm text-blue-800">
                                             <strong>Smart Permissions:</strong> When you select "Create" or "Edit", both form access and action permissions are automatically included (e.g., selecting "Create" adds both "create" and "store" permissions).
                                         </p>
                                     </div>
-                                </div>
 
-                                <div className="flex justify-end space-x-3">
-                                    <Link
-                                        href={route('roles.index')}
-                                        className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                                    >
-                                        Cancel
-                                    </Link>
-                                    <button
-                                        type="submit"
-                                        disabled={processing || role.name === 'Super-Admin'}
-                                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-                                    >
-                                        {processing ? 'Updating...' : 'Update Role'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                                    {/* Current role information display */}
+                                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                                        <h4 className="text-sm font-medium text-gray-900 mb-3">Current Role Information:</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span className="font-medium text-gray-700">Role ID:</span>
+                                                <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                    {role.id}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-gray-700">Role Type:</span>
+                                                <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${
+                                                    isSuperAdmin ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                                }`}>
+                                                    {isSuperAdmin ? 'Protected' : 'Editable'}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-gray-700">Original Permissions:</span>
+                                                <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                    {rolePermissions.length} permissions
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-gray-700">Status:</span>
+                                                <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                    Active
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* --- Action Buttons --- */}
+                                    <div className="flex justify-end gap-2">
+                                        <Link href={route('roles.index')}>
+                                            <Button type="button" variant="outline">
+                                                Cancel
+                                            </Button>
+                                        </Link>
+                                        <Button type="submit" disabled={processing || isSuperAdmin}>
+                                            {processing ? 'Updating...' : 'Update Role'}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </CardContent>
+                        </Card>
                     </div>
                 </div>
-            </div>
             </SittingsLayout>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

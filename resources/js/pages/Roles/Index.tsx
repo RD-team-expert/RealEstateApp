@@ -1,7 +1,18 @@
 import React from 'react';
-import { Head, Link, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/app-layout';
+import { Head, Link, useForm } from '@inertiajs/react';
+import AppLayout from '@/Layouts/app-layout';
 import SittingsLayout from '@/Layouts/settings/layout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Edit, Trash2, Plus, Eye, Shield } from 'lucide-react';
 
 interface Permission {
     id: number;
@@ -19,87 +30,123 @@ interface Props {
 }
 
 export default function RolesIndex({ roles }: Props) {
+    const { delete: destroy } = useForm();
+
     const handleDelete = (roleId: number, roleName: string) => {
         if (confirm(`Are you sure you want to delete the role "${roleName}"?`)) {
-            router.delete(route('roles.destroy', roleId));
+            destroy(route('roles.destroy', roleId));
         }
     };
 
     return (
-        <AuthenticatedLayout
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Roles</h2>}
-        >
+        <AppLayout>
             <SittingsLayout>
-            <Head title="Roles" />
-
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-medium">Manage Roles</h3>
-                                <Link
-                                    href={route('roles.create')}
-                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                                >
-                                    Create New Role
-                                </Link>
-                            </div>
-
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full table-auto border-collapse border border-gray-200">
-                                    <thead>
-                                        <tr className="bg-gray-50">
-                                            <th className="border border-gray-200 px-4 py-2 text-left">Role Name</th>
-                                            <th className="border border-gray-200 px-4 py-2 text-left">Permissions</th>
-                                            <th className="border border-gray-200 px-4 py-2 text-left">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {roles.map(role => (
-                                            <tr key={role.id}>
-                                                <td className="border border-gray-200 px-4 py-2 font-medium">
-                                                    {role.name}
-                                                </td>
-                                                <td className="border border-gray-200 px-4 py-2">
-                                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
-                                                        {role.permissions.length} permissions
-                                                    </span>
-                                                </td>
-                                                <td className="border border-gray-200 px-4 py-2">
-                                                    <div className="flex space-x-2">
-                                                        <Link
-                                                            href={route('roles.show', role.id)}
-                                                            className="text-green-600 hover:underline"
-                                                        >
-                                                            View
-                                                        </Link>
-                                                        <Link
-                                                            href={route('roles.edit', role.id)}
-                                                            className="text-blue-600 hover:underline"
-                                                        >
-                                                            Edit
-                                                        </Link>
-                                                        {role.name !== 'Super-Admin' && (
-                                                            <button
-                                                                onClick={() => handleDelete(role.id, role.name)}
-                                                                className="text-red-600 hover:underline"
-                                                            >
-                                                                Delete
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                <Head title="Roles" />
+                <div className="py-12">
+                    <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-2xl">Roles</CardTitle>
+                                    <div className="flex items-center gap-2">
+                                        <Link href={route('users.index')}>
+                                            <Button variant="outline">
+                                                View Users
+                                            </Button>
+                                        </Link>
+                                        <Link href={route('roles.create')}>
+                                            <Button>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Create Role
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>ID</TableHead>
+                                                <TableHead>Role Name</TableHead>
+                                                <TableHead>Permissions</TableHead>
+                                                <TableHead>Protected</TableHead>
+                                                <TableHead>Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {roles.map((role) => (
+                                                <TableRow key={role.id} className="hover:bg-gray-50">
+                                                    <TableCell className="font-medium">{role.id}</TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                            {role.name === 'Super-Admin' && (
+                                                                <Shield className="h-4 w-4 text-red-500" />
+                                                            )}
+                                                            <span className="font-medium">{role.name}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                            {role.permissions.length} permissions
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
+                                                            role.name === 'Super-Admin'
+                                                                ? 'bg-red-100 text-red-800'
+                                                                : 'bg-green-100 text-green-800'
+                                                        }`}>
+                                                            {role.name === 'Super-Admin' ? 'Protected' : 'Editable'}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex gap-2">
+                                                            <Link href={route('roles.show', role.id)}>
+                                                                <Button variant="outline" size="sm" title="View Role">
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                            </Link>
+                                                            <Link href={route('roles.edit', role.id)}>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    title="Edit Role"
+                                                                    disabled={role.name === 'Super-Admin'}
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            </Link>
+                                                            {role.name !== 'Super-Admin' && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => handleDelete(role.id, role.name)}
+                                                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                                    title="Delete Role"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                    {roles.length === 0 && (
+                                        <div className="text-center py-8 text-gray-500">
+                                            <p className="text-lg">No roles found.</p>
+                                            <p className="text-sm mt-2">Create your first role to get started.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
                 </div>
-            </div>
             </SittingsLayout>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

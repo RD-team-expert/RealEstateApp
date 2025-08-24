@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/app-layout';
+import AppLayout from '@/Layouts/app-layout';
 import SittingsLayout from '@/Layouts/settings/layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Permission {
     id: number;
@@ -13,7 +18,7 @@ interface Props {
 }
 
 export default function CreateRole({ permissions }: Props) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         permissions: [] as string[]
     });
@@ -87,106 +92,119 @@ export default function CreateRole({ permissions }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('roles.store'));
+        post(route('roles.store'), {
+            onSuccess: () => reset(),
+        });
     };
 
     return (
-        <AuthenticatedLayout
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Create Role</h2>}
-        >
+        <AppLayout>
             <SittingsLayout>
-            <Head title="Create Role" />
-
-            <div className="py-12">
-                <div className="max-w-6xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6">
-                            <form onSubmit={handleSubmit}>
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Role Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Enter role name"
-                                        required
-                                    />
-                                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                                </div>
-
-                                <div className="mb-6">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Permissions by Resource
-                                    </label>
-                                    <div className="max-h-96 overflow-y-auto border border-gray-200 p-4 rounded space-y-6">
-                                        {Object.entries(groupedPermissions).map(([resource, resourcePermissions]) => (
-                                            <div key={resource} className="space-y-3">
-                                                <h4 className="font-semibold text-gray-900 capitalize border-b border-gray-200 pb-2 flex items-center justify-between">
-                                                    <span>{resource.replace('-', ' ')}</span>
-                                                    <span className="text-xs font-normal text-gray-500">
-                                                        {resourcePermissions.filter(p => data.permissions.includes(p.name)).length}/{resourcePermissions.length} selected
-                                                    </span>
-                                                </h4>
-                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 ml-4">
-                                                    {resourcePermissions.map(permission => {
-                                                        const action = permission.name.split('.')[1];
-                                                        // Skip store and update as they're paired with create and edit
-                                                        if (action === 'store' || action === 'update') return null;
-
-                                                        return (
-                                                            <label key={permission.id} className="flex items-center space-x-2">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={isPermissionSelected(permission.name)}
-                                                                    onChange={(e) =>
-                                                                        handleSmartPermissionChange(resource, action, e.target.checked)
-                                                                    }
-                                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                                />
-                                                                <span className="text-sm font-medium">
-                                                                    {getActionDisplayName(action)}
-                                                                </span>
-                                                            </label>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        ))}
+                <Head title="Create Role" />
+                <div className="py-12">
+                    <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-2xl">Create New Role</CardTitle>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex justify-between items-center gap-2">
+                                            <Link href={route('roles.index')}>
+                                                <Button variant="outline">Back to List</Button>
+                                            </Link>
+                                            <Link href={route('users.index')}>
+                                                <Button variant="outline">View Users</Button>
+                                            </Link>
+                                        </div>
                                     </div>
-                                    {errors.permissions && <p className="text-red-500 text-sm mt-1">{errors.permissions}</p>}
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    {/* --- Basic Information --- */}
+                                    <div className="grid gap-4">
+                                        {/* Role Name */}
+                                        <div>
+                                            <Label htmlFor="name">Role Name *</Label>
+                                            <Input
+                                                id="name"
+                                                value={data.name}
+                                                onChange={(e) => setData('name', e.target.value)}
+                                                placeholder="Enter role name"
+                                                error={errors.name}
+                                                required
+                                            />
+                                            {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+                                        </div>
+                                    </div>
 
-                                    {/* Permission Info */}
-                                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    {/* --- Permission Assignment --- */}
+                                    <div className="space-y-4">
+                                        <Label>Select Permissions by Resource</Label>
+                                        <div className="max-h-96 overflow-y-auto border border-gray-200 p-4 rounded space-y-6">
+                                            {Object.entries(groupedPermissions).map(([resource, resourcePermissions]) => (
+                                                <div key={resource} className="space-y-3">
+                                                    <h4 className="font-semibold text-gray-900 capitalize border-b border-gray-200 pb-2 flex items-center justify-between">
+                                                        <span>{resource.replace('-', ' ')}</span>
+                                                        <span className="text-xs font-normal text-gray-500">
+                                                            {resourcePermissions.filter(p => data.permissions.includes(p.name)).length}/{resourcePermissions.length} selected
+                                                        </span>
+                                                    </h4>
+                                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 ml-4">
+                                                        {resourcePermissions.map(permission => {
+                                                            const action = permission.name.split('.')[1];
+                                                            // Skip store and update as they're paired with create and edit
+                                                            if (action === 'store' || action === 'update') return null;
+
+                                                            return (
+                                                                <div key={permission.id} className="flex items-center space-x-2">
+                                                                    <Checkbox
+                                                                        id={`permission-${permission.id}`}
+                                                                        checked={isPermissionSelected(permission.name)}
+                                                                        onCheckedChange={(checked) =>
+                                                                            handleSmartPermissionChange(resource, action, checked as boolean)
+                                                                        }
+                                                                    />
+                                                                    <label
+                                                                        htmlFor={`permission-${permission.id}`}
+                                                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                                    >
+                                                                        {getActionDisplayName(action)}
+                                                                    </label>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {errors.permissions && <p className="mt-1 text-sm text-red-600">{errors.permissions}</p>}
+                                    </div>
+
+                                    {/* Information note */}
+                                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                                         <p className="text-sm text-blue-800">
                                             <strong>Smart Permissions:</strong> When you select "Create" or "Edit", both form access and action permissions are automatically included (e.g., selecting "Create" adds both "create" and "store" permissions).
                                         </p>
                                     </div>
-                                </div>
 
-                                <div className="flex justify-end space-x-3">
-                                    <Link
-                                        href={route('roles.index')}
-                                        className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                                    >
-                                        Cancel
-                                    </Link>
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-                                    >
-                                        {processing ? 'Creating...' : 'Create Role'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                                    {/* --- Action Buttons --- */}
+                                    <div className="flex justify-end gap-2">
+                                        <Link href={route('roles.index')}>
+                                            <Button type="button" variant="outline">
+                                                Cancel
+                                            </Button>
+                                        </Link>
+                                        <Button type="submit" disabled={processing}>
+                                            {processing ? 'Creating...' : 'Create Role'}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </CardContent>
+                        </Card>
                     </div>
                 </div>
-            </div>
             </SittingsLayout>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }
