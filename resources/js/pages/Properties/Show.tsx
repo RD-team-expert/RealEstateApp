@@ -76,13 +76,13 @@ export default function Show({ auth, property }: Props) {
                                     <div>
                                         <p className="text-sm text-gray-600">Effective Date</p>
                                         <p className="font-medium">
-                                            {new Date(property.effective_date).toLocaleDateString()}
+                                            {property.effective_date}
                                         </p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Expiration Date</p>
                                         <p className="font-medium">
-                                            {new Date(property.expiration_date).toLocaleDateString()}
+                                            {property.expiration_date}
                                         </p>
                                     </div>
                                     <div>

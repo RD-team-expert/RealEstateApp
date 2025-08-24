@@ -23,6 +23,7 @@ export default function Create({ auth }: PageProps) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         post(route('properties-info.store'));
+
     };
 
     return (

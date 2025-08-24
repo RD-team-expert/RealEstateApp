@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePropertyInfoRequest;
 use App\Http\Requests\UpdatePropertyInfoRequest;
-use App\Models\PropertyInfo;
 use App\Services\PropertyInfoService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -106,7 +105,7 @@ class PropertyInfoController extends Controller
     {
         // Update all statuses before showing dashboard
         $this->propertyInfoService->updateAllStatuses();
-        
+
         $statistics = $this->propertyInfoService->getStatistics();
         $expired = $this->propertyInfoService->getExpired();
 
@@ -120,7 +119,7 @@ class PropertyInfoController extends Controller
     {
         // Update all statuses before showing expired properties
         $this->propertyInfoService->updateAllStatuses();
-        
+
         $properties = $this->propertyInfoService->getExpired();
 
         return Inertia::render('Properties/Expired', [

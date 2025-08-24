@@ -165,10 +165,10 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
                                                 <TableCell className="font-medium">{property.property_name}</TableCell>
                                                 <TableCell>{property.insurance_company_name}</TableCell>
                                                 <TableCell>{property.formatted_amount}</TableCell>
-                                                <TableCell>{new Date(property.effective_date).toLocaleDateString()}</TableCell>
+                                                <TableCell>{property.effective_date}</TableCell>
                                                 <TableCell>{property.policy_number}</TableCell>
                                                 <TableCell>
-                                                    {new Date(property.expiration_date).toLocaleDateString()}
+                                                    {property.expiration_date}
                                                 </TableCell>
                                                 <TableCell>{calculateDaysLeft(property.expiration_date)}</TableCell>
                                                 <TableCell>

@@ -83,11 +83,14 @@ class PropertyInfoService
     public function updateAllStatuses(): void
     {
         $properties = PropertyInfo::all();
-        
+
         foreach ($properties as $property) {
-            $newStatus = Carbon::now()->gt(Carbon::parse($property->expiration_date)) ? 'Expired' : 'Active';
-            
-            // Only update if status has changed to avoid unnecessary database writes
+            $today = Carbon::now()->startOfDay();
+            $expirationDate = Carbon::parse($property->getAttributes()['expiration_date'])->startOfDay();
+
+            // Expired when today is >= expiration date
+            $newStatus = $today->gte($expirationDate) ? 'Expired' : 'Active';
+
             if ($property->status !== $newStatus) {
                 $property->status = $newStatus;
                 $property->save();
