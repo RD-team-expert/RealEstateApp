@@ -15,7 +15,15 @@ class MoveInController extends Controller
 {
     public function __construct(
         protected MoveInService $moveInService
-    ) {}
+    ) {
+        $this->middleware('permission:move-in.index')->only('index');
+        $this->middleware('permission:move-in.create')->only('create');
+        $this->middleware('permission:move-in.store')->only('store');
+        $this->middleware('permission:move-in.show')->only('show');
+        $this->middleware('permission:move-in.edit')->only('edit');
+        $this->middleware('permission:move-in.update')->only('update');
+        $this->middleware('permission:move-in.destroy')->only('destroy');
+    }
 
     public function index(Request $request): Response
     {

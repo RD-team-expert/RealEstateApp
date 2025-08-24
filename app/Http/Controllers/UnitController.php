@@ -16,7 +16,15 @@ class UnitController extends Controller
 {
     public function __construct(
         private UnitService $unitService
-    ) {}
+    ) {
+        $this->middleware('permission:units.index')->only('index');
+        $this->middleware('permission:units.create')->only('create');
+        $this->middleware('permission:units.store')->only('store');
+        $this->middleware('permission:units.show')->only('show');
+        $this->middleware('permission:units.edit')->only('edit');
+        $this->middleware('permission:units.update')->only('update');
+        $this->middleware('permission:units.destroy')->only('destroy');
+    }
 
     public function index(Request $request): Response
     {

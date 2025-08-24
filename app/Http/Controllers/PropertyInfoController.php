@@ -15,7 +15,16 @@ class PropertyInfoController extends Controller
 {
     public function __construct(
         private PropertyInfoService $propertyInfoService
-    ) {}
+    ) {
+        $this->middleware('permission:properties.index')->only('index');
+        $this->middleware('permission:properties.create')->only('create');
+        $this->middleware('permission:properties.store')->only('store');
+        $this->middleware('permission:properties.show')->only('show');
+        $this->middleware('permission:properties.edit')->only('edit');
+        $this->middleware('permission:properties.update')->only('update');
+        $this->middleware('permission:properties.destroy')->only('destroy');
+
+    }
 
     public function index(Request $request): Response
     {

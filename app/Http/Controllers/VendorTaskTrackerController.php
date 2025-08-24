@@ -15,7 +15,15 @@ class VendorTaskTrackerController extends Controller
 {
     public function __construct(
         protected VendorTaskTrackerService $vendorTaskTrackerService
-    ) {}
+    ) {
+        $this->middleware('permission:vendor-task-tracker.index')->only('index');
+        $this->middleware('permission:vendor-task-tracker.create')->only('create');
+        $this->middleware('permission:vendor-task-tracker.store')->only('store');
+        $this->middleware('permission:vendor-task-tracker.show')->only('show');
+        $this->middleware('permission:vendor-task-tracker.edit')->only('edit');
+        $this->middleware('permission:vendor-task-tracker.update')->only('update');
+        $this->middleware('permission:vendor-task-tracker.destroy')->only('destroy');
+    }
 
     public function index(Request $request): Response
     {

@@ -15,8 +15,23 @@ import {
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { User } from '@/types';
 
+interface Role {
+    id: number;
+    name: string;
+}
+
+interface Permission {
+    id: number;
+    name: string;
+}
+
+interface UserWithRolesPermissions extends User {
+    roles: Role[];
+    permissions: Permission[];
+}
+
 interface Props {
-    users: User[];
+    users: UserWithRolesPermissions[];
 }
 
 export default function Index({ users }: Props) {
@@ -33,7 +48,7 @@ export default function Index({ users }: Props) {
             <SittingsLayout>
             <Head title="Users" />
             <div className="py-12">
-                <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     <Card>
                         <CardHeader>
                             <div className="flex items-center justify-between">
@@ -54,6 +69,8 @@ export default function Index({ users }: Props) {
                                             <TableHead>ID</TableHead>
                                             <TableHead>Name</TableHead>
                                             <TableHead>Email</TableHead>
+                                            <TableHead>Roles</TableHead>
+                                            <TableHead>Permissions</TableHead>
                                             <TableHead>Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -63,6 +80,30 @@ export default function Index({ users }: Props) {
                                                 <TableCell className="font-medium">{user.id}</TableCell>
                                                 <TableCell>{user.name}</TableCell>
                                                 <TableCell>{user.email}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {user.roles && user.roles.length > 0 ? (
+                                                            user.roles.map(role => (
+                                                                <span key={role.id} className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                                    {role.name}
+                                                                </span>
+                                                            ))
+                                                        ) : (
+                                                            <span className="text-gray-500 text-sm">No roles</span>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {user.permissions && user.permissions.length > 0 ? (
+                                                            <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                                {user.permissions.length} direct permissions
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-gray-500 text-sm">No direct permissions</span>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
                                                 <TableCell>
                                                     <div className="flex gap-2">
                                                         <Link href={route('users.edit', user.id)}>

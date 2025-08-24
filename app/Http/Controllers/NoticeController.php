@@ -14,6 +14,14 @@ class NoticeController extends Controller
     public function __construct(NoticeService $service)
     {
         $this->service = $service;
+
+        $this->middleware('permission:notices.index')->only('index');
+        $this->middleware('permission:notices.create')->only('create');
+        $this->middleware('permission:notices.store')->only('store');
+        $this->middleware('permission:notices.show')->only('show');
+        $this->middleware('permission:notices.edit')->only('edit');
+        $this->middleware('permission:notices.update')->only('update');
+        $this->middleware('permission:notices.destroy')->only('destroy');
     }
 
     public function index()

@@ -15,7 +15,15 @@ class PaymentController extends Controller
 {
     public function __construct(
         protected PaymentService $paymentService
-    ) {}
+    ) {
+        $this->middleware('permission:payments.index')->only('index');
+        $this->middleware('permission:payments.create')->only('create');
+        $this->middleware('permission:payments.store')->only('store');
+        $this->middleware('permission:payments.show')->only('show');
+        $this->middleware('permission:payments.edit')->only('edit');
+        $this->middleware('permission:payments.update')->only('update');
+        $this->middleware('permission:payments.destroy')->only('destroy');
+    }
 
     public function index(Request $request): Response
     {
@@ -23,7 +31,7 @@ class PaymentController extends Controller
 
         // Update all payment statuses before displaying
         $this->paymentService->updateAllStatuses();
-        
+
         $payments = $search
             ? $this->paymentService->searchPayments($search)
             : $this->paymentService->getAllPayments();

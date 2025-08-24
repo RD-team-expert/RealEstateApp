@@ -17,7 +17,15 @@ class TenantController extends Controller
 {
     public function __construct(
         protected TenantService $tenantService
-    ) {}
+    ) {
+        $this->middleware('permission:tenants.index')->only('index');
+        $this->middleware('permission:tenants.create')->only('create');
+        $this->middleware('permission:tenants.store')->only('store');
+        $this->middleware('permission:tenants.show')->only('show');
+        $this->middleware('permission:tenants.edit')->only('edit');
+        $this->middleware('permission:tenants.update')->only('update');
+        $this->middleware('permission:tenants.destroy')->only('destroy');
+    }
 
     public function index(Request $request): Response
     {

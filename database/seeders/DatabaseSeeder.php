@@ -5,7 +5,8 @@ namespace Database\Seeders;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-
+use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Permission;
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -15,10 +16,16 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
+        $user=User::factory()->create([
             'name' => 'Test User',
             'email' => 'realestate@example.com',
-            'password' => 'realestate1234',
+            'password' => Hash::make('realestate1234'),
         ]);
+
+        $this->call([
+        RolePermissionSeeder::class,
+        ]);
+
+        $user->givePermissionTo(Permission::all());
     }
 }

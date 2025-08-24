@@ -15,7 +15,15 @@ class MoveOutController extends Controller
 {
     public function __construct(
         protected MoveOutService $moveOutService
-    ) {}
+    ) {
+        $this->middleware('permission:move-out.index')->only('index');
+        $this->middleware('permission:move-out.create')->only('create');
+        $this->middleware('permission:move-out.store')->only('store');
+        $this->middleware('permission:move-out.show')->only('show');
+        $this->middleware('permission:move-out.edit')->only('edit');
+        $this->middleware('permission:move-out.update')->only('update');
+        $this->middleware('permission:move-out.destroy')->only('destroy');
+    }
 
     public function index(Request $request): Response
     {

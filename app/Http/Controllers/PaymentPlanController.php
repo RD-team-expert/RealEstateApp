@@ -14,6 +14,14 @@ class PaymentPlanController extends Controller
     public function __construct(PaymentPlanService $paymentPlanService)
     {
         $this->paymentPlanService = $paymentPlanService;
+
+        $this->middleware('permission:payment-plans.index')->only('index');
+        $this->middleware('permission:payment-plans.create')->only('create');
+        $this->middleware('permission:payment-plans.store')->only('store');
+        $this->middleware('permission:payment-plans.show')->only('show');
+        $this->middleware('permission:payment-plans.edit')->only('edit');
+        $this->middleware('permission:payment-plans.update')->only('update');
+        $this->middleware('permission:payment-plans.destroy')->only('destroy');
     }
 
     public function index()

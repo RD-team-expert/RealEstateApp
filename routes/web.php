@@ -16,6 +16,7 @@ use App\Http\Controllers\NoticeAndEvictionController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\PaymentPlanController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\RoleController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -23,6 +24,9 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+
+    Route::resource('roles', RoleController::class);
+
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');

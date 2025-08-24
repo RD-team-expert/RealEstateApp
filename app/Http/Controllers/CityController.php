@@ -14,6 +14,10 @@ class CityController extends Controller
     public function __construct(CityService $service)
     {
         $this->service = $service;
+
+        $this->middleware('permission:cities.index')->only('index');
+        $this->middleware('permission:cities.store')->only('store');
+        $this->middleware('permission:cities.destroy')->only('destroy');
     }
 
     public function index()

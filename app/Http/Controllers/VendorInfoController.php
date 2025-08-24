@@ -16,7 +16,15 @@ class VendorInfoController extends Controller
 {
     public function __construct(
         private VendorInfoService $vendorInfoService
-    ) {}
+    ) {
+        $this->middleware('permission:vendors.index')->only('index');
+        $this->middleware('permission:vendors.create')->only('create');
+        $this->middleware('permission:vendors.store')->only('store');
+        $this->middleware('permission:vendors.show')->only('show');
+        $this->middleware('permission:vendors.edit')->only('edit');
+        $this->middleware('permission:vendors.update')->only('update');
+        $this->middleware('permission:vendors.destroy')->only('destroy');
+    }
 
     public function index(Request $request): Response
     {

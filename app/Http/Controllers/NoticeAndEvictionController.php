@@ -16,6 +16,14 @@ class NoticeAndEvictionController extends Controller
     public function __construct(NoticeAndEvictionService $service)
     {
         $this->service = $service;
+
+        $this->middleware('permission:notice-and-evictions.index')->only('index');
+        $this->middleware('permission:notice-and-evictions.create')->only('create');
+        $this->middleware('permission:notice-and-evictions.store')->only('store');
+        $this->middleware('permission:notice-and-evictions.show')->only('show');
+        $this->middleware('permission:notice-and-evictions.edit')->only('edit');
+        $this->middleware('permission:notice-and-evictions.update')->only('update');
+        $this->middleware('permission:notice-and-evictions.destroy')->only('destroy');
     }
 
     public function index()

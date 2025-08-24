@@ -15,6 +15,14 @@ class OffersAndRenewalController extends Controller
     public function __construct(OffersAndRenewalService $service)
     {
         $this->service = $service;
+
+        $this->middleware('permission:offers-and-renewals.index')->only('index');
+        $this->middleware('permission:offers-and-renewals.create')->only('create');
+        $this->middleware('permission:offers-and-renewals.store')->only('store');
+        $this->middleware('permission:offers-and-renewals.show')->only('show');
+        $this->middleware('permission:offers-and-renewals.edit')->only('edit');
+        $this->middleware('permission:offers-and-renewals.update')->only('update');
+        $this->middleware('permission:offers-and-renewals.destroy')->only('destroy');
     }
 
     public function index()
