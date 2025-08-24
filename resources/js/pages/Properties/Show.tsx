@@ -6,20 +6,55 @@ import { Property } from '@/types/property';
 import type { PageProps } from '@/types/property';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface Props extends PageProps {
     property: Property;
 }
 
 export default function Show({ auth, property }: Props) {
+    // Helper function to format dates without timezone issues
+    const formatDate = (dateString: string): string => {
+        const [year, month, day] = dateString.split('-');
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString();
+    };
+
+    // Calculate days left with proper date handling
+    const calculateDaysLeft = (expirationDate: string): number => {
+        const today = new Date();
+        const [year, month, day] = expirationDate.split('-');
+        const expDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+
+        // Set both dates to start of day for accurate comparison
+        today.setHours(0, 0, 0, 0);
+        expDate.setHours(0, 0, 0, 0);
+
+        const diffTime = expDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    };
+
+    // Get status badge based on days left calculation
     const getStatusBadge = () => {
-        if (property.is_expired) {
-            return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-red-100 text-red-800">Expired</span>;
+        const daysLeft = calculateDaysLeft(property.expiration_date);
+
+        if (daysLeft <= 0) {
+            return <Badge variant="destructive">Expired</Badge>;
         }
-        if (property.is_expiring_soon) {
-            return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">Expiring Soon</span>;
+        return <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>;
+    };
+
+    // Get days left display with color coding
+    const getDaysLeftDisplay = () => {
+        const daysLeft = calculateDaysLeft(property.expiration_date);
+
+        if (daysLeft <= 0) {
+            return <span className="text-red-600 font-semibold">Expired ({Math.abs(daysLeft)} days ago)</span>;
+        } else if (daysLeft <= 30) {
+            return <span className="text-orange-600 font-semibold">{daysLeft} days</span>;
+        } else {
+            return <span className="text-green-600">{daysLeft} days</span>;
         }
-        return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">Active</span>;
     };
 
     return (
@@ -76,18 +111,18 @@ export default function Show({ auth, property }: Props) {
                                     <div>
                                         <p className="text-sm text-gray-600">Effective Date</p>
                                         <p className="font-medium">
-                                            {property.effective_date}
+                                            {formatDate(property.effective_date)}
                                         </p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Expiration Date</p>
                                         <p className="font-medium">
-                                            {property.expiration_date}
+                                            {formatDate(property.expiration_date)}
                                         </p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Days Left</p>
-                                        <p className="font-medium">{property.days_left}</p>
+                                        <p className="font-medium">{getDaysLeftDisplay()}</p>
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Status</p>
@@ -99,10 +134,10 @@ export default function Show({ auth, property }: Props) {
                             <div className="mt-8 pt-6 border-t">
                                 <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
                                     <div>
-                                        <p>Created: {new Date(property.created_at).toLocaleDateString()}</p>
+                                        <p>Created: {new Date(property.created_at + 'T00:00:00').toLocaleDateString()}</p>
                                     </div>
                                     <div>
-                                        <p>Updated: {new Date(property.updated_at).toLocaleDateString()}</p>
+                                        <p>Updated: {new Date(property.updated_at + 'T00:00:00').toLocaleDateString()}</p>
                                     </div>
                                 </div>
                             </div>
