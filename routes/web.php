@@ -23,7 +23,7 @@ Route::get('/', function () {
     return redirect()-> Route('login');
 })->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
 
     Route::resource('roles', RoleController::class);
 

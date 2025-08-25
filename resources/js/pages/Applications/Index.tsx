@@ -5,6 +5,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Table,
@@ -28,6 +29,8 @@ interface Props extends PageProps {
 export default function Index({ auth, applications, statistics, filters }: Props) {
     const [searchFilters, setSearchFilters] = useState<ApplicationFilters>(filters);
     const { flash } = usePage().props;
+    const { hasPermission, hasAnyPermission } = usePermissions();
+    
 
     const handleFilterChange = (key: keyof ApplicationFilters, value: string) => {
         const newFilters = { ...searchFilters, [key]: value };

@@ -15,7 +15,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props {
     units: UnitData[];
     properties: string[];
@@ -23,6 +23,7 @@ interface Props {
 }
 
 export default function Create({ units, properties, unitsByProperty }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const { data, setData, post, processing, errors } = useForm<TenantFormData>({
         property_name: '',
         unit_number: '',

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
     Table,
     TableBody,
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export default function Index({ tenants, search }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const [searchTerm, setSearchTerm] = useState(search || '');
 
     const handleSearch = (e: React.FormEvent) => {
@@ -89,12 +91,13 @@ export default function Index({ tenants, search }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Tenants</CardTitle>
+                                {hasAllPermissions(['tenants.create','tenants.store'])&&(
                                 <Link href={route('tenants.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
                                         Add New Tenant
                                     </Button>
-                                </Link>
+                                </Link>)}
                             </div>
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">
                                 <div className="flex-1">
@@ -131,7 +134,8 @@ export default function Index({ tenants, search }: Props) {
                                             <TableHead>Assistance Amount</TableHead>
                                             <TableHead>Assistance Company</TableHead>
                                             <TableHead>Created</TableHead>
-                                            <TableHead>Actions</TableHead>
+                                            {hasAnyPermission(['tenants.show','tenants.edit','tenants.update','tenants.destroy'])&&(
+                                            <TableHead>Actions</TableHead>)}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -193,18 +197,22 @@ export default function Index({ tenants, search }: Props) {
                                                 <TableCell>
                                                     {new Date(tenant.created_at).toLocaleDateString()}
                                                 </TableCell>
+                                                {hasAnyPermission(['tenants.show','tenants.edit','tenants.update','tenants.destroy'])&&(
                                                 <TableCell>
                                                     <div className="flex gap-1">
+                                                        {hasPermission('tenants.show')&&(
                                                         <Link href={route('tenants.show', tenant.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasAllPermissions(['tenants.edit','tenants.update'])&&(
                                                         <Link href={route('tenants.edit', tenant.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasPermission('tenants.destroy')&&(
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -212,9 +220,9 @@ export default function Index({ tenants, search }: Props) {
                                                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        </Button>)}
                                                     </div>
-                                                </TableCell>
+                                                </TableCell>)}
                                             </TableRow>
                                         ))}
                                     </TableBody>

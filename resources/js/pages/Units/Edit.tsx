@@ -14,13 +14,14 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface EditPageProps extends PageProps {
     unit: Unit;
     cities: Array<{ id: number; city: string }>;
 }
 
 export default function Edit({ auth, unit, cities }: EditPageProps) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const { data, setData, put, processing, errors } = useForm<UnitFormData>({
         city: unit.city,
         property: unit.property,
@@ -59,9 +60,10 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                     <Link href={route('units.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>
+                                    {hasPermission('cities.index')&&(
                                     <Link href={'/cities'}>
                                         <Button variant="outline">View Cities</Button>
-                                    </Link>
+                                    </Link>)}
                                 </div>
                             </div>
                         </CardHeader>

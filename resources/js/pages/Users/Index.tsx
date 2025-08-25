@@ -4,6 +4,7 @@ import AppLayout from '@/Layouts/app-layout';
 import SittingsLayout from '@/Layouts/settings/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
     Table,
     TableBody,
@@ -35,6 +36,7 @@ interface Props {
 }
 
 export default function Index({ users }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const { delete: destroy } = useForm();
 
     const handleDelete = (id: number) => {
@@ -53,12 +55,13 @@ export default function Index({ users }: Props) {
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-2xl">Users</CardTitle>
+                                {hasAllPermissions(['users.create','users.store'])&&(
                                 <Link href={route('users.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
                                         Create User
                                     </Button>
-                                </Link>
+                                </Link>)}
                             </div>
                         </CardHeader>
                         <CardContent>
@@ -71,7 +74,8 @@ export default function Index({ users }: Props) {
                                             <TableHead>Email</TableHead>
                                             <TableHead>Roles</TableHead>
                                             <TableHead>Permissions</TableHead>
-                                            <TableHead>Actions</TableHead>
+                                            {hasAnyPermission(['users.edit','users.update','users.destroy'])&&(
+                                            <TableHead>Actions</TableHead>)}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -104,13 +108,17 @@ export default function Index({ users }: Props) {
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>
+                                                {hasAnyPermission(['users.edit','users.update','users.destroy'])&&(
+                                                    <TableCell>
                                                     <div className="flex gap-2">
+                                                        {hasAllPermissions('users.edit','users.update')&&(
                                                         <Link href={route('users.edit', user.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
                                                         </Link>
+                                                        )}
+                                                        {hasPermission('users.destroy')&&(
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -119,8 +127,9 @@ export default function Index({ users }: Props) {
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
+                                                        )}
                                                     </div>
-                                                </TableCell>
+                                                </TableCell>)}
                                             </TableRow>
                                         ))}
                                     </TableBody>

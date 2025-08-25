@@ -17,6 +17,7 @@ import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { Unit, PaginatedUnits, UnitFilters, UnitStatistics } from '@/types/unit';
 import { PageProps } from '@/types/unit';
 
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props extends PageProps {
     units: PaginatedUnits;
     statistics: UnitStatistics;
@@ -24,6 +25,7 @@ interface Props extends PageProps {
 }
 
 export default function Index({ auth, units, statistics, filters }: Props) {
+     const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const [searchFilters, setSearchFilters] = useState<UnitFilters>(filters);
     const { flash } = usePage().props;
 
@@ -124,12 +126,14 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Units List</CardTitle>
+                                {hasAnyPermission(['units.store','units.create'])&&(
                                 <Link href={route('units.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
                                         Add Unit
                                     </Button>
                                 </Link>
+                                )}
                             </div>
                             {/* Filters */}
                             <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mt-4">
@@ -204,7 +208,9 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                                             <TableHead>Vacant</TableHead>
                                             <TableHead>Listed</TableHead>
                                             <TableHead>Applications</TableHead>
+                                            {hasAnyPermission(['units.show','units.edit','units.update','units.destroy'])&&(
                                             <TableHead>Actions</TableHead>
+                                            )}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -261,18 +267,22 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                                                         {unit.total_applications}
                                                     </Badge>
                                                 </TableCell>
+                                                {hasAnyPermission(['units.show','units.edit','units.update','units.destroy'])&&(
                                                 <TableCell>
                                                     <div className="flex gap-1">
+                                                        {hasPermission('units.show')&&(
                                                         <Link href={route('units.show', unit.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasAllPermissions(['units.edit','units.update'])&&(
                                                         <Link href={route('units.edit', unit.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasPermission('units.destroy')&&(
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -280,9 +290,9 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                                                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        </Button>)}
                                                     </div>
-                                                </TableCell>
+                                                </TableCell>)}
                                             </TableRow>
                                         ))}
                                     </TableBody>

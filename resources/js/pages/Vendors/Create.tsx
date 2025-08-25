@@ -6,6 +6,7 @@ import { PageProps } from '@/types/vendor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
     Select,
     SelectContent,
@@ -20,6 +21,7 @@ interface CreatePageProps extends PageProps {
 }
 
 export default function Create({ auth, cities }: CreatePageProps) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const { data, setData, post, processing, errors } = useForm<VendorFormData>({
         city: '',
         vendor_name: '',
@@ -46,9 +48,11 @@ export default function Create({ auth, cities }: CreatePageProps) {
                                     <Link href={route('vendors.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>
+                                    {hasPermission('cities.index')&&(
                                     <Link href={'/cities'}>
                                         <Button variant="outline">View Cities</Button>
                                     </Link>
+                                    )}
                                 </div>
                             </div>
                         </CardHeader>

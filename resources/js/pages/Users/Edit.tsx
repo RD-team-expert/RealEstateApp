@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-
+import { usePermissions } from '@/hooks/usePermissions';
 
 
 interface Role {
@@ -34,6 +34,7 @@ interface Props {
 }
 
 export default function Edit({ user, roles, permissions, userRoles, userPermissions }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const [assignmentType, setAssignmentType] = useState('role');
 
     const { data, setData, put, processing, errors } = useForm({
@@ -134,9 +135,10 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                                         <Link href={route('users.index')}>
                                             <Button variant="outline">Back to List</Button>
                                         </Link>
+                                        {hasPermission('roles.index')&&(
                                         <Link href={route('roles.index')}>
                                             <Button variant="outline">View Roles</Button>
-                                        </Link>
+                                        </Link>)}
                                     </div>
                                 </div>
                             </div>
@@ -236,6 +238,7 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                                                     <SelectValue placeholder="Choose a role" />
                                                 </SelectTrigger>
                                                 <SelectContent>
+
                                                     {roles.map(role => (
                                                         <SelectItem key={role.id} value={role.name}>
                                                             {role.name}

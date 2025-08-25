@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const sidebarNavItems: NavItem[] = [
     {
@@ -26,10 +27,13 @@ const sidebarNavItems: NavItem[] = [
         title: 'Users',
         href: '/users',
         icon: null,
+        permission: 'users.index',
     },
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
+
+    const { hasPermission } = usePermissions();
     // When server-side rendering, we only render the layout on the client...
     if (typeof window === 'undefined') {
         return null;
@@ -37,6 +41,13 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
 
     const currentPath = window.location.pathname;
 
+    // Filter nav items based on permissions
+    const filteredNavItems = sidebarNavItems.filter(item => {
+        if (item.permission) {
+            return hasPermission(item.permission);
+        }
+        return true; // Show items without permission requirements
+    });
     return (
         <div className="px-4 py-6">
             <Heading title="Settings" description="Manage your profile and account settings" />
@@ -44,7 +55,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
             <div className="flex flex-col space-y-8 lg:flex-row lg:space-y-0 lg:space-x-12">
                 <aside className="w-full max-w-xl lg:w-48">
                     <nav className="flex flex-col space-y-1 space-x-0">
-                        {sidebarNavItems.map((item, index) => (
+                        {filteredNavItems.map((item, index) => (
                             <Button
                                 key={`${item.href}-${index}`}
                                 size="sm"

@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props {
     task: VendorTaskTracker;
 }
 
 export default function Show({ task }: Props) {
+     const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const getUrgentBadge = (urgent: 'Yes' | 'No') => {
         return (
             <Badge variant={urgent === 'Yes' ? 'destructive' : 'secondary'}>
@@ -39,9 +41,10 @@ export default function Show({ task }: Props) {
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Vendor Task Details</CardTitle>
                                 <div className="flex gap-2">
+                                    {hasAllPermissions(['vendor-task-tracker.edit','vendor-task-tracker.update'])&&(
                                     <Link href={route('vendor-task-tracker.edit', task.id)}>
                                         <Button>Edit Task</Button>
-                                    </Link>
+                                    </Link>)}
                                     <Link href={route('vendor-task-tracker.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>

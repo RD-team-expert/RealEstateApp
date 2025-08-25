@@ -4,6 +4,7 @@ import AppLayout from '@/Layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
     Table,
     TableBody,
@@ -26,6 +27,7 @@ interface Props extends PageProps {
 export default function Index({ auth, vendors, statistics, filters, cities }: Props) {
     const [searchFilters, setSearchFilters] = useState<VendorFilters>(filters);
     const { flash } = usePage().props;
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
 
     const handleFilterChange = (key: keyof VendorFilters, value: string) => {
         const newFilters = { ...searchFilters, [key]: value };
@@ -110,12 +112,14 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Vendors List</CardTitle>
+                                {hasAllPermissions(['vendors.create','vendors.store'])&&(
                                 <Link href={route('vendors.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
                                         Add Vendor
                                     </Button>
                                 </Link>
+                                )}
                             </div>
                             {/* Filters */}
                             <div className="mt-4">
@@ -157,7 +161,9 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                             <TableHead>Number</TableHead>
                                             <TableHead>Email</TableHead>
                                             <TableHead>Service Type</TableHead>
+                                            {hasAnyPermission(['vendors.edit','vendors.show','vendors.update','vendors.destroy']) && (
                                             <TableHead>Actions</TableHead>
+                                            )}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -172,18 +178,23 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                                         : '-'}
                                                 </TableCell>
                                                 <TableCell>{vendor.service_type}</TableCell>
+                                                {hasAnyPermission(['vendors.edit','vendors.show','vendors.update','vendors.destroy']) && (
                                                 <TableCell>
                                                     <div className="flex gap-1">
+                                                        {hasPermission('vendors.show') && (
                                                         <Link href={route('vendors.show', vendor.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasAllPermissions(['vendors.edit','vendors.update']) && (
                                                         <Link href={route('vendors.edit', vendor.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
                                                         </Link>
+                                                        )}
+                                                        {hasPermission('vendors.destroy') && (
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -192,8 +203,10 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
+                                                        )}
                                                     </div>
                                                 </TableCell>
+                                                )}
                                             </TableRow>
                                         ))}
                                     </TableBody>

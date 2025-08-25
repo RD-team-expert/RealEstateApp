@@ -13,12 +13,13 @@ import AppLayout from '@/Layouts/app-layout';
 import { PageProps, UnitFormData } from '@/types/unit';
 import { Head, Link, useForm } from '@inertiajs/react';
 import React from 'react';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface CreatePageProps extends PageProps {
     cities: Array<{ id: number; city: string }>;
 }
 
 export default function Create({ auth, cities }: CreatePageProps) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const { data, setData, post, processing, errors } = useForm<UnitFormData>({
         city: '',
         property: '',
@@ -55,9 +56,10 @@ export default function Create({ auth, cities }: CreatePageProps) {
                                     <Link href={route('units.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>
+                                    {hasPermission('cities.index')&&(
                                     <Link href={'/cities'}>
                                         <Button variant="outline">View Cities</Button>
-                                    </Link>
+                                    </Link>)}
                                 </div>
                             </div>
                         </CardHeader>

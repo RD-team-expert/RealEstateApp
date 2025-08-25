@@ -6,12 +6,13 @@ import { Unit } from '@/types/unit';
 import { PageProps } from '@/types/unit';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props extends PageProps {
     unit: Unit;
 }
 
 export default function Show({ auth, unit }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const getVacantBadge = (vacant: string) => {
         const colorClass = vacant === 'Yes' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
         return <span className={`px-3 py-1 text-sm font-semibold rounded-full ${colorClass}`}>{vacant}</span>;
@@ -44,9 +45,10 @@ export default function Show({ auth, unit }: Props) {
                                     {unit.unit_name} - {unit.property}, {unit.city}
                                 </CardTitle>
                                 <div className="flex gap-2">
+                                    {hasAllPermission(['units.update','units.edit'])&&(
                                     <Link href={route('units.edit', unit.id)}>
                                         <Button>Edit</Button>
-                                    </Link>
+                                    </Link>)}
                                     <Link href={route('units.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>

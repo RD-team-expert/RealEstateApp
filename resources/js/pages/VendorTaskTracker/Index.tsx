@@ -15,7 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { VendorTaskTracker } from '@/types/vendor-task-tracker';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props {
     tasks: {
         data: VendorTaskTracker[];
@@ -26,6 +26,7 @@ interface Props {
 }
 
 export default function Index({ tasks, search }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const [searchTerm, setSearchTerm] = useState(search || '');
 
     const handleSearch = (e: React.FormEvent) => {
@@ -66,12 +67,14 @@ export default function Index({ tasks, search }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Vendor Task Tracker</CardTitle>
+                                {hasAllPermissions(['vendor-task-tracker.create','vendor-task-tracker.store'])&&(
                                 <Link href={route('vendor-task-tracker.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
                                         Add Task
                                     </Button>
                                 </Link>
+                                )}
                             </div>
 
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">
@@ -104,7 +107,9 @@ export default function Index({ tasks, search }: Props) {
                                             <TableHead>Note</TableHead>
                                             <TableHead>Status</TableHead>
                                             <TableHead>Urgent</TableHead>
+                                            {hasAnyPermission(['vendor-task-tracker.show','vendor-task-tracker.edit','vendor-task-tracker.update','vendor-task-tracker.destroy'])&&(
                                             <TableHead>Actions</TableHead>
+                                            )}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -138,18 +143,24 @@ export default function Index({ tasks, search }: Props) {
                                                 <TableCell>
                                                     {getUrgentBadge(task.urgent)}
                                                 </TableCell>
+                                                {hasAnyPermission(['vendor-task-tracker.show','vendor-task-tracker.edit','vendor-task-tracker.update','vendor-task-tracker.destroy'])&&(
                                                 <TableCell>
                                                     <div className="flex gap-1">
+                                                        {hasPermission('vendor-task-tracker.show')&&(
                                                         <Link href={route('vendor-task-tracker.show', task.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
                                                         </Link>
+                                                        )}
+                                                        {hasAllPermissions(['vendor-task-tracker.edit','vendor-task-tracker.update'])&&(
                                                         <Link href={route('vendor-task-tracker.edit', task.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
                                                         </Link>
+                                                        )}
+                                                        {hasPermission('vendor-task-tracker.destroy')&&(
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -157,9 +168,10 @@ export default function Index({ tasks, search }: Props) {
                                                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        </Button>)}
                                                     </div>
                                                 </TableCell>
+                                                )}
                                             </TableRow>
                                         ))}
                                     </TableBody>

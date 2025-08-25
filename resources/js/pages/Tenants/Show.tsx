@@ -4,12 +4,13 @@ import AppLayout from '@/Layouts/app-layout';
 import { Tenant } from '@/types/tenant';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props {
     tenant: Tenant;
 }
 
 export default function Show({ tenant }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     return (
         <AppLayout>
             <Head title={`${tenant.first_name} ${tenant.last_name}`} />
@@ -23,9 +24,10 @@ export default function Show({ tenant }: Props) {
                                     {tenant.first_name} {tenant.last_name}
                                 </CardTitle>
                                 <div className="flex gap-2">
+                                    {hasAllPermissions(['tenants.edit','tenants.update'])&&(
                                     <Link href={route('tenants.edit', tenant.id)}>
                                         <Button>Edit</Button>
-                                    </Link>
+                                    </Link>)}
                                     <Link href={route('tenants.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>

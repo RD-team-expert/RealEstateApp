@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface Role {
     id: number;
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export default function Create({ roles, permissions }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const [assignmentType, setAssignmentType] = useState('role');
 
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -125,9 +127,10 @@ export default function Create({ roles, permissions }: Props) {
                                     <Link href={route('users.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>
+                                    {hasPermission('roles.index')&&(
                                     <Link href={route('roles.index')}>
                                         <Button variant="outline">View Roles</Button>
-                                    </Link>
+                                    </Link>)}
                                     </div>
                                 </div>
                             </div>

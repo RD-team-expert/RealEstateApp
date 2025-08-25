@@ -60,12 +60,9 @@ class RolePermissionSeeder extends Seeder
 
             //vendor-task-tracker
             'vendor-task-tracker.index',
-            'vendor-task-tracker.create',
-            'vendor-task-tracker.store',
+            'vendor-task-tracker.create','vendor-task-tracker.store',
             'vendor-task-tracker.show',
-            'vendor-task-tracker.edit',
-            'vendor-task-tracker.update',
-            'vendor-task-tracker.destroy',
+            'vendor-task-tracker.edit','vendor-task-tracker.update','vendor-task-tracker.destroy',
 
             //move-in
             'move-in.index',
@@ -164,6 +161,8 @@ class RolePermissionSeeder extends Seeder
         $superAdmin = Role::create(['name' => 'Super-Admin']);
         $superAdmin->givePermissionTo(Permission::all());
 
+        $superAdmin = Role::create(['name' => 'None']);
+        $superAdmin->givePermissionTo();
         // Assign Super Admin to first user (optional)
         $user = User::first();
         if ($user) {

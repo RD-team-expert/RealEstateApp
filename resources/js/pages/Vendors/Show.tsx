@@ -7,12 +7,13 @@ import { VendorInfo } from '@/types/vendor';
 import { PageProps } from '@/types/vendor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props extends PageProps {
     vendor: VendorInfo;
 }
 
 export default function Show({ auth, vendor }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -29,9 +30,10 @@ export default function Show({ auth, vendor }: Props) {
                                     {vendor.vendor_name} - {vendor.city}
                                 </CardTitle>
                                 <div className="flex gap-2">
+                                    {hasAllPermissions(['vendors.edit','vendors.update'])&&(
                                     <Link href={route('vendors.edit', vendor.id)}>
                                         <Button>Edit</Button>
-                                    </Link>
+                                    </Link>)}
                                     <Link href={route('vendors.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>

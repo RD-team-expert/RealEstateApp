@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props {
     tenant: Tenant;
     units: UnitData[];
@@ -22,6 +22,7 @@ interface Props {
 }
 
 export default function Edit({ tenant, units, properties, unitsByProperty }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const { data, setData, put, processing, errors } = useForm<TenantFormData>({
         property_name: tenant.property_name ?? '',
         unit_number: tenant.unit_number ?? '',

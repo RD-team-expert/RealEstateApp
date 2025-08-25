@@ -25,6 +25,7 @@ export interface NavItem {
     title: string;
     href: string;
     icon: React.ComponentType<{ className?: string }>;
+    permission?: string;
 }
 
 export interface User {
@@ -41,6 +42,7 @@ export interface NavCategory {
     title: string;
     icon: React.ComponentType<{ className?: string }>; // Add this line
     items: NavItem[];
+    permissions?: string[];
 }
 
 export interface SharedData {

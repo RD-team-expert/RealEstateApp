@@ -6,6 +6,7 @@ import { PageProps } from '@/types/vendor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
     Select,
     SelectContent,
@@ -21,6 +22,7 @@ interface EditPageProps extends PageProps {
 }
 
 export default function Edit({ auth, vendor, cities }: EditPageProps) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const { data, setData, put, processing, errors } = useForm<VendorFormData>({
         city: vendor.city,
         vendor_name: vendor.vendor_name,
@@ -48,9 +50,11 @@ export default function Edit({ auth, vendor, cities }: EditPageProps) {
                                     <Link href={route('vendors.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>
+                                    {hasPermission('cities.index')&&(
                                     <Link href={'/cities'}>
                                         <Button variant="outline">View Cities</Button>
                                     </Link>
+                                    )}
                                 </div>
                             </div>
                         </CardHeader>
