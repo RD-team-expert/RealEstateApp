@@ -5,7 +5,7 @@ import SittingsLayout from '@/Layouts/settings/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Users, Key } from 'lucide-react';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Permission {
     id: number;
     name: string;
@@ -22,6 +22,7 @@ interface Props {
 }
 
 export default function ShowRole({ role }: Props) {
+const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     // Group permissions by resource (e.g., users, roles, tenants, etc.)
     const groupedPermissions = React.useMemo(() => {
         const groups: { [key: string]: Permission[] } = {};
@@ -84,9 +85,10 @@ export default function ShowRole({ role }: Props) {
                                         {role.name}
                                     </CardTitle>
                                     <div className="flex gap-2">
+                                        {hasAllPermissions(['roles.update','roles.edit',])&&(
                                         <Link href={route('roles.edit', role.id)}>
                                             <Button disabled={isSuperAdmin}>Edit</Button>
-                                        </Link>
+                                        </Link>)}
                                         <Link href={route('roles.index')}>
                                             <Button variant="outline">Back to List</Button>
                                         </Link>

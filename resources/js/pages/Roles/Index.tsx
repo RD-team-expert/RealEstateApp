@@ -13,7 +13,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Edit, Trash2, Plus, Eye, Shield } from 'lucide-react';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Permission {
     id: number;
     name: string;
@@ -31,7 +31,7 @@ interface Props {
 
 export default function RolesIndex({ roles }: Props) {
     const { delete: destroy } = useForm();
-
+const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const handleDelete = (roleId: number, roleName: string) => {
         if (confirm(`Are you sure you want to delete the role "${roleName}"?`)) {
             destroy(route('roles.destroy', roleId));
@@ -49,17 +49,19 @@ export default function RolesIndex({ roles }: Props) {
                                 <div className="flex items-center justify-between">
                                     <CardTitle className="text-2xl">Roles</CardTitle>
                                     <div className="flex items-center gap-2">
+                                        {hasPermission('users.index')&&(
                                         <Link href={route('users.index')}>
                                             <Button variant="outline">
                                                 View Users
                                             </Button>
-                                        </Link>
+                                        </Link>)}
+                                        {hasAllPermissions(['roles.store','roles.create'])&&(
                                         <Link href={route('roles.create')}>
                                             <Button>
                                                 <Plus className="h-4 w-4 mr-2" />
                                                 Create Role
                                             </Button>
-                                        </Link>
+                                        </Link>)}
                                     </div>
                                 </div>
                             </CardHeader>
@@ -72,7 +74,8 @@ export default function RolesIndex({ roles }: Props) {
                                                 <TableHead>Role Name</TableHead>
                                                 <TableHead>Permissions</TableHead>
                                                 <TableHead>Protected</TableHead>
-                                                <TableHead>Actions</TableHead>
+                                                {hasAnyPermission(['roles.show','roles.destroy','roles.update','roles.edit',])&&(
+                                                <TableHead>Actions</TableHead>)}
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -101,13 +104,17 @@ export default function RolesIndex({ roles }: Props) {
                                                             {role.name === 'Super-Admin' ? 'Protected' : 'Editable'}
                                                         </span>
                                                     </TableCell>
+                                                    {hasAnyPermission(['roles.show','roles.destroy','roles.update','roles.edit',])&&(
                                                     <TableCell>
+
                                                         <div className="flex gap-2">
+                                                            {hasPermission('roles.show')&&(
                                                             <Link href={route('roles.show', role.id)}>
                                                                 <Button variant="outline" size="sm" title="View Role">
                                                                     <Eye className="h-4 w-4" />
                                                                 </Button>
-                                                            </Link>
+                                                            </Link>)}
+                                                            {hasAllPermissions(['roles.update','roles.edit',])&&(
                                                             <Link href={route('roles.edit', role.id)}>
                                                                 <Button
                                                                     variant="outline"
@@ -117,8 +124,9 @@ export default function RolesIndex({ roles }: Props) {
                                                                 >
                                                                     <Edit className="h-4 w-4" />
                                                                 </Button>
-                                                            </Link>
-                                                            {role.name !== 'Super-Admin' && (
+                                                            </Link>)}
+
+                                                                {hasPermission('roles.destroy')&&(
                                                                 <Button
                                                                     variant="outline"
                                                                     size="sm"
@@ -127,10 +135,10 @@ export default function RolesIndex({ roles }: Props) {
                                                                     title="Delete Role"
                                                                 >
                                                                     <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
+                                                                </Button>)}
+
                                                         </div>
-                                                    </TableCell>
+                                                    </TableCell>)}
                                                 </TableRow>
                                             ))}
                                         </TableBody>

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Permission {
     id: number;
     name: string;
@@ -27,6 +27,7 @@ interface Props {
 }
 
 export default function EditRole({ role, permissions, rolePermissions }: Props) {
+const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const { data, setData, put, processing, errors } = useForm({
         name: role.name,
         permissions: rolePermissions
@@ -123,9 +124,10 @@ export default function EditRole({ role, permissions, rolePermissions }: Props) 
                                             <Link href={route('roles.index')}>
                                                 <Button variant="outline">Back to List</Button>
                                             </Link>
+                                            {hasAnyPermission('users.index')&&(
                                             <Link href={route('users.index')}>
                                                 <Button variant="outline">View Users</Button>
-                                            </Link>
+                                            </Link>)}
                                         </div>
                                     </div>
                                 </div>
