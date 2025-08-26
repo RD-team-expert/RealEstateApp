@@ -23,7 +23,7 @@ interface Props {
 }
 
 export default function Index({ tenants, search }: Props) {
-    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchTerm, setSearchTerm] = useState(search || '');
 
     const handleSearch = (e: React.FormEvent) => {
@@ -48,7 +48,13 @@ export default function Index({ tenants, search }: Props) {
     const getYesNoBadge = (value: 'Yes' | 'No' | string | null) => {
         if (value === null || value === undefined || value === '') return <Badge variant="outline">N/A</Badge>;
         return (
-            <Badge variant={value === 'Yes' ? 'default' : 'secondary'}>
+            <Badge
+                variant={value === 'Yes' ? 'default' : 'secondary'}
+                className={value === 'Yes'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                }
+            >
                 {value}
             </Badge>
         );
@@ -57,7 +63,13 @@ export default function Index({ tenants, search }: Props) {
     const getInsuranceBadge = (value: 'Yes' | 'No' | string | null) => {
         if (value === null || value === undefined || value === '') return <Badge variant="outline">N/A</Badge>;
         return (
-            <Badge variant={value === 'Yes' ? 'default' : 'destructive'}>
+            <Badge
+                variant={value === 'Yes' ? 'default' : 'destructive'}
+                className={value === 'Yes'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                    : undefined
+                }
+            >
                 {value}
             </Badge>
         );
@@ -66,7 +78,13 @@ export default function Index({ tenants, search }: Props) {
     const getSensitiveBadge = (value: 'Yes' | 'No' | string | null) => {
         if (value === null || value === undefined || value === '') return <Badge variant="outline">N/A</Badge>;
         return (
-            <Badge variant={value === 'Yes' ? 'destructive' : 'default'}>
+            <Badge
+                variant={value === 'Yes' ? 'destructive' : 'default'}
+                className={value === 'No'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                    : undefined
+                }
+            >
                 {value}
             </Badge>
         );
@@ -75,7 +93,13 @@ export default function Index({ tenants, search }: Props) {
     const getAssistanceBadge = (value: 'Yes' | 'No' | string | null) => {
         if (value === null || value === undefined || value === '') return <Badge variant="outline">N/A</Badge>;
         return (
-            <Badge variant={value === 'Yes' ? 'default' : 'secondary'}>
+            <Badge
+                variant={value === 'Yes' ? 'default' : 'secondary'}
+                className={value === 'Yes'
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                }
+            >
                 {value}
             </Badge>
         );
@@ -84,14 +108,13 @@ export default function Index({ tenants, search }: Props) {
     return (
         <AppLayout>
             <Head title="Tenants" />
-
-            <div className="py-12">
+            <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <Card>
+                    <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Tenants</CardTitle>
-                                {hasAllPermissions(['tenants.create','tenants.store'])&&(
+                                {hasAllPermissions(['tenants.create','tenants.store']) && (
                                 <Link href={route('tenants.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
@@ -106,6 +129,7 @@ export default function Index({ tenants, search }: Props) {
                                         placeholder="Search tenants..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="bg-input text-input-foreground"
                                     />
                                 </div>
                                 <Button type="submit">
@@ -117,64 +141,64 @@ export default function Index({ tenants, search }: Props) {
                             <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Property Name</TableHead>
-                                            <TableHead>Unit Number</TableHead>
-                                            <TableHead>First Name</TableHead>
-                                            <TableHead>Last Name</TableHead>
-                                            <TableHead>Street Address</TableHead>
-                                            <TableHead>Login Email</TableHead>
-                                            <TableHead>Alternate Email</TableHead>
-                                            <TableHead>Mobile</TableHead>
-                                            <TableHead>Emergency Phone</TableHead>
-                                            <TableHead>Payment Method</TableHead>
-                                            <TableHead>Has Insurance</TableHead>
-                                            <TableHead>Sensitive Communication</TableHead>
-                                            <TableHead>Has Assistance</TableHead>
-                                            <TableHead>Assistance Amount</TableHead>
-                                            <TableHead>Assistance Company</TableHead>
-                                            <TableHead>Created</TableHead>
-                                            {hasAnyPermission(['tenants.show','tenants.edit','tenants.update','tenants.destroy'])&&(
-                                            <TableHead>Actions</TableHead>)}
+                                        <TableRow className="border-border">
+                                            <TableHead className="text-muted-foreground">Property Name</TableHead>
+                                            <TableHead className="text-muted-foreground">Unit Number</TableHead>
+                                            <TableHead className="text-muted-foreground">First Name</TableHead>
+                                            <TableHead className="text-muted-foreground">Last Name</TableHead>
+                                            <TableHead className="text-muted-foreground">Street Address</TableHead>
+                                            <TableHead className="text-muted-foreground">Login Email</TableHead>
+                                            <TableHead className="text-muted-foreground">Alternate Email</TableHead>
+                                            <TableHead className="text-muted-foreground">Mobile</TableHead>
+                                            <TableHead className="text-muted-foreground">Emergency Phone</TableHead>
+                                            <TableHead className="text-muted-foreground">Payment Method</TableHead>
+                                            <TableHead className="text-muted-foreground">Has Insurance</TableHead>
+                                            <TableHead className="text-muted-foreground">Sensitive Communication</TableHead>
+                                            <TableHead className="text-muted-foreground">Has Assistance</TableHead>
+                                            <TableHead className="text-muted-foreground">Assistance Amount</TableHead>
+                                            <TableHead className="text-muted-foreground">Assistance Company</TableHead>
+                                            <TableHead className="text-muted-foreground">Created</TableHead>
+                                            {hasAnyPermission(['tenants.show','tenants.edit','tenants.update','tenants.destroy']) && (
+                                            <TableHead className="text-muted-foreground">Actions</TableHead>)}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {tenants.map((tenant) => (
-                                            <TableRow key={tenant.id} className="hover:bg-gray-50">
-                                                <TableCell className="font-medium">
+                                            <TableRow key={tenant.id} className="hover:bg-muted/50 border-border">
+                                                <TableCell className="font-medium text-foreground">
                                                     {displayValue(tenant.property_name)}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="text-foreground">
                                                     {displayValue(tenant.unit_number)}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="text-foreground">
                                                     {displayValue(tenant.first_name)}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="text-foreground">
                                                     {displayValue(tenant.last_name)}
                                                 </TableCell>
-                                                <TableCell className="max-w-[200px]">
+                                                <TableCell className="max-w-[200px] text-foreground">
                                                     <div className="truncate" title={tenant.street_address_line || 'N/A'}>
                                                         {displayValue(tenant.street_address_line)}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="max-w-[200px]">
+                                                <TableCell className="max-w-[200px] text-foreground">
                                                     <div className="truncate" title={tenant.login_email || 'N/A'}>
                                                         {displayValue(tenant.login_email)}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="max-w-[200px]">
+                                                <TableCell className="max-w-[200px] text-foreground">
                                                     <div className="truncate" title={tenant.alternate_email || 'N/A'}>
                                                         {displayValue(tenant.alternate_email)}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="text-foreground">
                                                     {displayValue(tenant.mobile)}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="text-foreground">
                                                     {displayValue(tenant.emergency_phone)}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="text-foreground">
                                                     {displayValue(tenant.cash_or_check)}
                                                 </TableCell>
                                                 <TableCell>
@@ -186,38 +210,38 @@ export default function Index({ tenants, search }: Props) {
                                                 <TableCell>
                                                     {getAssistanceBadge(tenant.has_assistance)}
                                                 </TableCell>
-                                                <TableCell>
-                                                    {tenant.assistance_amount ? `$${tenant.assistance_amount}` : 'N/A'}
+                                                <TableCell className="text-foreground">
+                                                    {tenant.assistance_amount ? `$${tenant.assistance_amount}` : <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
-                                                <TableCell className="max-w-[150px]">
+                                                <TableCell className="max-w-[150px] text-foreground">
                                                     <div className="truncate" title={tenant.assistance_company || 'N/A'}>
                                                         {displayValue(tenant.assistance_company)}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="text-foreground">
                                                     {new Date(tenant.created_at).toLocaleDateString()}
                                                 </TableCell>
-                                                {hasAnyPermission(['tenants.show','tenants.edit','tenants.update','tenants.destroy'])&&(
+                                                {hasAnyPermission(['tenants.show','tenants.edit','tenants.update','tenants.destroy']) && (
                                                 <TableCell>
                                                     <div className="flex gap-1">
-                                                        {hasPermission('tenants.show')&&(
+                                                        {hasPermission('tenants.show') && (
                                                         <Link href={route('tenants.show', tenant.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
                                                         </Link>)}
-                                                        {hasAllPermissions(['tenants.edit','tenants.update'])&&(
+                                                        {hasAllPermissions(['tenants.edit','tenants.update']) && (
                                                         <Link href={route('tenants.edit', tenant.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
                                                         </Link>)}
-                                                        {hasPermission('tenants.destroy')&&(
+                                                        {hasPermission('tenants.destroy') && (
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => handleDelete(tenant)}
-                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>)}
@@ -229,14 +253,14 @@ export default function Index({ tenants, search }: Props) {
                                 </Table>
                             </div>
                             {tenants.length === 0 && (
-                                <div className="text-center py-8 text-gray-500">
+                                <div className="text-center py-8 text-muted-foreground">
                                     <p className="text-lg">No tenants found.</p>
                                     <p className="text-sm">Try adjusting your search criteria.</p>
                                 </div>
                             )}
                             {/* Summary information */}
-                            <div className="mt-6 flex justify-between items-center">
-                                <div className="text-sm text-gray-600">
+                            <div className="mt-6 flex justify-between items-center border-t border-border pt-4">
+                                <div className="text-sm text-muted-foreground">
                                     Showing {tenants.length} tenant{tenants.length !== 1 ? 's' : ''}
                                     {search && ` matching "${search}"`}
                                 </div>

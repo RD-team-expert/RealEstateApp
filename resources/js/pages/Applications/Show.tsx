@@ -7,7 +7,9 @@ import { Application } from '@/types/application';
 import { PageProps } from '@/types/application';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
+import { Download, FileText } from 'lucide-react';
 
 interface Props extends PageProps {
     application: Application;
@@ -15,22 +17,33 @@ interface Props extends PageProps {
 
 export default function Show({ auth, application }: Props) {
     const getStatusBadge = (status: string | null) => {
-        if (!status) return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-gray-100 text-gray-800">No Status</span>;
+        if (!status) return <Badge variant="secondary">No Status</Badge>;
 
-        // Simple styling without predefined status mapping
-        return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">{status}</span>;
+        // Use shadcn Badge component with appropriate variants
+        switch (status.toLowerCase()) {
+            case 'approved':
+                return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">{status}</Badge>;
+            case 'new':
+                return <Badge variant="secondary">{status}</Badge>;
+            case 'undecided':
+                return <Badge variant="outline" className="border-yellow-300 text-yellow-800 dark:border-yellow-700 dark:text-yellow-300">{status}</Badge>;
+            default:
+                return <Badge variant="default">{status}</Badge>;
+        }
     };
-    const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
+
+    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Application Details</h2>}
+            header={<h2 className="font-semibold text-xl text-foreground leading-tight">Application Details</h2>}
         >
             <Head title="Application Details" />
 
-            <div className="py-12">
+            <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    <Card>
+                    <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">
@@ -50,85 +63,87 @@ export default function Show({ auth, application }: Props) {
                         <CardContent>
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold">Application Information</h3>
+                                    <h3 className="text-lg font-semibold text-foreground">Application Information</h3>
                                     <div>
-                                        <p className="text-sm text-gray-600">City</p>
-                                        <p className="font-medium">{application.city}</p>
-                                    </div>
-                                    <div></div>
-                                    <div>
-                                        <p className="text-sm text-gray-600">Property</p>
-                                        <p className="font-medium">{application.property}</p>
+                                        <p className="text-sm text-muted-foreground">City</p>
+                                        <p className="font-medium text-foreground">{application.city}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Name</p>
-                                        <p className="font-medium">{application.name}</p>
+                                        <p className="text-sm text-muted-foreground">Property</p>
+                                        <p className="font-medium text-foreground">{application.property}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Co-signer</p>
-                                        <p className="font-medium">{application.co_signer}</p>
+                                        <p className="text-sm text-muted-foreground">Name</p>
+                                        <p className="font-medium text-foreground">{application.name}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Unit</p>
-                                        <p className="font-medium">{application.unit}</p>
+                                        <p className="text-sm text-muted-foreground">Co-signer</p>
+                                        <p className="font-medium text-foreground">{application.co_signer}</p>
                                     </div>
-                                    {/* Attachment Section */}
-                                {application.attachment_name && (
-                                    <div className="mt-6 space-y-4">
-                                        <h3 className="text-lg font-semibold">Attachment</h3>
-                                        <div className="bg-gray-50 rounded-lg p-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="bg-blue-100 p-2 rounded-lg">
-                                                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className="font-medium text-gray-900">{application.attachment_name}</p>
-                                                    <p className="text-sm text-gray-500">Click to download</p>
-                                                </div>
-                                                <a
-                                                    href={`/applications/${application.id}/download`}
-                                                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                                >
-                                                    Download
-                                                </a>
-                                            </div>
-                                        </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Unit</p>
+                                        <p className="font-medium text-foreground">{application.unit}</p>
                                     </div>
-                                )}
                                 </div>
 
                                 <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold">Status & Progress</h3>
+                                    <h3 className="text-lg font-semibold text-foreground">Status & Progress</h3>
                                     <div>
-                                        <p className="text-sm text-gray-600">Status</p>
+                                        <p className="text-sm text-muted-foreground">Status</p>
                                         <div className="mt-1">{getStatusBadge(application.status)}</div>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Date</p>
-                                        <p className="font-medium">
+                                        <p className="text-sm text-muted-foreground">Date</p>
+                                        <p className="font-medium text-foreground">
                                             {application.date ? new Date(application.date).toLocaleDateString() : 'Not specified'}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Stage in Progress</p>
-                                        <p className="font-medium">{application.stage_in_progress || 'Not specified'}</p>
+                                        <p className="text-sm text-muted-foreground">Stage in Progress</p>
+                                        <p className="font-medium text-foreground">{application.stage_in_progress || 'Not specified'}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {application.notes && (
+                            {/* Attachment Section */}
+                            {application.attachment_name && (
                                 <div className="mt-6 space-y-4">
-                                    <h3 className="text-lg font-semibold">Notes</h3>
-                                    <div className="bg-gray-50 rounded-lg p-4">
-                                        <p className="text-gray-900 whitespace-pre-wrap">{application.notes}</p>
-                                    </div>
+                                    <h3 className="text-lg font-semibold text-foreground">Attachment</h3>
+                                    <Card className="bg-muted/50">
+                                        <CardContent className="p-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-primary/10 p-2 rounded-lg">
+                                                    <FileText className="w-6 h-6 text-primary" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-medium text-foreground">{application.attachment_name}</p>
+                                                    <p className="text-sm text-muted-foreground">Click to download</p>
+                                                </div>
+                                                <Button asChild size="sm">
+                                                    <a href={`/applications/${application.id}/download`}>
+                                                        <Download className="w-4 h-4 mr-2" />
+                                                        Download
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
                                 </div>
                             )}
 
-                            <div className="mt-8 pt-6 border-t">
-                                <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
+                            {application.notes && (
+                                <div className="mt-6 space-y-4">
+                                    <h3 className="text-lg font-semibold text-foreground">Notes</h3>
+                                    <Card className="bg-muted/50">
+                                        <CardContent className="p-4">
+                                            <p className="text-foreground whitespace-pre-wrap">{application.notes}</p>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            )}
+
+                            <div className="mt-8 pt-6 border-t border-border">
+                                <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
                                     <div>
                                         <p>Created: {new Date(application.created_at).toLocaleDateString()}</p>
                                     </div>

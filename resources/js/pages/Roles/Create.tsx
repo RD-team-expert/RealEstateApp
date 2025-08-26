@@ -7,7 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
+
 interface Permission {
     id: number;
     name: string;
@@ -18,7 +20,8 @@ interface Props {
 }
 
 export default function CreateRole({ permissions }: Props) {
-const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         permissions: [] as string[]
@@ -102,9 +105,9 @@ const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
         <AppLayout>
             <SittingsLayout>
                 <Head title="Create Role" />
-                <div className="py-12">
+                <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
                     <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
-                        <Card>
+                        <Card className="bg-card text-card-foreground shadow-lg">
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <CardTitle className="text-2xl">Create New Role</CardTitle>
@@ -113,7 +116,7 @@ const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
                                             <Link href={route('roles.index')}>
                                                 <Button variant="outline">Back to List</Button>
                                             </Link>
-                                            {hasAnyPermission('users.index')&&(
+                                            {hasAnyPermission('users.index') && (
                                             <Link href={route('users.index')}>
                                                 <Button variant="outline">View Users</Button>
                                             </Link>)}
@@ -133,24 +136,25 @@ const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
                                                 value={data.name}
                                                 onChange={(e) => setData('name', e.target.value)}
                                                 placeholder="Enter role name"
+                                                className="bg-input text-input-foreground"
                                                 error={errors.name}
                                                 required
                                             />
-                                            {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+                                            {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
                                         </div>
                                     </div>
 
                                     {/* --- Permission Assignment --- */}
                                     <div className="space-y-4">
                                         <Label>Select Permissions by Resource</Label>
-                                        <div className="max-h-96 overflow-y-auto border border-gray-200 p-4 rounded space-y-6">
+                                        <div className="max-h-96 overflow-y-auto border border-border p-4 rounded bg-muted/30 space-y-6">
                                             {Object.entries(groupedPermissions).map(([resource, resourcePermissions]) => (
                                                 <div key={resource} className="space-y-3">
-                                                    <h4 className="font-semibold text-gray-900 capitalize border-b border-gray-200 pb-2 flex items-center justify-between">
+                                                    <h4 className="font-semibold text-foreground capitalize border-b border-border pb-2 flex items-center justify-between">
                                                         <span>{resource.replace('-', ' ')}</span>
-                                                        <span className="text-xs font-normal text-gray-500">
+                                                        <Badge variant="outline" className="text-xs">
                                                             {resourcePermissions.filter(p => data.permissions.includes(p.name)).length}/{resourcePermissions.length} selected
-                                                        </span>
+                                                        </Badge>
                                                     </h4>
                                                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 ml-4">
                                                         {resourcePermissions.map(permission => {
@@ -169,7 +173,7 @@ const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
                                                                     />
                                                                     <label
                                                                         htmlFor={`permission-${permission.id}`}
-                                                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground"
                                                                     >
                                                                         {getActionDisplayName(action)}
                                                                     </label>
@@ -180,15 +184,17 @@ const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
                                                 </div>
                                             ))}
                                         </div>
-                                        {errors.permissions && <p className="mt-1 text-sm text-red-600">{errors.permissions}</p>}
+                                        {errors.permissions && <p className="mt-1 text-sm text-destructive">{errors.permissions}</p>}
                                     </div>
 
                                     {/* Information note */}
-                                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                        <p className="text-sm text-blue-800">
-                                            <strong>Smart Permissions:</strong> When you select "Create" or "Edit", both form access and action permissions are automatically included (e.g., selecting "Create" adds both "create" and "store" permissions).
-                                        </p>
-                                    </div>
+                                    <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+                                        <CardContent className="p-4">
+                                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                                                <strong>Smart Permissions:</strong> When you select "Create" or "Edit", both form access and action permissions are automatically included (e.g., selecting "Create" adds both "create" and "store" permissions).
+                                            </p>
+                                        </CardContent>
+                                    </Card>
 
                                     {/* --- Action Buttons --- */}
                                     <div className="flex justify-end gap-2">

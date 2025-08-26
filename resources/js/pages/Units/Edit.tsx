@@ -15,13 +15,14 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePermissions } from '@/hooks/usePermissions';
+
 interface EditPageProps extends PageProps {
     unit: Unit;
     cities: Array<{ id: number; city: string }>;
 }
 
 export default function Edit({ auth, unit, cities }: EditPageProps) {
-    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const { data, setData, put, processing, errors } = useForm<UnitFormData>({
         city: unit.city,
         property: unit.property,
@@ -60,8 +61,8 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                     <Link href={route('units.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>
-                                    {hasPermission('cities.index')&&(
-                                    <Link href={'/cities'}>
+                                    {hasPermission('cities.index') && (
+                                    <Link href={route('cities.index')}>
                                         <Button variant="outline">View Cities</Button>
                                     </Link>)}
                                 </div>
@@ -69,8 +70,8 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                         </CardHeader>
                         <CardContent>
                             {/* Note about calculated fields */}
-                            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <p className="text-sm text-blue-800">
+                            <div className="mb-6 p-4 bg-secondary border border-border rounded-lg">
+                                <p className="text-sm text-secondary-foreground">
                                     <strong>Note:</strong> Vacant, Listed, and Total Applications are automatically calculated based on your inputs.
                                 </p>
                             </div>
@@ -94,7 +95,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             </SelectContent>
                                         </Select>
                                         {errors.city && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.city}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.city}</p>
                                         )}
                                     </div>
                                     <div>
@@ -106,7 +107,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.property}
                                         />
                                         {errors.property && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.property}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.property}</p>
                                         )}
                                     </div>
                                 </div>
@@ -121,7 +122,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.unit_name}
                                         />
                                         {errors.unit_name && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.unit_name}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.unit_name}</p>
                                         )}
                                     </div>
 
@@ -135,7 +136,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.tenants}
                                         />
                                         {errors.tenants && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.tenants}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.tenants}</p>
                                         )}
                                     </div>
                                 </div>
@@ -152,7 +153,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.lease_start}
                                         />
                                         {errors.lease_start && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.lease_start}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.lease_start}</p>
                                         )}
                                     </div>
 
@@ -166,7 +167,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.lease_end}
                                         />
                                         {errors.lease_end && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.lease_end}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.lease_end}</p>
                                         )}
                                     </div>
                                 </div>
@@ -182,7 +183,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.lease_status}
                                         />
                                         {errors.lease_status && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.lease_status}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.lease_status}</p>
                                         )}
                                     </div>
 
@@ -199,7 +200,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.monthly_rent}
                                         />
                                         {errors.monthly_rent && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.monthly_rent}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.monthly_rent}</p>
                                         )}
                                     </div>
                                 </div>
@@ -218,7 +219,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.count_beds}
                                         />
                                         {errors.count_beds && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.count_beds}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.count_beds}</p>
                                         )}
                                     </div>
 
@@ -235,7 +236,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.count_baths}
                                         />
                                         {errors.count_baths && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.count_baths}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.count_baths}</p>
                                         )}
                                     </div>
                                 </div>
@@ -252,7 +253,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.recurring_transaction}
                                         />
                                         {errors.recurring_transaction && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.recurring_transaction}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.recurring_transaction}</p>
                                         )}
                                     </div>
 
@@ -266,7 +267,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.account_number}
                                         />
                                         {errors.account_number && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.account_number}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.account_number}</p>
                                         )}
                                     </div>
                                 </div>
@@ -283,7 +284,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.utility_status}
                                         />
                                         {errors.utility_status && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.utility_status}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.utility_status}</p>
                                         )}
                                     </div>
 
@@ -302,7 +303,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             </SelectContent>
                                         </Select>
                                         {errors.insurance && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.insurance}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.insurance}</p>
                                         )}
                                     </div>
                                 </div>
@@ -319,7 +320,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                             error={errors.insurance_expiration_date}
                                         />
                                         {errors.insurance_expiration_date && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.insurance_expiration_date}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.insurance_expiration_date}</p>
                                         )}
                                     </div>
                                     {/* Empty div for grid alignment */}
@@ -327,28 +328,28 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                 </div>
 
                                 {/* Current calculated values display */}
-                                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                    <h4 className="text-sm font-medium text-gray-900 mb-3">Current Calculated Values:</h4>
+                                <div className="p-4 bg-muted border border-border rounded-lg">
+                                    <h4 className="text-sm font-medium text-foreground mb-3">Current Calculated Values:</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                                         <div>
-                                            <span className="font-medium text-gray-700">Vacant:</span>
+                                            <span className="font-medium text-muted-foreground">Vacant:</span>
                                             <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${
-                                                unit.vacant === 'Yes' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                                unit.vacant === 'Yes' ? 'bg-destructive text-destructive-foreground' : 'bg-chart-1 text-primary-foreground'
                                             }`}>
                                                 {unit.vacant}
                                             </span>
                                         </div>
                                         <div>
-                                            <span className="font-medium text-gray-700">Listed:</span>
+                                            <span className="font-medium text-muted-foreground">Listed:</span>
                                             <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${
-                                                unit.listed === 'Yes' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+                                                unit.listed === 'Yes' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                                             }`}>
                                                 {unit.listed}
                                             </span>
                                         </div>
                                         <div>
-                                            <span className="font-medium text-gray-700">Total Applications:</span>
-                                            <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                                            <span className="font-medium text-muted-foreground">Total Applications:</span>
+                                            <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-secondary text-secondary-foreground">
                                                 {unit.total_applications}
                                             </span>
                                         </div>

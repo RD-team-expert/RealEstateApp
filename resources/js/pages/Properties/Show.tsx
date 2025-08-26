@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
+
 interface Props extends PageProps {
     property: Property;
 }
 
 export default function Show({ auth, property }: Props) {
-    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+
     // Helper function to format dates without timezone issues
     const formatDate = (dateString: string): string => {
         const [year, month, day] = dateString.split('-');
@@ -42,39 +44,39 @@ export default function Show({ auth, property }: Props) {
         if (daysLeft <= 0) {
             return <Badge variant="destructive">Expired</Badge>;
         }
-        return <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>;
+        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Active</Badge>;
     };
 
-    // Get days left display with color coding
-    const getDaysLeftDisplay = () => {
+    // Get days left display with color coding and badge styling
+    const getDaysLeftBadge = () => {
         const daysLeft = calculateDaysLeft(property.expiration_date);
 
         if (daysLeft <= 0) {
-            return <span className="text-red-600 font-semibold">Expired ({Math.abs(daysLeft)} days ago)</span>;
+            return <Badge variant="destructive">Expired ({Math.abs(daysLeft)} days ago)</Badge>;
         } else if (daysLeft <= 30) {
-            return <span className="text-orange-600 font-semibold">{daysLeft} days</span>;
+            return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">{daysLeft} days left</Badge>;
         } else {
-            return <span className="text-green-600">{daysLeft} days</span>;
+            return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">{daysLeft} days left</Badge>;
         }
     };
 
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Property Details</h2>}
+            header={<h2 className="font-semibold text-xl text-foreground leading-tight">Property Details</h2>}
         >
             <Head title="Property Details" />
 
-            <div className="py-12">
+            <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    <Card>
+                    <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">
                                     {property.property_name}
                                 </CardTitle>
                                 <div className="flex gap-2">
-                                    {hasAllPermissions(['properties.update','properties.edit'])&&(
+                                    {hasAllPermissions(['properties.update','properties.edit']) && (
                                     <Link href={route('properties-info.edit', property.id)}>
                                         <Button>Edit</Button>
                                     </Link>)}
@@ -88,53 +90,53 @@ export default function Show({ auth, property }: Props) {
                             <div className="grid md:grid-cols-2 gap-6">
                                 {/* Property Information */}
                                 <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold">Property Information</h3>
+                                    <h3 className="text-lg font-semibold text-foreground">Property Information</h3>
                                     <div>
-                                        <p className="text-sm text-gray-600">Property Name</p>
-                                        <p className="font-medium">{property.property_name}</p>
+                                        <p className="text-sm text-muted-foreground">Property Name</p>
+                                        <p className="font-medium text-foreground">{property.property_name}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Insurance Company</p>
-                                        <p className="font-medium">{property.insurance_company_name}</p>
+                                        <p className="text-sm text-muted-foreground">Insurance Company</p>
+                                        <p className="font-medium text-foreground">{property.insurance_company_name}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Amount</p>
-                                        <p className="font-medium">{property.formatted_amount}</p>
+                                        <p className="text-sm text-muted-foreground">Amount</p>
+                                        <p className="font-medium text-foreground text-blue-600 dark:text-blue-400">{property.formatted_amount}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Policy Number</p>
-                                        <p className="font-medium">{property.policy_number}</p>
+                                        <p className="text-sm text-muted-foreground">Policy Number</p>
+                                        <p className="font-medium text-foreground">{property.policy_number}</p>
                                     </div>
                                 </div>
 
                                 {/* Insurance Information */}
                                 <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold">Insurance Information</h3>
+                                    <h3 className="text-lg font-semibold text-foreground">Insurance Information</h3>
                                     <div>
-                                        <p className="text-sm text-gray-600">Effective Date</p>
-                                        <p className="font-medium">
+                                        <p className="text-sm text-muted-foreground">Effective Date</p>
+                                        <p className="font-medium text-foreground">
                                             {formatDate(property.effective_date)}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Expiration Date</p>
-                                        <p className="font-medium">
+                                        <p className="text-sm text-muted-foreground">Expiration Date</p>
+                                        <p className="font-medium text-foreground">
                                             {formatDate(property.expiration_date)}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Days Left</p>
-                                        <p className="font-medium">{getDaysLeftDisplay()}</p>
+                                        <p className="text-sm text-muted-foreground">Days Left</p>
+                                        <div className="mt-1">{getDaysLeftBadge()}</div>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Status</p>
+                                        <p className="text-sm text-muted-foreground">Status</p>
                                         <div className="mt-1">{getStatusBadge()}</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="mt-8 pt-6 border-t">
-                                <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
+                            <div className="mt-8 pt-6 border-t border-border">
+                                <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
                                     <div>
                                         <p>Created: {new Date(property.created_at + 'T00:00:00').toLocaleDateString()}</p>
                                     </div>

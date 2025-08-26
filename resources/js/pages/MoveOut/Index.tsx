@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { MoveOut } from '@/types/move-out';
 import { usePermissions } from '@/hooks/usePermissions';
+
 interface Props {
     moveOuts: {
         data: MoveOut[];
@@ -42,7 +43,11 @@ export default function Index({ moveOuts, search }: Props) {
     const getYesNoBadge = (value: 'Yes' | 'No' | null) => {
         if (value === null) return <Badge variant="outline">N/A</Badge>;
         return (
-            <Badge variant={value === 'Yes' ? 'default' : 'secondary'}>
+            <Badge variant={value === 'Yes' ? 'default' : 'secondary'} className={
+                value === 'Yes'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+            }>
                 {value}
             </Badge>
         );
@@ -51,7 +56,11 @@ export default function Index({ moveOuts, search }: Props) {
     const getCleaningBadge = (value: 'cleaned' | 'uncleaned' | null) => {
         if (value === null) return <Badge variant="outline">N/A</Badge>;
         return (
-            <Badge variant={value === 'cleaned' ? 'default' : 'secondary'}>
+            <Badge variant={value === 'cleaned' ? 'default' : 'secondary'} className={
+                value === 'cleaned'
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                    : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+            }>
                 {value}
             </Badge>
         );
@@ -60,7 +69,11 @@ export default function Index({ moveOuts, search }: Props) {
     const getFormBadge = (value: 'filled' | 'not filled' | null) => {
         if (value === null) return <Badge variant="outline">N/A</Badge>;
         return (
-            <Badge variant={value === 'filled' ? 'default' : 'secondary'}>
+            <Badge variant={value === 'filled' ? 'default' : 'secondary'} className={
+                value === 'filled'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+            }>
                 {value}
             </Badge>
         );
@@ -71,18 +84,19 @@ export default function Index({ moveOuts, search }: Props) {
         return new Date(date).toLocaleDateString();
     };
 
-    const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
+    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+
     return (
         <AppLayout>
             <Head title="Move-Out Management" />
 
-            <div className="py-12">
+            <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
                 <div className="max-w-[100vw] mx-auto sm:px-6 lg:px-8">
-                    <Card>
+                    <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Move-Out Management</CardTitle>
-                                {hasAllPermissions(['move-out.create','move-out.store',])&&(
+                                {hasAllPermissions(['move-out.create','move-out.store']) && (
                                 <Link href={route('move-out.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
@@ -98,6 +112,7 @@ export default function Index({ moveOuts, search }: Props) {
                                         placeholder="Search by tenant name, unit, or status..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="bg-input text-input-foreground"
                                     />
                                 </div>
                                 <Button type="submit">
@@ -110,45 +125,44 @@ export default function Index({ moveOuts, search }: Props) {
                             <div className="overflow-x-auto">
                                 <Table>
                                     <TableHeader>
-                                        <TableRow>
-
-                                            <TableHead className="min-w-[120px]">Unit Name</TableHead>
-                                            <TableHead className="min-w-[150px]">Tenant Name</TableHead>
-                                            <TableHead className="min-w-[120px]">Move Out Date</TableHead>
-                                            <TableHead className="min-w-[120px]">Lease Status</TableHead>
-                                            <TableHead className="min-w-[150px]">Lease Ending on Buildium</TableHead>
-                                            <TableHead className="min-w-[120px]">Keys Location</TableHead>
-                                            <TableHead className="min-w-[140px]">Utilities Under Our Name</TableHead>
-                                            <TableHead className="min-w-[160px]">Date Utility Put Under Our Name</TableHead>
-                                            <TableHead className="min-w-[150px]">Walkthrough</TableHead>
-                                            <TableHead className="min-w-[120px]">Repairs</TableHead>
-                                            <TableHead className="min-w-[160px]">Send Back Security Deposit</TableHead>
-                                            <TableHead className="min-w-[120px]">Notes</TableHead>
-                                            <TableHead className="min-w-[100px]">Cleaning</TableHead>
-                                            <TableHead className="min-w-[120px]">List the Unit</TableHead>
-                                            <TableHead className="min-w-[120px]">Move Out Form</TableHead>
-                                            {hasAnyPermission(['move-out.show','move-out.edit','move-out.update','move-out.destroy',])&&(
-                                            <TableHead className="min-w-[120px]">Actions</TableHead>)}
+                                        <TableRow className="border-border">
+                                            <TableHead className="min-w-[120px] text-muted-foreground">Unit Name</TableHead>
+                                            <TableHead className="min-w-[150px] text-muted-foreground">Tenant Name</TableHead>
+                                            <TableHead className="min-w-[120px] text-muted-foreground">Move Out Date</TableHead>
+                                            <TableHead className="min-w-[120px] text-muted-foreground">Lease Status</TableHead>
+                                            <TableHead className="min-w-[150px] text-muted-foreground">Lease Ending on Buildium</TableHead>
+                                            <TableHead className="min-w-[120px] text-muted-foreground">Keys Location</TableHead>
+                                            <TableHead className="min-w-[140px] text-muted-foreground">Utilities Under Our Name</TableHead>
+                                            <TableHead className="min-w-[160px] text-muted-foreground">Date Utility Put Under Our Name</TableHead>
+                                            <TableHead className="min-w-[150px] text-muted-foreground">Walkthrough</TableHead>
+                                            <TableHead className="min-w-[120px] text-muted-foreground">Repairs</TableHead>
+                                            <TableHead className="min-w-[160px] text-muted-foreground">Send Back Security Deposit</TableHead>
+                                            <TableHead className="min-w-[120px] text-muted-foreground">Notes</TableHead>
+                                            <TableHead className="min-w-[100px] text-muted-foreground">Cleaning</TableHead>
+                                            <TableHead className="min-w-[120px] text-muted-foreground">List the Unit</TableHead>
+                                            <TableHead className="min-w-[120px] text-muted-foreground">Move Out Form</TableHead>
+                                            {hasAnyPermission(['move-out.show','move-out.edit','move-out.update','move-out.destroy']) && (
+                                            <TableHead className="min-w-[120px] text-muted-foreground">Actions</TableHead>)}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {moveOuts.data.map((moveOut) => (
-                                            <TableRow key={moveOut.id} className="hover:bg-gray-50">
-                                                <TableCell>{moveOut.units_name}</TableCell>
-                                                <TableCell className="font-medium">{moveOut.tenants_name}</TableCell>
-                                                <TableCell>{formatDate(moveOut.move_out_date)}</TableCell>
+                                            <TableRow key={moveOut.id} className="hover:bg-muted/50 border-border">
+                                                <TableCell className="text-foreground">{moveOut.units_name}</TableCell>
+                                                <TableCell className="font-medium text-foreground">{moveOut.tenants_name}</TableCell>
+                                                <TableCell className="text-foreground">{formatDate(moveOut.move_out_date)}</TableCell>
                                                 <TableCell>
                                                     {moveOut.lease_status ? (
                                                         <Badge variant="outline">{moveOut.lease_status}</Badge>
-                                                    ) : 'N/A'}
+                                                    ) : <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
-                                                <TableCell>{formatDate(moveOut.date_lease_ending_on_buildium)}</TableCell>
-                                                <TableCell>{moveOut.keys_location || 'N/A'}</TableCell>
+                                                <TableCell className="text-foreground">{formatDate(moveOut.date_lease_ending_on_buildium)}</TableCell>
+                                                <TableCell className="text-foreground">{moveOut.keys_location || <span className="text-muted-foreground">N/A</span>}</TableCell>
                                                 <TableCell>
                                                     {getYesNoBadge(moveOut.utilities_under_our_name)}
                                                 </TableCell>
-                                                <TableCell>{formatDate(moveOut.date_utility_put_under_our_name)}</TableCell>
-                                                <TableCell className="max-w-[150px] truncate">
+                                                <TableCell className="text-foreground">{formatDate(moveOut.date_utility_put_under_our_name)}</TableCell>
+                                                <TableCell className="max-w-[150px] truncate text-foreground">
                                                     {moveOut.walkthrough ? (
                                                         <span title={moveOut.walkthrough}>
                                                             {moveOut.walkthrough.length > 50
@@ -156,9 +170,9 @@ export default function Index({ moveOuts, search }: Props) {
                                                                 : moveOut.walkthrough
                                                             }
                                                         </span>
-                                                    ) : 'N/A'}
+                                                    ) : <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
-                                                <TableCell className="max-w-[120px] truncate">
+                                                <TableCell className="max-w-[120px] truncate text-foreground">
                                                     {moveOut.repairs ? (
                                                         <span title={moveOut.repairs}>
                                                             {moveOut.repairs.length > 30
@@ -166,10 +180,10 @@ export default function Index({ moveOuts, search }: Props) {
                                                                 : moveOut.repairs
                                                             }
                                                         </span>
-                                                    ) : 'N/A'}
+                                                    ) : <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
-                                                <TableCell>{moveOut.send_back_security_deposit || 'N/A'}</TableCell>
-                                                <TableCell className="max-w-[120px] truncate">
+                                                <TableCell className="text-foreground">{moveOut.send_back_security_deposit || <span className="text-muted-foreground">N/A</span>}</TableCell>
+                                                <TableCell className="max-w-[120px] truncate text-foreground">
                                                     {moveOut.notes ? (
                                                         <span title={moveOut.notes}>
                                                             {moveOut.notes.length > 30
@@ -177,37 +191,36 @@ export default function Index({ moveOuts, search }: Props) {
                                                                 : moveOut.notes
                                                             }
                                                         </span>
-                                                    ) : 'N/A'}
+                                                    ) : <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
                                                 <TableCell>
                                                     {getCleaningBadge(moveOut.cleaning)}
                                                 </TableCell>
-                                                <TableCell>{moveOut.list_the_unit || 'N/A'}</TableCell>
+                                                <TableCell className="text-foreground">{moveOut.list_the_unit || <span className="text-muted-foreground">N/A</span>}</TableCell>
                                                 <TableCell>
                                                     {getFormBadge(moveOut.move_out_form)}
                                                 </TableCell>
-                                                {hasAnyPermission(['move-out.show','move-out.edit','move-out.update','move-out.destroy',])&&(
+                                                {hasAnyPermission(['move-out.show','move-out.edit','move-out.update','move-out.destroy']) && (
                                                 <TableCell>
-
                                                     <div className="flex gap-1">
-                                                        {hasPermission('move-out.show')&&(
+                                                        {hasPermission('move-out.show') && (
                                                         <Link href={route('move-out.show', moveOut.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
                                                         </Link>)}
-                                                        {hasAllPermissions(['move-out.edit','move-out.update'])&&(
+                                                        {hasAllPermissions(['move-out.edit','move-out.update']) && (
                                                         <Link href={route('move-out.edit', moveOut.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
                                                         </Link>)}
-                                                        {hasPermission('move-out.destroy')&&(
+                                                        {hasPermission('move-out.destroy') && (
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => handleDelete(moveOut)}
-                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>)}
@@ -220,7 +233,7 @@ export default function Index({ moveOuts, search }: Props) {
                             </div>
 
                             {moveOuts.data.length === 0 && (
-                                <div className="text-center py-8 text-gray-500">
+                                <div className="text-center py-8 text-muted-foreground">
                                     <p className="text-lg">No move-out records found.</p>
                                     <p className="text-sm">Try adjusting your search criteria.</p>
                                 </div>
@@ -228,8 +241,8 @@ export default function Index({ moveOuts, search }: Props) {
 
                             {/* Pagination info */}
                             {moveOuts.meta && (
-                                <div className="mt-6 flex justify-between items-center">
-                                    <div className="text-sm text-gray-600">
+                                <div className="mt-6 flex justify-between items-center border-t border-border pt-4">
+                                    <div className="text-sm text-muted-foreground">
                                         Showing {moveOuts.meta.from || 0} to {moveOuts.meta.to || 0} of {moveOuts.meta.total || 0} results
                                     </div>
                                 </div>

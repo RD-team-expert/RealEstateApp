@@ -16,8 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { Unit, PaginatedUnits, UnitFilters, UnitStatistics } from '@/types/unit';
 import { PageProps } from '@/types/unit';
-
 import { usePermissions } from '@/hooks/usePermissions';
+
 interface Props extends PageProps {
     units: PaginatedUnits;
     statistics: UnitStatistics;
@@ -25,7 +25,7 @@ interface Props extends PageProps {
 }
 
 export default function Index({ auth, units, statistics, filters }: Props) {
-     const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchFilters, setSearchFilters] = useState<UnitFilters>(filters);
     const { flash } = usePage().props;
 
@@ -78,12 +78,12 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                 <div className="max-w-full mx-auto sm:px-6 lg:px-8">
                     {/* Flash Messages */}
                     {flash?.success && (
-                        <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                        <div className="mb-4 bg-chart-1/20 border border-chart-1 text-chart-1 px-4 py-3 rounded">
                             {flash.success}
                         </div>
                     )}
                     {flash?.error && (
-                        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        <div className="mb-4 bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded">
                             {flash.error}
                         </div>
                     )}
@@ -92,32 +92,32 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                         <Card>
                             <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">Total Units</h3>
-                                <p className="text-3xl font-bold text-blue-600">{statistics.total}</p>
+                                <h3 className="text-lg font-semibold text-foreground">Total Units</h3>
+                                <p className="text-3xl font-bold text-primary">{statistics.total}</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">Vacant</h3>
-                                <p className="text-3xl font-bold text-red-600">{statistics.vacant}</p>
+                                <h3 className="text-lg font-semibold text-foreground">Vacant</h3>
+                                <p className="text-3xl font-bold text-destructive">{statistics.vacant}</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">Occupied</h3>
-                                <p className="text-3xl font-bold text-green-600">{statistics.occupied}</p>
+                                <h3 className="text-lg font-semibold text-foreground">Occupied</h3>
+                                <p className="text-3xl font-bold text-chart-1">{statistics.occupied}</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">Listed</h3>
-                                <p className="text-3xl font-bold text-purple-600">{statistics.listed}</p>
+                                <h3 className="text-lg font-semibold text-foreground">Listed</h3>
+                                <p className="text-3xl font-bold text-chart-2">{statistics.listed}</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">Total Applications</h3>
-                                <p className="text-3xl font-bold text-orange-600">{statistics.total_applications}</p>
+                                <h3 className="text-lg font-semibold text-foreground">Total Applications</h3>
+                                <p className="text-3xl font-bold text-chart-3">{statistics.total_applications}</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -126,7 +126,7 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Units List</CardTitle>
-                                {hasAnyPermission(['units.store','units.create'])&&(
+                                {hasAnyPermission(['units.store','units.create']) && (
                                 <Link href={route('units.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
@@ -158,7 +158,7 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                                 <select
                                     value={searchFilters.vacant || ''}
                                     onChange={(e) => handleFilterChange('vacant', e.target.value)}
-                                    className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                                 >
                                     <option value="">All Vacant Status</option>
                                     <option value="Yes">Vacant</option>
@@ -167,7 +167,7 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                                 <select
                                     value={searchFilters.listed || ''}
                                     onChange={(e) => handleFilterChange('listed', e.target.value)}
-                                    className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                                 >
                                     <option value="">All Listed Status</option>
                                     <option value="Yes">Listed</option>
@@ -176,7 +176,7 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                                 <select
                                     value={searchFilters.insurance || ''}
                                     onChange={(e) => handleFilterChange('insurance', e.target.value)}
-                                    className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                                 >
                                     <option value="">All Insurance</option>
                                     <option value="Yes">Has Insurance</option>
@@ -208,14 +208,14 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                                             <TableHead>Vacant</TableHead>
                                             <TableHead>Listed</TableHead>
                                             <TableHead>Applications</TableHead>
-                                            {hasAnyPermission(['units.show','units.edit','units.update','units.destroy'])&&(
+                                            {hasAnyPermission(['units.show','units.edit','units.update','units.destroy']) && (
                                             <TableHead>Actions</TableHead>
                                             )}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {units.data.map((unit) => (
-                                            <TableRow key={unit.id} className="hover:bg-gray-50">
+                                            <TableRow key={unit.id} className="hover:bg-muted/50">
                                                 <TableCell className="font-medium">{unit.city}</TableCell>
                                                 <TableCell>{unit.property}</TableCell>
                                                 <TableCell>
@@ -263,31 +263,31 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                                                     {getListedBadge(unit.listed)}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                                                    <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
                                                         {unit.total_applications}
                                                     </Badge>
                                                 </TableCell>
-                                                {hasAnyPermission(['units.show','units.edit','units.update','units.destroy'])&&(
+                                                {hasAnyPermission(['units.show','units.edit','units.update','units.destroy']) && (
                                                 <TableCell>
                                                     <div className="flex gap-1">
-                                                        {hasPermission('units.show')&&(
+                                                        {hasPermission('units.show') && (
                                                         <Link href={route('units.show', unit.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
                                                         </Link>)}
-                                                        {hasAllPermissions(['units.edit','units.update'])&&(
+                                                        {hasAllPermissions(['units.edit','units.update']) && (
                                                         <Link href={route('units.edit', unit.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
                                                         </Link>)}
-                                                        {hasPermission('units.destroy')&&(
+                                                        {hasPermission('units.destroy') && (
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => handleDelete(unit)}
-                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>)}
@@ -300,7 +300,7 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                             </div>
 
                             {units.data.length === 0 && (
-                                <div className="text-center py-8 text-gray-500">
+                                <div className="text-center py-8 text-muted-foreground">
                                     <p className="text-lg">No units found matching your criteria.</p>
                                     <p className="text-sm">Try adjusting your search filters.</p>
                                 </div>
@@ -317,10 +317,10 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                                                 disabled={!link.url}
                                                 className={`px-3 py-2 text-sm rounded ${
                                                     link.active
-                                                        ? 'bg-blue-500 text-white'
+                                                        ? 'bg-primary text-primary-foreground'
                                                         : link.url
-                                                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        ? 'bg-muted text-foreground hover:bg-accent'
+                                                        : 'bg-muted text-muted-foreground cursor-not-allowed'
                                                 }`}
                                                 dangerouslySetInnerHTML={{ __html: link.label }}
                                             />
@@ -330,7 +330,7 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                             )}
 
                             {/* Total count */}
-                            <div className="mt-4 text-sm text-gray-600 text-center">
+                            <div className="mt-4 text-sm text-muted-foreground text-center">
                                 Showing {units.from || 0} to {units.to || 0} of {units.total || 0} units
                             </div>
                         </CardContent>

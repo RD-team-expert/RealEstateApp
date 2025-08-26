@@ -6,11 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
+
 interface Props {
     moveOut: MoveOut;
 }
 
 export default function Show({ moveOut }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+
     const getYesNoBadge = (value: 'Yes' | 'No' | null) => {
         if (value === null) return <Badge variant="outline">N/A</Badge>;
         return (
@@ -42,7 +45,7 @@ export default function Show({ moveOut }: Props) {
         if (!date) return 'Not Set';
         return new Date(date).toLocaleDateString();
     };
-const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
+
     return (
         <AppLayout>
             <Head title={`Move-Out Details #${moveOut.id}`} />
@@ -54,7 +57,7 @@ const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Move-Out Record Details - #{moveOut.id}</CardTitle>
                                 <div className="flex gap-2">
-                                    {hasAllPermissions(['move-out.edit','move-out.update'])&&(
+                                    {hasAllPermissions(['move-out.edit','move-out.update']) && (
                                     <Link href={route('move-out.edit', moveOut.id)}>
                                         <Button>Edit Record</Button>
                                     </Link>)}
@@ -70,15 +73,15 @@ const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
                                 <div className="space-y-4">
                                     <h3 className="text-lg font-semibold">Basic Information</h3>
                                     <div>
-                                        <p className="text-sm text-gray-600">Tenant Name</p>
+                                        <p className="text-sm text-muted-foreground">Tenant Name</p>
                                         <p className="font-medium">{moveOut.tenants_name}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Unit Name</p>
+                                        <p className="text-sm text-muted-foreground">Unit Name</p>
                                         <p className="font-medium">{moveOut.units_name}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Lease Status</p>
+                                        <p className="text-sm text-muted-foreground">Lease Status</p>
                                         <p className="font-medium">{moveOut.lease_status || 'N/A'}</p>
                                     </div>
                                 </div>
@@ -87,15 +90,15 @@ const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
                                 <div className="space-y-4">
                                     <h3 className="text-lg font-semibold">Location & Utilities</h3>
                                     <div>
-                                        <p className="text-sm text-gray-600">Keys Location</p>
+                                        <p className="text-sm text-muted-foreground">Keys Location</p>
                                         <p className="font-medium">{moveOut.keys_location || 'N/A'}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Utilities Under Our Name</p>
+                                        <p className="text-sm text-muted-foreground">Utilities Under Our Name</p>
                                         <div className="mt-1">{getYesNoBadge(moveOut.utilities_under_our_name)}</div>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">List the Unit</p>
+                                        <p className="text-sm text-muted-foreground">List the Unit</p>
                                         <p className="font-medium">{moveOut.list_the_unit || 'N/A'}</p>
                                     </div>
                                 </div>
@@ -104,15 +107,15 @@ const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
                                 <div className="space-y-4">
                                     <h3 className="text-lg font-semibold">Status Information</h3>
                                     <div>
-                                        <p className="text-sm text-gray-600">Cleaning Status</p>
+                                        <p className="text-sm text-muted-foreground">Cleaning Status</p>
                                         <div className="mt-1">{getCleaningBadge(moveOut.cleaning)}</div>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Move-Out Form</p>
+                                        <p className="text-sm text-muted-foreground">Move-Out Form</p>
                                         <div className="mt-1">{getFormBadge(moveOut.move_out_form)}</div>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-600">Send Back Security Deposit</p>
+                                        <p className="text-sm text-muted-foreground">Send Back Security Deposit</p>
                                         <p className="font-medium">{moveOut.send_back_security_deposit || 'N/A'}</p>
                                     </div>
                                 </div>
@@ -122,19 +125,19 @@ const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
                                     <h3 className="text-lg font-semibold">Additional Information</h3>
                                     {moveOut.walkthrough && (
                                         <div>
-                                            <p className="text-sm text-gray-600">Walkthrough</p>
+                                            <p className="text-sm text-muted-foreground">Walkthrough</p>
                                             <p className="font-medium">{moveOut.walkthrough}</p>
                                         </div>
                                     )}
                                     {moveOut.repairs && (
                                         <div>
-                                            <p className="text-sm text-gray-600">Repairs</p>
+                                            <p className="text-sm text-muted-foreground">Repairs</p>
                                             <p className="font-medium">{moveOut.repairs}</p>
                                         </div>
                                     )}
                                     {moveOut.notes && (
                                         <div>
-                                            <p className="text-sm text-gray-600">Notes</p>
+                                            <p className="text-sm text-muted-foreground">Notes</p>
                                             <p className="font-medium">{moveOut.notes}</p>
                                         </div>
                                     )}
@@ -145,31 +148,29 @@ const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
                             <div className="mt-6 space-y-4">
                                 <h3 className="text-lg font-semibold">Important Dates</h3>
                                 <div className="grid md:grid-cols-2 gap-4">
-                                    <div className="bg-red-50 p-4 rounded-lg">
-                                        <p className="text-sm text-red-600">Move-Out Date</p>
-                                        <p className="text-lg font-semibold text-red-700">
+                                    <div className="bg-destructive/20 p-4 rounded-lg">
+                                        <p className="text-sm text-destructive">Move-Out Date</p>
+                                        <p className="text-lg font-semibold text-destructive">
                                             {formatDate(moveOut.move_out_date)}
                                         </p>
                                     </div>
-                                    <div className="bg-blue-50 p-4 rounded-lg">
-                                        <p className="text-sm text-blue-600">Date Lease Ending on Buildium</p>
-                                        <p className="text-lg font-semibold text-blue-700">
+                                    <div className="bg-primary/20 p-4 rounded-lg">
+                                        <p className="text-sm text-primary">Date Lease Ending on Buildium</p>
+                                        <p className="text-lg font-semibold text-primary">
                                             {formatDate(moveOut.date_lease_ending_on_buildium)}
                                         </p>
                                     </div>
-                                    <div className="bg-green-50 p-4 rounded-lg">
-                                        <p className="text-sm text-green-600">Date Utility Put Under Our Name</p>
-                                        <p className="text-lg font-semibold text-green-700">
+                                    <div className="bg-chart-1/20 p-4 rounded-lg">
+                                        <p className="text-sm text-chart-1">Date Utility Put Under Our Name</p>
+                                        <p className="text-lg font-semibold text-chart-1">
                                             {formatDate(moveOut.date_utility_put_under_our_name)}
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-
-
-                            <div className="mt-8 pt-6 border-t">
-                                <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
+                            <div className="mt-8 pt-6 border-t border-border">
+                                <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
                                     <div>
                                         <p>Created: {new Date(moveOut.created_at).toLocaleDateString()}</p>
                                     </div>

@@ -27,7 +27,7 @@ interface Props extends PageProps {
 export default function Index({ auth, vendors, statistics, filters, cities }: Props) {
     const [searchFilters, setSearchFilters] = useState<VendorFilters>(filters);
     const { flash } = usePage().props;
-    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
     const handleFilterChange = (key: keyof VendorFilters, value: string) => {
         const newFilters = { ...searchFilters, [key]: value };
@@ -52,12 +52,12 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     {/* Flash Messages */}
                     {flash?.success && (
-                        <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                        <div className="mb-4 bg-chart-1/20 border border-chart-1 text-chart-1 px-4 py-3 rounded">
                             {flash.success}
                         </div>
                     )}
                     {flash?.error && (
-                        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        <div className="mb-4 bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded">
                             {flash.error}
                         </div>
                     )}
@@ -66,53 +66,51 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                         <Card>
                             <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">Total Vendors</h3>
-                                <p className="text-3xl font-bold text-blue-600">{statistics.total}</p>
+                                <h3 className="text-lg font-semibold text-foreground">Total Vendors</h3>
+                                <p className="text-3xl font-bold text-primary">{statistics.total}</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">With Email</h3>
-                                <p className="text-3xl font-bold text-green-600">{statistics.with_email}</p>
+                                <h3 className="text-lg font-semibold text-foreground">With Email</h3>
+                                <p className="text-3xl font-bold text-chart-1">{statistics.with_email}</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">With Phone</h3>
-                                <p className="text-3xl font-bold text-purple-600">{statistics.with_number}</p>
+                                <h3 className="text-lg font-semibold text-foreground">With Phone</h3>
+                                <p className="text-3xl font-bold text-chart-2">{statistics.with_number}</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">Cities</h3>
-                                <p className="text-3xl font-bold text-orange-600">{Object.keys(statistics.city_counts).length}</p>
+                                <h3 className="text-lg font-semibold text-foreground">Cities</h3>
+                                <p className="text-3xl font-bold text-chart-3">{Object.keys(statistics.city_counts).length}</p>
                             </CardContent>
                         </Card>
                         {/* Vendors by City */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Vendors by City</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                {Object.entries(statistics.city_counts).map(([city, count]) => (
-                                    <div key={city} className="text-center">
-                                        <p className="text-sm text-gray-600">{city}</p>
-                                        <p className="text-xl font-bold text-blue-600">{count}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg">Vendors by City</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                    {Object.entries(statistics.city_counts).map(([city, count]) => (
+                                        <div key={city} className="text-center">
+                                            <p className="text-sm text-muted-foreground">{city}</p>
+                                            <p className="text-xl font-bold text-primary">{count}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
-
-
 
                     <Card className="mt-6">
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Vendors List</CardTitle>
-                                {hasAllPermissions(['vendors.create','vendors.store'])&&(
+                                {hasAllPermissions(['vendors.create','vendors.store']) && (
                                 <Link href={route('vendors.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
@@ -168,13 +166,13 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                     </TableHeader>
                                     <TableBody>
                                         {vendors.data.map((vendor) => (
-                                            <TableRow key={vendor.id} className="hover:bg-gray-50">
+                                            <TableRow key={vendor.id} className="hover:bg-muted/50">
                                                 <TableCell className="font-medium">{vendor.city}</TableCell>
                                                 <TableCell>{vendor.vendor_name}</TableCell>
                                                 <TableCell>{vendor.number || '-'}</TableCell>
                                                 <TableCell>
                                                     {vendor.email
-                                                        ? <a href={`mailto:${vendor.email}`} className="text-blue-600 hover:text-blue-900">{vendor.email}</a>
+                                                        ? <a href={`mailto:${vendor.email}`} className="text-primary hover:text-primary/80">{vendor.email}</a>
                                                         : '-'}
                                                 </TableCell>
                                                 <TableCell>{vendor.service_type}</TableCell>
@@ -199,7 +197,7 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => handleDelete(vendor)}
-                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
@@ -213,7 +211,7 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                 </Table>
                             </div>
                             {vendors.data.length === 0 && (
-                                <div className="text-center py-8 text-gray-500">
+                                <div className="text-center py-8 text-muted-foreground">
                                     <p className="text-lg">No vendors found.</p>
                                     <p className="text-sm">Try adjusting your search filters.</p>
                                 </div>
@@ -229,10 +227,10 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                                 disabled={!link.url}
                                                 className={`px-3 py-2 text-sm rounded ${
                                                     link.active
-                                                        ? 'bg-blue-500 text-white'
+                                                        ? 'bg-primary text-primary-foreground'
                                                         : link.url
-                                                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        ? 'bg-muted text-foreground hover:bg-accent'
+                                                        : 'bg-muted text-muted-foreground cursor-not-allowed'
                                                 }`}
                                                 dangerouslySetInnerHTML={{ __html: link.label }}
                                             />
@@ -241,7 +239,7 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                 </div>
                             )}
                             {/* Record count */}
-                            <div className="mt-4 text-sm text-gray-600 text-center">
+                            <div className="mt-4 text-sm text-muted-foreground text-center">
                                 Showing {vendors.from || 0} to {vendors.to || 0} of {vendors.total || 0} vendors
                             </div>
                         </CardContent>

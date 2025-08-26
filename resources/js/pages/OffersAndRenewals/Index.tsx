@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { OfferRenewal } from '@/types/OfferRenewal';
 import { usePermissions } from '@/hooks/usePermissions';
+
 interface Props {
   offers: OfferRenewal[];
   search?: string;
@@ -57,29 +58,57 @@ const Index = ({ offers, search }: Props) => {
 
   const getStatusBadge = (status: string | null) => {
     if (!status) return <Badge variant="outline">N/A</Badge>;
-    return <Badge variant="default">{status}</Badge>;
+
+    switch (status.toLowerCase()) {
+      case 'accepted':
+        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">{status}</Badge>;
+      case 'pending':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">{status}</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">{status}</Badge>;
+      default:
+        return <Badge variant="default">{status}</Badge>;
+    }
   };
 
   const getYesNoBadge = (value: string | null) => {
     if (!value || value === '-') return <Badge variant="outline">N/A</Badge>;
     return (
-      <Badge variant={value === 'Yes' ? 'default' : 'secondary'}>
+      <Badge variant={value === 'Yes' ? 'default' : 'secondary'} className={
+        value === 'Yes'
+          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+          : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+      }>
         {value}
       </Badge>
     );
   };
 
-  const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+  const getDaysLeftBadge = (days: string | null) => {
+    if (!days) return <Badge variant="outline">N/A</Badge>;
+    const numDays = parseInt(days);
+    if (numDays <= 7) {
+      return <Badge variant="destructive">{days} days</Badge>;
+    } else if (numDays <= 30) {
+      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">{days} days</Badge>;
+    } else {
+      return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">{days} days</Badge>;
+    }
+  };
+
+  const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+
   return (
     <AppLayout>
       <Head title="Offers and Renewals" />
-      <div className="py-12">
+
+      <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-          <Card>
+          <Card className="bg-card text-card-foreground shadow-lg">
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle className="text-2xl">Offers and Renewals</CardTitle>
-                {hasAllPermissions(['offers-and-renewals.create','offers-and-renewals.store'])&&(
+                {hasAllPermissions(['offers-and-renewals.create','offers-and-renewals.store']) && (
                 <Link href="/offers_and_renewals/create">
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
@@ -94,6 +123,7 @@ const Index = ({ offers, search }: Props) => {
                     placeholder="Search by unit, tenant, or status..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    className="bg-input text-input-foreground"
                   />
                 </div>
                 <Button type="submit">
@@ -113,71 +143,69 @@ const Index = ({ offers, search }: Props) => {
                 ))}
               </div>
             </CardHeader>
+
             <CardContent>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow className="border-border">
                       {/* Static columns - Basic info */}
-                      <TableHead>Unit</TableHead>
-                      <TableHead>Tenant</TableHead>
-
+                      <TableHead className="text-muted-foreground">Unit</TableHead>
+                      <TableHead className="text-muted-foreground">Tenant</TableHead>
                       {/* Conditional columns */}
                       {(activeTab === 'offers' || activeTab === 'both') && (
                         <>
-                          <TableHead>Date Sent Offer</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Date of Acceptance</TableHead>
-                          <TableHead>Offer Last Notice Sent</TableHead>
-                          <TableHead>Offer Notice Kind</TableHead>
+                          <TableHead className="text-muted-foreground">Date Sent Offer</TableHead>
+                          <TableHead className="text-muted-foreground">Status</TableHead>
+                          <TableHead className="text-muted-foreground">Date of Acceptance</TableHead>
+                          <TableHead className="text-muted-foreground">Offer Last Notice Sent</TableHead>
+                          <TableHead className="text-muted-foreground">Offer Notice Kind</TableHead>
                         </>
                       )}
                       {(activeTab === 'renewals' || activeTab === 'both') && (
                         <>
-                          <TableHead>Lease Sent?</TableHead>
-                          <TableHead>Date Sent Lease</TableHead>
-                          <TableHead>Lease Signed?</TableHead>
-                          <TableHead>Date Signed</TableHead>
-                          <TableHead>Renewal Last Notice Sent</TableHead>
-                          <TableHead>Renewal Notice Kind</TableHead>
-                          <TableHead>Notes</TableHead>
+                          <TableHead className="text-muted-foreground">Lease Sent?</TableHead>
+                          <TableHead className="text-muted-foreground">Date Sent Lease</TableHead>
+                          <TableHead className="text-muted-foreground">Lease Signed?</TableHead>
+                          <TableHead className="text-muted-foreground">Date Signed</TableHead>
+                          <TableHead className="text-muted-foreground">Renewal Last Notice Sent</TableHead>
+                          <TableHead className="text-muted-foreground">Renewal Notice Kind</TableHead>
+                          <TableHead className="text-muted-foreground">Notes</TableHead>
                         </>
                       )}
-
                       {/* Status columns at the end */}
-                      <TableHead>How Many Days Left</TableHead>
-                      <TableHead>Expired</TableHead>
-                      {hasAnyPermission(['offers-and-renewals.show','offers-and-renewals.edit','offers-and-renewals.update','offers-and-renewals.destroy'])&&(
-                      <TableHead>Actions</TableHead>)}
+                      <TableHead className="text-muted-foreground">How Many Days Left</TableHead>
+                      <TableHead className="text-muted-foreground">Expired</TableHead>
+                      {hasAnyPermission(['offers-and-renewals.show','offers-and-renewals.edit','offers-and-renewals.update','offers-and-renewals.destroy']) && (
+                      <TableHead className="text-muted-foreground">Actions</TableHead>)}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filtered.map((offer) => (
-                      <TableRow key={offer.id} className="hover:bg-gray-50">
-                        <TableCell className="font-medium">{offer.unit}</TableCell>
-                        <TableCell>{offer.tenant}</TableCell>
-
+                      <TableRow key={offer.id} className="hover:bg-muted/50 border-border">
+                        <TableCell className="font-medium text-foreground">{offer.unit}</TableCell>
+                        <TableCell className="text-foreground">{offer.tenant}</TableCell>
                         {(activeTab === 'offers' || activeTab === 'both') && (
                           <>
-                            <TableCell>
+                            <TableCell className="text-foreground">
                               {offer.date_sent_offer
                                 ? new Date(offer.date_sent_offer).toLocaleDateString()
-                                : 'N/A'}
+                                : <span className="text-muted-foreground">N/A</span>}
                             </TableCell>
                             <TableCell>
                               {getStatusBadge(offer.status)}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-foreground">
                               {offer.date_of_acceptance
                                 ? new Date(offer.date_of_acceptance).toLocaleDateString()
-                                : 'N/A'}
+                                : <span className="text-muted-foreground">N/A</span>}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-foreground">
                               {offer.last_notice_sent
                                 ? new Date(offer.last_notice_sent).toLocaleDateString()
-                                : 'N/A'}
+                                : <span className="text-muted-foreground">N/A</span>}
                             </TableCell>
-                            <TableCell>{offer.notice_kind || 'N/A'}</TableCell>
+                            <TableCell className="text-foreground">{offer.notice_kind || <span className="text-muted-foreground">N/A</span>}</TableCell>
                           </>
                         )}
                         {(activeTab === 'renewals' || activeTab === 'both') && (
@@ -185,61 +213,62 @@ const Index = ({ offers, search }: Props) => {
                             <TableCell>
                               {getYesNoBadge(offer.lease_sent)}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-foreground">
                               {offer.date_sent_lease
                                 ? new Date(offer.date_sent_lease).toLocaleDateString()
-                                : 'N/A'}
+                                : <span className="text-muted-foreground">N/A</span>}
                             </TableCell>
                             <TableCell>
                               {getYesNoBadge(offer.lease_signed)}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-foreground">
                               {offer.date_signed
                                 ? new Date(offer.date_signed).toLocaleDateString()
-                                : 'N/A'}
+                                : <span className="text-muted-foreground">N/A</span>}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-foreground">
                               {offer.last_notice_sent_2
                                 ? new Date(offer.last_notice_sent_2).toLocaleDateString()
-                                : 'N/A'}
+                                : <span className="text-muted-foreground">N/A</span>}
                             </TableCell>
-                            <TableCell>{offer.notice_kind_2 || 'N/A'}</TableCell>
-                            <TableCell className="max-w-xs">
+                            <TableCell className="text-foreground">{offer.notice_kind_2 || <span className="text-muted-foreground">N/A</span>}</TableCell>
+                            <TableCell className="max-w-xs text-foreground">
                               <div className="truncate" title={offer.notes || 'N/A'}>
-                                {offer.notes || 'N/A'}
+                                {offer.notes || <span className="text-muted-foreground">N/A</span>}
                               </div>
                             </TableCell>
                           </>
                         )}
-
                         {/* Status columns at the end */}
-                        <TableCell>{offer.how_many_days_left || '0'}</TableCell>
+                        <TableCell>
+                          {getDaysLeftBadge(offer.how_many_days_left)}
+                        </TableCell>
                         <TableCell>
                           <Badge variant={offer.expired === 'expired' ? 'destructive' : 'default'}>
-                            {offer.expired ?? 'N/A'}
+                            {offer.expired ?? <span className="text-muted-foreground">N/A</span>}
                           </Badge>
                         </TableCell>
-                        {hasAnyPermission(['offers-and-renewals.show','offers-and-renewals.edit','offers-and-renewals.update','offers-and-renewals.destroy'])&&(
+                        {hasAnyPermission(['offers-and-renewals.show','offers-and-renewals.edit','offers-and-renewals.update','offers-and-renewals.destroy']) && (
                         <TableCell>
                           <div className="flex gap-1">
-                            {hasPermission('offers-and-renewals.show')&&(
+                            {hasPermission('offers-and-renewals.show') && (
                             <Link href={`/offers_and_renewals/${offer.id}`}>
                               <Button variant="outline" size="sm">
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>)}
-                            {hasAllPermissions(['offers-and-renewals.edit','offers-and-renewals.update'])&&(
+                            {hasAllPermissions(['offers-and-renewals.edit','offers-and-renewals.update']) && (
                             <Link href={`/offers_and_renewals/${offer.id}/edit`}>
                               <Button variant="outline" size="sm">
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>)}
-                            {hasPermission('offers-and-renewals.destroy')&&(
+                            {hasPermission('offers-and-renewals.destroy') && (
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleDelete(offer)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>)}
@@ -250,15 +279,16 @@ const Index = ({ offers, search }: Props) => {
                   </TableBody>
                 </Table>
               </div>
+
               {filtered.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-muted-foreground">
                   <p className="text-lg">No offers found.</p>
                   <p className="text-sm">Try adjusting your search criteria.</p>
                 </div>
               )}
 
-              <div className="mt-6 flex justify-between items-center">
-                <div className="text-sm text-gray-600">
+              <div className="mt-6 flex justify-between items-center border-t border-border pt-4">
+                <div className="text-sm text-muted-foreground">
                   Showing {filtered.length} {activeTab}
                 </div>
               </div>

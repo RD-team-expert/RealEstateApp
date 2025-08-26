@@ -1,5 +1,4 @@
 // resources/js/Pages/Applications/Index.tsx
-
 import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
@@ -29,13 +28,11 @@ interface Props extends PageProps {
 export default function Index({ auth, applications, statistics, filters }: Props) {
     const [searchFilters, setSearchFilters] = useState<ApplicationFilters>(filters);
     const { flash } = usePage().props;
-    const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
-
+    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
     const handleFilterChange = (key: keyof ApplicationFilters, value: string) => {
         const newFilters = { ...searchFilters, [key]: value };
         setSearchFilters(newFilters);
-
         router.get(route('applications.index'), newFilters, {
             preserveState: true,
             preserveScroll: true,
@@ -56,17 +53,16 @@ export default function Index({ auth, applications, statistics, filters }: Props
     return (
         <AppLayout>
             <Head title="Applications" />
-
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     {/* Flash Messages */}
                     {flash?.success && (
-                        <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                        <div className="mb-4 bg-chart-1/20 border border-chart-1 text-chart-1 px-4 py-3 rounded">
                             {flash.success}
                         </div>
                     )}
                     {flash?.error && (
-                        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        <div className="mb-4 bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded">
                             {flash.error}
                         </div>
                     )}
@@ -75,18 +71,18 @@ export default function Index({ auth, applications, statistics, filters }: Props
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <Card>
                             <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">Total Applications</h3>
-                                <p className="text-3xl font-bold text-blue-600">{statistics.total}</p>
+                                <h3 className="text-lg font-semibold text-foreground">Total Applications</h3>
+                                <p className="text-3xl font-bold text-primary">{statistics.total}</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">By Status</h3>
+                                <h3 className="text-lg font-semibold text-foreground">By Status</h3>
                                 <div className="mt-2 space-y-1">
                                     {Object.entries(statistics.status_counts).map(([status, count]) => (
                                         <div key={status} className="flex justify-between text-sm">
-                                            <span>{status || 'No Status'}:</span>
-                                            <span className="font-semibold">{count}</span>
+                                            <span className="text-muted-foreground">{status || 'No Status'}:</span>
+                                            <span className="font-semibold text-foreground">{count}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -94,12 +90,12 @@ export default function Index({ auth, applications, statistics, filters }: Props
                         </Card>
                         <Card>
                             <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-gray-900">By Stage</h3>
+                                <h3 className="text-lg font-semibold text-foreground">By Stage</h3>
                                 <div className="mt-2 space-y-1">
                                     {Object.entries(statistics.stage_counts).slice(0, 5).map(([stage, count]) => (
                                         <div key={stage} className="flex justify-between text-sm">
-                                            <span>{stage || 'No Stage'}:</span>
-                                            <span className="font-semibold">{count}</span>
+                                            <span className="text-muted-foreground">{stage || 'No Stage'}:</span>
+                                            <span className="font-semibold text-foreground">{count}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -111,7 +107,7 @@ export default function Index({ auth, applications, statistics, filters }: Props
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Applications</CardTitle>
-                                {hasAllPermissions(['applications.create','applications.store',])&&(
+                                {hasAllPermissions(['applications.create','applications.store']) && (
                                 <Link href={route('applications.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
@@ -187,26 +183,23 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                             <TableHead>Unit</TableHead>
                                             <TableHead>Name</TableHead>
                                             <TableHead>Co-signer</TableHead>
-
                                             <TableHead>Status</TableHead>
                                             <TableHead>Date</TableHead>
                                             <TableHead>Stage</TableHead>
                                             <TableHead>Note</TableHead>
                                             <TableHead>Attachment</TableHead>
-                                            {hasAnyPermission(['applications.show','applications.edit','applications.update','applications.destroy',])&&(
+                                            {hasAnyPermission(['applications.show','applications.edit','applications.update','applications.destroy']) && (
                                             <TableHead>Actions</TableHead>)}
-
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {applications.data.map((application) => (
-                                            <TableRow key={application.id} className="hover:bg-gray-50">
+                                            <TableRow key={application.id} className="hover:bg-muted/50">
                                                 <TableCell className="font-medium">{application.city}</TableCell>
                                                 <TableCell className="font-medium">{application.property}</TableCell>
                                                 <TableCell>{application.unit}</TableCell>
                                                 <TableCell>{application.name}</TableCell>
                                                 <TableCell>{application.co_signer}</TableCell>
-
                                                 <TableCell>
                                                     {getStatusBadge(application.status)}
                                                 </TableCell>
@@ -218,46 +211,44 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                                 </TableCell>
                                                 <TableCell>{application.stage_in_progress || 'N/A'}</TableCell>
                                                 <TableCell>{application.notes || 'N/A'}</TableCell>
-
                                                 <TableCell>
                                                     {application.attachment_name ? (
                                                         <a
                                                             href={`/applications/${application.id}/download`}
-                                                            className="text-blue-600 hover:underline text-sm"
+                                                            className="text-primary hover:underline text-sm"
                                                         >
                                                             {application.attachment_name}
                                                         </a>
                                                     ) : (
-                                                        <span className="text-gray-400 text-sm">No attachment</span>
+                                                        <span className="text-muted-foreground text-sm">No attachment</span>
                                                     )}
                                                 </TableCell>
-                                                {hasAnyPermission(['applications.show','applications.edit','applications.update','applications.destroy'])&&(
+                                                {hasAnyPermission(['applications.show','applications.edit','applications.update','applications.destroy']) && (
                                                 <TableCell>
                                                     <div className="flex gap-1">
-                                                        {hasPermission('applications.show')&&(
+                                                        {hasPermission('applications.show') && (
                                                         <Link href={route('applications.show', application.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
                                                         </Link>)}
-                                                        {hasAnyPermission('applications.edit','applications.update')&&(
+                                                        {hasAnyPermission(['applications.edit','applications.update']) && (
                                                         <Link href={route('applications.edit', application.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
                                                         </Link>)}
-                                                        {hasPermission('applications.destroy')&&(
+                                                        {hasPermission('applications.destroy') && (
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => handleDelete(application)}
-                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>)}
                                                     </div>
                                                 </TableCell>)}
-
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -265,7 +256,7 @@ export default function Index({ auth, applications, statistics, filters }: Props
                             </div>
 
                             {applications.data.length === 0 && (
-                                <div className="text-center py-8 text-gray-500">
+                                <div className="text-center py-8 text-muted-foreground">
                                     <p className="text-lg">No applications found.</p>
                                     <p className="text-sm">Try adjusting your search criteria.</p>
                                 </div>
@@ -282,10 +273,10 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                                 disabled={!link.url}
                                                 className={`px-3 py-2 text-sm rounded ${
                                                     link.active
-                                                        ? 'bg-blue-500 text-white'
+                                                        ? 'bg-primary text-primary-foreground'
                                                         : link.url
-                                                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        ? 'bg-muted text-foreground hover:bg-accent'
+                                                        : 'bg-muted text-muted-foreground cursor-not-allowed'
                                                 }`}
                                                 dangerouslySetInnerHTML={{ __html: link.label }}
                                             />
@@ -297,7 +288,7 @@ export default function Index({ auth, applications, statistics, filters }: Props
                             {/* Pagination info */}
                             {applications.meta && (
                                 <div className="mt-6 flex justify-between items-center">
-                                    <div className="text-sm text-gray-600">
+                                    <div className="text-sm text-muted-foreground">
                                         Showing {applications.meta.from || 0} to {applications.meta.to || 0} of {applications.meta.total || 0} results
                                     </div>
                                 </div>

@@ -5,6 +5,7 @@ import { City } from '@/types/City';
 import AppLayout from '@/Layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Table,
@@ -42,22 +43,24 @@ const Index = ({ cities }: Props) => {
       router.delete(`/cities/${id}`);
     }
   };
-const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+
+  const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+
   return (
     <AppLayout>
       <Head title="Cities" />
 
-      <div className="py-12">
+      <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Add City Form Card */}
-            {hasAllPermissions(['cities.store','cities.create'])&&(
+            {hasAllPermissions(['cities.store','cities.create']) && (
             <div className="lg:col-span-1">
-              <Card>
+              <Card className="bg-card text-card-foreground shadow-lg">
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-xl">Manage Cities</CardTitle>
-                    <Button onClick={() => setShowForm(!showForm)}>
+                    <Button onClick={() => setShowForm(!showForm)} variant={showForm ? "outline" : "default"}>
                       {showForm ? (
                         <>
                           <X className="h-4 w-4 mr-2" />
@@ -76,20 +79,22 @@ const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
                 {/* Create Form */}
                 {showForm && (
                   <CardContent>
-                    <h3 className="text-lg font-semibold mb-3">Add New City</h3>
+                    <h3 className="text-lg font-semibold mb-3 text-foreground">Add New City</h3>
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          City Name <span className="text-red-500">*</span>
-                        </label>
+                        <Label htmlFor="city" className="block text-sm font-medium text-foreground mb-1">
+                          City Name <span className="text-destructive">*</span>
+                        </Label>
                         <Input
+                          id="city"
                           type="text"
                           value={data.city}
                           onChange={(e) => setData('city', e.target.value)}
                           placeholder="Enter city name"
+                          className="bg-input text-input-foreground"
                           required
                         />
-                        {errors.city && <div className="text-red-500 text-sm mt-1">{errors.city}</div>}
+                        {errors.city && <div className="text-destructive text-sm mt-1">{errors.city}</div>}
                       </div>
                       <Button type="submit" disabled={processing} className="w-full">
                         {processing ? 'Adding...' : 'Add City'}
@@ -102,7 +107,7 @@ const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
 
             {/* Cities Table Card */}
             <div className="lg:col-span-2">
-              <Card>
+              <Card className="bg-card text-card-foreground shadow-lg">
                 <CardHeader>
                   <CardTitle className="text-xl">Cities List</CardTitle>
                 </CardHeader>
@@ -110,23 +115,23 @@ const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>City</TableHead>
-                          {hasPermission('cities.destroy')&&(
-                          <TableHead>Actions</TableHead>)}
+                        <TableRow className="border-border">
+                          <TableHead className="text-muted-foreground">City</TableHead>
+                          {hasPermission('cities.destroy') && (
+                          <TableHead className="text-muted-foreground">Actions</TableHead>)}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {cities.map((city) => (
-                          <TableRow key={city.id} className="hover:bg-gray-50">
-                            <TableCell className="font-medium">{city.city}</TableCell>
-                            {hasPermission('cities.destroy')&&(
+                          <TableRow key={city.id} className="hover:bg-muted/50 border-border">
+                            <TableCell className="font-medium text-foreground">{city.city}</TableCell>
+                            {hasPermission('cities.destroy') && (
                             <TableCell>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDelete(city.id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -138,15 +143,15 @@ const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
                   </div>
 
                   {cities.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-muted-foreground">
                       <p className="text-lg">No cities found.</p>
                       <p className="text-sm">Add your first city using the form on the left.</p>
                     </div>
                   )}
 
                   {/* Records count info */}
-                  <div className="mt-6 flex justify-between items-center">
-                    <div className="text-sm text-gray-600">
+                  <div className="mt-6 flex justify-between items-center border-t border-border pt-4">
+                    <div className="text-sm text-muted-foreground">
                       Showing {cities.length} cities
                     </div>
                   </div>
