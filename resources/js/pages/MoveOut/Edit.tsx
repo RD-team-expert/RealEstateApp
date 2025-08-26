@@ -293,7 +293,7 @@ export default function Edit({ moveOut, tenants, unitsByTenant, tenantsData }: P
                                 </div>
 
                                 <div className="flex justify-end gap-2">
-                                    <Link href={route('move-out.show', moveOut.id)}>
+                                    <Link href={route('move-out.index', moveOut.id)}>
                                         <Button type="button" variant="outline">Cancel</Button>
                                     </Link>
                                     <Button type="submit" disabled={processing}>

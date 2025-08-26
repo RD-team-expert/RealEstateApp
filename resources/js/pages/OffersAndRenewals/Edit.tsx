@@ -330,7 +330,7 @@ const Edit: React.FC = () => {
 
                 {/* --- Action Buttons --- */}
                 <div className="flex justify-end gap-2">
-                  <Link href={`/offers_and_renewals/${offer.id}`}>
+                  <Link href="/offers_and_renewals">
                     <Button type="button" variant="outline">
                       Cancel
                     </Button>

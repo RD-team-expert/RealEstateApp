@@ -222,7 +222,7 @@ export default function Edit({ payment, units, cities, unitsByCity }: Props) {
                                         )}
                                     </div>
 
-                                    
+
                                 </div>
 
                                 {/* --- Notes --- */}
@@ -243,7 +243,7 @@ export default function Edit({ payment, units, cities, unitsByCity }: Props) {
 
                                 {/* --- Action Buttons --- */}
                                 <div className="flex justify-end gap-2">
-                                    <Link href={route('payments.show', payment.id)}>
+                                    <Link href={route('payments.index', payment.id)}>
                                         <Button type="button" variant="outline">Cancel</Button>
                                     </Link>
                                     <Button type="submit" disabled={processing}>

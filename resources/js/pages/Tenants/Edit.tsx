@@ -378,7 +378,7 @@ export default function Edit({ tenant, units, properties, unitsByProperty }: Pro
 
                                 {/* --- Action Buttons --- */}
                                 <div className="flex justify-end gap-2">
-                                    <Link href={route('tenants.show', tenant.id)}>
+                                    <Link href={route('tenants.index', tenant.id)}>
                                         <Button type="button" variant="outline">
                                             Cancel
                                         </Button>

@@ -262,7 +262,7 @@ export default function Edit({ task, units, cities, unitsByCity, vendors }: Prop
 
                                 {/* --- Action Buttons --- */}
                                 <div className="flex justify-end gap-2">
-                                    <Link href={route('vendor-task-tracker.show', task.id)}>
+                                    <Link href={route('vendor-task-tracker.index', task.id)}>
                                         <Button type="button" variant="outline">Cancel</Button>
                                     </Link>
                                     <Button type="submit" disabled={processing}>

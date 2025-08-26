@@ -229,7 +229,7 @@ export default function Edit({ moveIn, units }: Props) {
                                 </div>
 
                                 <div className="flex justify-end gap-2">
-                                    <Link href={route('move-in.show', moveIn.id)}>
+                                    <Link href={route('move-in.index', moveIn.id)}>
                                         <Button type="button" variant="outline">Cancel</Button>
                                     </Link>
                                     <Button type="submit" disabled={processing}>
