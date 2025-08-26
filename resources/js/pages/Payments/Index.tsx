@@ -15,6 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { Payment } from '@/types/payments';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface Props {
     payments: {
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export default function Index({ payments, search }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     const [searchTerm, setSearchTerm] = useState(search || '');
 
     const handleSearch = (e: React.FormEvent) => {
@@ -66,12 +68,13 @@ export default function Index({ payments, search }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Payments Management</CardTitle>
+                                {hasAllPermissions (['payments.create','payments.store',])&&(
                                 <Link href={route('payments.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
                                         Add Payment
                                     </Button>
-                                </Link>
+                                </Link>)}
                             </div>
 
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">
@@ -104,7 +107,8 @@ export default function Index({ payments, search }: Props) {
                                             <TableHead>Note</TableHead>
                                             <TableHead>Reversed Payments</TableHead>
                                             <TableHead>Permanent</TableHead>
-                                            <TableHead>Actions</TableHead>
+                                            {hasAnyPermission(['payments.show','payments.edit','payments.update','payments.destroy',])&&(
+                                            <TableHead>Actions</TableHead>)}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -134,18 +138,22 @@ export default function Index({ payments, search }: Props) {
                                                         {payment.permanent}
                                                     </Badge>
                                                 </TableCell>
+                                                {hasAnyPermission(['payments.show','payments.edit','payments.update','payments.destroy',])&&(
                                                 <TableCell>
                                                     <div className="flex gap-1">
+                                                        {hasPermission('payments.show')&&(
                                                         <Link href={route('payments.show', payment.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasAllPermissions(['payments.edit','payments.update'])&&(
                                                         <Link href={route('payments.edit', payment.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasPermission('payments.destroy')&&(
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -153,9 +161,9 @@ export default function Index({ payments, search }: Props) {
                                                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        </Button>)}
                                                     </div>
-                                                </TableCell>
+                                                </TableCell>)}
                                             </TableRow>
                                         ))}
                                     </TableBody>

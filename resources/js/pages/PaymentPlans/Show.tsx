@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
+
 const formatCurrency = (amount: number | null) => {
   if (amount === null) return 'N/A';
   return new Intl.NumberFormat('en-US', {
@@ -24,8 +25,10 @@ const getStatusBadge = (status: string | null) => {
       : 'outline';
   return <Badge variant={variant}>{status}</Badge>;
 };
-const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+
 const Show: React.FC<PaymentPlanShowProps> = ({ paymentPlan }) => {
+
+const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
   return (
     <AppLayout>
       <Head title={`Payment Plan #${paymentPlan.id}`} />

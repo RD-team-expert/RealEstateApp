@@ -45,6 +45,22 @@ export default function Index({ users }: Props) {
         }
     };
 
+    // Function to get different badge colors for roles
+    const getRoleBadgeColor = (roleId: number) => {
+        const colors = [
+            'bg-primary text-primary-foreground',
+            'bg-secondary text-secondary-foreground',
+            'bg-chart-1 text-primary-foreground',
+            'bg-chart-2 text-secondary-foreground',
+            'bg-chart-3 text-foreground',
+            'bg-chart-4 text-secondary-foreground',
+            'bg-chart-5 text-primary-foreground',
+            'bg-accent text-accent-foreground',
+        ];
+
+        return colors[roleId % colors.length];
+    };
+
     return (
         <AppLayout>
             <SittingsLayout>
@@ -80,7 +96,7 @@ export default function Index({ users }: Props) {
                                     </TableHeader>
                                     <TableBody>
                                         {users.map((user) => (
-                                            <TableRow key={user.id} className="hover:bg-gray-50">
+                                            <TableRow key={user.id} className="hover:bg-muted/50">
                                                 <TableCell className="font-medium">{user.id}</TableCell>
                                                 <TableCell>{user.name}</TableCell>
                                                 <TableCell>{user.email}</TableCell>
@@ -88,23 +104,23 @@ export default function Index({ users }: Props) {
                                                     <div className="flex flex-wrap gap-1">
                                                         {user.roles && user.roles.length > 0 ? (
                                                             user.roles.map(role => (
-                                                                <span key={role.id} className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                                <span key={role.id} className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(role.id)}`}>
                                                                     {role.name}
                                                                 </span>
                                                             ))
                                                         ) : (
-                                                            <span className="text-gray-500 text-sm">No roles</span>
+                                                            <span className="text-muted-foreground text-sm">No roles</span>
                                                         )}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-wrap gap-1">
                                                         {user.permissions && user.permissions.length > 0 ? (
-                                                            <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                            <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-chart-1 text-primary-foreground">
                                                                 {user.permissions.length} direct permissions
                                                             </span>
                                                         ) : (
-                                                            <span className="text-gray-500 text-sm">No direct permissions</span>
+                                                            <span className="text-muted-foreground text-sm">No direct permissions</span>
                                                         )}
                                                     </div>
                                                 </TableCell>
@@ -123,7 +139,7 @@ export default function Index({ users }: Props) {
                                                             variant="outline"
                                                             size="sm"
                                                             onClick={() => handleDelete(user.id)}
-                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
@@ -135,7 +151,7 @@ export default function Index({ users }: Props) {
                                     </TableBody>
                                 </Table>
                                 {users.length === 0 && (
-                                    <div className="text-center py-8 text-gray-500">
+                                    <div className="text-center py-8 text-muted-foreground">
                                         <p className="text-lg">No users found.</p>
                                     </div>
                                 )}

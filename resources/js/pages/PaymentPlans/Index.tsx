@@ -127,29 +127,30 @@ export default function Index({ paymentPlans, search }: Props) {
                         <TableCell>{plan.notes}</TableCell>
                         {hasAnyPermission(['payment-plans.show','payment-plans.edit','payment-plans.update','payment-plans.destroy',])&&(
                         <TableCell>
-                          <div className="flex gap-1">
-                            {hasPermission('payment-plans.show')&&(
-                            <Link href={`/payment-plans/${plan.id}`}>
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </Link>)}
-                            {hasAllPermissions(['payment-plans.edit','payment-plans.update'])&&(
-                            <Link href={`/payment-plans/${plan.id}/edit`}>
-                              <Button variant="outline" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </Link>)}
-                            {hasPermission('payment-plans.destroy')&&(
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(plan)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>)}
-                          </div>
+                            <div className="flex gap-1">
+                                {/* {hasPermission('payment-plans.show')&&( */}
+                                <Link href={route('payment-plans.show', plan.id)}>
+                                    <Button variant="outline" size="sm">
+                                        <Eye className="h-4 w-4" />
+                                    </Button>
+                                </Link>
+                             {/* )} */}
+                                {hasAllPermissions(['payment-plans.update','payment-plans.edit'])&&(
+                                <Link href={route('payment-plans.edit', plan.id)}>
+                                    <Button variant="outline" size="sm">
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
+                                </Link>)}
+                                {hasPermission('payment-plans.destroy')&&(
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDelete(plan)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>)}
+                            </div>
                         </TableCell>)}
                       </TableRow>
                     ))}

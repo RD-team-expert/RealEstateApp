@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { usePermissions } from '@/hooks/usePermissions';
 
-
 interface Role {
     id: number;
     name: string;
@@ -145,8 +144,8 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                         </CardHeader>
                         <CardContent>
                             {/* Note about password field */}
-                            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <p className="text-sm text-blue-800">
+                            <div className="mb-6 p-4 bg-secondary border border-border rounded-lg">
+                                <p className="text-sm text-secondary-foreground">
                                     <strong>Note:</strong> Leave password fields blank to keep the current password unchanged.
                                 </p>
                             </div>
@@ -164,7 +163,7 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                                             required
                                         />
                                         {errors.name && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.name}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.name}</p>
                                         )}
                                     </div>
 
@@ -179,7 +178,7 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                                             required
                                         />
                                         {errors.email && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.email}</p>
                                         )}
                                     </div>
                                 </div>
@@ -197,7 +196,7 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                                             error={errors.password}
                                         />
                                         {errors.password && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.password}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.password}</p>
                                         )}
                                     </div>
 
@@ -212,7 +211,7 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                                             error={errors.password_confirmation}
                                         />
                                         {errors.password_confirmation && (
-                                            <p className="text-red-600 text-sm mt-1">{errors.password_confirmation}</p>
+                                            <p className="text-destructive text-sm mt-1">{errors.password_confirmation}</p>
                                         )}
                                     </div>
                                 </div>
@@ -238,7 +237,6 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                                                     <SelectValue placeholder="Choose a role" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-
                                                     {roles.map(role => (
                                                         <SelectItem key={role.id} value={role.name}>
                                                             {role.name}
@@ -246,17 +244,17 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
+                                            {errors.role && <p className="mt-1 text-sm text-destructive">{errors.role}</p>}
                                         </div>
                                     )}
 
                                     {assignmentType === 'permissions' && (
                                         <div>
                                             <Label>Select Permissions by Resource</Label>
-                                            <div className="max-h-96 overflow-y-auto border border-gray-200 p-4 rounded space-y-6">
+                                            <div className="border border-border bg-card p-4 rounded space-y-6">
                                                 {Object.entries(groupedPermissions).map(([resource, resourcePermissions]) => (
                                                     <div key={resource} className="space-y-3">
-                                                        <h4 className="font-semibold text-gray-900 capitalize border-b border-gray-200 pb-2">
+                                                        <h4 className="font-semibold text-card-foreground capitalize border-b border-border pb-2">
                                                             {resource.replace('-', ' ')}
                                                         </h4>
                                                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 ml-4">
@@ -276,7 +274,7 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                                                                         />
                                                                         <label
                                                                             htmlFor={`permission-${permission.id}`}
-                                                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                                            className="text-sm font-medium leading-none text-card-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                                                         >
                                                                             {getActionDisplayName(action)}
                                                                         </label>
@@ -287,37 +285,37 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                                                     </div>
                                                 ))}
                                             </div>
-                                            {errors.permissions && <p className="mt-1 text-sm text-red-600">{errors.permissions}</p>}
+                                            {errors.permissions && <p className="mt-1 text-sm text-destructive">{errors.permissions}</p>}
                                         </div>
                                     )}
 
                                     {/* Current Assignments Display */}
-                                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                        <h4 className="text-sm font-medium text-gray-900 mb-3">Current Assignments:</h4>
+                                    <div className="p-4 bg-muted border border-border rounded-lg">
+                                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Current Assignments:</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                             <div>
-                                                <span className="font-medium text-gray-700">Current Roles:</span>
+                                                <span className="font-medium text-foreground">Current Roles:</span>
                                                 <div className="mt-1">
                                                     {userRoles.length > 0 ? (
                                                         userRoles.map(role => (
-                                                            <span key={role} className="inline-block ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 mr-1">
+                                                            <span key={role} className="inline-block ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-primary text-primary-foreground mr-1">
                                                                 {role}
                                                             </span>
                                                         ))
                                                     ) : (
-                                                        <span className="ml-2 text-gray-500">No roles assigned</span>
+                                                        <span className="ml-2 text-muted-foreground">No roles assigned</span>
                                                     )}
                                                 </div>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Direct Permissions:</span>
+                                                <span className="font-medium text-foreground">Direct Permissions:</span>
                                                 <div className="mt-1">
                                                     {userPermissions.length > 0 ? (
-                                                        <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                        <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-chart-1 text-primary-foreground">
                                                             {userPermissions.length} permissions
                                                         </span>
                                                     ) : (
-                                                        <span className="ml-2 text-gray-500">No direct permissions</span>
+                                                        <span className="ml-2 text-muted-foreground">No direct permissions</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -326,39 +324,39 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                                 </div>
 
                                 {/* Information note */}
-                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <p className="text-sm text-blue-800">
+                                <div className="p-4 bg-secondary border border-border rounded-lg">
+                                    <p className="text-sm text-secondary-foreground">
                                         <strong>Note:</strong> When selecting "Create" or "Edit" permissions, both the form and action permissions are automatically included.
                                     </p>
                                 </div>
 
                                 {/* Current user information display */}
-                                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                                    <h4 className="text-sm font-medium text-gray-900 mb-3">Current User Information:</h4>
+                                <div className="p-4 bg-muted border border-border rounded-lg">
+                                    <h4 className="text-sm font-medium text-muted-foreground mb-3">Current User Information:</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                         <div>
-                                            <span className="font-medium text-gray-700">User ID:</span>
-                                            <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                            <span className="font-medium text-foreground">User ID:</span>
+                                            <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-primary text-primary-foreground">
                                                 {user.id}
                                             </span>
                                         </div>
                                         <div>
-                                            <span className="font-medium text-gray-700">Email Verified:</span>
+                                            <span className="font-medium text-foreground">Email Verified:</span>
                                             <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${
-                                                user.email_verified_at ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                user.email_verified_at ? 'bg-chart-1 text-primary-foreground' : 'bg-destructive text-destructive-foreground'
                                             }`}>
                                                 {user.email_verified_at ? 'Yes' : 'No'}
                                             </span>
                                         </div>
                                         <div>
-                                            <span className="font-medium text-gray-700">Created:</span>
-                                            <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                            <span className="font-medium text-foreground">Created:</span>
+                                            <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-muted-foreground text-background">
                                                 {new Date(user.created_at).toLocaleDateString()}
                                             </span>
                                         </div>
                                         <div>
-                                            <span className="font-medium text-gray-700">Last Updated:</span>
-                                            <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                            <span className="font-medium text-foreground">Last Updated:</span>
+                                            <span className="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-muted-foreground text-background">
                                                 {new Date(user.updated_at).toLocaleDateString()}
                                             </span>
                                         </div>

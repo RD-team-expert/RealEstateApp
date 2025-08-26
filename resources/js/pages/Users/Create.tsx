@@ -150,7 +150,7 @@ export default function Create({ roles, permissions }: Props) {
                                             error={errors.name}
                                             required
                                         />
-                                        {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+                                        {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
                                     </div>
 
                                     {/* Email */}
@@ -165,7 +165,7 @@ export default function Create({ roles, permissions }: Props) {
                                             error={errors.email}
                                             required
                                         />
-                                        {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                                        {errors.email && <p className="mt-1 text-sm text-destructive">{errors.email}</p>}
                                     </div>
                                 </div>
 
@@ -183,7 +183,7 @@ export default function Create({ roles, permissions }: Props) {
                                             error={errors.password}
                                             required
                                         />
-                                        {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+                                        {errors.password && <p className="mt-1 text-sm text-destructive">{errors.password}</p>}
                                     </div>
 
                                     {/* Confirm Password */}
@@ -198,7 +198,7 @@ export default function Create({ roles, permissions }: Props) {
                                             error={errors.password_confirmation}
                                             required
                                         />
-                                        {errors.password_confirmation && <p className="mt-1 text-sm text-red-600">{errors.password_confirmation}</p>}
+                                        {errors.password_confirmation && <p className="mt-1 text-sm text-destructive">{errors.password_confirmation}</p>}
                                     </div>
                                 </div>
 
@@ -230,17 +230,17 @@ export default function Create({ roles, permissions }: Props) {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
+                                            {errors.role && <p className="mt-1 text-sm text-destructive">{errors.role}</p>}
                                         </div>
                                     )}
 
                                     {assignmentType === 'permissions' && (
                                         <div>
                                             <Label>Select Permissions by Resource</Label>
-                                            <div className="max-h-96 overflow-y-auto border border-gray-200 p-4 rounded space-y-6">
+                                            <div className="border border-border bg-card p-4 rounded space-y-6">
                                                 {Object.entries(groupedPermissions).map(([resource, resourcePermissions]) => (
                                                     <div key={resource} className="space-y-3">
-                                                        <h4 className="font-semibold text-gray-900 capitalize border-b border-gray-200 pb-2">
+                                                        <h4 className="font-semibold text-card-foreground capitalize border-b border-border pb-2">
                                                             {resource.replace('-', ' ')}
                                                         </h4>
                                                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 ml-4">
@@ -260,7 +260,7 @@ export default function Create({ roles, permissions }: Props) {
                                                                         />
                                                                         <label
                                                                             htmlFor={`permission-${permission.id}`}
-                                                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                                            className="text-sm font-medium leading-none text-card-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                                                         >
                                                                             {getActionDisplayName(action)}
                                                                         </label>
@@ -271,14 +271,14 @@ export default function Create({ roles, permissions }: Props) {
                                                     </div>
                                                 ))}
                                             </div>
-                                            {errors.permissions && <p className="mt-1 text-sm text-red-600">{errors.permissions}</p>}
+                                            {errors.permissions && <p className="mt-1 text-sm text-destructive">{errors.permissions}</p>}
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Information note */}
-                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <p className="text-sm text-blue-800">
+                                <div className="p-4 bg-secondary border border-border rounded-lg">
+                                    <p className="text-sm text-secondary-foreground">
                                         <strong>Note:</strong> When selecting "Create" or "Edit" permissions, both the form and action permissions are automatically included.
                                     </p>
                                 </div>

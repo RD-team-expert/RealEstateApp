@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props {
     payment: Payment;
 }
@@ -25,7 +26,7 @@ export default function Show({ payment }: Props) {
                       status.toLowerCase().includes('pending') ? 'secondary' : 'outline';
         return <Badge variant={variant}>{status}</Badge>;
     };
-
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     return (
         <AppLayout>
             <Head title={`Payment Details #${payment.id}`} />
@@ -37,9 +38,10 @@ export default function Show({ payment }: Props) {
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Payment Details</CardTitle>
                                 <div className="flex gap-2">
+                                    {hasAnyPermission(['payments.edit','payments.update'])&&(
                                     <Link href={route('payments.edit', payment.id)}>
                                         <Button>Edit Payment</Button>
-                                    </Link>
+                                    </Link>)}
                                     <Link href={route('payments.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>

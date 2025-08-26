@@ -12,7 +12,7 @@ interface Props extends PageProps {
 }
 
 export default function Show({ auth, unit }: Props) {
-    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const getVacantBadge = (vacant: string) => {
         const colorClass = vacant === 'Yes' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
         return <span className={`px-3 py-1 text-sm font-semibold rounded-full ${colorClass}`}>{vacant}</span>;
@@ -45,7 +45,7 @@ export default function Show({ auth, unit }: Props) {
                                     {unit.unit_name} - {unit.property}, {unit.city}
                                 </CardTitle>
                                 <div className="flex gap-2">
-                                    {hasAllPermission(['units.update','units.edit'])&&(
+                                    {hasAllPermissions(['units.update','units.edit'])&&(
                                     <Link href={route('units.edit', unit.id)}>
                                         <Button>Edit</Button>
                                     </Link>)}
