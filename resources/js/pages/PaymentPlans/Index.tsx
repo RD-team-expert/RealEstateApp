@@ -15,12 +15,13 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props extends PaymentPlanIndexProps {
   search?: string | null;
 }
 
 export default function Index({ paymentPlans, search }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
   const [searchTerm, setSearchTerm] = useState(search || '');
 
   const handleSearch = (e: React.FormEvent) => {
@@ -62,12 +63,13 @@ export default function Index({ paymentPlans, search }: Props) {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle className="text-2xl">Payment Plans Management</CardTitle>
+                {hasAllPermissions(['payment-plans.create','payment-plans.store',])&&(
                 <Link href="/payment-plans/create">
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Payment Plan
                   </Button>
-                </Link>
+                </Link>)}
               </div>
 
               <form onSubmit={handleSearch} className="flex gap-2 mt-4">
@@ -99,7 +101,8 @@ export default function Index({ paymentPlans, search }: Props) {
                       <TableHead>Status</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Note</TableHead>
-                      <TableHead>Actions</TableHead>
+                      {hasAnyPermission(['payment-plans.show','payment-plans.edit','payment-plans.update','payment-plans.destroy',])&&(
+                      <TableHead>Actions</TableHead>)}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -122,18 +125,22 @@ export default function Index({ paymentPlans, search }: Props) {
                           {new Date(plan.dates).toLocaleDateString()}
                         </TableCell>
                         <TableCell>{plan.notes}</TableCell>
+                        {hasAnyPermission(['payment-plans.show','payment-plans.edit','payment-plans.update','payment-plans.destroy',])&&(
                         <TableCell>
                           <div className="flex gap-1">
+                            {hasPermission('payment-plans.show')&&(
                             <Link href={`/payment-plans/${plan.id}`}>
                               <Button variant="outline" size="sm">
                                 <Eye className="h-4 w-4" />
                               </Button>
-                            </Link>
+                            </Link>)}
+                            {hasAllPermissions(['payment-plans.edit','payment-plans.update'])&&(
                             <Link href={`/payment-plans/${plan.id}/edit`}>
                               <Button variant="outline" size="sm">
                                 <Edit className="h-4 w-4" />
                               </Button>
-                            </Link>
+                            </Link>)}
+                            {hasPermission('payment-plans.destroy')&&(
                             <Button
                               variant="outline"
                               size="sm"
@@ -141,9 +148,9 @@ export default function Index({ paymentPlans, search }: Props) {
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </Button>)}
                           </div>
-                        </TableCell>
+                        </TableCell>)}
                       </TableRow>
                     ))}
                   </TableBody>

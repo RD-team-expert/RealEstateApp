@@ -4,7 +4,7 @@ import { OfferRenewal } from '@/types/OfferRenewal';
 import AppLayout from '@/Layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { usePermissions } from '@/hooks/usePermissions';
 const Show = () => {
     const { offer } = usePage().props as { offer: OfferRenewal };
 
@@ -13,6 +13,7 @@ const Show = () => {
         return new Date(date).toLocaleDateString();
     };
 
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     return (
         <AppLayout>
             <Head title={`Offer ${offer.id}`} />
@@ -26,9 +27,10 @@ const Show = () => {
                                     Offer Details - #{offer.id}
                                 </CardTitle>
                                 <div className="flex gap-2">
+                                    {hasAllPermissions(['offers-and-renewals.edit','offers-and-renewals.update'])&&(
                                     <Link href={`/offers_and_renewals/${offer.id}/edit`}>
                                         <Button>Edit</Button>
-                                    </Link>
+                                    </Link>)}
                                     <Link href="/offers_and_renewals">
                                         <Button variant="outline">Back to List</Button>
                                     </Link>

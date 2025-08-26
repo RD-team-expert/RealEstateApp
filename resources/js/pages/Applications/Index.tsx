@@ -29,8 +29,8 @@ interface Props extends PageProps {
 export default function Index({ auth, applications, statistics, filters }: Props) {
     const [searchFilters, setSearchFilters] = useState<ApplicationFilters>(filters);
     const { flash } = usePage().props;
-    const { hasPermission, hasAnyPermission } = usePermissions();
-    
+    const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
+
 
     const handleFilterChange = (key: keyof ApplicationFilters, value: string) => {
         const newFilters = { ...searchFilters, [key]: value };
@@ -111,12 +111,13 @@ export default function Index({ auth, applications, statistics, filters }: Props
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Applications</CardTitle>
+                                {hasAllPermissions(['applications.create','applications.store',])&&(
                                 <Link href={route('applications.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
                                         Add Application
                                     </Button>
-                                </Link>
+                                </Link>)}
                             </div>
 
                             {/* Filters */}
@@ -192,7 +193,8 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                             <TableHead>Stage</TableHead>
                                             <TableHead>Note</TableHead>
                                             <TableHead>Attachment</TableHead>
-                                            <TableHead>Actions</TableHead>
+                                            {hasAnyPermission(['applications.show','applications.edit','applications.update','applications.destroy',])&&(
+                                            <TableHead>Actions</TableHead>)}
 
                                         </TableRow>
                                     </TableHeader>
@@ -229,18 +231,22 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                                         <span className="text-gray-400 text-sm">No attachment</span>
                                                     )}
                                                 </TableCell>
+                                                {hasAnyPermission(['applications.show','applications.edit','applications.update','applications.destroy'])&&(
                                                 <TableCell>
                                                     <div className="flex gap-1">
+                                                        {hasPermission('applications.show')&&(
                                                         <Link href={route('applications.show', application.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasAnyPermission('applications.edit','applications.update')&&(
                                                         <Link href={route('applications.edit', application.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasPermission('applications.destroy')&&(
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -248,9 +254,9 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        </Button>)}
                                                     </div>
-                                                </TableCell>
+                                                </TableCell>)}
 
                                             </TableRow>
                                         ))}

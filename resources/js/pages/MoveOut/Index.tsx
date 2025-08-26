@@ -15,7 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { MoveOut } from '@/types/move-out';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props {
     moveOuts: {
         data: MoveOut[];
@@ -71,6 +71,7 @@ export default function Index({ moveOuts, search }: Props) {
         return new Date(date).toLocaleDateString();
     };
 
+    const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
     return (
         <AppLayout>
             <Head title="Move-Out Management" />
@@ -81,12 +82,13 @@ export default function Index({ moveOuts, search }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Move-Out Management</CardTitle>
+                                {hasAllPermissions(['move-out.create','move-out.store',])&&(
                                 <Link href={route('move-out.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
                                         Add Move-Out Record
                                     </Button>
-                                </Link>
+                                </Link>)}
                             </div>
 
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">
@@ -125,7 +127,8 @@ export default function Index({ moveOuts, search }: Props) {
                                             <TableHead className="min-w-[100px]">Cleaning</TableHead>
                                             <TableHead className="min-w-[120px]">List the Unit</TableHead>
                                             <TableHead className="min-w-[120px]">Move Out Form</TableHead>
-                                            <TableHead className="min-w-[120px]">Actions</TableHead>
+                                            {hasAnyPermission(['move-out.show','move-out.edit','move-out.update','move-out.destroy',])&&(
+                                            <TableHead className="min-w-[120px]">Actions</TableHead>)}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -183,18 +186,23 @@ export default function Index({ moveOuts, search }: Props) {
                                                 <TableCell>
                                                     {getFormBadge(moveOut.move_out_form)}
                                                 </TableCell>
+                                                {hasAnyPermission(['move-out.show','move-out.edit','move-out.update','move-out.destroy',])&&(
                                                 <TableCell>
+
                                                     <div className="flex gap-1">
+                                                        {hasPermission('move-out.show')&&(
                                                         <Link href={route('move-out.show', moveOut.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasAllPermissions(['move-out.edit','move-out.update'])&&(
                                                         <Link href={route('move-out.edit', moveOut.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasPermission('move-out.destroy')&&(
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -202,9 +210,9 @@ export default function Index({ moveOuts, search }: Props) {
                                                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        </Button>)}
                                                     </div>
-                                                </TableCell>
+                                                </TableCell>)}
                                             </TableRow>
                                         ))}
                                     </TableBody>

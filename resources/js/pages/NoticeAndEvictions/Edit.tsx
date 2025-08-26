@@ -13,6 +13,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const Edit = () => {
   const { record, tenants, notices } = usePage().props as {
@@ -48,6 +49,7 @@ const Edit = () => {
     value: `${t.first_name} ${t.last_name}`,
   }));
 
+  const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
   return (
     <AppLayout>
       <Head title="Edit Notice & Eviction" />
@@ -61,9 +63,10 @@ const Edit = () => {
                   Edit Notice & Eviction (ID: {record.id})
                 </CardTitle>
                 <div className="flex gap-2">
+                    {hasPermission('notices.index')&&(
                   <Link href={'/notices'}>
                     <Button variant="outline">View Notices</Button>
-                  </Link>
+                  </Link>)}
                   <Link href={'/notice_and_evictions'}>
                     <Button variant="outline">Back to List</Button>
                   </Link>

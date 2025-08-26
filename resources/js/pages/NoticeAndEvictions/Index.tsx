@@ -15,7 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { NoticeAndEviction } from '@/types/NoticeAndEviction';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props {
     records: NoticeAndEviction[];
     search?: string;
@@ -49,6 +49,7 @@ const Index = ({ records, search }: Props) => {
         );
     };
 
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     return (
         <AppLayout>
             <Head title="Notice & Evictions" />
@@ -59,12 +60,13 @@ const Index = ({ records, search }: Props) => {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Notice & Evictions</CardTitle>
+                                {hasAllPermissions(['notice-and-evictions.create','notice-and-evictions.store',])&&(
                                 <Link href="/notice_and_evictions/create">
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
                                         Add Record
                                     </Button>
-                                </Link>
+                                </Link>)}
                             </div>
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">
                                 <div className="flex-1">
@@ -100,7 +102,8 @@ const Index = ({ records, search }: Props) => {
                                             <TableHead>Evicted/Payment Plan</TableHead>
                                             <TableHead>If Left?</TableHead>
                                             <TableHead>Writ Date</TableHead>
-                                            <TableHead>Actions</TableHead>
+                                            {hasAnyPermission(['notice-and-evictions.show','notice-and-evictions.edit','notice-and-evictions.update','notice-and-evictions.destroy'])&&(
+                                            <TableHead>Actions</TableHead>)}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -143,18 +146,22 @@ const Index = ({ records, search }: Props) => {
                                                         : 'N/A'
                                                     }
                                                 </TableCell>
+                                                {hasAnyPermission(['notice-and-evictions.show','notice-and-evictions.edit','notice-and-evictions.update','notice-and-evictions.destroy'])&&(
                                                 <TableCell>
                                                     <div className="flex gap-1">
+                                                        {hasPermission('notice-and-evictions.show')&&(
                                                         <Link href={`/notice_and_evictions/${record.id}`}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasAllPermissions(['notice-and-evictions.edit','notice-and-evictions.update'])&&(
                                                         <Link href={`/notice_and_evictions/${record.id}/edit`}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasPermission('notice-and-evictions.destroy')&&(
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -162,9 +169,9 @@ const Index = ({ records, search }: Props) => {
                                                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        </Button>)}
                                                     </div>
-                                                </TableCell>
+                                                </TableCell>)}
                                             </TableRow>
                                         ))}
                                     </TableBody>

@@ -5,7 +5,7 @@ import { MoveOut } from '@/types/move-out';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props {
     moveOut: MoveOut;
 }
@@ -42,7 +42,7 @@ export default function Show({ moveOut }: Props) {
         if (!date) return 'Not Set';
         return new Date(date).toLocaleDateString();
     };
-
+const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
     return (
         <AppLayout>
             <Head title={`Move-Out Details #${moveOut.id}`} />
@@ -54,9 +54,10 @@ export default function Show({ moveOut }: Props) {
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Move-Out Record Details - #{moveOut.id}</CardTitle>
                                 <div className="flex gap-2">
+                                    {hasAllPermissions(['move-out.edit','move-out.update'])&&(
                                     <Link href={route('move-out.edit', moveOut.id)}>
                                         <Button>Edit Record</Button>
-                                    </Link>
+                                    </Link>)}
                                     <Link href={route('move-out.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>

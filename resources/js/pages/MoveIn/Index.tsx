@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { MoveIn } from '@/types/move-in';
 
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props {
     moveIns: {
         data: MoveIn[];
@@ -32,7 +33,7 @@ export default function Index({ moveIns, search }: Props) {
         e.preventDefault();
         router.get(route('move-in.index'), { search: searchTerm }, { preserveState: true });
     };
-
+const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
     const handleDelete = (moveIn: MoveIn) => {
         if (confirm('Are you sure you want to delete this move-in record?')) {
             router.delete(route('move-in.destroy', moveIn.id));
@@ -58,12 +59,13 @@ export default function Index({ moveIns, search }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Move-In Management</CardTitle>
+                                {hasAllPermissions(['move-in.create','move-in.store',])&&(
                                 <Link href={route('move-in.create')}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
                                         Add Move-In Record
                                     </Button>
-                                </Link>
+                                </Link>)}
                             </div>
 
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">
@@ -98,7 +100,8 @@ export default function Index({ moveIns, search }: Props) {
                                             <TableHead>Date of move in form filled in</TableHead>
                                             <TableHead>Submitted Insurance</TableHead>
                                             <TableHead>Date of Insurance expiration </TableHead>
-                                            <TableHead>Actions</TableHead>
+                                            {hasAnyPermission(['move-in.show','move-in.edit','move-in.update','move-in.destroy',])&&(
+                                            <TableHead>Actions</TableHead>)}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -155,18 +158,22 @@ export default function Index({ moveIns, search }: Props) {
                                                         ? new Date(moveIn.date_of_insurance_expiration).toLocaleDateString()
                                                         : 'N/A'}
                                                 </TableCell>
+                                                {hasAnyPermission(['move-in.show','move-in.edit','move-in.update','move-in.destroy',])&&(
                                                 <TableCell>
                                                     <div className="flex gap-1">
+                                                        {hasPermission('move-in.show')&&(
                                                         <Link href={route('move-in.show', moveIn.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasAllPermissions(['move-in.edit','move-in.update'])&&(
                                                         <Link href={route('move-in.edit', moveIn.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>
+                                                        </Link>)}
+                                                        {hasPermission('move-in.destroy')&&(
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -174,9 +181,9 @@ export default function Index({ moveIns, search }: Props) {
                                                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        </Button>)}
                                                     </div>
-                                                </TableCell>
+                                                </TableCell>)}
                                             </TableRow>
                                         ))}
                                     </TableBody>

@@ -15,7 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { OfferRenewal } from '@/types/OfferRenewal';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props {
   offers: OfferRenewal[];
   search?: string;
@@ -69,6 +69,7 @@ const Index = ({ offers, search }: Props) => {
     );
   };
 
+  const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
   return (
     <AppLayout>
       <Head title="Offers and Renewals" />
@@ -78,12 +79,13 @@ const Index = ({ offers, search }: Props) => {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle className="text-2xl">Offers and Renewals</CardTitle>
+                {hasAllPermissions(['offers-and-renewals.create','offers-and-renewals.store'])&&(
                 <Link href="/offers_and_renewals/create">
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Add New
                   </Button>
-                </Link>
+                </Link>)}
               </div>
               <form onSubmit={handleSearch} className="flex gap-2 mt-4">
                 <div className="flex-1">
@@ -145,7 +147,8 @@ const Index = ({ offers, search }: Props) => {
                       {/* Status columns at the end */}
                       <TableHead>How Many Days Left</TableHead>
                       <TableHead>Expired</TableHead>
-                      <TableHead>Actions</TableHead>
+                      {hasAnyPermission(['offers-and-renewals.show','offers-and-renewals.edit','offers-and-renewals.update','offers-and-renewals.destroy'])&&(
+                      <TableHead>Actions</TableHead>)}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -216,18 +219,22 @@ const Index = ({ offers, search }: Props) => {
                             {offer.expired ?? 'N/A'}
                           </Badge>
                         </TableCell>
+                        {hasAnyPermission(['offers-and-renewals.show','offers-and-renewals.edit','offers-and-renewals.update','offers-and-renewals.destroy'])&&(
                         <TableCell>
                           <div className="flex gap-1">
+                            {hasPermission('offers-and-renewals.show')&&(
                             <Link href={`/offers_and_renewals/${offer.id}`}>
                               <Button variant="outline" size="sm">
                                 <Eye className="h-4 w-4" />
                               </Button>
-                            </Link>
+                            </Link>)}
+                            {hasAllPermissions(['offers-and-renewals.edit','offers-and-renewals.update'])&&(
                             <Link href={`/offers_and_renewals/${offer.id}/edit`}>
                               <Button variant="outline" size="sm">
                                 <Edit className="h-4 w-4" />
                               </Button>
-                            </Link>
+                            </Link>)}
+                            {hasPermission('offers-and-renewals.destroy')&&(
                             <Button
                               variant="outline"
                               size="sm"
@@ -235,9 +242,9 @@ const Index = ({ offers, search }: Props) => {
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </Button>)}
                           </div>
-                        </TableCell>
+                        </TableCell>)}
                       </TableRow>
                     ))}
                   </TableBody>

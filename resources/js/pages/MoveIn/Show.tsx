@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props {
     moveIn: MoveIn;
 }
@@ -24,7 +25,7 @@ export default function Show({ moveIn }: Props) {
         if (!date) return 'Not Set';
         return new Date(date).toLocaleDateString();
     };
-
+const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
     return (
         <AppLayout>
             <Head title={`Move-In Details #${moveIn.id}`} />
@@ -36,9 +37,10 @@ export default function Show({ moveIn }: Props) {
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Move-In Record Details</CardTitle>
                                 <div className="flex gap-2">
+                                    {hasAllPermissions(['move-in.edit','move-in.update'])&&(
                                     <Link href={route('move-in.edit', moveIn.id)}>
                                         <Button>Edit Record</Button>
-                                    </Link>
+                                    </Link>)}
                                     <Link href={route('move-in.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>

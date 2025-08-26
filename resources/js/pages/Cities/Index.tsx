@@ -15,6 +15,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Trash2, Plus, X } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface Props {
   cities: City[];
@@ -41,7 +42,7 @@ const Index = ({ cities }: Props) => {
       router.delete(`/cities/${id}`);
     }
   };
-
+const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
   return (
     <AppLayout>
       <Head title="Cities" />
@@ -50,6 +51,7 @@ const Index = ({ cities }: Props) => {
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Add City Form Card */}
+            {hasAllPermissions(['cities.store','cities.create'])&&(
             <div className="lg:col-span-1">
               <Card>
                 <CardHeader>
@@ -96,7 +98,7 @@ const Index = ({ cities }: Props) => {
                   </CardContent>
                 )}
               </Card>
-            </div>
+            </div>)}
 
             {/* Cities Table Card */}
             <div className="lg:col-span-2">
@@ -110,13 +112,15 @@ const Index = ({ cities }: Props) => {
                       <TableHeader>
                         <TableRow>
                           <TableHead>City</TableHead>
-                          <TableHead>Actions</TableHead>
+                          {hasPermission('cities.destroy')&&(
+                          <TableHead>Actions</TableHead>)}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {cities.map((city) => (
                           <TableRow key={city.id} className="hover:bg-gray-50">
                             <TableCell className="font-medium">{city.city}</TableCell>
+                            {hasPermission('cities.destroy')&&(
                             <TableCell>
                               <Button
                                 variant="outline"
@@ -126,7 +130,7 @@ const Index = ({ cities }: Props) => {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
-                            </TableCell>
+                            </TableCell>)}
                           </TableRow>
                         ))}
                       </TableBody>

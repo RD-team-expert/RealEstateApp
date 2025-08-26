@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+import { usePermissions } from '@/hooks/usePermissions';
 const Show = () => {
     const { record } = usePage().props as { record: NoticeAndEviction };
 
@@ -12,7 +13,7 @@ const Show = () => {
         if (!date) return 'Not Set';
         return new Date(date).toLocaleDateString();
     };
-
+const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     return (
         <AppLayout>
             <Head title={`Notice & Eviction #${record.id}`} />
@@ -26,9 +27,10 @@ const Show = () => {
                                     Notice & Eviction Details - #{record.id}
                                 </CardTitle>
                                 <div className="flex gap-2">
+                                    {hasAllPermissions(['notice-and-evictions.edit','notice-and-evictions.update'])&&(
                                     <Link href={`/notice_and_evictions/${record.id}/edit`}>
                                         <Button>Edit</Button>
-                                    </Link>
+                                    </Link>)}
                                     <Link href="/notice_and_evictions">
                                         <Button variant="outline">Back to List</Button>
                                     </Link>

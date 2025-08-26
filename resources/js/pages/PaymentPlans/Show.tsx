@@ -5,7 +5,7 @@ import { PaymentPlanShowProps } from '@/types/PaymentPlan';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
+import { usePermissions } from '@/hooks/usePermissions';
 const formatCurrency = (amount: number | null) => {
   if (amount === null) return 'N/A';
   return new Intl.NumberFormat('en-US', {
@@ -24,7 +24,7 @@ const getStatusBadge = (status: string | null) => {
       : 'outline';
   return <Badge variant={variant}>{status}</Badge>;
 };
-
+const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
 const Show: React.FC<PaymentPlanShowProps> = ({ paymentPlan }) => {
   return (
     <AppLayout>
@@ -36,9 +36,10 @@ const Show: React.FC<PaymentPlanShowProps> = ({ paymentPlan }) => {
               <div className="flex justify-between items-center">
                 <CardTitle className="text-2xl">Payment Plan Details</CardTitle>
                 <div className="flex gap-2">
+                    {hasAllPermissions(['payment-plans.edit','payment-plans.update'])&&(
                   <Link href={`/payment-plans/${paymentPlan.id}/edit`}>
                     <Button>Edit Payment Plan</Button>
-                  </Link>
+                  </Link>)}
                   <Link href="/payment-plans">
                     <Button variant="outline">Back to List</Button>
                   </Link>

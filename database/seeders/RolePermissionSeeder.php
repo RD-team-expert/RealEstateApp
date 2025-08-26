@@ -148,6 +148,7 @@ class RolePermissionSeeder extends Seeder
 
             //cities
             'cities.index',
+            'cities.create',
             'cities.store',
             'cities.destroy',
         ];

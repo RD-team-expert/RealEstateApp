@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+import { usePermissions } from '@/hooks/usePermissions';
 const Create = () => {
   const { tenants, notices } = usePage().props as { tenants: Tenant[]; notices: Notice[] };
 
@@ -43,7 +44,7 @@ const Create = () => {
     label: `${t.first_name} ${t.last_name}`,
     value: `${t.first_name} ${t.last_name}`,
   }));
-
+const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
   return (
     <AppLayout>
       <Head title="Create Notice & Eviction" />
@@ -55,9 +56,10 @@ const Create = () => {
               <div className="flex justify-between items-center">
                 <CardTitle className="text-2xl">Create New Notice & Eviction</CardTitle>
                 <div className="flex gap-2">
+                    {hasPermission('notices.index')&&(
                   <Link href={'/notices'}>
                     <Button variant="outline">View Notices</Button>
-                  </Link>
+                  </Link>)}
                   <Link href={'/notice_and_evictions'}>
                     <Button variant="outline">Back to List</Button>
                   </Link>

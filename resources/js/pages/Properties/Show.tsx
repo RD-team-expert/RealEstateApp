@@ -7,12 +7,13 @@ import type { PageProps } from '@/types/property';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
+import { usePermissions } from '@/hooks/usePermissions';
 interface Props extends PageProps {
     property: Property;
 }
 
 export default function Show({ auth, property }: Props) {
+    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
     // Helper function to format dates without timezone issues
     const formatDate = (dateString: string): string => {
         const [year, month, day] = dateString.split('-');
@@ -73,9 +74,10 @@ export default function Show({ auth, property }: Props) {
                                     {property.property_name}
                                 </CardTitle>
                                 <div className="flex gap-2">
+                                    {hasAllPermissions(['properties.update','properties.edit'])&&(
                                     <Link href={route('properties-info.edit', property.id)}>
                                         <Button>Edit</Button>
-                                    </Link>
+                                    </Link>)}
                                     <Link href={route('properties-info.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>

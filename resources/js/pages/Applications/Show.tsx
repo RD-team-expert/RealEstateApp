@@ -7,6 +7,7 @@ import { Application } from '@/types/application';
 import { PageProps } from '@/types/application';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface Props extends PageProps {
     application: Application;
@@ -19,7 +20,7 @@ export default function Show({ auth, application }: Props) {
         // Simple styling without predefined status mapping
         return <span className="px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">{status}</span>;
     };
-
+    const { hasPermission, hasAnyPermission,hasAllPermissions } = usePermissions();
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -36,9 +37,10 @@ export default function Show({ auth, application }: Props) {
                                     {application.name} - {application.property}
                                 </CardTitle>
                                 <div className="flex gap-2">
+                                    {hasAllPermissions(['applications.edit','applications.update'])&&(
                                     <Link href={route('applications.edit', application.id)}>
                                         <Button>Edit</Button>
-                                    </Link>
+                                    </Link>)}
                                     <Link href={route('applications.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>
