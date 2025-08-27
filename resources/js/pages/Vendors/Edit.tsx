@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { VendorInfo, VendorFormData } from '@/types/vendor';
 import { PageProps } from '@/types/vendor';
@@ -34,9 +34,18 @@ export default function Edit({ auth, vendor, cities }: EditPageProps) {
         e.preventDefault();
         put(route('vendors.update', vendor.id));
     };
-
+const breadcrumbs: BreadcrumbItem[] = [
+                        {
+                            title: 'Vendors',
+                            href: '/vendors',
+                        },
+                        {
+                            title: 'Edit',
+                            href: '/vendors/{vendor}/edit',
+                        },
+                    ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Vendor - ${vendor.vendor_name}`} />
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
@@ -51,7 +60,8 @@ export default function Edit({ auth, vendor, cities }: EditPageProps) {
                                         <Button variant="outline">Back to List</Button>
                                     </Link>
                                     {hasPermission('cities.index')&&(
-                                    <Link href={'/cities'}>
+                                    <Link href={route('cities.index')}
+                                    data={{ bc: JSON.stringify(breadcrumbs) }}>
                                         <Button variant="outline">View Cities</Button>
                                     </Link>
                                     )}

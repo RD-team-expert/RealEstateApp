@@ -14,7 +14,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { type BreadcrumbItem } from '@/types';
 
 interface Props extends PageProps {
     application: Application;
@@ -82,8 +82,18 @@ export default function Edit({ auth, application, units, cities, properties, uni
         put(route('applications.update', application.id));
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Applications',
+            href: '/applications',
+        },
+        {
+            title: 'Edit',
+            href: 'applications/{application}/edit',
+        },
+    ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Application - ${application.name}`} />
 
             <div className="py-12">

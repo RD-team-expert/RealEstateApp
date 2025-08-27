@@ -1,6 +1,6 @@
 // resources/js/Pages/Units/Show.tsx
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/app-layout';
 import { Unit } from '@/types/unit';
 import { PageProps } from '@/types/unit';
@@ -69,11 +69,21 @@ export default function Show({ auth, unit }: Props) {
             </Badge>
         );
     };
-
+const breadcrumbs: BreadcrumbItem[] = [
+                    {
+                        title: 'Units',
+                        href: '/units',
+                    },
+                    {
+                        title: 'Show',
+                        href: '/units/{unit}',
+                    },
+                ];
     return (
         <AuthenticatedLayout
             user={auth.user}
             header={<h2 className="font-semibold text-xl text-foreground leading-tight">Unit Details</h2>}
+            breadcrumbs={breadcrumbs}
         >
             <Head title="Unit Details" />
 

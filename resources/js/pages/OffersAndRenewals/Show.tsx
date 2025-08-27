@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link, usePage } from '@inertiajs/react';
 import { OfferRenewal } from '@/types/OfferRenewal';
 import AppLayout from '@/Layouts/app-layout';
 import { Button } from '@/components/ui/button';
@@ -57,8 +57,18 @@ const Show = () => {
 
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'OffersAndRenewals/',
+            href: '/offers_and_renewals',
+        },
+        {
+            title: 'Show',
+            href: '/offers_and_renewals/{offers_and_renewal}',
+        },
+    ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Offer ${offer.id}`} />
 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

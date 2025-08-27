@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link, usePage } from '@inertiajs/react';
 import { NoticeAndEviction } from '@/types/NoticeAndEviction';
 import AppLayout from '@/Layouts/app-layout';
 import { Button } from '@/components/ui/button';
@@ -43,10 +43,21 @@ const Show = () => {
         );
     };
 
+
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'NoticeAndEvictions',
+            href: '/notice_and_evictions',
+        },
+        {
+            title: 'Show',
+            href: 'notice_and_evictions/{notice_and_eviction}',
+        },
+    ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Notice & Eviction #${record.id}`} />
 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

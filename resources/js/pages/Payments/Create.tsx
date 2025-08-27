@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     units: UnitData[];
     cities: string[];
@@ -50,8 +50,18 @@ export default function Create({ units, cities, unitsByCity }: Props) {
         post(route('payments.store'));
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+          {
+              title: 'Payments',
+              href: '/payments',
+          },
+          {
+              title: 'Create',
+              href: '/payments/create',
+          },
+      ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Payment" />
 
             <div className="py-12">
@@ -183,7 +193,7 @@ export default function Create({ units, cities, unitsByCity }: Props) {
                                     </div>
                                 </div>
 
-                                
+
 
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
@@ -196,7 +206,7 @@ export default function Create({ units, cities, unitsByCity }: Props) {
                                         />
                                         {errors.reversed_payments && <p className="text-red-600 text-sm mt-1">{errors.reversed_payments}</p>}
                                     </div>
-                                    
+
                                 </div>
                                 <div>
                                     <Label htmlFor="notes">Notes</Label>

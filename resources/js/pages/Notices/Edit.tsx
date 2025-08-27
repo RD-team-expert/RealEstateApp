@@ -1,4 +1,5 @@
 import React from 'react';
+import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { Notice } from '@/types/Notice';
@@ -20,8 +21,22 @@ const Edit: React.FC = () => {
     put(`/notices/${notice.id}`);
   }
 
+  const { url } = usePage();
+    const searching = url.split('?')[1] ?? '';
+    const bcParam = new URLSearchParams(searching).get('bc');
+
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(() => {
+      const base: BreadcrumbItem[] = [{ title: 'Edit', href: '/notices/{notice}/edit' }];
+      if (!bcParam) return base;
+      try {
+        const prev = JSON.parse(bcParam) as BreadcrumbItem[];
+        return Array.isArray(prev) ? [...prev, ...base] : base;
+      } catch {
+        return base;
+      }
+    }, [bcParam]);
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Edit Notice" />
 
       <div className="py-12">

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { usePermissions } from '@/hooks/usePermissions';
+import { type BreadcrumbItem } from '@/types';
 
 interface Role {
     id: number;
@@ -111,9 +112,19 @@ export default function Create({ roles, permissions }: Props) {
             onSuccess: () => reset(),
         });
     };
+const breadcrumbs: BreadcrumbItem[] = [
+                    {
+                        title: 'Users',
+                        href: '/users',
+                    },
+                    {
+                        title: 'Create',
+                        href: '/users/create',
+                    },
+                ];
 
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <SittingsLayout>
             <Head title="Create User" />
             <div className="py-12">
@@ -128,7 +139,8 @@ export default function Create({ roles, permissions }: Props) {
                                         <Button variant="outline">Back to List</Button>
                                     </Link>
                                     {hasPermission('roles.index')&&(
-                                    <Link href={route('roles.index')}>
+                                    <Link href={route('roles.index')}
+                                    data={{ bc: JSON.stringify(breadcrumbs) }}>
                                         <Button variant="outline">View Roles</Button>
                                     </Link>)}
                                     </div>

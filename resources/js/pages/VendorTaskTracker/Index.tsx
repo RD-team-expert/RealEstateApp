@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { VendorTaskTracker } from '@/types/vendor-task-tracker';
 import { usePermissions } from '@/hooks/usePermissions';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     tasks: {
         data: VendorTaskTracker[];
@@ -58,8 +58,14 @@ export default function Index({ tasks, search }: Props) {
         return <Badge variant={variant}>{status}</Badge>;
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+                {
+                    title: 'VendorTaskTracker',
+                    href: '/vendor-task-tracker',
+                }
+            ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Vendor Task Tracker" />
 
             <div className="py-12">

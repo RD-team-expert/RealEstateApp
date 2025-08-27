@@ -1,7 +1,7 @@
 // resources/js/Pages/Applications/Show.tsx
 
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/app-layout';
 import { Application } from '@/types/application';
 import { PageProps } from '@/types/application';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Download, FileText } from 'lucide-react';
+import { type BreadcrumbItem } from '@/types';
 
 interface Props extends PageProps {
     application: Application;
@@ -34,10 +35,21 @@ export default function Show({ auth, application }: Props) {
 
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
+    const breadcrumbs: BreadcrumbItem[] = [
+            {
+                title: 'Applications',
+                href: '/applications',
+            },
+            {
+                title: 'Show',
+                href: 'applications/{application}',
+            },
+        ];
     return (
         <AuthenticatedLayout
             user={auth.user}
             header={<h2 className="font-semibold text-xl text-foreground leading-tight">Application Details</h2>}
+            breadcrumbs={breadcrumbs}
         >
             <Head title="Application Details" />
 

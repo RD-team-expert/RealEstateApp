@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link, useForm } from '@inertiajs/react';
 import { PaymentPlanEditProps, PaymentPlanFormData } from '@/types/PaymentPlan';
 import AppLayout from '@/Layouts/app-layout';
 import { Button } from '@/components/ui/button';
@@ -30,8 +30,18 @@ const Edit: React.FC<PaymentPlanEditProps> = ({ paymentPlan, dropdownData }) => 
     put(`/payment-plans/${paymentPlan.id}`);
   };
 
+  const breadcrumbs: BreadcrumbItem[] = [
+          {
+              title: 'Payment Plans',
+              href: '/payment-plans',
+          },
+          {
+              title: 'Edit',
+              href: '/payment-plans/{payment_plan}/edit',
+          },
+      ];
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Edit Payment Plan" />
       <div className="py-12">
         <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">

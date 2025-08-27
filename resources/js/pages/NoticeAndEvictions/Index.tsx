@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { NoticeAndEviction } from '@/types/NoticeAndEviction';
 import { usePermissions } from '@/hooks/usePermissions';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     records: NoticeAndEviction[];
     search?: string;
@@ -67,8 +67,14 @@ const Index = ({ records, search }: Props) => {
 
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
+    const breadcrumbs: BreadcrumbItem[] = [
+            {
+                title: 'NoticeAndEvictions',
+                href: '/notice_and_evictions',
+            },
+        ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Notice & Evictions" />
 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

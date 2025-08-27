@@ -1,5 +1,6 @@
 import React from 'react';
-import { Head, useForm, Link } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';
+import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { Notice } from '@/types/Notice';
 import { Button } from '@/components/ui/button';
@@ -17,9 +18,22 @@ const Create: React.FC = () => {
     e.preventDefault();
     post('/notices');
   }
+const { url } = usePage();
+    const searching = url.split('?')[1] ?? '';
+    const bcParam = new URLSearchParams(searching).get('bc');
 
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(() => {
+      const base: BreadcrumbItem[] = [{ title: 'Create', href: '/notices/create' }];
+      if (!bcParam) return base;
+      try {
+        const prev = JSON.parse(bcParam) as BreadcrumbItem[];
+        return Array.isArray(prev) ? [...prev, ...base] : base;
+      } catch {
+        return base;
+      }
+    }, [bcParam]);
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Create Notice" />
 
       <div className="py-12">

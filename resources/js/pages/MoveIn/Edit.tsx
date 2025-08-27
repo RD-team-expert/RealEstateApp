@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { MoveIn, MoveInFormData } from '@/types/move-in';
 import { Button } from '@/components/ui/button';
@@ -40,8 +40,18 @@ export default function Edit({ moveIn, units }: Props) {
         put(route('move-in.update', moveIn.id));
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+            {
+                title: 'MoveIn',
+                href: '/move-in',
+            },
+            {
+                title: 'Edit',
+                href: 'move-in/{move_in}/edit',
+            },
+        ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Move-In Record #${moveIn.id}`} />
 
             <div className="py-12">

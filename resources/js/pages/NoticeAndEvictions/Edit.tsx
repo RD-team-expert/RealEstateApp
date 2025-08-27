@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, useForm, Link, usePage } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { NoticeAndEviction, Tenant, Notice } from '@/types/NoticeAndEviction';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePermissions } from '@/hooks/usePermissions';
-
 const Edit = () => {
   const { record, tenants, notices } = usePage().props as {
     record: NoticeAndEviction;
@@ -50,8 +49,18 @@ const Edit = () => {
   }));
 
   const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+  const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'NoticeAndEvictions',
+            href: '/notice_and_evictions',
+        },
+        {
+            title: 'Edit',
+            href: '/notice_and_evictions/{notice_and_eviction}/edit',
+        },
+    ];
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Edit Notice & Eviction" />
 
       <div className="py-12">
@@ -64,7 +73,8 @@ const Edit = () => {
                 </CardTitle>
                 <div className="flex gap-2">
                     {hasPermission('notices.index')&&(
-                  <Link href={'/notices'}>
+                  <Link href={route('notices.index')}
+                        data={{ bc: JSON.stringify(breadcrumbs) }}>
                     <Button variant="outline">View Notices</Button>
                   </Link>)}
                   <Link href={'/notice_and_evictions'}>

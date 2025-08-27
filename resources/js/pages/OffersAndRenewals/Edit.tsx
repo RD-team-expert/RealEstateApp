@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, useForm, Link, usePage } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import { OfferRenewal, Tenant } from '@/types/OfferRenewal';
 import AppLayout from '@/Layouts/app-layout';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
 const Edit: React.FC = () => {
   const { offer, tenants } = usePage().props as { offer: OfferRenewal; tenants: Tenant[] };
 
@@ -33,8 +32,18 @@ const Edit: React.FC = () => {
     value: `${t.first_name} ${t.last_name}`,
   }));
 
+  const breadcrumbs: BreadcrumbItem[] = [
+          {
+              title: 'OffersAndRenewals/',
+              href: '/offers_and_renewals',
+          },
+          {
+              title: 'Edit',
+              href: '/offers_and_renewals/{offers_and_renewal}/edit',
+          },
+      ];
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Edit Offer & Renewal" />
 
       <div className="py-12">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router,usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Plus, Search } from 'lucide-react';
 import { Notice } from '@/types/Notice';
 import { usePermissions } from '@/hooks/usePermissions';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     notices: Notice[];
     search?: string;
@@ -48,8 +48,22 @@ const Index = ({ notices, search }: Props) => {
 
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
+    const { url } = usePage();
+  const searching = url.split('?')[1] ?? '';
+  const bcParam = new URLSearchParams(searching).get('bc');
+
+  const breadcrumbs: BreadcrumbItem[] = React.useMemo(() => {
+    const base: BreadcrumbItem[] = [{ title: 'Notices', href: '/notices' }];
+    if (!bcParam) return base;
+    try {
+      const prev = JSON.parse(bcParam) as BreadcrumbItem[];
+      return Array.isArray(prev) ? [...prev, ...base] : base;
+    } catch {
+      return base;
+    }
+  }, [bcParam]);
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Notices" />
 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
@@ -59,7 +73,8 @@ const Index = ({ notices, search }: Props) => {
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Notices</CardTitle>
                                 {hasAllPermissions(['notices.create','notices.store']) && (
-                                <Link href="/notices/create">
+                                <Link href="/notices/create"
+                                data={{ bc: JSON.stringify(breadcrumbs) }}>
                                     <Button>
                                         <Plus className="h-4 w-4 mr-2" />
                                         Add Notice
@@ -104,7 +119,8 @@ const Index = ({ notices, search }: Props) => {
                                                 <TableCell>
                                                     <div className="flex gap-1">
                                                         {hasAllPermissions(['notices.edit','notices.update']) && (
-                                                        <Link href={`/notices/${notice.id}/edit`}>
+                                                        <Link href={`/notices/${notice.id}/edit`}
+                                                        data={{ bc: JSON.stringify(breadcrumbs) }}>
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>

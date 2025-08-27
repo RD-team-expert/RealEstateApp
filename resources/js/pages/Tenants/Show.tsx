@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { Tenant } from '@/types/tenant';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,18 @@ interface Props {
 
 export default function Show({ tenant }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+    const breadcrumbs: BreadcrumbItem[] = [
+                {
+                    title: 'Tenants',
+                    href: '/tenants',
+                },
+                {
+                    title: 'Show',
+                    href: '/tenants/{tenant}',
+                },
+            ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${tenant.first_name} ${tenant.last_name}`} />
 
             <div className="py-12">

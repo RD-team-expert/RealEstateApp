@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePermissions } from '@/hooks/usePermissions';
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     units: UnitData[];
     properties: string[];
@@ -60,9 +61,18 @@ export default function Create({ units, properties, unitsByProperty }: Props) {
         e.preventDefault();
         post(route('tenants.store'));
     };
-
+    const breadcrumbs: BreadcrumbItem[] = [
+            {
+                title: 'Tenants',
+                href: '/tenants',
+            },
+            {
+                title: 'Create',
+                href: '/tenants/create',
+            },
+        ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Tenant" />
 
             <div className="py-12">

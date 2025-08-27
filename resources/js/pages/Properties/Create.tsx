@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { type BreadcrumbItem } from '@/types';
 export default function Create({ auth }: PageProps) {
     const { data, setData, post, processing, errors } = useForm<PropertyFormData>({
         property_name: '',
@@ -25,9 +25,18 @@ export default function Create({ auth }: PageProps) {
         post(route('properties-info.store'));
 
     };
-
+const breadcrumbs: BreadcrumbItem[] = [
+          {
+              title: 'PropertiesInfo',
+              href: '/properties-info',
+          },
+          {
+              title: 'Create',
+              href: '/properties-info/create',
+          },
+      ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Property" />
 
             <div className="py-12">

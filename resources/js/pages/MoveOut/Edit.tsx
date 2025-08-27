@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     moveOut: MoveOut;
     tenants: string[];
@@ -60,8 +60,18 @@ export default function Edit({ moveOut, tenants, unitsByTenant, tenantsData }: P
         put(route('move-out.update', moveOut.id));
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+            {
+                title: 'MoveOut',
+                href: '/move-out',
+            },
+            {
+                title: 'Edit',
+                href: 'move-in/{move_in}/edit',
+            },
+        ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Move-Out Record #${moveOut.id}`} />
 
             <div className="py-12">

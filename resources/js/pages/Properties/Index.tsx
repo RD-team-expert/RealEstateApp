@@ -18,7 +18,7 @@ import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { Property, PaginatedProperties, PropertyFilters, PropertyStatistics } from '@/types/property';
 import type { PageProps } from '@/types/property';
 import { usePermissions } from '@/hooks/usePermissions';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props extends PageProps {
     properties: PaginatedProperties;
     statistics: PropertyStatistics;
@@ -70,9 +70,14 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return diffDays;
     };
-
+const breadcrumbs: BreadcrumbItem[] = [
+          {
+              title: 'PropertiesInfo',
+              href: '/properties-info',
+          },
+      ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Properties Insurance" />
 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

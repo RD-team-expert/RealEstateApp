@@ -16,7 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props extends PaymentPlanIndexProps {
   search?: string | null;
 }
@@ -57,8 +57,14 @@ export default function Index({ paymentPlans, search }: Props) {
         }
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+              {
+                  title: 'Payment Plans',
+                  href: '/payment-plans',
+              }
+          ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Payment Plans" />
 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { Application, PaginatedApplications, ApplicationFilters, ApplicationStatistics } from '@/types/application';
 import { PageProps } from '@/types/application';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props extends PageProps {
     applications: PaginatedApplications;
     statistics: ApplicationStatistics;
@@ -50,8 +50,14 @@ export default function Index({ auth, applications, statistics, filters }: Props
         return <Badge variant="default">{status}</Badge>;
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+            {
+                title: 'Applications',
+                href: '/applications',
+            },
+        ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Applications" />
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">

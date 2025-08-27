@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import SittingsLayout from '@/Layouts/settings/layout';
 import { Button } from '@/components/ui/button';
@@ -73,8 +73,22 @@ export default function ShowRole({ role }: Props) {
 
     const isSuperAdmin = role.name === 'Super-Admin';
 
+    const { url } = usePage();
+    const searching = url.split('?')[1] ?? '';
+    const bcParam = new URLSearchParams(searching).get('bc');
+
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(() => {
+      const base: BreadcrumbItem[] = [{ title: 'Show', href: '/roles/{role}' }];
+      if (!bcParam) return base;
+      try {
+        const prev = JSON.parse(bcParam) as BreadcrumbItem[];
+        return Array.isArray(prev) ? [...prev, ...base] : base;
+      } catch {
+        return base;
+      }
+    }, [bcParam]);
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <SittingsLayout>
                 <Head title={`Role: ${role.name}`} />
 

@@ -13,7 +13,8 @@ import AppLayout from '@/Layouts/app-layout';
 import { PageProps, UnitFormData } from '@/types/unit';
 import { Head, Link, useForm } from '@inertiajs/react';
 import React from 'react';
-import { usePermissions } from '@/hooks/usePermissions';
+import { type BreadcrumbItem } from '@/types';import { usePermissions } from '@/hooks/usePermissions';
+
 interface CreatePageProps extends PageProps {
     cities: Array<{ id: number; city: string }>;
 }
@@ -42,9 +43,18 @@ export default function Create({ auth, cities }: CreatePageProps) {
         e.preventDefault();
         post(route('units.store'));
     };
-
+const breadcrumbs: BreadcrumbItem[] = [
+                {
+                    title: 'Units',
+                    href: '/units',
+                },
+                {
+                    title: 'Create',
+                    href: '/units/create',
+                },
+            ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Unit" />
             <div className="py-12">
                 <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
@@ -57,9 +67,11 @@ export default function Create({ auth, cities }: CreatePageProps) {
                                         <Button variant="outline">Back to List</Button>
                                     </Link>
                                     {hasPermission('cities.index')&&(
-                                    <Link href={'/cities'}>
+                                    <Link  href={route('cities.index')}
+                                    data={{ bc: JSON.stringify(breadcrumbs) }}>
                                         <Button variant="outline">View Cities</Button>
-                                    </Link>)}
+                                    </Link>
+                                )}
                                 </div>
                             </div>
                         </CardHeader>

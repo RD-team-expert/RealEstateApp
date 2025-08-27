@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     units: UnitData[];
     cities: string[];
@@ -53,8 +53,18 @@ export default function Create({ units, cities, unitsByCity, vendors }: Props) {
         post(route('vendor-task-tracker.store'));
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'VendorTaskTracker',
+            href: '/vendor-task-tracker',
+        },
+        {
+            title: 'Create',
+            href: '/vendor-task-tracker/create',
+        },
+    ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Vendor Task" />
 
             <div className="py-12">

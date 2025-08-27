@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     task: VendorTaskTracker;
     units: UnitData[];
@@ -55,8 +55,18 @@ export default function Edit({ task, units, cities, unitsByCity, vendors }: Prop
         put(route('vendor-task-tracker.update', task.id));
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+            {
+                title: 'VendorTaskTracker',
+                href: '/vendor-task-tracker',
+            },
+            {
+                title: 'Edit',
+                href: '/vendor-task-tracker/{vendor_task_tracker}/edit',
+            },
+        ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Task #${task.id}`} />
 
             <div className="py-12">

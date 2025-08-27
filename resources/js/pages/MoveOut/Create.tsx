@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     tenants: string[];
     unitsByTenant: Record<string, string[]>;
@@ -57,8 +57,18 @@ export default function Create({ tenants, unitsByTenant, tenantsData }: Props) {
         post(route('move-out.store'));
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'MoveOut',
+            href: '/move-out',
+        },
+        {
+            title: 'Creat',
+            href: 'move-in/create',
+        },
+    ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Move-Out Record" />
 
             <div className="py-12">

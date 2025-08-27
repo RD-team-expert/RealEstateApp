@@ -1,4 +1,5 @@
 import React from 'react';
+import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import { OfferRenewal, Tenant } from '@/types/OfferRenewal';
 import AppLayout from '@/Layouts/app-layout';
@@ -13,7 +14,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
 const Create: React.FC = () => {
   const { tenants } = usePage().props as { tenants: Tenant[] };
 
@@ -49,8 +49,18 @@ const Create: React.FC = () => {
     value: `${t.first_name} ${t.last_name}`,
   }));
 
+  const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'OffersAndRenewals/',
+            href: '/offers_and_renewals',
+        },
+        {
+            title: 'Creat',
+            href: '/offers_and_renewals/create',
+        },
+    ];
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Create Offer" />
 
       <div className="py-12">

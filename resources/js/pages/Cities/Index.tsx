@@ -1,6 +1,6 @@
 // Cities/Index.tsx
 import React, { useState } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router,usePage } from '@inertiajs/react';
 import { City } from '@/types/City';
 import AppLayout from '@/Layouts/app-layout';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/table';
 import { Trash2, Plus, X } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
-
+import type { BreadcrumbItem } from '@/types';
 interface Props {
   cities: City[];
 }
@@ -46,8 +46,22 @@ const Index = ({ cities }: Props) => {
 
   const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
+  const { url } = usePage();
+  const search = url.split('?')[1] ?? '';
+  const bcParam = new URLSearchParams(search).get('bc');
+
+  const breadcrumbs: BreadcrumbItem[] = React.useMemo(() => {
+    const base: BreadcrumbItem[] = [{ title: 'Cities', href: '/cities' }];
+    if (!bcParam) return base;
+    try {
+      const prev = JSON.parse(bcParam) as BreadcrumbItem[];
+      return Array.isArray(prev) ? [...prev, ...base] : base;
+    } catch {
+      return base;
+    }
+  }, [bcParam]);
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Cities" />
 
       <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { VendorTaskTracker } from '@/types/vendor-task-tracker';
 import { Button } from '@/components/ui/button';
@@ -30,9 +30,18 @@ export default function Show({ task }: Props) {
 
         return <Badge variant={variant}>{status}</Badge>;
     };
-
+    const breadcrumbs: BreadcrumbItem[] = [
+            {
+                title: 'VendorTaskTracker',
+                href: '/vendor-task-tracker',
+            },
+            {
+                title: 'Show',
+                href: '/vendor-task-tracker/{vendor_task_tracker}',
+            },
+        ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Task Details #${task.id}`} />
 
             <div className="py-12">

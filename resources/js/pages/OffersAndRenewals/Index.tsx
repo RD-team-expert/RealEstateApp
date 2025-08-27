@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { OfferRenewal } from '@/types/OfferRenewal';
 import { usePermissions } from '@/hooks/usePermissions';
+import { type BreadcrumbItem } from '@/types';
 
 interface Props {
   offers: OfferRenewal[];
@@ -98,8 +99,14 @@ const Index = ({ offers, search }: Props) => {
 
   const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
+  const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'OffersAndRenewals/',
+            href: '/offers_and_renewals',
+        },
+    ];
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Offers and Renewals" />
 
       <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

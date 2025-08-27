@@ -1,7 +1,7 @@
 // resources/js/Pages/Vendors/Show.tsx
 
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/app-layout';
 import { VendorInfo } from '@/types/vendor';
 import { PageProps } from '@/types/vendor';
@@ -16,6 +16,16 @@ interface Props extends PageProps {
 export default function Show({ auth, vendor }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
+    const breadcrumbs: BreadcrumbItem[] = [
+                        {
+                            title: 'Vendors',
+                            href: '/vendors',
+                        },
+                        {
+                            title: 'Show',
+                            href: '/vendors/{vendor}',
+                        },
+                    ];
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -24,6 +34,7 @@ export default function Show({ auth, vendor }: Props) {
                     Vendor Details
                 </h2>
             }
+            breadcrumbs={breadcrumbs}
         >
             <Head title="Vendor Details" />
 

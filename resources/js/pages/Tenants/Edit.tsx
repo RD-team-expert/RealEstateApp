@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePermissions } from '@/hooks/usePermissions';
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     tenant: Tenant;
     units: UnitData[];
@@ -63,9 +64,18 @@ export default function Edit({ tenant, units, properties, unitsByProperty }: Pro
         e.preventDefault();
         put(route('tenants.update', tenant.id));
     };
-
+    const breadcrumbs: BreadcrumbItem[] = [
+                {
+                    title: 'Tenants',
+                    href: '/tenants',
+                },
+                {
+                    title: 'Edit',
+                    href: '/tenants/{tenant}/edit',
+                },
+            ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit ${tenant.first_name} ${tenant.last_name}`} />
 
             <div className="py-12">

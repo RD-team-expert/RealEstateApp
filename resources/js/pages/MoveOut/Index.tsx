@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { MoveOut } from '@/types/move-out';
 import { usePermissions } from '@/hooks/usePermissions';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     moveOuts: {
         data: MoveOut[];
@@ -86,8 +86,14 @@ export default function Index({ moveOuts, search }: Props) {
 
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'MoveOut',
+            href: '/move-out',
+        },
+    ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Move-Out Management" />
 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

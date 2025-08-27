@@ -16,7 +16,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     tenants: Tenant[];
     search?: string;
@@ -105,8 +105,14 @@ export default function Index({ tenants, search }: Props) {
         );
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+                    {
+                        title: 'Tenants',
+                        href: '/tenants',
+                    },
+                ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Tenants" />
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">

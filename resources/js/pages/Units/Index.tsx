@@ -17,6 +17,7 @@ import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { Unit, PaginatedUnits, UnitFilters, UnitStatistics } from '@/types/unit';
 import { PageProps } from '@/types/unit';
 import { usePermissions } from '@/hooks/usePermissions';
+import { type BreadcrumbItem } from '@/types';
 
 interface Props extends PageProps {
     units: PaginatedUnits;
@@ -71,8 +72,14 @@ export default function Index({ auth, units, statistics, filters }: Props) {
         );
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+                        {
+                            title: 'Units',
+                            href: '/units',
+                        },
+                    ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Units" />
             <div className="py-12">
                 <div className="max-w-full mx-auto sm:px-6 lg:px-8">

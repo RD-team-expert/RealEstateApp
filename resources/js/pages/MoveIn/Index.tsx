@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { MoveIn } from '@/types/move-in';
 import { usePermissions } from '@/hooks/usePermissions';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props {
     moveIns: {
         data: MoveIn[];
@@ -55,8 +55,14 @@ export default function Index({ moveIns, search }: Props) {
         );
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'MoveIn',
+            href: '/move-in',
+        }
+    ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Move-In Management" />
 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

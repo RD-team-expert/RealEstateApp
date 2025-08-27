@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, useForm, Link, usePage } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { NoticeAndEviction, Tenant, Notice } from '@/types/NoticeAndEviction';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
 import { usePermissions } from '@/hooks/usePermissions';
 const Create = () => {
   const { tenants, notices } = usePage().props as { tenants: Tenant[]; notices: Notice[] };
@@ -45,8 +44,18 @@ const Create = () => {
     value: `${t.first_name} ${t.last_name}`,
   }));
 const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'NoticeAndEvictions',
+            href: '/notice_and_evictions',
+        },
+        {
+            title: 'Create',
+            href: 'notice_and_evictions/create',
+        },
+    ];
   return (
-    <AppLayout>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Create Notice & Eviction" />
 
       <div className="py-12">
@@ -57,7 +66,8 @@ const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
                 <CardTitle className="text-2xl">Create New Notice & Eviction</CardTitle>
                 <div className="flex gap-2">
                     {hasPermission('notices.index')&&(
-                  <Link href={'/notices'}>
+                  <Link href={route('notices.index')}
+                        data={{ bc: JSON.stringify(breadcrumbs) }}>
                     <Button variant="outline">View Notices</Button>
                   </Link>)}
                   <Link href={'/notice_and_evictions'}>

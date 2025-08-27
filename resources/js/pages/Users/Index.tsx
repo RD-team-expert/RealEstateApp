@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import SittingsLayout from '@/Layouts/settings/layout';
 import { Button } from '@/components/ui/button';
@@ -60,9 +60,15 @@ export default function Index({ users }: Props) {
 
         return colors[roleId % colors.length];
     };
+const breadcrumbs: BreadcrumbItem[] = [
+                    {
+                        title: 'Users',
+                        href: '/users',
+                    },
+                ];
 
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <SittingsLayout>
             <Head title="Users" />
             <div className="py-12">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { Payment } from '@/types/payments';
 import { Button } from '@/components/ui/button';
@@ -29,8 +29,18 @@ export default function Show({ payment }: Props) {
         return <Badge variant={variant}>{status}</Badge>;
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+          {
+              title: 'Payments',
+              href: '/payments',
+          },
+          {
+              title: 'Show',
+              href: '/payments/{payment}',
+          },
+      ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Payment Details #${payment.id}`} />
 
             <div className="py-12">

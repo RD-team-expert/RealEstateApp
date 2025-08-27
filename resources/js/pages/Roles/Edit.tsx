@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link, useForm,usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import SittingsLayout from '@/Layouts/settings/layout';
 import { Button } from '@/components/ui/button';
@@ -105,9 +105,22 @@ export default function EditRole({ role, permissions, rolePermissions }: Props) 
     };
 
     const isSuperAdmin = role.name === 'Super-Admin';
+const { url } = usePage();
+    const searching = url.split('?')[1] ?? '';
+    const bcParam = new URLSearchParams(searching).get('bc');
 
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(() => {
+      const base: BreadcrumbItem[] = [{ title: 'Edit', href: '/roles/{role}/edit' }];
+      if (!bcParam) return base;
+      try {
+        const prev = JSON.parse(bcParam) as BreadcrumbItem[];
+        return Array.isArray(prev) ? [...prev, ...base] : base;
+      } catch {
+        return base;
+      }
+    }, [bcParam]);
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <SittingsLayout>
                 <Head title={`Edit Role - ${role.name}`} />
                 <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

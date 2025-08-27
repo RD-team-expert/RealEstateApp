@@ -1,12 +1,11 @@
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { MoveIn } from '@/types/move-in';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
-
 interface Props {
     moveIn: MoveIn;
 }
@@ -28,8 +27,18 @@ export default function Show({ moveIn }: Props) {
         return new Date(date).toLocaleDateString();
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'MoveIn',
+            href: '/move-in',
+        },
+        {
+            title: 'Show',
+            href: '/move-in/{move_in}',
+        },
+    ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Move-In Details #${moveIn.id}`} />
 
             <div className="py-12">

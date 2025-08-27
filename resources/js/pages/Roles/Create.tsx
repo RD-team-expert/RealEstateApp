@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage} from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import SittingsLayout from '@/Layouts/settings/layout';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
-
+import { type BreadcrumbItem } from '@/types';
 interface Permission {
     id: number;
     name: string;
@@ -101,8 +101,22 @@ export default function CreateRole({ permissions }: Props) {
         });
     };
 
+    const { url } = usePage();
+    const searching = url.split('?')[1] ?? '';
+    const bcParam = new URLSearchParams(searching).get('bc');
+
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(() => {
+      const base: BreadcrumbItem[] = [{ title: 'Create', href: '/roles/create' }];
+      if (!bcParam) return base;
+      try {
+        const prev = JSON.parse(bcParam) as BreadcrumbItem[];
+        return Array.isArray(prev) ? [...prev, ...base] : base;
+      } catch {
+        return base;
+      }
+    }, [bcParam]);
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <SittingsLayout>
                 <Head title="Create Role" />
                 <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

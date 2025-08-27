@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { MoveInFormData } from '@/types/move-in';
 import { Button } from '@/components/ui/button';
@@ -39,8 +39,18 @@ export default function Create({ units }: Props) {
         post(route('move-in.store'));
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'MoveIn',
+            href: '/move-in',
+        },
+        {
+            title: 'Create',
+            href: '/move-in/create',
+        },
+    ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Move-In Record" />
 
             <div className="py-12">

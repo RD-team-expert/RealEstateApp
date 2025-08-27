@@ -1,6 +1,6 @@
 // resources/js/Pages/Units/Edit.tsx
 import React from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { Unit, UnitFormData, PageProps } from '@/types/unit';
 import { Button } from '@/components/ui/button';
@@ -46,8 +46,18 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
         put(route('units.update', unit.id));
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+                    {
+                        title: 'Units',
+                        href: '/units',
+                    },
+                    {
+                        title: 'Edit',
+                        href: '/units/{unit}/edit',
+                    },
+                ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Unit - ${unit.unit_name}`} />
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
@@ -62,7 +72,8 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                         <Button variant="outline">Back to List</Button>
                                     </Link>
                                     {hasPermission('cities.index') && (
-                                    <Link href={route('cities.index')}>
+                                    <Link href={route('cities.index')}
+                                    data={{ bc: JSON.stringify(breadcrumbs) }}>
                                         <Button variant="outline">View Cities</Button>
                                     </Link>)}
                                 </div>

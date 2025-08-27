@@ -16,7 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import axios from 'axios';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props extends PageProps {
     units: UnitData[];
     cities: string[];
@@ -74,8 +74,18 @@ export default function Create({ auth, units, cities, properties, unitsByPropert
         post(route('applications.store'));
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Applications',
+            href: '/applications',
+        },
+        {
+            title: 'Create',
+            href: '/applications/create',
+        },
+    ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Application" />
 
             <div className="py-12">

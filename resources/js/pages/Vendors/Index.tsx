@@ -16,7 +16,7 @@ import {
 import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
 import { VendorInfo, PaginatedVendors, VendorFilters, VendorStatistics } from '@/types/vendor';
 import { PageProps } from '@/types/vendor';
-
+import { type BreadcrumbItem } from '@/types';
 interface Props extends PageProps {
     vendors: PaginatedVendors;
     statistics: VendorStatistics;
@@ -44,8 +44,14 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
         }
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+                    {
+                        title: 'Vendors',
+                        href: '/vendors',
+                    },
+                ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Vendors" />
 
             <div className="py-12">

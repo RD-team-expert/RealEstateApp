@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { type BreadcrumbItem } from '@/types';import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { Property, PropertyFormData } from '@/types/property';
 import type { PageProps } from '@/types/property';
@@ -27,8 +27,18 @@ export default function Edit({ auth, property }: Props) {
         put(route('properties-info.update', property.id));
     };
 
+    const breadcrumbs: BreadcrumbItem[] = [
+          {
+              title: 'PropertiesInfo',
+              href: '/properties-info',
+          },
+          {
+              title: 'Edit',
+              href: '/properties-info/{properties_info}/edit',
+          },
+      ];
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Property - ${property.property_name}`} />
 
             <div className="py-12">
