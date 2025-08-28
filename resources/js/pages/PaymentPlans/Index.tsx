@@ -57,14 +57,9 @@ export default function Index({ paymentPlans, search }: Props) {
         }
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-              {
-                  title: 'Payment Plans',
-                  href: '/payment-plans',
-              }
-          ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Payment Plans" />
 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

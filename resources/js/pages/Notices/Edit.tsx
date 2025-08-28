@@ -25,18 +25,9 @@ const Edit: React.FC = () => {
     const searching = url.split('?')[1] ?? '';
     const bcParam = new URLSearchParams(searching).get('bc');
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(() => {
-      const base: BreadcrumbItem[] = [{ title: 'Edit', href: '/notices/{notice}/edit' }];
-      if (!bcParam) return base;
-      try {
-        const prev = JSON.parse(bcParam) as BreadcrumbItem[];
-        return Array.isArray(prev) ? [...prev, ...base] : base;
-      } catch {
-        return base;
-      }
-    }, [bcParam]);
+
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
+    <AppLayout >
       <Head title="Edit Notice" />
 
       <div className="py-12">

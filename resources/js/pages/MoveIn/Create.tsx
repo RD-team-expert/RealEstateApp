@@ -39,18 +39,9 @@ export default function Create({ units }: Props) {
         post(route('move-in.store'));
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'MoveIn',
-            href: '/move-in',
-        },
-        {
-            title: 'Create',
-            href: '/move-in/create',
-        },
-    ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Create Move-In Record" />
 
             <div className="py-12">

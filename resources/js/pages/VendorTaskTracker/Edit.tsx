@@ -55,18 +55,9 @@ export default function Edit({ task, units, cities, unitsByCity, vendors }: Prop
         put(route('vendor-task-tracker.update', task.id));
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-            {
-                title: 'VendorTaskTracker',
-                href: '/vendor-task-tracker',
-            },
-            {
-                title: 'Edit',
-                href: '/vendor-task-tracker/{vendor_task_tracker}/edit',
-            },
-        ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title={`Edit Task #${task.id}`} />
 
             <div className="py-12">

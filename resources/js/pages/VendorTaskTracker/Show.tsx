@@ -30,18 +30,9 @@ export default function Show({ task }: Props) {
 
         return <Badge variant={variant}>{status}</Badge>;
     };
-    const breadcrumbs: BreadcrumbItem[] = [
-            {
-                title: 'VendorTaskTracker',
-                href: '/vendor-task-tracker',
-            },
-            {
-                title: 'Show',
-                href: '/vendor-task-tracker/{vendor_task_tracker}',
-            },
-        ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title={`Task Details #${task.id}`} />
 
             <div className="py-12">

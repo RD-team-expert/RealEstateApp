@@ -43,18 +43,9 @@ export default function Create({ auth, cities }: CreatePageProps) {
         e.preventDefault();
         post(route('units.store'));
     };
-const breadcrumbs: BreadcrumbItem[] = [
-                {
-                    title: 'Units',
-                    href: '/units',
-                },
-                {
-                    title: 'Create',
-                    href: '/units/create',
-                },
-            ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Create Unit" />
             <div className="py-12">
                 <div className="mx-auto max-w-4xl sm:px-6 lg:px-8">
@@ -68,7 +59,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                                     </Link>
                                     {hasPermission('cities.index')&&(
                                     <Link  href={route('cities.index')}
-                                    data={{ bc: JSON.stringify(breadcrumbs) }}>
+                                    >
                                         <Button variant="outline">View Cities</Button>
                                     </Link>
                                 )}

@@ -25,18 +25,9 @@ export default function Create({ auth }: PageProps) {
         post(route('properties-info.store'));
 
     };
-const breadcrumbs: BreadcrumbItem[] = [
-          {
-              title: 'PropertiesInfo',
-              href: '/properties-info',
-          },
-          {
-              title: 'Create',
-              href: '/properties-info/create',
-          },
-      ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Create Property" />
 
             <div className="py-12">

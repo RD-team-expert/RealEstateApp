@@ -109,18 +109,9 @@ const { url } = usePage();
     const searching = url.split('?')[1] ?? '';
     const bcParam = new URLSearchParams(searching).get('bc');
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(() => {
-      const base: BreadcrumbItem[] = [{ title: 'Edit', href: '/roles/{role}/edit' }];
-      if (!bcParam) return base;
-      try {
-        const prev = JSON.parse(bcParam) as BreadcrumbItem[];
-        return Array.isArray(prev) ? [...prev, ...base] : base;
-      } catch {
-        return base;
-      }
-    }, [bcParam]);
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <SittingsLayout>
                 <Head title={`Edit Role - ${role.name}`} />
                 <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

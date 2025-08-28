@@ -64,18 +64,9 @@ export default function Edit({ tenant, units, properties, unitsByProperty }: Pro
         e.preventDefault();
         put(route('tenants.update', tenant.id));
     };
-    const breadcrumbs: BreadcrumbItem[] = [
-                {
-                    title: 'Tenants',
-                    href: '/tenants',
-                },
-                {
-                    title: 'Edit',
-                    href: '/tenants/{tenant}/edit',
-                },
-            ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title={`Edit ${tenant.first_name} ${tenant.last_name}`} />
 
             <div className="py-12">

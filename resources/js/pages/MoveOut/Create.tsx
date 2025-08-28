@@ -57,18 +57,9 @@ export default function Create({ tenants, unitsByTenant, tenantsData }: Props) {
         post(route('move-out.store'));
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'MoveOut',
-            href: '/move-out',
-        },
-        {
-            title: 'Creat',
-            href: 'move-in/create',
-        },
-    ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Create Move-Out Record" />
 
             <div className="py-12">

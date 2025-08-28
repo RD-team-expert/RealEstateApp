@@ -22,18 +22,9 @@ const { url } = usePage();
     const searching = url.split('?')[1] ?? '';
     const bcParam = new URLSearchParams(searching).get('bc');
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(() => {
-      const base: BreadcrumbItem[] = [{ title: 'Create', href: '/notices/create' }];
-      if (!bcParam) return base;
-      try {
-        const prev = JSON.parse(bcParam) as BreadcrumbItem[];
-        return Array.isArray(prev) ? [...prev, ...base] : base;
-      } catch {
-        return base;
-      }
-    }, [bcParam]);
+
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
+    <AppLayout >
       <Head title="Create Notice" />
 
       <div className="py-12">

@@ -105,14 +105,9 @@ export default function Index({ tenants, search }: Props) {
         );
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-                    {
-                        title: 'Tenants',
-                        href: '/tenants',
-                    },
-                ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Tenants" />
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">

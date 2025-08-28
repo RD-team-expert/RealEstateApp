@@ -32,18 +32,9 @@ const Edit: React.FC = () => {
     value: `${t.first_name} ${t.last_name}`,
   }));
 
-  const breadcrumbs: BreadcrumbItem[] = [
-          {
-              title: 'OffersAndRenewals/',
-              href: '/offers_and_renewals',
-          },
-          {
-              title: 'Edit',
-              href: '/offers_and_renewals/{offers_and_renewal}/edit',
-          },
-      ];
+
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
+    <AppLayout >
       <Head title="Edit Offer & Renewal" />
 
       <div className="py-12">

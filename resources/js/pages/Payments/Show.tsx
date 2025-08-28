@@ -29,18 +29,9 @@ export default function Show({ payment }: Props) {
         return <Badge variant={variant}>{status}</Badge>;
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-          {
-              title: 'Payments',
-              href: '/payments',
-          },
-          {
-              title: 'Show',
-              href: '/payments/{payment}',
-          },
-      ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title={`Payment Details #${payment.id}`} />
 
             <div className="py-12">

@@ -30,18 +30,9 @@ const Create: React.FC<PaymentPlanCreateProps> = ({ dropdownData }) => {
     post('/payment-plans');
   };
 
-  const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'Payment Plans',
-            href: '/payment-plans',
-        },
-        {
-            title: 'Creat',
-            href: '/payment-plans/create',
-        },
-    ];
+
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
+    <AppLayout >
       <Head title="Create Payment Plan" />
       <div className="py-12">
         <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">

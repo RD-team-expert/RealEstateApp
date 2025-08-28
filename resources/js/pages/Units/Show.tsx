@@ -69,21 +69,12 @@ export default function Show({ auth, unit }: Props) {
             </Badge>
         );
     };
-const breadcrumbs: BreadcrumbItem[] = [
-                    {
-                        title: 'Units',
-                        href: '/units',
-                    },
-                    {
-                        title: 'Show',
-                        href: '/units/{unit}',
-                    },
-                ];
+
     return (
         <AuthenticatedLayout
             user={auth.user}
             header={<h2 className="font-semibold text-xl text-foreground leading-tight">Unit Details</h2>}
-            breadcrumbs={breadcrumbs}
+            
         >
             <Head title="Unit Details" />
 

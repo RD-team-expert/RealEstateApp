@@ -49,18 +49,9 @@ const Create: React.FC = () => {
     value: `${t.first_name} ${t.last_name}`,
   }));
 
-  const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'OffersAndRenewals/',
-            href: '/offers_and_renewals',
-        },
-        {
-            title: 'Creat',
-            href: '/offers_and_renewals/create',
-        },
-    ];
+
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
+    <AppLayout >
       <Head title="Create Offer" />
 
       <div className="py-12">

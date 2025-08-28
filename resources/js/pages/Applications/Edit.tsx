@@ -82,18 +82,9 @@ export default function Edit({ auth, application, units, cities, properties, uni
         put(route('applications.update', application.id));
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'Applications',
-            href: '/applications',
-        },
-        {
-            title: 'Edit',
-            href: 'applications/{application}/edit',
-        },
-    ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title={`Edit Application - ${application.name}`} />
 
             <div className="py-12">

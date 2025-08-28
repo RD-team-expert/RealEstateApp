@@ -117,18 +117,8 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
         put(route('users.update', user.id));
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-                    {
-                        title: 'Users',
-                        href: '/users',
-                    },
-                    {
-                        title: 'Edit',
-                        href: '/users/{user}/edit',
-                    },
-                ];
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <SittingsLayout>
             <Head title={`Edit User - ${user.name}`} />
             <div className="py-12">
@@ -146,7 +136,7 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
                                         </Link>
                                         {hasPermission('roles.index')&&(
                                         <Link href={route('roles.index')}
-                                        data={{ bc: JSON.stringify(breadcrumbs) }}>
+                                        >
                                             <Button variant="outline">View Roles</Button>
                                         </Link>)}
                                     </div>

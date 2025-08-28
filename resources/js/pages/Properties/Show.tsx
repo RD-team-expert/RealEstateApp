@@ -60,21 +60,12 @@ export default function Show({ auth, property }: Props) {
         }
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-          {
-              title: 'PropertiesInfo',
-              href: '/properties-info',
-          },
-          {
-              title: 'Show',
-              href: '/properties-info/{properties_info}',
-          },
-      ];
+
     return (
         <AuthenticatedLayout
             user={auth.user}
             header={<h2 className="font-semibold text-xl text-foreground leading-tight">Property Details</h2>}
-            breadcrumbs={breadcrumbs}
+            
         >
             <Head title="Property Details" />
 

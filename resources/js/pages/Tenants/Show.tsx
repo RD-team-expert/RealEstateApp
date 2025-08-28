@@ -11,18 +11,9 @@ interface Props {
 
 export default function Show({ tenant }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
-    const breadcrumbs: BreadcrumbItem[] = [
-                {
-                    title: 'Tenants',
-                    href: '/tenants',
-                },
-                {
-                    title: 'Show',
-                    href: '/tenants/{tenant}',
-                },
-            ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title={`${tenant.first_name} ${tenant.last_name}`} />
 
             <div className="py-12">

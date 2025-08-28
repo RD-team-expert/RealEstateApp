@@ -44,14 +44,9 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
         }
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-                    {
-                        title: 'Vendors',
-                        href: '/vendors',
-                    },
-                ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Vendors" />
 
             <div className="py-12">

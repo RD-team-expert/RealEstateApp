@@ -68,19 +68,10 @@ export default function RolesIndex({ roles }: Props) {
     const searching = url.split('?')[1] ?? '';
     const bcParam = new URLSearchParams(searching).get('bc');
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(() => {
-      const base: BreadcrumbItem[] = [{ title: 'Role', href: '/roles' }];
-      if (!bcParam) return base;
-      try {
-        const prev = JSON.parse(bcParam) as BreadcrumbItem[];
-        return Array.isArray(prev) ? [...prev, ...base] : base;
-      } catch {
-        return base;
-      }
-    }, [bcParam]);
+
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <SittingsLayout>
                 <Head title="Roles" />
                 <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
@@ -98,7 +89,7 @@ export default function RolesIndex({ roles }: Props) {
                                         </Link>)}
                                         {hasAllPermissions(['roles.store','roles.create']) && (
                                         <Link href={route('roles.create')}
-                                        data={{ bc: JSON.stringify(breadcrumbs) }}>
+                                        >
                                             <Button>
                                                 <Plus className="h-4 w-4 mr-2" />
                                                 Create Role
@@ -142,13 +133,13 @@ export default function RolesIndex({ roles }: Props) {
                                                     <TableCell>
                                                         <div className="flex gap-2">
                                                             {hasPermission('roles.show') && (
-                                                            <Link href={route('roles.show', role.id)} data={{ bc: JSON.stringify(breadcrumbs) }}>
+                                                            <Link href={route('roles.show', role.id)} >
                                                                 <Button variant="outline" size="sm" title="View Role">
                                                                     <Eye className="h-4 w-4" />
                                                                 </Button>
                                                             </Link>)}
                                                             {hasAllPermissions(['roles.update','roles.edit']) && (
-                                                            <Link href={route('roles.edit', role.id)} data={{ bc: JSON.stringify(breadcrumbs) }}>
+                                                            <Link href={route('roles.edit', role.id)} >
                                                                 <Button
                                                                     variant="outline"
                                                                     size="sm"

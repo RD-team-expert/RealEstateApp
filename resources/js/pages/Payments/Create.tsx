@@ -50,18 +50,9 @@ export default function Create({ units, cities, unitsByCity }: Props) {
         post(route('payments.store'));
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-          {
-              title: 'Payments',
-              href: '/payments',
-          },
-          {
-              title: 'Create',
-              href: '/payments/create',
-          },
-      ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Create Payment" />
 
             <div className="py-12">

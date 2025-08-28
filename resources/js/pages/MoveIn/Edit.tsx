@@ -40,18 +40,9 @@ export default function Edit({ moveIn, units }: Props) {
         put(route('move-in.update', moveIn.id));
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-            {
-                title: 'MoveIn',
-                href: '/move-in',
-            },
-            {
-                title: 'Edit',
-                href: 'move-in/{move_in}/edit',
-            },
-        ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title={`Edit Move-In Record #${moveIn.id}`} />
 
             <div className="py-12">

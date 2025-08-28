@@ -27,18 +27,9 @@ export default function Edit({ auth, property }: Props) {
         put(route('properties-info.update', property.id));
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-          {
-              title: 'PropertiesInfo',
-              href: '/properties-info',
-          },
-          {
-              title: 'Edit',
-              href: '/properties-info/{properties_info}/edit',
-          },
-      ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title={`Edit Property - ${property.property_name}`} />
 
             <div className="py-12">

@@ -16,16 +16,7 @@ interface Props extends PageProps {
 export default function Show({ auth, vendor }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
-    const breadcrumbs: BreadcrumbItem[] = [
-                        {
-                            title: 'Vendors',
-                            href: '/vendors',
-                        },
-                        {
-                            title: 'Show',
-                            href: '/vendors/{vendor}',
-                        },
-                    ];
+    
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -34,7 +25,7 @@ export default function Show({ auth, vendor }: Props) {
                     Vendor Details
                 </h2>
             }
-            breadcrumbs={breadcrumbs}
+
         >
             <Head title="Vendor Details" />
 

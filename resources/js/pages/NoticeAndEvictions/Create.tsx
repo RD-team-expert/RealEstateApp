@@ -44,18 +44,9 @@ const Create = () => {
     value: `${t.first_name} ${t.last_name}`,
   }));
 const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
-const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'NoticeAndEvictions',
-            href: '/notice_and_evictions',
-        },
-        {
-            title: 'Create',
-            href: 'notice_and_evictions/create',
-        },
-    ];
+
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
+    <AppLayout >
       <Head title="Create Notice & Eviction" />
 
       <div className="py-12">
@@ -66,8 +57,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                 <CardTitle className="text-2xl">Create New Notice & Eviction</CardTitle>
                 <div className="flex gap-2">
                     {hasPermission('notices.index')&&(
-                  <Link href={route('notices.index')}
-                        data={{ bc: JSON.stringify(breadcrumbs) }}>
+                  <Link href={route('notices.index')}>
                     <Button variant="outline">View Notices</Button>
                   </Link>)}
                   <Link href={'/notice_and_evictions'}>

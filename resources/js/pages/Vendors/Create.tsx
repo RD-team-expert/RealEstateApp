@@ -35,18 +35,9 @@ export default function Create({ auth, cities }: CreatePageProps) {
         post(route('vendors.store'));
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-                        {
-                            title: 'Vendors',
-                            href: '/vendors',
-                        },
-                        {
-                            title: 'Create',
-                            href: '/vendors/create',
-                        },
-                    ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Create Vendor" />
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
@@ -60,7 +51,7 @@ export default function Create({ auth, cities }: CreatePageProps) {
                                     </Link>
                                     {hasPermission('cities.index')&&(
                                     <Link href={route('cities.index')}
-                                    data={{ bc: JSON.stringify(breadcrumbs) }}>
+                                    >
                                         <Button variant="outline">View Cities</Button>
                                     </Link>
                                     )}

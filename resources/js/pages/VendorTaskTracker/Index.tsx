@@ -58,14 +58,9 @@ export default function Index({ tasks, search }: Props) {
         return <Badge variant={variant}>{status}</Badge>;
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-                {
-                    title: 'VendorTaskTracker',
-                    href: '/vendor-task-tracker',
-                }
-            ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Vendor Task Tracker" />
 
             <div className="py-12">

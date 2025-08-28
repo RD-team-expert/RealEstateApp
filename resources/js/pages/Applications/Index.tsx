@@ -50,14 +50,9 @@ export default function Index({ auth, applications, statistics, filters }: Props
         return <Badge variant="default">{status}</Badge>;
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-            {
-                title: 'Applications',
-                href: '/applications',
-            },
-        ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Applications" />
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">

@@ -46,18 +46,9 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
         put(route('units.update', unit.id));
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-                    {
-                        title: 'Units',
-                        href: '/units',
-                    },
-                    {
-                        title: 'Edit',
-                        href: '/units/{unit}/edit',
-                    },
-                ];
+    
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title={`Edit Unit - ${unit.unit_name}`} />
             <div className="py-12">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
@@ -73,7 +64,7 @@ export default function Edit({ auth, unit, cities }: EditPageProps) {
                                     </Link>
                                     {hasPermission('cities.index') && (
                                     <Link href={route('cities.index')}
-                                    data={{ bc: JSON.stringify(breadcrumbs) }}>
+                                    >
                                         <Button variant="outline">View Cities</Button>
                                     </Link>)}
                                 </div>

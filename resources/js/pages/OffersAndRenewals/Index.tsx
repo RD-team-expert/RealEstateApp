@@ -99,14 +99,8 @@ const Index = ({ offers, search }: Props) => {
 
   const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
-  const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'OffersAndRenewals/',
-            href: '/offers_and_renewals',
-        },
-    ];
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
+    <AppLayout >
       <Head title="Offers and Renewals" />
 
       <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

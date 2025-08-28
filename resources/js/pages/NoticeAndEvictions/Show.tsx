@@ -46,18 +46,9 @@ const Show = () => {
 
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'NoticeAndEvictions',
-            href: '/notice_and_evictions',
-        },
-        {
-            title: 'Show',
-            href: 'notice_and_evictions/{notice_and_eviction}',
-        },
-    ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title={`Notice & Eviction #${record.id}`} />
 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

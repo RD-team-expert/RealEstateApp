@@ -60,18 +60,9 @@ export default function Edit({ moveOut, tenants, unitsByTenant, tenantsData }: P
         put(route('move-out.update', moveOut.id));
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-            {
-                title: 'MoveOut',
-                href: '/move-out',
-            },
-            {
-                title: 'Edit',
-                href: 'move-in/{move_in}/edit',
-            },
-        ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title={`Edit Move-Out Record #${moveOut.id}`} />
 
             <div className="py-12">

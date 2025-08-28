@@ -112,19 +112,9 @@ export default function Create({ roles, permissions }: Props) {
             onSuccess: () => reset(),
         });
     };
-const breadcrumbs: BreadcrumbItem[] = [
-                    {
-                        title: 'Users',
-                        href: '/users',
-                    },
-                    {
-                        title: 'Create',
-                        href: '/users/create',
-                    },
-                ];
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <SittingsLayout>
             <Head title="Create User" />
             <div className="py-12">
@@ -139,8 +129,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                                         <Button variant="outline">Back to List</Button>
                                     </Link>
                                     {hasPermission('roles.index')&&(
-                                    <Link href={route('roles.index')}
-                                    data={{ bc: JSON.stringify(breadcrumbs) }}>
+                                    <Link href={route('roles.index')}>
                                         <Button variant="outline">View Roles</Button>
                                     </Link>)}
                                     </div>

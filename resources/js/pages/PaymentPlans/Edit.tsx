@@ -30,18 +30,9 @@ const Edit: React.FC<PaymentPlanEditProps> = ({ paymentPlan, dropdownData }) => 
     put(`/payment-plans/${paymentPlan.id}`);
   };
 
-  const breadcrumbs: BreadcrumbItem[] = [
-          {
-              title: 'Payment Plans',
-              href: '/payment-plans',
-          },
-          {
-              title: 'Edit',
-              href: '/payment-plans/{payment_plan}/edit',
-          },
-      ];
+
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
+    <AppLayout >
       <Head title="Edit Payment Plan" />
       <div className="py-12">
         <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">

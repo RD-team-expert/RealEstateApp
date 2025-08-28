@@ -28,18 +28,9 @@ const getStatusBadge = (status: string | null) => {
 
 const Show: React.FC<PaymentPlanShowProps> = ({ paymentPlan }) => {
   const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
-const breadcrumbs: BreadcrumbItem[] = [
-          {
-              title: 'Payment Plans',
-              href: '/payment-plans',
-          },
-          {
-              title: 'Show',
-              href: '/payment-plans/{payment_plan}',
-          },
-      ];
+
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
+    <AppLayout >
       <Head title={`Payment Plan #${paymentPlan.id}`} />
       <div className="py-12">
         <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">

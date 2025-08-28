@@ -52,18 +52,9 @@ export default function Edit({ payment, units, cities, unitsByCity }: Props) {
         e.preventDefault();
         put(route('payments.update', payment.id));
     };
-const breadcrumbs: BreadcrumbItem[] = [
-          {
-              title: 'Payments',
-              href: '/payments',
-          },
-          {
-              title: 'Edit',
-              href: '/payments/{payment}/edit',
-          },
-      ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout>
             <Head title={`Edit Payment #${payment.id}`} />
 
             <div className="py-12">

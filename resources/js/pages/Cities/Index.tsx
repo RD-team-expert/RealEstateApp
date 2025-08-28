@@ -46,22 +46,9 @@ const Index = ({ cities }: Props) => {
 
   const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
-  const { url } = usePage();
-  const search = url.split('?')[1] ?? '';
-  const bcParam = new URLSearchParams(search).get('bc');
 
-  const breadcrumbs: BreadcrumbItem[] = React.useMemo(() => {
-    const base: BreadcrumbItem[] = [{ title: 'Cities', href: '/cities' }];
-    if (!bcParam) return base;
-    try {
-      const prev = JSON.parse(bcParam) as BreadcrumbItem[];
-      return Array.isArray(prev) ? [...prev, ...base] : base;
-    } catch {
-      return base;
-    }
-  }, [bcParam]);
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
+    <AppLayout >
       <Head title="Cities" />
 
       <div className="py-12 bg-background text-foreground transition-colors min-h-screen">

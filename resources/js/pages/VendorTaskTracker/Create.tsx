@@ -53,18 +53,9 @@ export default function Create({ units, cities, unitsByCity, vendors }: Props) {
         post(route('vendor-task-tracker.store'));
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'VendorTaskTracker',
-            href: '/vendor-task-tracker',
-        },
-        {
-            title: 'Create',
-            href: '/vendor-task-tracker/create',
-        },
-    ];
+    
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Create Vendor Task" />
 
             <div className="py-12">

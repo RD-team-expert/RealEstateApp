@@ -61,18 +61,9 @@ export default function Create({ units, properties, unitsByProperty }: Props) {
         e.preventDefault();
         post(route('tenants.store'));
     };
-    const breadcrumbs: BreadcrumbItem[] = [
-            {
-                title: 'Tenants',
-                href: '/tenants',
-            },
-            {
-                title: 'Create',
-                href: '/tenants/create',
-            },
-        ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Create Tenant" />
 
             <div className="py-12">

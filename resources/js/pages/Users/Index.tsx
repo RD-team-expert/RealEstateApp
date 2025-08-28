@@ -60,15 +60,10 @@ export default function Index({ users }: Props) {
 
         return colors[roleId % colors.length];
     };
-const breadcrumbs: BreadcrumbItem[] = [
-                    {
-                        title: 'Users',
-                        href: '/users',
-                    },
-                ];
+
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <SittingsLayout>
             <Head title="Users" />
             <div className="py-12">

@@ -49,18 +49,9 @@ const Edit = () => {
   }));
 
   const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
-  const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'NoticeAndEvictions',
-            href: '/notice_and_evictions',
-        },
-        {
-            title: 'Edit',
-            href: '/notice_and_evictions/{notice_and_eviction}/edit',
-        },
-    ];
+  
   return (
-    <AppLayout breadcrumbs={breadcrumbs}>
+    <AppLayout >
       <Head title="Edit Notice & Eviction" />
 
       <div className="py-12">
@@ -73,8 +64,7 @@ const Edit = () => {
                 </CardTitle>
                 <div className="flex gap-2">
                     {hasPermission('notices.index')&&(
-                  <Link href={route('notices.index')}
-                        data={{ bc: JSON.stringify(breadcrumbs) }}>
+                  <Link href={route('notices.index')}>
                     <Button variant="outline">View Notices</Button>
                   </Link>)}
                   <Link href={'/notice_and_evictions'}>

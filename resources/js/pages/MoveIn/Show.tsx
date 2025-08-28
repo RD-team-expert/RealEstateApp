@@ -27,18 +27,9 @@ export default function Show({ moveIn }: Props) {
         return new Date(date).toLocaleDateString();
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'MoveIn',
-            href: '/move-in',
-        },
-        {
-            title: 'Show',
-            href: '/move-in/{move_in}',
-        },
-    ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title={`Move-In Details #${moveIn.id}`} />
 
             <div className="py-12">

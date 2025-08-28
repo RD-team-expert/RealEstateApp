@@ -72,14 +72,9 @@ export default function Index({ auth, units, statistics, filters }: Props) {
         );
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-                        {
-                            title: 'Units',
-                            href: '/units',
-                        },
-                    ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Units" />
             <div className="py-12">
                 <div className="max-w-full mx-auto sm:px-6 lg:px-8">

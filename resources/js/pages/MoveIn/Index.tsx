@@ -55,14 +55,9 @@ export default function Index({ moveIns, search }: Props) {
         );
     };
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'MoveIn',
-            href: '/move-in',
-        }
-    ];
+
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout >
             <Head title="Move-In Management" />
 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
