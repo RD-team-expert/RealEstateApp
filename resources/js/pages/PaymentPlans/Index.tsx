@@ -14,9 +14,88 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+
+// CSV Export utility function
+const exportToCSV = (data: PaymentPlan[], filename: string = 'payment-plans.csv') => {
+    try {
+        const formatCurrency = (amount: number | null | undefined) => {
+            if (amount === null || amount === undefined || isNaN(amount)) return '0.00';
+            return Number(amount).toFixed(2);
+        };
+
+        const formatString = (value: string | null | undefined) => {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/"/g, '""');
+        };
+
+        const formatDate = (dateStr: string | null | undefined) => {
+            if (!dateStr) return '';
+            try {
+                return new Date(dateStr).toLocaleDateString();
+            } catch (error) {
+                return dateStr || '';
+            }
+        };
+
+        const headers = [
+            'ID',
+            'Property',
+            'Unit',
+            'Tenant',
+            'Amount',
+            'Paid',
+            'Left to Pay',
+            'Status',
+            'Date',
+            'Notes'
+        ];
+
+        const csvData = [
+            headers.join(','),
+            ...data.map(plan => {
+                try {
+                    return [
+                        plan.id || '',
+                        `"${formatString(plan.property)}"`,
+                        `"${formatString(plan.unit)}"`,
+                        `"${formatString(plan.tenant)}"`,
+                        formatCurrency(plan.amount),
+                        formatCurrency(plan.paid),
+                        formatCurrency(plan.left_to_pay),
+                        `"${formatString(plan.status)}"`,
+                        `"${formatDate(plan.dates)}"`,
+                        `"${formatString(plan.notes)}"`
+                    ].join(',');
+                } catch (rowError) {
+                    console.error('Error processing payment plan row:', plan, rowError);
+                    return ''; // Skip problematic rows
+                }
+            }).filter(row => row !== '') // Remove empty rows
+        ].join('\n');
+
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        return true;
+    } catch (error) {
+        console.error('CSV Export Error:', error);
+        throw error;
+    }
+};
+
 interface Props extends PaymentPlanIndexProps {
   search?: string | null;
 }
@@ -24,6 +103,7 @@ interface Props extends PaymentPlanIndexProps {
 export default function Index({ paymentPlans, search }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchTerm, setSearchTerm] = useState(search || '');
+    const [isExporting, setIsExporting] = useState(false);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,6 +113,29 @@ export default function Index({ paymentPlans, search }: Props) {
     const handleDelete = (paymentPlan: PaymentPlan) => {
         if (confirm('Are you sure you want to delete this payment plan?')) {
             router.delete(`/payment-plans/${paymentPlan.id}`);
+        }
+    };
+
+    const handleCSVExport = () => {
+        if (!paymentPlans || !paymentPlans.data || paymentPlans.data.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        setIsExporting(true);
+
+        try {
+            console.log('Exporting payment plans data:', paymentPlans.data); // Debug log
+            const filename = `payment-plans-${new Date().toISOString().split('T')[0]}.csv`;
+            exportToCSV(paymentPlans.data, filename);
+
+            // Success feedback
+            console.log('Export completed successfully');
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -57,7 +160,6 @@ export default function Index({ paymentPlans, search }: Props) {
         }
     };
 
-
     return (
         <AppLayout >
             <Head title="Payment Plans" />
@@ -68,13 +170,28 @@ export default function Index({ paymentPlans, search }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Payment Plans Management</CardTitle>
-                                {hasAllPermissions(['payment-plans.create','payment-plans.store']) && (
-                                <Link href="/payment-plans/create">
-                                    <Button>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Add Payment Plan
+                                <div className="flex gap-2 items-center">
+                                    {/* Export Button */}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCSVExport}
+                                        disabled={isExporting || !paymentPlans?.data || paymentPlans.data.length === 0}
+                                        className="flex items-center"
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        {isExporting ? 'Exporting...' : 'Export CSV'}
                                     </Button>
-                                </Link>)}
+
+                                    {hasAllPermissions(['payment-plans.create','payment-plans.store']) && (
+                                        <Link href="/payment-plans/create">
+                                            <Button>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add Payment Plan
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
 
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import {
     Table,
@@ -17,6 +17,64 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { type BreadcrumbItem } from '@/types';
+
+// CSV Export utility function
+const exportToCSV = (data: Tenant[], filename: string = 'tenants.csv') => {
+    const headers = [
+        'ID',
+        'Property Name',
+        'Unit Number',
+        'First Name',
+        'Last Name',
+        'Street Address',
+        'Login Email',
+        'Alternate Email',
+        'Mobile',
+        'Emergency Phone',
+        'Payment Method',
+        'Has Insurance',
+        'Sensitive Communication',
+        'Has Assistance',
+        'Assistance Amount',
+        'Assistance Company',
+    ];
+
+    const csvData = [
+        headers.join(','),
+        ...data.map(tenant => [
+            tenant.id,
+            `"${tenant.property_name || ''}"`,
+            `"${tenant.unit_number || ''}"`,
+            `"${tenant.first_name || ''}"`,
+            `"${tenant.last_name || ''}"`,
+            `"${(tenant.street_address_line || '').replace(/"/g, '""')}"`,
+            `"${tenant.login_email || ''}"`,
+            `"${tenant.alternate_email || ''}"`,
+            `"${tenant.mobile || ''}"`,
+            `"${tenant.emergency_phone || ''}"`,
+            `"${tenant.cash_or_check || ''}"`,
+            `"${tenant.has_insurance || ''}"`,
+            `"${tenant.sensitive_communication || ''}"`,
+            `"${tenant.has_assistance || ''}"`,
+            `"${tenant.assistance_amount || ''}"`,
+            `"${(tenant.assistance_company || '').replace(/"/g, '""')}"`,
+        ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
+
 interface Props {
     tenants: Tenant[];
     search?: string;
@@ -25,6 +83,7 @@ interface Props {
 export default function Index({ tenants, search }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchTerm, setSearchTerm] = useState(search || '');
+    const [isExporting, setIsExporting] = useState(false);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,6 +93,24 @@ export default function Index({ tenants, search }: Props) {
     const handleDelete = (tenant: Tenant) => {
         if (confirm(`Are you sure you want to delete ${tenant.first_name} ${tenant.last_name}?`)) {
             router.delete(route('tenants.destroy', tenant.id));
+        }
+    };
+
+    const handleCSVExport = () => {
+        if (tenants.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        setIsExporting(true);
+        try {
+            const filename = `tenants-${new Date().toISOString().split('T')[0]}.csv`;
+            exportToCSV(tenants, filename);
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Export failed. Please try again.');
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -105,7 +182,6 @@ export default function Index({ tenants, search }: Props) {
         );
     };
 
-
     return (
         <AppLayout >
             <Head title="Tenants" />
@@ -115,13 +191,28 @@ export default function Index({ tenants, search }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Tenants</CardTitle>
-                                {hasAllPermissions(['tenants.create','tenants.store']) && (
-                                <Link href={route('tenants.create')}>
-                                    <Button>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Add New Tenant
+                                <div className="flex gap-2 items-center">
+                                    {/* Export Button */}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCSVExport}
+                                        disabled={isExporting || tenants.length === 0}
+                                        className="flex items-center"
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        {isExporting ? 'Exporting...' : 'Export CSV'}
                                     </Button>
-                                </Link>)}
+
+                                    {hasAllPermissions(['tenants.create','tenants.store']) && (
+                                        <Link href={route('tenants.create')}>
+                                            <Button>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add New Tenant
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">
                                 <div className="flex-1">
@@ -158,7 +249,7 @@ export default function Index({ tenants, search }: Props) {
                                             <TableHead className="text-muted-foreground">Has Assistance</TableHead>
                                             <TableHead className="text-muted-foreground">Assistance Amount</TableHead>
                                             <TableHead className="text-muted-foreground">Assistance Company</TableHead>
-                                            <TableHead className="text-muted-foreground">Created</TableHead>
+
                                             {hasAnyPermission(['tenants.show','tenants.edit','tenants.update','tenants.destroy']) && (
                                             <TableHead className="text-muted-foreground">Actions</TableHead>)}
                                         </TableRow>
@@ -219,9 +310,7 @@ export default function Index({ tenants, search }: Props) {
                                                         {displayValue(tenant.assistance_company)}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="text-foreground">
-                                                    {new Date(tenant.created_at).toLocaleDateString()}
-                                                </TableCell>
+
                                                 {hasAnyPermission(['tenants.show','tenants.edit','tenants.update','tenants.destroy']) && (
                                                 <TableCell>
                                                     <div className="flex gap-1">

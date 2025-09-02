@@ -13,11 +13,74 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { Unit, PaginatedUnits, UnitFilters, UnitStatistics } from '@/types/unit';
 import { PageProps } from '@/types/unit';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+
+// CSV Export utility function
+const exportToCSV = (data: Unit[], filename: string = 'units.csv') => {
+    const headers = [
+        'ID',
+        'City',
+        'Property',
+        'Unit Name',
+        'Tenants',
+        'Lease Start',
+        'Lease End',
+        'Beds',
+        'Baths',
+        'Lease Status',
+        'Monthly Rent',
+        'Recurring Transaction',
+        'Utility Status',
+        'Account Number',
+        'Insurance',
+        'Insurance Expiration',
+        'Vacant',
+        'Listed',
+        'Applications'
+    ];
+
+    const csvData = [
+        headers.join(','),
+        ...data.map(unit => [
+            unit.id,
+            `"${unit.city}"`,
+            `"${unit.property}"`,
+            `"${unit.unit_name}"`,
+            `"${unit.tenants || ''}"`,
+            `"${unit.lease_start ? new Date(unit.lease_start).toLocaleDateString() : ''}"`,
+            `"${unit.lease_end ? new Date(unit.lease_end).toLocaleDateString() : ''}"`,
+            unit.count_beds || '',
+            unit.count_baths || '',
+            `"${unit.lease_status || ''}"`,
+            `"${unit.formatted_monthly_rent || ''}"`,
+            `"${(unit.recurring_transaction || '').replace(/"/g, '""')}"`,
+            `"${(unit.utility_status || '').replace(/"/g, '""')}"`,
+            `"${(unit.account_number || '').replace(/"/g, '""')}"`,
+            `"${unit.insurance || ''}"`,
+            `"${unit.insurance_expiration_date ? new Date(unit.insurance_expiration_date).toLocaleDateString() : ''}"`,
+            `"${unit.vacant}"`,
+            `"${unit.listed}"`,
+            unit.total_applications || 0
+        ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
 
 interface Props extends PageProps {
     units: PaginatedUnits;
@@ -28,6 +91,7 @@ interface Props extends PageProps {
 export default function Index({ auth, units, statistics, filters }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchFilters, setSearchFilters] = useState<UnitFilters>(filters);
+    const [isExporting, setIsExporting] = useState(false);
     const { flash } = usePage().props;
 
     const handleFilterChange = (key: keyof UnitFilters, value: string) => {
@@ -42,6 +106,24 @@ export default function Index({ auth, units, statistics, filters }: Props) {
     const handleDelete = (unit: Unit) => {
         if (confirm('Are you sure you want to delete this unit?')) {
             router.delete(route('units.destroy', unit.id));
+        }
+    };
+
+    const handleCSVExport = () => {
+        if (units.data.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        setIsExporting(true);
+        try {
+            const filename = `units-${new Date().toISOString().split('T')[0]}.csv`;
+            exportToCSV(units.data, filename);
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Export failed. Please try again.');
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -71,7 +153,6 @@ export default function Index({ auth, units, statistics, filters }: Props) {
             </Badge>
         );
     };
-
 
     return (
         <AppLayout >
@@ -128,14 +209,28 @@ export default function Index({ auth, units, statistics, filters }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Units List</CardTitle>
-                                {hasAnyPermission(['units.store','units.create']) && (
-                                <Link href={route('units.create')}>
-                                    <Button>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Add Unit
+                                <div className="flex gap-2 items-center">
+                                    {/* Export Button */}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCSVExport}
+                                        disabled={isExporting || units.data.length === 0}
+                                        className="flex items-center"
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        {isExporting ? 'Exporting...' : 'Export CSV'}
                                     </Button>
-                                </Link>
-                                )}
+
+                                    {hasAnyPermission(['units.store','units.create']) && (
+                                        <Link href={route('units.create')}>
+                                            <Button>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add Unit
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
                             {/* Filters */}
                             <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mt-4">

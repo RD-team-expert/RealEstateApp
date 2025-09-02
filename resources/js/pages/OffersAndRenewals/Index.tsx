@@ -13,10 +13,119 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { OfferRenewal } from '@/types/OfferRenewal';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+
+// CSV Export utility function
+const exportToCSV = (data: OfferRenewal[], activeTab: string, filename: string = 'offers-renewals.csv') => {
+    try {
+        const formatDate = (dateStr: string | null | undefined) => {
+            if (!dateStr) return '';
+            try {
+                return new Date(dateStr).toLocaleDateString();
+            } catch (error) {
+                return dateStr || '';
+            }
+        };
+
+        const formatString = (value: string | null | undefined) => {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/"/g, '""');
+        };
+
+        // Dynamic headers based on active tab
+        let headers = ['ID', 'Unit', 'Tenant'];
+
+        if (activeTab === 'offers' || activeTab === 'both') {
+            headers = headers.concat([
+                'Date Sent Offer',
+                'Status',
+                'Date of Acceptance',
+                'Offer Last Notice Sent',
+                'Offer Notice Kind'
+            ]);
+        }
+
+        if (activeTab === 'renewals' || activeTab === 'both') {
+            headers = headers.concat([
+                'Lease Sent',
+                'Date Sent Lease',
+                'Lease Signed',
+                'Date Signed',
+                'Renewal Last Notice Sent',
+                'Renewal Notice Kind',
+                'Notes'
+            ]);
+        }
+
+        headers = headers.concat(['How Many Days Left', 'Expired']);
+
+        const csvData = [
+            headers.join(','),
+            ...data.map(offer => {
+                try {
+                    let row = [
+                        offer.id || '',
+                        `"${formatString(offer.unit)}"`,
+                        `"${formatString(offer.tenant)}"`
+                    ];
+
+                    if (activeTab === 'offers' || activeTab === 'both') {
+                        row = row.concat([
+                            `"${formatDate(offer.date_sent_offer)}"`,
+                            `"${formatString(offer.status)}"`,
+                            `"${formatDate(offer.date_of_acceptance)}"`,
+                            `"${formatDate(offer.last_notice_sent)}"`,
+                            `"${formatString(offer.notice_kind)}"`
+                        ]);
+                    }
+
+                    if (activeTab === 'renewals' || activeTab === 'both') {
+                        row = row.concat([
+                            `"${formatString(offer.lease_sent)}"`,
+                            `"${formatDate(offer.date_sent_lease)}"`,
+                            `"${formatString(offer.lease_signed)}"`,
+                            `"${formatDate(offer.date_signed)}"`,
+                            `"${formatDate(offer.last_notice_sent_2)}"`,
+                            `"${formatString(offer.notice_kind_2)}"`,
+                            `"${formatString(offer.notes)}"`
+                        ]);
+                    }
+
+                    row = row.concat([
+                        `"${formatString(offer.how_many_days_left)}"`,
+                        `"${formatString(offer.expired)}"`
+                    ]);
+
+                    return row.join(',');
+                } catch (rowError) {
+                    console.error('Error processing offer row:', offer, rowError);
+                    return ''; // Skip problematic rows
+                }
+            }).filter(row => row !== '') // Remove empty rows
+        ].join('\n');
+
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        return true;
+    } catch (error) {
+        console.error('CSV Export Error:', error);
+        throw error;
+    }
+};
 
 interface Props {
   offers: OfferRenewal[];
@@ -32,6 +141,7 @@ const TABS = [
 const Index = ({ offers, search }: Props) => {
   const [searchTerm, setSearchTerm] = useState(search || '');
   const [activeTab, setActiveTab] = useState<'offers' | 'renewals' | 'both'>('offers');
+  const [isExporting, setIsExporting] = useState(false);
 
   // Filtering logic, shows all by default
   const filtered = offers.filter(offer => {
@@ -54,6 +164,29 @@ const Index = ({ offers, search }: Props) => {
   const handleDelete = (offer: OfferRenewal) => {
     if (window.confirm('Are you sure you want to delete this offer? This action cannot be undone.')) {
       router.delete(`/offers_and_renewals/${offer.id}`);
+    }
+  };
+
+  const handleCSVExport = () => {
+    if (!filtered || filtered.length === 0) {
+        alert('No data to export');
+        return;
+    }
+
+    setIsExporting(true);
+
+    try {
+        console.log('Exporting offers and renewals data:', filtered); // Debug log
+        const filename = `offers-renewals-${activeTab}-${new Date().toISOString().split('T')[0]}.csv`;
+        exportToCSV(filtered, activeTab, filename);
+
+        // Success feedback
+        console.log('Export completed successfully');
+    } catch (error) {
+        console.error('Export failed:', error);
+        alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+    } finally {
+        setIsExporting(false);
     }
   };
 
@@ -109,13 +242,28 @@ const Index = ({ offers, search }: Props) => {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle className="text-2xl">Offers and Renewals</CardTitle>
-                {hasAllPermissions(['offers-and-renewals.create','offers-and-renewals.store']) && (
-                <Link href="/offers_and_renewals/create">
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add New
+                <div className="flex gap-2 items-center">
+                  {/* Export Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCSVExport}
+                    disabled={isExporting || !filtered || filtered.length === 0}
+                    className="flex items-center"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    {isExporting ? 'Exporting...' : 'Export CSV'}
                   </Button>
-                </Link>)}
+
+                  {hasAllPermissions(['offers-and-renewals.create','offers-and-renewals.store']) && (
+                    <Link href="/offers_and_renewals/create">
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add New
+                      </Button>
+                    </Link>
+                  )}
+                </div>
               </div>
               <form onSubmit={handleSearch} className="flex gap-2 mt-4">
                 <div className="flex-1">

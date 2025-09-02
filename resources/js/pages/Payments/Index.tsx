@@ -13,10 +13,91 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { Payment } from '@/types/payments';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+
+// Updated CSV Export utility function with better error handling
+const exportToCSV = (data: Payment[], filename: string = 'payments.csv') => {
+    try {
+        const formatCurrency = (amount: number | null | undefined) => {
+            if (amount === null || amount === undefined || isNaN(amount)) return '0.00';
+            return Number(amount).toFixed(2);
+        };
+
+        const formatString = (value: string | null | undefined) => {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/"/g, '""');
+        };
+
+        const formatDate = (dateStr: string | null | undefined) => {
+            if (!dateStr) return '';
+            try {
+                return new Date(dateStr).toLocaleDateString();
+            } catch (error) {
+                return dateStr || '';
+            }
+        };
+
+        const headers = [
+            'ID',
+            'Date',
+            'City',
+            'Unit Name',
+            'Owes',
+            'Paid',
+            'Left to Pay',
+            'Status',
+            'Notes',
+            'Reversed Payments',
+            'Permanent'
+        ];
+
+        const csvData = [
+            headers.join(','),
+            ...data.map(payment => {
+                try {
+                    return [
+                        payment.id || '',
+                        `"${formatDate(payment.date)}"`,
+                        `"${formatString(payment.city)}"`,
+                        `"${formatString(payment.unit_name)}"`,
+                        formatCurrency(payment.owes),
+                        formatCurrency(payment.paid),
+                        formatCurrency(payment.left_to_pay),
+                        `"${formatString(payment.status)}"`,
+                        `"${formatString(payment.notes)}"`,
+                        `"${formatString(payment.reversed_payments)}"`,
+                        `"${formatString(payment.permanent)}"`
+                    ].join(',');
+                } catch (rowError) {
+                    console.error('Error processing payment row:', payment, rowError);
+                    return ''; // Skip problematic rows
+                }
+            }).filter(row => row !== '') // Remove empty rows
+        ].join('\n');
+
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        return true;
+    } catch (error) {
+        console.error('CSV Export Error:', error);
+        throw error;
+    }
+};
+
 interface Props {
     payments: {
         data: Payment[];
@@ -29,6 +110,7 @@ interface Props {
 export default function Index({ payments, search }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchTerm, setSearchTerm] = useState(search || '');
+    const [isExporting, setIsExporting] = useState(false);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -41,8 +123,31 @@ export default function Index({ payments, search }: Props) {
         }
     };
 
+    const handleCSVExport = () => {
+        if (!payments || !payments.data || payments.data.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        setIsExporting(true);
+
+        try {
+            console.log('Exporting payments data:', payments.data); // Debug log
+            const filename = `payments-${new Date().toISOString().split('T')[0]}.csv`;
+            exportToCSV(payments.data, filename);
+
+            // Success feedback
+            console.log('Export completed successfully');
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const formatCurrency = (amount: number | null) => {
-        if (amount === null) return 'N/A';
+        if (amount === null || amount === undefined || isNaN(amount)) return 'N/A';
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
@@ -75,7 +180,6 @@ export default function Index({ payments, search }: Props) {
         );
     };
 
-
     return (
         <AppLayout >
             <Head title="Payments" />
@@ -86,13 +190,28 @@ export default function Index({ payments, search }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Payments Management</CardTitle>
-                                {hasAllPermissions(['payments.create','payments.store']) && (
-                                <Link href={route('payments.create')}>
-                                    <Button>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Add Payment
+                                <div className="flex gap-2 items-center">
+                                    {/* Export Button */}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCSVExport}
+                                        disabled={isExporting || !payments?.data || payments.data.length === 0}
+                                        className="flex items-center"
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        {isExporting ? 'Exporting...' : 'Export CSV'}
                                     </Button>
-                                </Link>)}
+
+                                    {hasAllPermissions(['payments.create','payments.store']) && (
+                                        <Link href={route('payments.create')}>
+                                            <Button>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add Payment
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">
                                 <div className="flex-1">

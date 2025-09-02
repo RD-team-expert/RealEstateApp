@@ -13,10 +13,96 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { MoveOut } from '@/types/move-out';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+
+// CSV Export utility function
+const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
+    try {
+        const formatDate = (dateStr: string | null | undefined) => {
+            if (!dateStr) return '';
+            try {
+                return new Date(dateStr).toLocaleDateString();
+            } catch (error) {
+                return dateStr || '';
+            }
+        };
+
+        const formatString = (value: string | null | undefined) => {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/"/g, '""');
+        };
+
+        const headers = [
+            'ID',
+            'Unit Name',
+            'Tenant Name',
+            'Move Out Date',
+            'Lease Status',
+            'Lease Ending on Buildium',
+            'Keys Location',
+            'Utilities Under Our Name',
+            'Date Utility Put Under Our Name',
+            'Walkthrough',
+            'Repairs',
+            'Send Back Security Deposit',
+            'Notes',
+            'Cleaning',
+            'List the Unit',
+            'Move Out Form'
+        ];
+
+        const csvData = [
+            headers.join(','),
+            ...data.map(moveOut => {
+                try {
+                    return [
+                        moveOut.id || '',
+                        `"${formatString(moveOut.units_name)}"`,
+                        `"${formatString(moveOut.tenants_name)}"`,
+                        `"${formatDate(moveOut.move_out_date)}"`,
+                        `"${formatString(moveOut.lease_status)}"`,
+                        `"${formatDate(moveOut.date_lease_ending_on_buildium)}"`,
+                        `"${formatString(moveOut.keys_location)}"`,
+                        `"${formatString(moveOut.utilities_under_our_name)}"`,
+                        `"${formatDate(moveOut.date_utility_put_under_our_name)}"`,
+                        `"${formatString(moveOut.walkthrough)}"`,
+                        `"${formatString(moveOut.repairs)}"`,
+                        `"${formatString(moveOut.send_back_security_deposit)}"`,
+                        `"${formatString(moveOut.notes)}"`,
+                        `"${formatString(moveOut.cleaning)}"`,
+                        `"${formatString(moveOut.list_the_unit)}"`,
+                        `"${formatString(moveOut.move_out_form)}"`
+                    ].join(',');
+                } catch (rowError) {
+                    console.error('Error processing move-out row:', moveOut, rowError);
+                    return ''; // Skip problematic rows
+                }
+            }).filter(row => row !== '') // Remove empty rows
+        ].join('\n');
+
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        return true;
+    } catch (error) {
+        console.error('CSV Export Error:', error);
+        throw error;
+    }
+};
+
 interface Props {
     moveOuts: {
         data: MoveOut[];
@@ -28,6 +114,7 @@ interface Props {
 
 export default function Index({ moveOuts, search }: Props) {
     const [searchTerm, setSearchTerm] = useState(search || '');
+    const [isExporting, setIsExporting] = useState(false);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -37,6 +124,29 @@ export default function Index({ moveOuts, search }: Props) {
     const handleDelete = (moveOut: MoveOut) => {
         if (confirm('Are you sure you want to delete this move-out record?')) {
             router.delete(route('move-out.destroy', moveOut.id));
+        }
+    };
+
+    const handleCSVExport = () => {
+        if (!moveOuts || !moveOuts.data || moveOuts.data.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        setIsExporting(true);
+
+        try {
+            console.log('Exporting move-out data:', moveOuts.data); // Debug log
+            const filename = `move-outs-${new Date().toISOString().split('T')[0]}.csv`;
+            exportToCSV(moveOuts.data, filename);
+
+            // Success feedback
+            console.log('Export completed successfully');
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -96,13 +206,28 @@ export default function Index({ moveOuts, search }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Move-Out Management</CardTitle>
-                                {hasAllPermissions(['move-out.create','move-out.store']) && (
-                                <Link href={route('move-out.create')}>
-                                    <Button>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Add Move-Out Record
+                                <div className="flex gap-2 items-center">
+                                    {/* Export Button */}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCSVExport}
+                                        disabled={isExporting || !moveOuts?.data || moveOuts.data.length === 0}
+                                        className="flex items-center"
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        {isExporting ? 'Exporting...' : 'Export CSV'}
                                     </Button>
-                                </Link>)}
+
+                                    {hasAllPermissions(['move-out.create','move-out.store']) && (
+                                        <Link href={route('move-out.create')}>
+                                            <Button>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add Move-Out Record
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
 
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">

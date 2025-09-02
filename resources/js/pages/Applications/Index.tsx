@@ -15,10 +15,86 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { Application, PaginatedApplications, ApplicationFilters, ApplicationStatistics } from '@/types/application';
 import { PageProps } from '@/types/application';
 import { type BreadcrumbItem } from '@/types';
+
+// CSV Export utility function
+const exportToCSV = (data: Application[], filename: string = 'applications.csv') => {
+    try {
+        const formatDate = (dateStr: string | null | undefined) => {
+            if (!dateStr) return '';
+            try {
+                return new Date(dateStr).toLocaleDateString();
+            } catch (error) {
+                return dateStr || '';
+            }
+        };
+
+        const formatString = (value: string | null | undefined) => {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/"/g, '""');
+        };
+
+        const headers = [
+            'ID',
+            'City',
+            'Property',
+            'Unit',
+            'Name',
+            'Co-signer',
+            'Status',
+            'Date',
+            'Stage in Progress',
+            'Notes',
+            'Attachment Name'
+        ];
+
+        const csvData = [
+            headers.join(','),
+            ...data.map(application => {
+                try {
+                    return [
+                        application.id || '',
+                        `"${formatString(application.city)}"`,
+                        `"${formatString(application.property)}"`,
+                        `"${formatString(application.unit)}"`,
+                        `"${formatString(application.name)}"`,
+                        `"${formatString(application.co_signer)}"`,
+                        `"${formatString(application.status)}"`,
+                        `"${formatDate(application.date)}"`,
+                        `"${formatString(application.stage_in_progress)}"`,
+                        `"${formatString(application.notes)}"`,
+                        `"${formatString(application.attachment_name)}"`
+                    ].join(',');
+                } catch (rowError) {
+                    console.error('Error processing application row:', application, rowError);
+                    return ''; // Skip problematic rows
+                }
+            }).filter(row => row !== '') // Remove empty rows
+        ].join('\n');
+
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        return true;
+    } catch (error) {
+        console.error('CSV Export Error:', error);
+        throw error;
+    }
+};
+
 interface Props extends PageProps {
     applications: PaginatedApplications;
     statistics: ApplicationStatistics;
@@ -27,6 +103,7 @@ interface Props extends PageProps {
 
 export default function Index({ auth, applications, statistics, filters }: Props) {
     const [searchFilters, setSearchFilters] = useState<ApplicationFilters>(filters);
+    const [isExporting, setIsExporting] = useState(false);
     const { flash } = usePage().props;
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
@@ -45,11 +122,33 @@ export default function Index({ auth, applications, statistics, filters }: Props
         }
     };
 
+    const handleCSVExport = () => {
+        if (!applications || !applications.data || applications.data.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        setIsExporting(true);
+
+        try {
+            console.log('Exporting applications data:', applications.data); // Debug log
+            const filename = `applications-${new Date().toISOString().split('T')[0]}.csv`;
+            exportToCSV(applications.data, filename);
+
+            // Success feedback
+            console.log('Export completed successfully');
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const getStatusBadge = (status: string | null) => {
         if (!status) return <Badge variant="outline">No Status</Badge>;
         return <Badge variant="default">{status}</Badge>;
     };
-
 
     return (
         <AppLayout >
@@ -108,13 +207,28 @@ export default function Index({ auth, applications, statistics, filters }: Props
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Applications</CardTitle>
-                                {hasAllPermissions(['applications.create','applications.store']) && (
-                                <Link href={route('applications.create')}>
-                                    <Button>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Add Application
+                                <div className="flex gap-2 items-center">
+                                    {/* Export Button */}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCSVExport}
+                                        disabled={isExporting || !applications?.data || applications.data.length === 0}
+                                        className="flex items-center"
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        {isExporting ? 'Exporting...' : 'Export CSV'}
                                     </Button>
-                                </Link>)}
+
+                                    {hasAllPermissions(['applications.create','applications.store']) && (
+                                        <Link href={route('applications.create')}>
+                                            <Button>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add Application
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Filters */}

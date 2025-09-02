@@ -13,10 +13,48 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { VendorInfo, PaginatedVendors, VendorFilters, VendorStatistics } from '@/types/vendor';
 import { PageProps } from '@/types/vendor';
 import { type BreadcrumbItem } from '@/types';
+
+// CSV Export utility function
+const exportToCSV = (data: VendorInfo[], filename: string = 'vendors.csv') => {
+    const headers = [
+        'ID',
+        'City',
+        'Vendor Name',
+        'Number',
+        'Email',
+        'Service Type'
+    ];
+
+    const csvData = [
+        headers.join(','),
+        ...data.map(vendor => [
+            vendor.id,
+            `"${vendor.city}"`,
+            `"${vendor.vendor_name}"`,
+            `"${vendor.number || ''}"`,
+            `"${vendor.email || ''}"`,
+            `"${vendor.service_type}"`
+        ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
+
 interface Props extends PageProps {
     vendors: PaginatedVendors;
     statistics: VendorStatistics;
@@ -26,6 +64,7 @@ interface Props extends PageProps {
 
 export default function Index({ auth, vendors, statistics, filters, cities }: Props) {
     const [searchFilters, setSearchFilters] = useState<VendorFilters>(filters);
+    const [isExporting, setIsExporting] = useState(false);
     const { flash } = usePage().props;
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
@@ -44,6 +83,23 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
         }
     };
 
+    const handleCSVExport = () => {
+        if (vendors.data.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        setIsExporting(true);
+        try {
+            const filename = `vendors-${new Date().toISOString().split('T')[0]}.csv`;
+            exportToCSV(vendors.data, filename);
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Export failed. Please try again.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     return (
         <AppLayout >
@@ -111,14 +167,28 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Vendors List</CardTitle>
-                                {hasAllPermissions(['vendors.create','vendors.store']) && (
-                                <Link href={route('vendors.create')}>
-                                    <Button>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Add Vendor
+                                <div className="flex gap-2 items-center">
+                                    {/* Export Button */}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCSVExport}
+                                        disabled={isExporting || vendors.data.length === 0}
+                                        className="flex items-center"
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        {isExporting ? 'Exporting...' : 'Export CSV'}
                                     </Button>
-                                </Link>
-                                )}
+
+                                    {hasAllPermissions(['vendors.create','vendors.store']) && (
+                                        <Link href={route('vendors.create')}>
+                                            <Button>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add Vendor
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
                             {/* Filters */}
                             <div className="mt-4">

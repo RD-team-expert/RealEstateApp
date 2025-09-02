@@ -13,10 +13,92 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { NoticeAndEviction } from '@/types/NoticeAndEviction';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+
+// CSV Export utility function
+const exportToCSV = (data: NoticeAndEviction[], filename: string = 'notice-evictions.csv') => {
+    try {
+        const formatDate = (dateStr: string | null | undefined) => {
+            if (!dateStr) return '';
+            try {
+                return new Date(dateStr).toLocaleDateString();
+            } catch (error) {
+                return dateStr || '';
+            }
+        };
+
+        const formatString = (value: string | null | undefined) => {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/"/g, '""');
+        };
+
+        const headers = [
+            'ID',
+            'Unit Name',
+            'Tenants Name',
+            'Status',
+            'Date',
+            'Type of Notice',
+            'Have An Exception',
+            'Note',
+            'Evictions',
+            'Sent to Attorney',
+            'Hearing Dates',
+            'Evicted/Payment Plan',
+            'If Left',
+            'Writ Date'
+        ];
+
+        const csvData = [
+            headers.join(','),
+            ...data.map(record => {
+                try {
+                    return [
+                        record.id || '',
+                        `"${formatString(record.unit_name)}"`,
+                        `"${formatString(record.tenants_name)}"`,
+                        `"${formatString(record.status)}"`,
+                        `"${formatDate(record.date)}"`,
+                        `"${formatString(record.type_of_notice)}"`,
+                        `"${formatString(record.have_an_exception)}"`,
+                        `"${formatString(record.note)}"`,
+                        `"${formatString(record.evictions)}"`,
+                        `"${formatString(record.sent_to_atorney)}"`,
+                        `"${formatDate(record.hearing_dates)}"`,
+                        `"${formatString(record.evected_or_payment_plan)}"`,
+                        `"${formatString(record.if_left)}"`,
+                        `"${formatDate(record.writ_date)}"`
+                    ].join(',');
+                } catch (rowError) {
+                    console.error('Error processing record row:', record, rowError);
+                    return ''; // Skip problematic rows
+                }
+            }).filter(row => row !== '') // Remove empty rows
+        ].join('\n');
+
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        return true;
+    } catch (error) {
+        console.error('CSV Export Error:', error);
+        throw error;
+    }
+};
+
 interface Props {
     records: NoticeAndEviction[];
     search?: string;
@@ -24,6 +106,7 @@ interface Props {
 
 const Index = ({ records, search }: Props) => {
     const [searchTerm, setSearchTerm] = useState(search || '');
+    const [isExporting, setIsExporting] = useState(false);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,6 +116,29 @@ const Index = ({ records, search }: Props) => {
     const handleDelete = (record: NoticeAndEviction) => {
         if (window.confirm('Delete this record? This cannot be undone.')) {
             router.delete(`/notice_and_evictions/${record.id}`);
+        }
+    };
+
+    const handleCSVExport = () => {
+        if (!records || records.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        setIsExporting(true);
+
+        try {
+            console.log('Exporting notice and evictions data:', records); // Debug log
+            const filename = `notice-evictions-${new Date().toISOString().split('T')[0]}.csv`;
+            exportToCSV(records, filename);
+
+            // Success feedback
+            console.log('Export completed successfully');
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -67,7 +173,6 @@ const Index = ({ records, search }: Props) => {
 
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
-    
     return (
         <AppLayout >
             <Head title="Notice & Evictions" />
@@ -78,13 +183,28 @@ const Index = ({ records, search }: Props) => {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Notice & Evictions</CardTitle>
-                                {hasAllPermissions(['notice-and-evictions.create','notice-and-evictions.store']) && (
-                                <Link href="/notice_and_evictions/create">
-                                    <Button>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Add Record
+                                <div className="flex gap-2 items-center">
+                                    {/* Export Button */}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCSVExport}
+                                        disabled={isExporting || !records || records.length === 0}
+                                        className="flex items-center"
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        {isExporting ? 'Exporting...' : 'Export CSV'}
                                     </Button>
-                                </Link>)}
+
+                                    {hasAllPermissions(['notice-and-evictions.create','notice-and-evictions.store']) && (
+                                        <Link href="/notice_and_evictions/create">
+                                            <Button>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add Record
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">
                                 <div className="flex-1">

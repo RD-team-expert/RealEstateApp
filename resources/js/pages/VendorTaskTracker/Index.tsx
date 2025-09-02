@@ -13,10 +13,60 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { VendorTaskTracker } from '@/types/vendor-task-tracker';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+
+// Export utility functions
+const exportToCSV = (data: VendorTaskTracker[], filename: string = 'vendor-tasks.csv') => {
+    const headers = [
+        'ID',
+        'City',
+        'Submission Date',
+        'Vendor Name',
+        'Unit Name',
+        'Assigned Tasks',
+        'Scheduled Visits',
+        'Task End Date',
+        'Notes',
+        'Status',
+        'Urgent'
+    ];
+
+    const csvData = [
+        headers.join(','),
+        ...data.map(task => [
+            task.id,
+            `"${task.city}"`,
+            `"${new Date(task.task_submission_date).toLocaleDateString()}"`,
+            `"${task.vendor_name}"`,
+            `"${task.unit_name}"`,
+            `"${(task.assigned_tasks || '').replace(/"/g, '""')}"`,
+            `"${task.any_scheduled_visits ? new Date(task.any_scheduled_visits).toLocaleDateString() : 'N/A'}"`,
+            `"${task.task_ending_date ? new Date(task.task_ending_date).toLocaleDateString() : 'N/A'}"`,
+            `"${(task.notes || '').replace(/"/g, '""')}"`,
+            `"${task.status || ''}"`,
+            `"${task.urgent}"`
+        ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
+
+
+
 interface Props {
     tasks: {
         data: VendorTaskTracker[];
@@ -29,6 +79,7 @@ interface Props {
 export default function Index({ tasks, search }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchTerm, setSearchTerm] = useState(search || '');
+    const [isExporting, setIsExporting] = useState(false);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,6 +91,26 @@ export default function Index({ tasks, search }: Props) {
             router.delete(route('vendor-task-tracker.destroy', task.id));
         }
     };
+
+    const handleCSVExport = () => {
+        if (tasks.data.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        setIsExporting(true);
+        try {
+            const filename = `vendor-tasks-${new Date().toISOString().split('T')[0]}.csv`;
+            exportToCSV(tasks.data, filename);
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Export failed. Please try again.');
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+
 
     const getUrgentBadge = (urgent: 'Yes' | 'No') => {
         return (
@@ -58,7 +129,6 @@ export default function Index({ tasks, search }: Props) {
         return <Badge variant={variant}>{status}</Badge>;
     };
 
-
     return (
         <AppLayout >
             <Head title="Vendor Task Tracker" />
@@ -69,14 +139,31 @@ export default function Index({ tasks, search }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl text-foreground">Vendor Task Tracker</CardTitle>
-                                {hasAllPermissions(['vendor-task-tracker.create', 'vendor-task-tracker.store']) && (
-                                    <Link href={route('vendor-task-tracker.create')}>
-                                        <Button>
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            Add Task
+                                <div className="flex gap-2 items-center">
+                                    {/* Export Buttons */}
+                                    <div className="flex gap-1">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleCSVExport}
+                                            disabled={isExporting || tasks.data.length === 0}
+                                            className="flex items-center"
+                                        >
+                                            <Download className="h-4 w-4 mr-2" />
+                                            {isExporting ? 'Exporting...' : 'Export CSV'}
                                         </Button>
-                                    </Link>
-                                )}
+
+                                    </div>
+
+                                    {hasAllPermissions(['vendor-task-tracker.create', 'vendor-task-tracker.store']) && (
+                                        <Link href={route('vendor-task-tracker.create')}>
+                                            <Button>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add Task
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
 
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">

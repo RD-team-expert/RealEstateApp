@@ -13,10 +13,90 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { MoveIn } from '@/types/move-in';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+
+// CSV Export utility function
+const exportToCSV = (data: MoveIn[], filename: string = 'move-ins.csv') => {
+    try {
+        const formatDate = (dateStr: string | null | undefined) => {
+            if (!dateStr) return '';
+            try {
+                return new Date(dateStr).toLocaleDateString();
+            } catch (error) {
+                return dateStr || '';
+            }
+        };
+
+        const formatString = (value: string | null | undefined) => {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/"/g, '""');
+        };
+
+        const headers = [
+            'ID',
+            'Unit Name',
+            'Signed Lease',
+            'Lease Signing Date',
+            'Move-In Date',
+            'Paid Security & First Month',
+            'Scheduled Payment Date',
+            'Handled Keys',
+            'Move in form sent On',
+            'Filled Move-In Form',
+            'Date of move in form filled in',
+            'Submitted Insurance',
+            'Date of Insurance expiration'
+        ];
+
+        const csvData = [
+            headers.join(','),
+            ...data.map(moveIn => {
+                try {
+                    return [
+                        moveIn.id || '',
+                        `"${formatString(moveIn.unit_name)}"`,
+                        `"${formatString(moveIn.signed_lease)}"`,
+                        `"${formatDate(moveIn.lease_signing_date)}"`,
+                        `"${formatDate(moveIn.move_in_date)}"`,
+                        `"${formatString(moveIn.paid_security_deposit_first_month_rent)}"`,
+                        `"${formatDate(moveIn.scheduled_paid_time)}"`,
+                        `"${formatString(moveIn.handled_keys)}"`,
+                        `"${formatDate(moveIn.move_in_form_sent_date)}"`,
+                        `"${formatString(moveIn.filled_move_in_form)}"`,
+                        `"${formatDate(moveIn.date_of_move_in_form_filled)}"`,
+                        `"${formatString(moveIn.submitted_insurance)}"`,
+                        `"${formatDate(moveIn.date_of_insurance_expiration)}"`
+                    ].join(',');
+                } catch (rowError) {
+                    console.error('Error processing move-in row:', moveIn, rowError);
+                    return ''; // Skip problematic rows
+                }
+            }).filter(row => row !== '') // Remove empty rows
+        ].join('\n');
+
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        return true;
+    } catch (error) {
+        console.error('CSV Export Error:', error);
+        throw error;
+    }
+};
+
 interface Props {
     moveIns: {
         data: MoveIn[];
@@ -28,6 +108,7 @@ interface Props {
 
 export default function Index({ moveIns, search }: Props) {
     const [searchTerm, setSearchTerm] = useState(search || '');
+    const [isExporting, setIsExporting] = useState(false);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,6 +120,29 @@ export default function Index({ moveIns, search }: Props) {
     const handleDelete = (moveIn: MoveIn) => {
         if (confirm('Are you sure you want to delete this move-in record?')) {
             router.delete(route('move-in.destroy', moveIn.id));
+        }
+    };
+
+    const handleCSVExport = () => {
+        if (!moveIns || !moveIns.data || moveIns.data.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        setIsExporting(true);
+
+        try {
+            console.log('Exporting move-in data:', moveIns.data); // Debug log
+            const filename = `move-ins-${new Date().toISOString().split('T')[0]}.csv`;
+            exportToCSV(moveIns.data, filename);
+
+            // Success feedback
+            console.log('Export completed successfully');
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -55,7 +159,6 @@ export default function Index({ moveIns, search }: Props) {
         );
     };
 
-
     return (
         <AppLayout >
             <Head title="Move-In Management" />
@@ -66,13 +169,28 @@ export default function Index({ moveIns, search }: Props) {
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Move-In Management</CardTitle>
-                                {hasAllPermissions(['move-in.create','move-in.store']) && (
-                                <Link href={route('move-in.create')}>
-                                    <Button>
-                                        <Plus className="h-4 w-4 mr-2" />
-                                        Add Move-In Record
+                                <div className="flex gap-2 items-center">
+                                    {/* Export Button */}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCSVExport}
+                                        disabled={isExporting || !moveIns?.data || moveIns.data.length === 0}
+                                        className="flex items-center"
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        {isExporting ? 'Exporting...' : 'Export CSV'}
                                     </Button>
-                                </Link>)}
+
+                                    {hasAllPermissions(['move-in.create','move-in.store']) && (
+                                        <Link href={route('move-in.create')}>
+                                            <Button>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add Move-In Record
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
 
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">
@@ -177,7 +295,7 @@ export default function Index({ moveIns, search }: Props) {
                                                             <Button variant="outline" size="sm">
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>)}
+                                        </Link>)}
                                                         {hasPermission('move-in.destroy') && (
                                                         <Button
                                                             variant="outline"
