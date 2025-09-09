@@ -18,6 +18,7 @@ const Create: React.FC = () => {
   const { tenants } = usePage().props as { tenants: Tenant[] };
 
   const { data, setData, post, processing, errors } = useForm<Partial<OfferRenewal>>({
+    property:'',
     unit: '',
     tenant: '',
     date_sent_offer: '',
@@ -42,6 +43,9 @@ const Create: React.FC = () => {
 
   // Get unique units for Unit dropdown
   const units = Array.from(new Set(tenants.map(t => t.unit_number)));
+
+  // Get unique units for Unit dropdown
+  const properties = Array.from(new Set(tenants.map(t => t.property_name)));
 
   // Build tenant name list for Tenant dropdown
   const tenantNames = tenants.map(t => ({
@@ -69,6 +73,25 @@ const Create: React.FC = () => {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
+                    {/* Property */}
+                    <div>
+                    <Label htmlFor="property">Property *</Label>
+                    <Select onValueChange={(value) => setData('property', value)} value={data.property}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {properties.map((property) => (
+                          <SelectItem key={property} value={property}>
+                            {property}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.unit && (
+                      <p className="text-red-600 text-sm mt-1">{errors.unit}</p>
+                    )}
+                  </div>
                   {/* Unit */}
                   <div>
                     <Label htmlFor="unit">Unit *</Label>

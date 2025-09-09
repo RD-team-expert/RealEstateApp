@@ -25,6 +25,7 @@ const Edit: React.FC = () => {
 
   // Get unique units for Unit dropdown
   const units = Array.from(new Set(tenants.map(t => t.unit_number)));
+  const properties = Array.from(new Set(tenants.map(t => t.property_name )));
 
   // Build tenant name list for Tenant dropdown
   const tenantNames = tenants.map(t => ({
@@ -55,6 +56,29 @@ const Edit: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* --- Basic Information --- */}
                 <div className="grid md:grid-cols-2 gap-4">
+
+                    <div>
+                    <Label htmlFor="property">property *</Label>
+                    <Select
+                      onValueChange={(value) => setData('property', value)}
+                      value={data.property || undefined}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select property" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {properties.map(property => (
+                          <SelectItem key={property} value={property}>
+                            {property}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.property && (
+                      <p className="text-red-600 text-sm mt-1">{errors.property}</p>
+                    )}
+                  </div>
+
                   <div>
                     <Label htmlFor="unit">Unit *</Label>
                     <Select

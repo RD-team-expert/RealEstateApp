@@ -15,25 +15,29 @@ class OffersAndRenewalRequest extends FormRequest
     public function rules()
     {
         return [
+            'property' => [
+                'required', 'string',
+                Rule::exists('tenants', 'property_name'),
+            ],
             'unit' => [
                 'required', 'string',
                 Rule::exists('tenants', 'unit_number'),
             ],
             'tenant' => [
-    'required', 'string', function($attribute, $value, $fail) {
-        $nameParts = explode(' ', $value, 2);  // Only split into 2 parts: first and the rest
-        if (count($nameParts) < 2) {
-            $fail('The ' . $attribute . ' must contain first and last name');
-            return;
-        }
-        [$firstName, $lastName] = $nameParts;
-        $exists = DB::table('tenants')
-            ->where('first_name', $firstName)
-            ->where('last_name', $lastName)
-            ->exists();
-        if (!$exists) {
-            $fail('The tenant does not exist in the tenants table');
-        }
+                'required', 'string', function($attribute, $value, $fail) {
+                    $nameParts = explode(' ', $value, 2);  // Only split into 2 parts: first and the rest
+                    if (count($nameParts) < 2) {
+                        $fail('The ' . $attribute . ' must contain first and last name');
+                        return;
+                    }
+                    [$firstName, $lastName] = $nameParts;
+                    $exists = DB::table('tenants')
+                        ->where('first_name', $firstName)
+                        ->where('last_name', $lastName)
+                        ->exists();
+                    if (!$exists) {
+                        $fail('The tenant does not exist in the tenants table');
+                    }
     }
 ],
             'date_sent_offer' => 'required|date',

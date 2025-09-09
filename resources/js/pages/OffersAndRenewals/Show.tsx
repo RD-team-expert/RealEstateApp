@@ -87,6 +87,10 @@ const Show = () => {
                                 <div className="space-y-4">
                                     <h3 className="text-lg font-semibold text-foreground">Basic Information</h3>
                                     <div>
+                                        <p className="text-sm text-muted-foreground">Property</p>
+                                        <p className="font-medium text-foreground">{offer.property}</p>
+                                    </div>
+                                    <div>
                                         <p className="text-sm text-muted-foreground">Unit</p>
                                         <p className="font-medium text-foreground">{offer.unit}</p>
                                     </div>

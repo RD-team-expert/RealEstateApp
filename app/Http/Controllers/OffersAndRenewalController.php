@@ -40,7 +40,7 @@ class OffersAndRenewalController extends Controller
     // ... rest of your methods remain the same
     public function create()
     {
-        $tenants = Tenant::all(['unit_number', 'first_name', 'last_name']);
+        $tenants = Tenant::all(['property_name','unit_number', 'first_name', 'last_name']);
         return Inertia::render('OffersAndRenewals/Create', [
             'tenants' => $tenants
         ]);
@@ -59,7 +59,7 @@ class OffersAndRenewalController extends Controller
 
     public function edit(OffersAndRenewal $offers_and_renewal)
     {
-        $tenants = Tenant::all(['unit_number', 'first_name', 'last_name']);
+        $tenants = Tenant::all(['property_name','unit_number', 'first_name', 'last_name']);
         return Inertia::render('OffersAndRenewals/Edit', [
             'offer' => $offers_and_renewal,
             'tenants' => $tenants

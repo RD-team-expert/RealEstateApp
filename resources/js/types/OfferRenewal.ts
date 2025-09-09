@@ -1,6 +1,7 @@
 // types/OfferRenewal.ts
 export interface OfferRenewal {
   id: number;
+  property: string;
   unit: string;
   tenant: string;
   date_sent_offer: string;
@@ -22,6 +23,7 @@ export interface OfferRenewal {
 }
 
 export interface Tenant {
+  property_name: string;
   unit_number: string;
   first_name: string;
   last_name: string;

@@ -9,6 +9,7 @@ return new class extends Migration
     {
         Schema::create('offers_and_renewals', function (Blueprint $table) {
             $table->id();
+            $table->string('property');
             $table->string('unit');
             $table->string('tenant');
             $table->date('date_sent_offer');

@@ -19,7 +19,7 @@ class OffersAndRenewal extends Model
     protected $table = 'offers_and_renewals';
 
     protected $fillable = [
-        'unit','tenant','date_sent_offer','status','date_of_acceptance',
+        'property','unit','tenant','date_sent_offer','status','date_of_acceptance',
         'last_notice_sent','notice_kind','lease_sent','date_sent_lease',
         'lease_signed','date_signed','last_notice_sent_2','notice_kind_2',
         'notes','how_many_days_left','expired','date_offer_expires','date_lease_expires',
@@ -39,65 +39,65 @@ class OffersAndRenewal extends Model
     ];
 
     public function calculateExpiry(): void
-{
-    $now = now();
+    {
+        $now = now();
 
-    if ($this->how_many_days_left !== null) {
-        if ($this->status !== 'Accepted') {
-            $this->date_offer_expires = $this->date_sent_offer
-                ? $this->date_sent_offer->clone()->addDays($this->how_many_days_left)
-                : null;
-            if ($this->date_offer_expires && $this->date_offer_expires->lte($now)) {
-                $this->expired = 'expired';
+        if ($this->how_many_days_left !== null) {
+            if ($this->status !== 'Accepted') {
+                $this->date_offer_expires = $this->date_sent_offer
+                    ? $this->date_sent_offer->clone()->addDays($this->how_many_days_left)
+                    : null;
+                if ($this->date_offer_expires && $this->date_offer_expires->lte($now)) {
+                    $this->expired = 'expired';
+                } else {
+                    $this->expired = 'active';
+                }
+                $this->date_lease_expires = null;
             } else {
-                $this->expired = 'active';
+                $this->date_lease_expires = $this->date_sent_lease
+                    ? $this->date_sent_lease->clone()->addDays($this->how_many_days_left)
+                    : null;
+                if ($this->date_lease_expires && $this->date_lease_expires->lte($now)) {
+                    $this->expired = 'expired';
+                } else {
+                    $this->expired = 'active';
+                }
+                $this->date_offer_expires = null;
             }
-            $this->date_lease_expires = null;
-        } else {
-            $this->date_lease_expires = $this->date_sent_lease
-                ? $this->date_sent_lease->clone()->addDays($this->how_many_days_left)
-                : null;
-            if ($this->date_lease_expires && $this->date_lease_expires->lte($now)) {
-                $this->expired = 'expired';
-            } else {
-                $this->expired = 'active';
-            }
-            $this->date_offer_expires = null;
+            return;
         }
-        return;
-    }
 
-    // If no manual days left, calculate how_many_days_left and expiration from date_sent_lease
-    if ($this->date_sent_lease) {
-        $diff = $this->date_sent_lease->diffInDays($now, false);
-        $this->how_many_days_left = max(0, 30 - $diff);
+        // If no manual days left, calculate how_many_days_left and expiration from date_sent_lease
+        if ($this->date_sent_lease) {
+            $diff = $this->date_sent_lease->diffInDays($now, false);
+            $this->how_many_days_left = max(0, 30 - $diff);
 
-        if ($this->status !== 'Accepted') {
-            $this->date_offer_expires = $this->date_sent_offer
-                ? $this->date_sent_offer->clone()->addDays($this->how_many_days_left)
-                : null;
-            if ($this->date_offer_expires && $this->date_offer_expires->lte($now)) {
-                $this->expired = 'expired';
+            if ($this->status !== 'Accepted') {
+                $this->date_offer_expires = $this->date_sent_offer
+                    ? $this->date_sent_offer->clone()->addDays($this->how_many_days_left)
+                    : null;
+                if ($this->date_offer_expires && $this->date_offer_expires->lte($now)) {
+                    $this->expired = 'expired';
+                } else {
+                    $this->expired = 'active';
+                }
+                $this->date_lease_expires = null;
             } else {
-                $this->expired = 'active';
+                $this->date_lease_expires = $this->date_sent_lease
+                    ? $this->date_sent_lease->clone()->addDays($this->how_many_days_left)
+                    : null;
+                if ($this->date_lease_expires && $this->date_lease_expires->lte($now)) {
+                    $this->expired = 'expired';
+                } else {
+                    $this->expired = 'active';
+                }
+                $this->date_offer_expires = null;
             }
-            $this->date_lease_expires = null;
         } else {
-            $this->date_lease_expires = $this->date_sent_lease
-                ? $this->date_sent_lease->clone()->addDays($this->how_many_days_left)
-                : null;
-            if ($this->date_lease_expires && $this->date_lease_expires->lte($now)) {
-                $this->expired = 'expired';
-            } else {
-                $this->expired = 'active';
-            }
+            $this->how_many_days_left = null;
             $this->date_offer_expires = null;
+            $this->date_lease_expires = null;
+            $this->expired = null;
         }
-    } else {
-        $this->how_many_days_left = null;
-        $this->date_offer_expires = null;
-        $this->date_lease_expires = null;
-        $this->expired = null;
     }
-}
 }

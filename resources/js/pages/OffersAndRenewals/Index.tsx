@@ -36,7 +36,7 @@ const exportToCSV = (data: OfferRenewal[], activeTab: string, filename: string =
         };
 
         // Dynamic headers based on active tab
-        let headers = ['ID', 'Unit', 'Tenant'];
+        let headers = ['ID','Property', 'Unit', 'Tenant'];
 
         if (activeTab === 'offers' || activeTab === 'both') {
             headers = headers.concat([
@@ -299,6 +299,7 @@ const Index = ({ offers, search }: Props) => {
                   <TableHeader>
                     <TableRow className="border-border">
                       {/* Static columns - Basic info */}
+                      <TableHead className="text-muted-foreground">Property</TableHead>
                       <TableHead className="text-muted-foreground">Unit</TableHead>
                       <TableHead className="text-muted-foreground">Tenant</TableHead>
                       {/* Conditional columns */}
@@ -332,6 +333,7 @@ const Index = ({ offers, search }: Props) => {
                   <TableBody>
                     {filtered.map((offer) => (
                       <TableRow key={offer.id} className="hover:bg-muted/50 border-border">
+                        <TableCell className="font-medium text-foreground">{offer.property}</TableCell>
                         <TableCell className="font-medium text-foreground">{offer.unit}</TableCell>
                         <TableCell className="text-foreground">{offer.tenant}</TableCell>
                         {(activeTab === 'offers' || activeTab === 'both') && (
