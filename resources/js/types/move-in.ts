@@ -16,7 +16,7 @@ export interface MoveIn {
     updated_at: string;
 }
 
-export interface MoveInFormData {
+export type MoveInFormData = {
     unit_name: string;
     signed_lease: 'Yes' | 'No' | '';
     lease_signing_date: string;
@@ -29,4 +29,4 @@ export interface MoveInFormData {
     date_of_move_in_form_filled: string;
     submitted_insurance: 'Yes' | 'No' | '';
     date_of_insurance_expiration: string;
-}
+} & Record<string, any>;

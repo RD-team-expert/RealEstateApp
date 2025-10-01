@@ -62,7 +62,15 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('vendor-task-tracker', VendorTaskTrackerController::class);
 
-    Route::resource('move-in', MoveInController::class);
+    Route::resource('move-in', MoveInController::class)->except(['create']);
+
+    // Demo route for MoveIn Drawer component
+    Route::get('move-in-drawer-demo', function () {
+        $units = ['Unit 101', 'Unit 102', 'Unit 201', 'Unit 202', 'Unit 301'];
+        return Inertia::render('MoveInDrawerDemo', [
+            'units' => $units,
+        ]);
+    })->name('move-in-drawer-demo');
 
     Route::resource('move-out', MoveOutController::class);
 

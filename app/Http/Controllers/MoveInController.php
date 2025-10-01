@@ -17,7 +17,6 @@ class MoveInController extends Controller
         protected MoveInService $moveInService
     ) {
         $this->middleware('permission:move-in.index')->only('index');
-        $this->middleware('permission:move-in.create')->only('create');
         $this->middleware('permission:move-in.store')->only('store');
         $this->middleware('permission:move-in.show')->only('show');
         $this->middleware('permission:move-in.edit')->only('edit');
@@ -33,17 +32,11 @@ class MoveInController extends Controller
             ? $this->moveInService->searchMoveIns($search)
             : $this->moveInService->getAllMoveIns();
 
+        $dropdownData = $this->moveInService->getUnitsForDropdown();
+
         return Inertia::render('MoveIn/Index', [
             'moveIns' => $moveIns,
             'search' => $search,
-        ]);
-    }
-
-    public function create(): Response
-    {
-        $dropdownData = $this->moveInService->getUnitsForDropdown();
-
-        return Inertia::render('MoveIn/Create', [
             'units' => $dropdownData['units'],
         ]);
     }

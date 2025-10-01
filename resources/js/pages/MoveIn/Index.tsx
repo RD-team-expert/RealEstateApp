@@ -17,6 +17,7 @@ import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { MoveIn } from '@/types/move-in';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+import MoveInCreateDrawer from './MoveInCreateDrawer';
 
 // CSV Export utility function
 const exportToCSV = (data: MoveIn[], filename: string = 'move-ins.csv') => {
@@ -104,11 +105,13 @@ interface Props {
         meta: any;
     };
     search: string | null;
+    units: string[];
 }
 
-export default function Index({ moveIns, search }: Props) {
+export default function Index({ moveIns, search, units }: Props) {
     const [searchTerm, setSearchTerm] = useState(search || '');
     const [isExporting, setIsExporting] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -144,6 +147,11 @@ export default function Index({ moveIns, search }: Props) {
         } finally {
             setIsExporting(false);
         }
+    };
+
+    const handleDrawerSuccess = () => {
+        // Refresh the page data after successful creation
+        router.reload();
     };
 
     const getYesNoBadge = (value: 'Yes' | 'No' | null) => {
@@ -183,12 +191,10 @@ export default function Index({ moveIns, search }: Props) {
                                     </Button>
 
                                     {hasAllPermissions(['move-in.create','move-in.store']) && (
-                                        <Link href={route('move-in.create')}>
-                                            <Button>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add Move-In Record
-                                            </Button>
-                                        </Link>
+                                        <Button onClick={() => setIsDrawerOpen(true)}>
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Add Move-In Record
+                                        </Button>
                                     )}
                                 </div>
                             </div>
@@ -332,6 +338,14 @@ export default function Index({ moveIns, search }: Props) {
                     </Card>
                 </div>
             </div>
+
+            {/* Move-In Create Drawer */}
+            <MoveInCreateDrawer
+                units={units}
+                open={isDrawerOpen}
+                onOpenChange={setIsDrawerOpen}
+                onSuccess={handleDrawerSuccess}
+            />
         </AppLayout>
     );
 }

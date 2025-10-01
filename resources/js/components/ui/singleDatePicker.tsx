@@ -1,10 +1,9 @@
-'use client'
-
 import { useState } from 'react'
 import { ChevronDownIcon, CalendarIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
 
 interface SingleDatePickerProps {
   value?: Date
@@ -46,34 +45,45 @@ export const SingleDatePicker: React.FC<SingleDatePickerProps> = ({
     return Object.keys(disabledConditions).length > 0 ? disabledConditions : undefined
   }
 
+  const formatDisplayDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    })
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className={`justify-between font-normal ${className}`}
+          className={cn(
+            "w-full justify-between text-left font-normal",
+            !value && "text-muted-foreground",
+            className
+          )}
           disabled={disabled}
+          role="combobox"
+          aria-expanded={open}
+          aria-haspopup="dialog"
         >
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4" />
-            {value
-              ? value.toLocaleDateString('en-US', {
-                  day: '2-digit',
-                  month: 'short',
-                  year: 'numeric'
-                })
-              : placeholder}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <CalendarIcon className="h-4 w-4 shrink-0" />
+            <span className="truncate">
+              {value ? formatDisplayDate(value) : placeholder}
+            </span>
           </div>
-          <ChevronDownIcon className="h-4 w-4" />
+          <ChevronDownIcon className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+      <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
         <Calendar
           mode="single"
           selected={value}
           onSelect={handleSelect}
           disabled={getDisabledDates()}
-          captionLayout="dropdown"
+          initialFocus
         />
       </PopoverContent>
     </Popover>
