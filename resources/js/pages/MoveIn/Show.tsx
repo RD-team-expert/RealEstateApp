@@ -39,10 +39,6 @@ export default function Show({ moveIn }: Props) {
                             <div className="flex justify-between items-center">
                                 <CardTitle className="text-2xl">Move-In Record Details</CardTitle>
                                 <div className="flex gap-2">
-                                    {hasAllPermissions(['move-in.edit','move-in.update']) && (
-                                    <Link href={route('move-in.edit', moveIn.id)}>
-                                        <Button>Edit Record</Button>
-                                    </Link>)}
                                     <Link href={route('move-in.index')}>
                                         <Button variant="outline">Back to List</Button>
                                     </Link>

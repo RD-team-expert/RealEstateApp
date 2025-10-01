@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Table,
-    TableBody,
+    TableBody,  
     TableCell,
     TableHead,
     TableHeader,
@@ -16,8 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { MoveIn } from '@/types/move-in';
 import { usePermissions } from '@/hooks/usePermissions';
-import { type BreadcrumbItem } from '@/types';
 import MoveInCreateDrawer from './MoveInCreateDrawer';
+import MoveInEditDrawer from './MoveInEditDrawer';
 
 // CSV Export utility function
 const exportToCSV = (data: MoveIn[], filename: string = 'move-ins.csv') => {
@@ -109,9 +109,13 @@ interface Props {
 }
 
 export default function Index({ moveIns, search, units }: Props) {
+    
+
     const [searchTerm, setSearchTerm] = useState(search || '');
     const [isExporting, setIsExporting] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+    const [selectedMoveIn, setSelectedMoveIn] = useState<MoveIn | null>(null);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -143,7 +147,8 @@ export default function Index({ moveIns, search, units }: Props) {
             console.log('Export completed successfully');
         } catch (error) {
             console.error('Export failed:', error);
-            alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            alert(`Export failed: ${errorMessage}. Please check the console for details.`);
         } finally {
             setIsExporting(false);
         }
@@ -154,13 +159,36 @@ export default function Index({ moveIns, search, units }: Props) {
         router.reload();
     };
 
+    const handleEditDrawerSuccess = () => {
+        // Refresh the page data after successful update
+        router.reload();
+    };
+
+    const handleEdit = (moveIn: MoveIn) => {
+        setSelectedMoveIn(moveIn);
+        setIsEditDrawerOpen(true);
+    };
+
+    const formatDateUTC = (dateStr?: string | null) => {
+  if (!dateStr) return 'N/A';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'N/A';
+  return new Intl.DateTimeFormat(undefined, {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(d);
+};
+
+
     const getYesNoBadge = (value: 'Yes' | 'No' | null) => {
         if (value === null) return <Badge variant="outline">N/A</Badge>;
         return (
             <Badge variant={value === 'Yes' ? 'default' : 'secondary'} className={
                 value === 'Yes'
                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
             }>
                 {value}
             </Badge>
@@ -173,37 +201,38 @@ export default function Index({ moveIns, search, units }: Props) {
 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    {/* Title and Buttons Section */}
+                    <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-2xl font-bold text-foreground">Move-In Management</h1>
+                        <div className="flex gap-2 items-center">
+                            {/* Export Button */}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCSVExport}
+                                disabled={isExporting || !moveIns?.data || moveIns.data.length === 0}
+                                className="flex items-center"
+                            >
+                                <Download className="h-4 w-4 mr-2" />
+                                {isExporting ? 'Exporting...' : 'Export CSV'}
+                            </Button>
+
+                            {hasAllPermissions(['move-in.create','move-in.store']) && (
+                                <Button onClick={() => setIsDrawerOpen(true)}>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Move-In Record
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
-                            <div className="flex justify-between items-center">
-                                <CardTitle className="text-2xl">Move-In Management</CardTitle>
-                                <div className="flex gap-2 items-center">
-                                    {/* Export Button */}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleCSVExport}
-                                        disabled={isExporting || !moveIns?.data || moveIns.data.length === 0}
-                                        className="flex items-center"
-                                    >
-                                        <Download className="h-4 w-4 mr-2" />
-                                        {isExporting ? 'Exporting...' : 'Export CSV'}
-                                    </Button>
-
-                                    {hasAllPermissions(['move-in.create','move-in.store']) && (
-                                        <Button onClick={() => setIsDrawerOpen(true)}>
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            Add Move-In Record
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-
-                            <form onSubmit={handleSearch} className="flex gap-2 mt-4">
+                            <form onSubmit={handleSearch} className="flex gap-2">
                                 <div className="flex-1">
                                     <Input
                                         type="text"
-                                        placeholder="Search by unit name or status..."
+                                        placeholder="Search by unit name "
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         className="bg-input text-input-foreground"
@@ -216,79 +245,65 @@ export default function Index({ moveIns, search, units }: Props) {
                         </CardHeader>
 
                         <CardContent>
-                            <div className="overflow-x-auto">
-                                <Table>
+                            <div className="overflow-x-auto relative">
+                                <Table className="border-collapse border border-border rounded-md">
                                     <TableHeader>
                                         <TableRow className="border-border">
-                                            <TableHead className="text-muted-foreground">Unit Name</TableHead>
-                                            <TableHead className="text-muted-foreground">Signed Lease</TableHead>
-                                            <TableHead className="text-muted-foreground">Lease Signing Date</TableHead>
-                                            <TableHead className="text-muted-foreground">Move-In Date</TableHead>
-                                            <TableHead className="text-muted-foreground">Paid Security & First Month</TableHead>
-                                            <TableHead className="text-muted-foreground">Scheduled Payment Date</TableHead>
-                                            <TableHead className="text-muted-foreground">Handled Keys</TableHead>
-                                            <TableHead className="text-muted-foreground">Move in form sent On</TableHead>
-                                            <TableHead className="text-muted-foreground">Filled Move-In Form</TableHead>
-                                            <TableHead className="text-muted-foreground">Date of move in form filled in</TableHead>
-                                            <TableHead className="text-muted-foreground">Submitted Insurance</TableHead>
-                                            <TableHead className="text-muted-foreground">Date of Insurance expiration</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted sticky left-0 z-10 min-w-[120px]">Unit Name</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Signed Lease</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Lease Signing Date</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Move-In Date</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Paid Security & First Month</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Scheduled Payment Date</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Handled Keys</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Move in form sent On</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Filled Move-In Form</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Date of move in form filled in</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Submitted Insurance</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Date of Insurance expiration</TableHead>
                                             {hasAnyPermission(['move-in.show','move-in.edit','move-in.update','move-in.destroy']) && (
-                                            <TableHead className="text-muted-foreground">Actions</TableHead>)}
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Actions</TableHead>)}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {moveIns.data.map((moveIn) => (
-                                            <TableRow key={moveIn.id} className="hover:bg-muted/50 border-border">
-                                                <TableCell className="font-medium text-foreground">{moveIn.unit_name}</TableCell>
-                                                <TableCell>
+                                            <TableRow key={moveIn.id} className="hover:bg-muted/50 border-border ">
+                                                <TableCell className="font-medium text-foreground border border-border bg-muted sticky left-0 z-10 min-w-[120px]">{moveIn.unit_name}</TableCell>
+                                                <TableCell className="border border-border">
                                                     {getYesNoBadge(moveIn.signed_lease)}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">
-                                                    {moveIn.lease_signing_date
-                                                        ? new Date(moveIn.lease_signing_date).toLocaleDateString()
-                                                        : 'N/A'
-                                                    }
+                                                <TableCell className="text-foreground border border-border">
+                                                    {formatDateUTC(moveIn.lease_signing_date)}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">
-                                                    {moveIn.move_in_date
-                                                        ? new Date(moveIn.move_in_date).toLocaleDateString()
-                                                        : 'N/A'
-                                                    }
+                                                <TableCell className="text-foreground border border-border">
+                                                    {formatDateUTC(moveIn.move_in_date)}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="border border-border">
                                                     {getYesNoBadge(moveIn.paid_security_deposit_first_month_rent)}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">
-                                                    {moveIn.scheduled_paid_time
-                                                        ? new Date(moveIn.scheduled_paid_time).toLocaleDateString()
-                                                        : 'N/A'}
+                                                <TableCell className="text-foreground border border-border">
+                                                    {formatDateUTC(moveIn.scheduled_paid_time)}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="border border-border">
                                                     {getYesNoBadge(moveIn.handled_keys)}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">
-                                                    {moveIn.move_in_form_sent_date
-                                                        ? new Date(moveIn.move_in_form_sent_date).toLocaleDateString()
-                                                        : 'N/A'}
+                                                <TableCell className="text-foreground border border-border">
+                                                    {formatDateUTC(moveIn.move_in_form_sent_date)}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="border border-border">
                                                     {getYesNoBadge(moveIn.filled_move_in_form)}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">
-                                                    {moveIn.date_of_move_in_form_filled
-                                                        ? new Date(moveIn.date_of_move_in_form_filled).toLocaleDateString()
-                                                        : 'N/A'}
+                                                <TableCell className="text-foreground border border-border">
+                                                    {formatDateUTC(moveIn.date_of_move_in_form_filled)}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="border border-border">
                                                     {getYesNoBadge(moveIn.submitted_insurance)}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">
-                                                    {moveIn.date_of_insurance_expiration
-                                                        ? new Date(moveIn.date_of_insurance_expiration).toLocaleDateString()
-                                                        : 'N/A'}
+                                                <TableCell className="text-foreground border border-border">
+                                                    {formatDateUTC(moveIn.date_of_insurance_expiration)}
                                                 </TableCell>
                                                 {hasAnyPermission(['move-in.show','move-in.edit','move-in.update','move-in.destroy']) && (
-                                                <TableCell>
+                                                <TableCell className="border border-border">
                                                     <div className="flex gap-1">
                                                         {hasPermission('move-in.show') && (
                                                         <Link href={route('move-in.show', moveIn.id)}>
@@ -297,11 +312,13 @@ export default function Index({ moveIns, search, units }: Props) {
                                                             </Button>
                                                         </Link>)}
                                                         {hasAllPermissions(['move-in.edit','move-in.update']) && (
-                                                        <Link href={route('move-in.edit', moveIn.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                        </Link>)}
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="sm"
+                                                            onClick={() => handleEdit(moveIn)}
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>)}
                                                         {hasPermission('move-in.destroy') && (
                                                         <Button
                                                             variant="outline"
@@ -346,6 +363,17 @@ export default function Index({ moveIns, search, units }: Props) {
                 onOpenChange={setIsDrawerOpen}
                 onSuccess={handleDrawerSuccess}
             />
+
+            {/* Move-In Edit Drawer */}
+            {selectedMoveIn && (
+                <MoveInEditDrawer
+                    moveIn={selectedMoveIn}
+                    units={units}
+                    open={isEditDrawerOpen}
+                    onOpenChange={setIsEditDrawerOpen}
+                    onSuccess={handleEditDrawerSuccess}
+                />
+            )}
         </AppLayout>
     );
 }

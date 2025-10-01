@@ -19,7 +19,6 @@ class MoveInController extends Controller
         $this->middleware('permission:move-in.index')->only('index');
         $this->middleware('permission:move-in.store')->only('store');
         $this->middleware('permission:move-in.show')->only('show');
-        $this->middleware('permission:move-in.edit')->only('edit');
         $this->middleware('permission:move-in.update')->only('update');
         $this->middleware('permission:move-in.destroy')->only('destroy');
     }
@@ -54,16 +53,6 @@ class MoveInController extends Controller
     {
         return Inertia::render('MoveIn/Show', [
             'moveIn' => $moveIn
-        ]);
-    }
-
-    public function edit(MoveIn $moveIn): Response
-    {
-        $dropdownData = $this->moveInService->getUnitsForDropdown();
-
-        return Inertia::render('MoveIn/Edit', [
-            'moveIn' => $moveIn,
-            'units' => $dropdownData['units'],
         ]);
     }
 

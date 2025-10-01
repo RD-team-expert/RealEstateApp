@@ -1,6 +1,6 @@
 // resources/js/layouts/app-layout.tsx
 import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
-import { useBreadcrumbs } from '@/hooks/useBreadCrumbs';
+import { useBreadcrumbs } from '@/hooks/useBreadcrumbs';
 import { type BreadcrumbItem } from '@/types';
 import { type ReactNode } from 'react';
 
