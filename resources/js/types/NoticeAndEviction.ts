@@ -13,6 +13,7 @@ export interface NoticeAndEviction {
   evected_or_payment_plan?: string; // "Evected" | "Payment Plan"
   if_left?: string; // "Yes" | "No"
   writ_date?: string;
+  is_archived?: boolean;
   created_at?: string;
   updated_at?: string;
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use App\Models\Notice;
 
 class NoticeAndEviction extends Model
@@ -25,13 +26,15 @@ class NoticeAndEviction extends Model
         'hearing_dates',
         'evected_or_payment_plan',
         'if_left',
-        'writ_date'
+        'writ_date',
+        'is_archived'
     ];
 
     protected $casts = [
         'date' => 'date',
         'hearing_dates' => 'date',
         'writ_date' => 'date',
+        'is_archived' => 'boolean',
     ];
 
     // Calculated column for 'evictions'
@@ -53,5 +56,39 @@ class NoticeAndEviction extends Model
                 }
             }
         }
+    }
+
+    // Global scope to exclude archived records by default
+    protected static function booted()
+    {
+        static::addGlobalScope('active', function (Builder $builder) {
+            $builder->where('is_archived', false);
+        });
+    }
+
+    // Scope to include archived records when needed
+    public function scopeWithArchived(Builder $query)
+    {
+        return $query->withoutGlobalScope('active');
+    }
+
+    // Scope to get only archived records
+    public function scopeOnlyArchived(Builder $query)
+    {
+        return $query->withoutGlobalScope('active')->where('is_archived', true);
+    }
+
+    // Soft delete method - sets is_archived to true instead of deleting
+    public function archive()
+    {
+        $this->is_archived = true;
+        return $this->save();
+    }
+
+    // Restore method - sets is_archived to false
+    public function restore()
+    {
+        $this->is_archived = false;
+        return $this->save();
     }
 }

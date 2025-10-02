@@ -1,22 +1,16 @@
-import React, { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
-import { NoticeAndEviction } from '@/types/NoticeAndEviction';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/hooks/usePermissions';
-import { type BreadcrumbItem } from '@/types';
+import AppLayout from '@/layouts/app-layout';
+import { Notice, NoticeAndEviction, Tenant } from '@/types/NoticeAndEviction';
+import { Head, Link, router } from '@inertiajs/react';
+import { Download, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import NoticeAndEvictionsCreateDrawer from './NoticeAndEvictionsCreateDrawer';
+import NoticeAndEvictionsEditDrawer from './NoticeAndEvictionsEditDrawer';
 
 // CSV Export utility function
 const exportToCSV = (data: NoticeAndEviction[], filename: string = 'notice-evictions.csv') => {
@@ -49,34 +43,36 @@ const exportToCSV = (data: NoticeAndEviction[], filename: string = 'notice-evict
             'Hearing Dates',
             'Evicted/Payment Plan',
             'If Left',
-            'Writ Date'
+            'Writ Date',
         ];
 
         const csvData = [
             headers.join(','),
-            ...data.map(record => {
-                try {
-                    return [
-                        record.id || '',
-                        `"${formatString(record.unit_name)}"`,
-                        `"${formatString(record.tenants_name)}"`,
-                        `"${formatString(record.status)}"`,
-                        `"${formatDate(record.date)}"`,
-                        `"${formatString(record.type_of_notice)}"`,
-                        `"${formatString(record.have_an_exception)}"`,
-                        `"${formatString(record.note)}"`,
-                        `"${formatString(record.evictions)}"`,
-                        `"${formatString(record.sent_to_atorney)}"`,
-                        `"${formatDate(record.hearing_dates)}"`,
-                        `"${formatString(record.evected_or_payment_plan)}"`,
-                        `"${formatString(record.if_left)}"`,
-                        `"${formatDate(record.writ_date)}"`
-                    ].join(',');
-                } catch (rowError) {
-                    console.error('Error processing record row:', record, rowError);
-                    return ''; // Skip problematic rows
-                }
-            }).filter(row => row !== '') // Remove empty rows
+            ...data
+                .map((record) => {
+                    try {
+                        return [
+                            record.id || '',
+                            `"${formatString(record.unit_name)}"`,
+                            `"${formatString(record.tenants_name)}"`,
+                            `"${formatString(record.status)}"`,
+                            `"${formatDate(record.date)}"`,
+                            `"${formatString(record.type_of_notice)}"`,
+                            `"${formatString(record.have_an_exception)}"`,
+                            `"${formatString(record.note)}"`,
+                            `"${formatString(record.evictions)}"`,
+                            `"${formatString(record.sent_to_atorney)}"`,
+                            `"${formatDate(record.hearing_dates)}"`,
+                            `"${formatString(record.evected_or_payment_plan)}"`,
+                            `"${formatString(record.if_left)}"`,
+                            `"${formatDate(record.writ_date)}"`,
+                        ].join(',');
+                    } catch (rowError) {
+                        console.error('Error processing record row:', record, rowError);
+                        return ''; // Skip problematic rows
+                    }
+                })
+                .filter((row) => row !== ''), // Remove empty rows
         ].join('\n');
 
         const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
@@ -102,11 +98,16 @@ const exportToCSV = (data: NoticeAndEviction[], filename: string = 'notice-evict
 interface Props {
     records: NoticeAndEviction[];
     search?: string;
+    tenants?: Tenant[];
+    notices?: Notice[];
 }
 
-const Index = ({ records, search }: Props) => {
+const Index = ({ records, search, tenants = [], notices = [] }: Props) => {
     const [searchTerm, setSearchTerm] = useState(search || '');
     const [isExporting, setIsExporting] = useState(false);
+    const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+    const [selectedRecord, setSelectedRecord] = useState<NoticeAndEviction | null>(null);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -117,6 +118,16 @@ const Index = ({ records, search }: Props) => {
         if (window.confirm('Delete this record? This cannot be undone.')) {
             router.delete(`/notice_and_evictions/${record.id}`);
         }
+    };
+
+    const handleEdit = (record: NoticeAndEviction) => {
+        setSelectedRecord(record);
+        setIsEditDrawerOpen(true);
+    };
+
+    const handleEditSuccess = () => {
+        // Refresh the page to get updated data
+        router.reload();
     };
 
     const handleCSVExport = () => {
@@ -136,7 +147,7 @@ const Index = ({ records, search }: Props) => {
             console.log('Export completed successfully');
         } catch (error) {
             console.error('Export failed:', error);
-            alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+            alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please check the console for details.`);
         } finally {
             setIsExporting(false);
         }
@@ -148,11 +159,23 @@ const Index = ({ records, search }: Props) => {
         // Use theme-aware status colors
         switch (status.toLowerCase()) {
             case 'active':
-                return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">{status}</Badge>;
+                return (
+                    <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                        {status}
+                    </Badge>
+                );
             case 'pending':
-                return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">{status}</Badge>;
+                return (
+                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+                        {status}
+                    </Badge>
+                );
             case 'closed':
-                return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">{status}</Badge>;
+                return (
+                    <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+                        {status}
+                    </Badge>
+                );
             default:
                 return <Badge variant="default">{status}</Badge>;
         }
@@ -161,11 +184,14 @@ const Index = ({ records, search }: Props) => {
     const getYesNoBadge = (value: string | null) => {
         if (!value || value === '-') return <Badge variant="outline">N/A</Badge>;
         return (
-            <Badge variant={value === 'Yes' ? 'default' : 'secondary'} className={
-                value === 'Yes'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-            }>
+            <Badge
+                variant={value === 'Yes' ? 'default' : 'secondary'}
+                className={
+                    value === 'Yes'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                }
+            >
                 {value}
             </Badge>
         );
@@ -174,16 +200,16 @@ const Index = ({ records, search }: Props) => {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
     return (
-        <AppLayout >
+        <AppLayout>
             <Head title="Notice & Evictions" />
 
-            <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div className="min-h-screen bg-background py-12 text-foreground transition-colors">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
-                            <div className="flex justify-between items-center">
+                            <div className="flex items-center justify-between">
                                 <CardTitle className="text-2xl">Notice & Evictions</CardTitle>
-                                <div className="flex gap-2 items-center">
+                                <div className="flex items-center gap-2">
                                     {/* Export Button */}
                                     <Button
                                         variant="outline"
@@ -192,28 +218,26 @@ const Index = ({ records, search }: Props) => {
                                         disabled={isExporting || !records || records.length === 0}
                                         className="flex items-center"
                                     >
-                                        <Download className="h-4 w-4 mr-2" />
+                                        <Download className="mr-2 h-4 w-4" />
                                         {isExporting ? 'Exporting...' : 'Export CSV'}
                                     </Button>
 
-                                    {hasAllPermissions(['notice-and-evictions.create','notice-and-evictions.store']) && (
-                                        <Link href="/notice_and_evictions/create">
-                                            <Button>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add Record
-                                            </Button>
-                                        </Link>
+                                    {hasAllPermissions(['notice-and-evictions.create', 'notice-and-evictions.store']) && (
+                                        <Button onClick={() => setIsCreateDrawerOpen(true)}>
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Add Record
+                                        </Button>
                                     )}
                                 </div>
                             </div>
-                            <form onSubmit={handleSearch} className="flex gap-2 mt-4">
+                            <form onSubmit={handleSearch} className="mt-4 flex gap-2">
                                 <div className="flex-1">
                                     <Input
                                         type="text"
                                         placeholder="Search by unit name, tenant name, or status..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="bg-input text-input-foreground"
+                                        className="text-input-foreground bg-input"
                                     />
                                 </div>
                                 <Button type="submit">
@@ -241,76 +265,90 @@ const Index = ({ records, search }: Props) => {
                                             <TableHead className="text-muted-foreground">Evicted/Payment Plan</TableHead>
                                             <TableHead className="text-muted-foreground">If Left?</TableHead>
                                             <TableHead className="text-muted-foreground">Writ Date</TableHead>
-                                            {hasAnyPermission(['notice-and-evictions.show','notice-and-evictions.edit','notice-and-evictions.update','notice-and-evictions.destroy']) && (
-                                            <TableHead className="text-muted-foreground">Actions</TableHead>)}
+                                            {hasAnyPermission([
+                                                'notice-and-evictions.show',
+                                                'notice-and-evictions.edit',
+                                                'notice-and-evictions.update',
+                                                'notice-and-evictions.destroy',
+                                            ]) && <TableHead className="text-muted-foreground">Actions</TableHead>}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {records.map((record) => (
-                                            <TableRow key={record.id} className="hover:bg-muted/50 border-border">
+                                            <TableRow key={record.id} className="border-border hover:bg-muted/50">
                                                 <TableCell className="font-medium text-foreground">{record.id}</TableCell>
                                                 <TableCell className="text-foreground">{record.unit_name}</TableCell>
                                                 <TableCell className="text-foreground">{record.tenants_name}</TableCell>
-                                                <TableCell>
-                                                    {getStatusBadge(record.status)}
+                                                <TableCell>{getStatusBadge(record.status ?? null)}</TableCell>
+                                                <TableCell className="text-foreground">
+                                                    {record.date ? (
+                                                        new Date(record.date).toLocaleDateString()
+                                                    ) : (
+                                                        <span className="text-muted-foreground">N/A</span>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell className="text-foreground">
-                                                    {record.date
-                                                        ? new Date(record.date).toLocaleDateString()
-                                                        : <span className="text-muted-foreground">N/A</span>
-                                                    }
+                                                    {record.type_of_notice || <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">{record.type_of_notice || <span className="text-muted-foreground">N/A</span>}</TableCell>
-                                                <TableCell>
-                                                    {getYesNoBadge(record.have_an_exception)}
-                                                </TableCell>
-                                                <TableCell className="text-foreground">{record.note || <span className="text-muted-foreground">N/A</span>}</TableCell>
-                                                <TableCell className="text-foreground">{record.evictions || <span className="text-muted-foreground">N/A</span>}</TableCell>
-                                                <TableCell>
-                                                    {getYesNoBadge(record.sent_to_atorney)}
+                                                <TableCell>{getYesNoBadge(record.have_an_exception ?? null)}</TableCell>
+                                                <TableCell className="text-foreground">
+                                                    {record.note || <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
                                                 <TableCell className="text-foreground">
-                                                    {record.hearing_dates
-                                                        ? new Date(record.hearing_dates).toLocaleDateString()
-                                                        : <span className="text-muted-foreground">N/A</span>
-                                                    }
+                                                    {record.evictions || <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">{record.evected_or_payment_plan || <span className="text-muted-foreground">N/A</span>}</TableCell>
-                                                <TableCell>
-                                                    {getYesNoBadge(record.if_left)}
+                                                <TableCell>{getYesNoBadge(record.sent_to_atorney ?? null)}</TableCell>
+                                                <TableCell className="text-foreground">
+                                                    {record.hearing_dates ? (
+                                                        new Date(record.hearing_dates).toLocaleDateString()
+                                                    ) : (
+                                                        <span className="text-muted-foreground">N/A</span>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell className="text-foreground">
-                                                    {record.writ_date
-                                                        ? new Date(record.writ_date).toLocaleDateString()
-                                                        : <span className="text-muted-foreground">N/A</span>
-                                                    }
+                                                    {record.evected_or_payment_plan || <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
-                                                {hasAnyPermission(['notice-and-evictions.show','notice-and-evictions.edit','notice-and-evictions.update','notice-and-evictions.destroy']) && (
-                                                <TableCell>
-                                                    <div className="flex gap-1">
-                                                        {hasPermission('notice-and-evictions.show') && (
-                                                        <Link href={`/notice_and_evictions/${record.id}`}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>)}
-                                                        {hasAllPermissions(['notice-and-evictions.edit','notice-and-evictions.update']) && (
-                                                        <Link href={`/notice_and_evictions/${record.id}/edit`}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>)}
-                                                        {hasPermission('notice-and-evictions.destroy') && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(record)}
-                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>)}
-                                                    </div>
-                                                </TableCell>)}
+                                                <TableCell>{getYesNoBadge(record.if_left ?? null)}</TableCell>
+                                                <TableCell className="text-foreground">
+                                                    {record.writ_date ? (
+                                                        new Date(record.writ_date).toLocaleDateString()
+                                                    ) : (
+                                                        <span className="text-muted-foreground">N/A</span>
+                                                    )}
+                                                </TableCell>
+                                                {hasAnyPermission([
+                                                    'notice-and-evictions.show',
+                                                    'notice-and-evictions.edit',
+                                                    'notice-and-evictions.update',
+                                                    'notice-and-evictions.destroy',
+                                                ]) && (
+                                                    <TableCell>
+                                                        <div className="flex gap-1">
+                                                            {hasPermission('notice-and-evictions.show') && (
+                                                                <Link href={`/notice_and_evictions/${record.id}`}>
+                                                                    <Button variant="outline" size="sm">
+                                                                        <Eye className="h-4 w-4" />
+                                                                    </Button>
+                                                                </Link>
+                                                            )}
+                                                            {hasAllPermissions(['notice-and-evictions.edit', 'notice-and-evictions.update']) && (
+                                                                <Button variant="outline" size="sm" onClick={() => handleEdit(record)}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {hasPermission('notice-and-evictions.destroy') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => handleDelete(record)}
+                                                                    className="border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                )}
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -318,22 +356,35 @@ const Index = ({ records, search }: Props) => {
                             </div>
 
                             {records.length === 0 && (
-                                <div className="text-center py-8 text-muted-foreground">
+                                <div className="py-8 text-center text-muted-foreground">
                                     <p className="text-lg">No records found.</p>
                                     <p className="text-sm">Try adjusting your search criteria.</p>
                                 </div>
                             )}
 
                             {/* Records count info */}
-                            <div className="mt-6 flex justify-between items-center border-t border-border pt-4">
-                                <div className="text-sm text-muted-foreground">
-                                    Showing {records.length} records
-                                </div>
+                            <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                                <div className="text-sm text-muted-foreground">Showing {records.length} records</div>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
             </div>
+
+            {/* Create Drawer */}
+            <NoticeAndEvictionsCreateDrawer open={isCreateDrawerOpen} onOpenChange={setIsCreateDrawerOpen} tenants={tenants} notices={notices} />
+
+            {/* Edit Drawer */}
+            {selectedRecord && (
+                <NoticeAndEvictionsEditDrawer
+                    record={selectedRecord}
+                    tenants={tenants}
+                    notices={notices}
+                    open={isEditDrawerOpen}
+                    onOpenChange={setIsEditDrawerOpen}
+                    onSuccess={handleEditSuccess}
+                />
+            )}
         </AppLayout>
     );
 };

@@ -28,6 +28,7 @@ class NoticeAndEvictionController extends Controller
 
     public function index()
     {
+        // Get all non-archived records and update their evictions status
         $records = NoticeAndEviction::all();
         foreach ($records as $record) {
             if ($record->have_an_exception === 'Yes') {
@@ -46,8 +47,19 @@ class NoticeAndEvictionController extends Controller
             }
             $record->save();
         }
+        
+        // Get the updated records through the service
         $records = $this->service->listAll();
-        return Inertia::render('NoticeAndEvictions/Index', ['records' => $records]);
+        
+        // Get tenants and notices for the drawer component
+        $tenants = Tenant::all(['unit_number', 'first_name', 'last_name']);
+        $notices = Notice::all(['notice_name']);
+        
+        return Inertia::render('NoticeAndEvictions/Index', [
+            'records' => $records,
+            'tenants' => $tenants,
+            'notices' => $notices,
+        ]);
     }
 
     public function create()
@@ -85,7 +97,7 @@ class NoticeAndEvictionController extends Controller
     public function update(NoticeAndEvictionRequest $request, NoticeAndEviction $notice_and_eviction)
     {
         $this->service->update($notice_and_eviction, $request->validated());
-        return redirect()->route('notice_and_evictions.show', $notice_and_eviction->id)->with('success', 'Updated successfully.');
+        return redirect()->route('notice_and_evictions.index')->with('success', 'Updated successfully.');
     }
 
     public function destroy(NoticeAndEviction $notice_and_eviction)

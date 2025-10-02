@@ -24,7 +24,7 @@ class NoticeAndEvictionService
 
     public function delete(NoticeAndEviction $nev): void
     {
-        $nev->delete();
+        $nev->archive();
     }
 
     public function listAll()
