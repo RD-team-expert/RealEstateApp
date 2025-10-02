@@ -25,6 +25,7 @@ export interface PaymentFormData {
     notes: string;
     reversed_payments: string;
     permanent: 'Yes' | 'No' | '';
+    [key: string]: any;
 }
 
 export interface UnitData {

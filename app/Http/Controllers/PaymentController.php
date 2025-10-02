@@ -36,9 +36,15 @@ class PaymentController extends Controller
             ? $this->paymentService->searchPayments($search)
             : $this->paymentService->getAllPayments();
 
+        // Get dropdown data for the create drawer
+        $dropdownData = $this->paymentService->getUnitsForDropdowns();
+
         return Inertia::render('Payments/Index', [
             'payments' => $payments,
             'search' => $search,
+            'cities' => $dropdownData['cities'],
+            'unitsByCity' => $dropdownData['unitsByCity'],
+            'units' => $dropdownData['units'],
         ]);
     }
 

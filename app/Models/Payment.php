@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class Payment extends Model
 {
@@ -20,6 +21,7 @@ class Payment extends Model
         'notes',
         'reversed_payments',
         'permanent',
+        'is_archived',
     ];
 
     protected $casts = [
@@ -27,6 +29,7 @@ class Payment extends Model
         'owes' => 'decimal:2',
         'paid' => 'decimal:2',
         'left_to_pay' => 'decimal:2',
+        'is_archived' => 'boolean',
     ];
 
     // Automatically calculate left_to_pay when owes or paid changes
@@ -39,6 +42,53 @@ class Payment extends Model
                 $payment->left_to_pay = $payment->owes - $payment->paid;
             }
         });
+
+        // Global scope to filter out archived records by default
+        static::addGlobalScope('not_archived', function (Builder $builder) {
+            $builder->where('is_archived', false);
+        });
+    }
+
+    /**
+     * Soft delete by setting is_archived to true
+     */
+    public function archive(): bool
+    {
+        $this->is_archived = true;
+        return $this->save();
+    }
+
+    /**
+     * Restore archived record
+     */
+    public function restore(): bool
+    {
+        $this->is_archived = false;
+        return $this->save();
+    }
+
+    /**
+     * Check if record is archived
+     */
+    public function isArchived(): bool
+    {
+        return $this->is_archived;
+    }
+
+    /**
+     * Scope to include archived records
+     */
+    public function scopeWithArchived(Builder $query): Builder
+    {
+        return $query->withoutGlobalScope('not_archived');
+    }
+
+    /**
+     * Scope to get only archived records
+     */
+    public function scopeOnlyArchived(Builder $query): Builder
+    {
+        return $query->withoutGlobalScope('not_archived')->where('is_archived', true);
     }
 
     /**

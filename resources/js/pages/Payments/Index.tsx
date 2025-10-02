@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,9 +14,11 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
-import { Payment } from '@/types/payments';
+import { Payment, UnitData } from '@/types/payments';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+import PaymentCreateDrawer from './PaymentCreateDrawer';
+import PaymentEditDrawer from './PaymentEditDrawer';
 
 // Updated CSV Export utility function with better error handling
 const exportToCSV = (data: Payment[], filename: string = 'payments.csv') => {
@@ -105,12 +107,18 @@ interface Props {
         meta: any;
     };
     search: string | null;
+    units: UnitData[];
+    cities: string[];
+    unitsByCity: Record<string, string[]>;
 }
 
-export default function Index({ payments, search }: Props) {
+export default function Index({ payments, search, units, cities, unitsByCity }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchTerm, setSearchTerm] = useState(search || '');
     const [isExporting, setIsExporting] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+    const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -121,6 +129,16 @@ export default function Index({ payments, search }: Props) {
         if (confirm('Are you sure you want to delete this payment?')) {
             router.delete(route('payments.destroy', payment.id));
         }
+    };
+
+    const handleEdit = (payment: Payment) => {
+        setSelectedPayment(payment);
+        setEditDrawerOpen(true);
+    };
+
+    const handleEditSuccess = () => {
+        // Refresh the page to show updated data
+        router.reload();
     };
 
     const handleCSVExport = () => {
@@ -140,7 +158,7 @@ export default function Index({ payments, search }: Props) {
             console.log('Export completed successfully');
         } catch (error) {
             console.error('Export failed:', error);
-            alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+            alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please check the console for details.`);
         } finally {
             setIsExporting(false);
         }
@@ -204,12 +222,13 @@ export default function Index({ payments, search }: Props) {
                                     </Button>
 
                                     {hasAllPermissions(['payments.create','payments.store']) && (
-                                        <Link href={route('payments.create')}>
-                                            <Button>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add Payment
-                                            </Button>
-                                        </Link>
+                                        <Button 
+                                            onClick={() => setDrawerOpen(true)}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                                        >
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Add Payment
+                                        </Button>
                                     )}
                                 </div>
                             </div>
@@ -282,11 +301,13 @@ export default function Index({ payments, search }: Props) {
                                                             </Button>
                                                         </Link>)}
                                                         {hasAllPermissions(['payments.edit','payments.update']) && (
-                                                        <Link href={route('payments.edit', payment.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>)}
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="sm"
+                                                            onClick={() => handleEdit(payment)}
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>)}
                                                         {hasPermission('payments.destroy') && (
                                                         <Button
                                                             variant="outline"
@@ -323,6 +344,26 @@ export default function Index({ payments, search }: Props) {
                     </Card>
                 </div>
             </div>
+
+            <PaymentCreateDrawer
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                units={units}
+                cities={cities}
+                unitsByCity={unitsByCity}
+            />
+
+            {selectedPayment && (
+                <PaymentEditDrawer
+                    payment={selectedPayment}
+                    units={units}
+                    cities={cities}
+                    unitsByCity={unitsByCity}
+                    open={editDrawerOpen}
+                    onOpenChange={setEditDrawerOpen}
+                    onSuccess={handleEditSuccess}
+                />
+            )}
         </AppLayout>
     );
 }

@@ -42,7 +42,23 @@ class PaymentService
 
     public function deletePayment(Payment $payment): bool
     {
-        return $payment->delete();
+        return $payment->archive();
+    }
+
+    /**
+     * Archive a payment (soft delete)
+     */
+    public function archivePayment(Payment $payment): bool
+    {
+        return $payment->archive();
+    }
+
+    /**
+     * Restore an archived payment
+     */
+    public function restorePayment(Payment $payment): bool
+    {
+        return $payment->restore();
     }
 
     public function getUnitsForDropdowns(): array
@@ -66,6 +82,7 @@ class PaymentService
      */
     public function updateAllStatuses(): void
     {
+        // Only update non-archived payments
         $payments = Payment::all();
         
         foreach ($payments as $payment) {
@@ -84,6 +101,7 @@ class PaymentService
      */
     public function getStatistics(): array
     {
+        // Statistics only for non-archived payments due to global scope
         $total = Payment::count();
         $paid = Payment::where('status', 'Paid')->count();
         $didntPay = Payment::where('status', 'Didn\'t Pay')->count();
