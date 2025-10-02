@@ -12,6 +12,19 @@ class PaymentPlanService
         return PaymentPlan::orderBy('created_at', 'desc')->paginate(15);
     }
 
+    public function searchPaymentPlans(string $search)
+    {
+        return PaymentPlan::where(function ($query) use ($search) {
+                    $query->where('property', 'like', "%{$search}%")
+                          ->orWhere('unit', 'like', "%{$search}%")
+                          ->orWhere('tenant', 'like', "%{$search}%")
+                          ->orWhere('status', 'like', "%{$search}%")
+                          ->orWhere('notes', 'like', "%{$search}%");
+                })
+                ->orderBy('created_at', 'desc')
+                ->paginate(15);
+    }
+
     public function getPaymentPlan($id)
     {
         return PaymentPlan::findOrFail($id);
@@ -32,7 +45,7 @@ class PaymentPlanService
     public function deletePaymentPlan($id)
     {
         $paymentPlan = PaymentPlan::findOrFail($id);
-        return $paymentPlan->delete();
+        return $paymentPlan->archive();
     }
 
     public function getDropdownData()

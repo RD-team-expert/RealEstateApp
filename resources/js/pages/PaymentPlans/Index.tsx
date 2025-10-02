@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { PaymentPlanIndexProps, PaymentPlan } from '@/types/PaymentPlan';
-import AppLayout from '@/Layouts/app-layout';
+import { PaymentPlanIndexProps, PaymentPlan, DropdownData } from '@/types/PaymentPlan';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,8 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+import PaymentPlanCreateDrawer from './PaymentPlanCreateDrawer';
+import PaymentPlanEditDrawer from './PaymentPlanEditDrawer';
 
 // CSV Export utility function
 const exportToCSV = (data: PaymentPlan[], filename: string = 'payment-plans.csv') => {
@@ -98,12 +100,16 @@ const exportToCSV = (data: PaymentPlan[], filename: string = 'payment-plans.csv'
 
 interface Props extends PaymentPlanIndexProps {
   search?: string | null;
+  dropdownData?: DropdownData;
 }
 
-export default function Index({ paymentPlans, search }: Props) {
+export default function Index({ paymentPlans, search, dropdownData }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchTerm, setSearchTerm] = useState(search || '');
     const [isExporting, setIsExporting] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+    const [selectedPaymentPlan, setSelectedPaymentPlan] = useState<PaymentPlan | null>(null);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -114,6 +120,11 @@ export default function Index({ paymentPlans, search }: Props) {
         if (confirm('Are you sure you want to delete this payment plan?')) {
             router.delete(`/payment-plans/${paymentPlan.id}`);
         }
+    };
+
+    const handleEdit = (paymentPlan: PaymentPlan) => {
+        setSelectedPaymentPlan(paymentPlan);
+        setEditDrawerOpen(true);
     };
 
     const handleCSVExport = () => {
@@ -133,7 +144,7 @@ export default function Index({ paymentPlans, search }: Props) {
             console.log('Export completed successfully');
         } catch (error) {
             console.error('Export failed:', error);
-            alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+            alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please check the console for details.`);
         } finally {
             setIsExporting(false);
         }
@@ -184,12 +195,10 @@ export default function Index({ paymentPlans, search }: Props) {
                                     </Button>
 
                                     {hasAllPermissions(['payment-plans.create','payment-plans.store']) && (
-                                        <Link href="/payment-plans/create">
-                                            <Button>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add Payment Plan
-                                            </Button>
-                                        </Link>
+                                        <Button onClick={() => setDrawerOpen(true)}>
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Add Payment Plan
+                                        </Button>
                                     )}
                                 </div>
                             </div>
@@ -257,11 +266,13 @@ export default function Index({ paymentPlans, search }: Props) {
                                                             </Button>
                                                         </Link>
                                                         {hasAllPermissions(['payment-plans.update','payment-plans.edit']) && (
-                                                        <Link href={route('payment-plans.edit', plan.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>)}
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="sm"
+                                                            onClick={() => handleEdit(plan)}
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>)}
                                                         {hasPermission('payment-plans.destroy') && (
                                                         <Button
                                                             variant="outline"
@@ -287,17 +298,43 @@ export default function Index({ paymentPlans, search }: Props) {
                             )}
 
                             {/* Pagination info */}
-                            {paymentPlans.meta && (
+                            {/* {paymentPlans.meta && (
                                 <div className="mt-6 flex justify-between items-center border-t border-border pt-4">
                                     <div className="text-sm text-muted-foreground">
                                         Showing {paymentPlans.meta.from || 0} to {paymentPlans.meta.to || 0} of {paymentPlans.meta.total || 0} results
                                     </div>
                                 </div>
-                            )}
+                            )} */}
                         </CardContent>
                     </Card>
                 </div>
             </div>
+
+            {/* Payment Plan Create Drawer */}
+            {dropdownData && (
+                <PaymentPlanCreateDrawer
+                    dropdownData={dropdownData}
+                    open={drawerOpen}
+                    onOpenChange={setDrawerOpen}
+                    onSuccess={() => {
+                        router.reload();
+                    }}
+                />
+            )}
+
+            {/* Payment Plan Edit Drawer */}
+            {dropdownData && selectedPaymentPlan && (
+                <PaymentPlanEditDrawer
+                    paymentPlan={selectedPaymentPlan}
+                    dropdownData={dropdownData}
+                    open={editDrawerOpen}
+                    onOpenChange={setEditDrawerOpen}
+                    onSuccess={() => {
+                        router.reload();
+                        setSelectedPaymentPlan(null);
+                    }}
+                />
+            )}
         </AppLayout>
     );
 }

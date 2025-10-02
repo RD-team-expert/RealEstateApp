@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\PaymentPlanStoreRequest;
 use App\Http\Requests\PaymentPlanUpdateRequest;
 use App\Services\PaymentPlanService;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class PaymentPlanController extends Controller
@@ -24,12 +25,20 @@ class PaymentPlanController extends Controller
         $this->middleware('permission:payment-plans.destroy')->only('destroy');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $paymentPlans = $this->paymentPlanService->getAllPaymentPlans();
+        $search = $request->get('search');
+        
+        $paymentPlans = $search 
+            ? $this->paymentPlanService->searchPaymentPlans($search)
+            : $this->paymentPlanService->getAllPaymentPlans();
+            
+        $dropdownData = $this->paymentPlanService->getDropdownData();
 
         return Inertia::render('PaymentPlans/Index', [
-            'paymentPlans' => $paymentPlans
+            'paymentPlans' => $paymentPlans,
+            'search' => $search,
+            'dropdownData' => $dropdownData
         ]);
     }
 

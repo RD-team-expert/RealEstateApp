@@ -14,7 +14,7 @@ export interface PaymentPlan {
   updated_at: string;
 }
 
-export interface PaymentPlanFormData {
+export type PaymentPlanFormData =  {
   property: string;
   unit: string;
   tenant: string;
@@ -22,7 +22,7 @@ export interface PaymentPlanFormData {
   dates: string;
   paid: number;
   notes?: string;
-}
+} 
 
 export interface DropdownData {
   properties: Record<string, string>;
