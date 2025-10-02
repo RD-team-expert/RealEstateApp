@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,8 @@ import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { VendorTaskTracker } from '@/types/vendor-task-tracker';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+import VendorTaskTrackerCreateDrawer from './VendorTaskTrackerCreateDrawer';
+import VendorTaskTrackerEditDrawer from './VendorTaskTrackerEditDrawer';
 
 // Export utility functions
 const exportToCSV = (data: VendorTaskTracker[], filename: string = 'vendor-tasks.csv') => {
@@ -74,12 +76,36 @@ interface Props {
         meta: any;
     };
     search: string | null;
+    units: string[];
+    cities: string[];
+    unitsByCity: Record<string, string[]>;
+    vendors: string[];
 }
 
-export default function Index({ tasks, search }: Props) {
+export default function Index({ tasks, search, units, cities, unitsByCity, vendors }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchTerm, setSearchTerm] = useState(search || '');
     const [isExporting, setIsExporting] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<VendorTaskTracker | null>(null);
+
+    const handleDrawerSuccess = () => {
+        // Refresh the page data after successful creation
+        router.reload();
+    };
+
+    const handleEditDrawerSuccess = () => {
+        // Refresh the page data after successful edit
+        router.reload();
+        setIsEditDrawerOpen(false);
+        setSelectedTask(null);
+    };
+
+    const handleEditTask = (task: VendorTaskTracker) => {
+        setSelectedTask(task);
+        setIsEditDrawerOpen(true);
+    };
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -156,12 +182,10 @@ export default function Index({ tasks, search }: Props) {
                                     </div>
 
                                     {hasAllPermissions(['vendor-task-tracker.create', 'vendor-task-tracker.store']) && (
-                                        <Link href={route('vendor-task-tracker.create')}>
-                                            <Button>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add Task
-                                            </Button>
-                                        </Link>
+                                        <Button onClick={() => setIsDrawerOpen(true)}>
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Add Task
+                                        </Button>
                                     )}
                                 </div>
                             </div>
@@ -244,12 +268,14 @@ export default function Index({ tasks, search }: Props) {
                                                                 </Link>
                                                             )}
                                                             {hasAllPermissions(['vendor-task-tracker.edit', 'vendor-task-tracker.update']) && (
-                                                                <Link href={route('vendor-task-tracker.edit', task.id)}>
-                                                                    <Button variant="outline" size="sm">
-                                                                        <Edit className="h-4 w-4" />
-                                                                    </Button>
-                                                                </Link>
-                                                            )}
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm"
+                                                    onClick={() => handleEditTask(task)}
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                            )}
                                                             {hasPermission('vendor-task-tracker.destroy') && (
                                                                 <Button
                                                                     variant="outline"
@@ -288,6 +314,31 @@ export default function Index({ tasks, search }: Props) {
                     </Card>
                 </div>
             </div>
+
+            {/* Vendor Task Tracker Create Drawer */}
+            <VendorTaskTrackerCreateDrawer
+                units={units}
+                cities={cities}
+                unitsByCity={unitsByCity}
+                vendors={vendors}
+                open={isDrawerOpen}
+                onOpenChange={setIsDrawerOpen}
+                onSuccess={handleDrawerSuccess}
+            />
+
+            {/* Vendor Task Tracker Edit Drawer */}
+            {selectedTask && (
+                <VendorTaskTrackerEditDrawer
+                    task={selectedTask}
+                    units={units}
+                    cities={cities}
+                    unitsByCity={unitsByCity}
+                    vendors={vendors}
+                    open={isEditDrawerOpen}
+                    onOpenChange={setIsEditDrawerOpen}
+                    onSuccess={handleEditDrawerSuccess}
+                />
+            )}
         </AppLayout>
     );
 }

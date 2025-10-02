@@ -33,9 +33,16 @@ class VendorTaskTrackerController extends Controller
             ? $this->vendorTaskTrackerService->searchTasks($search)
             : $this->vendorTaskTrackerService->getAllTasks();
 
+        // Get dropdown data for the create drawer
+        $dropdownData = $this->vendorTaskTrackerService->getDropdownData();
+
         return Inertia::render('VendorTaskTracker/Index', [
             'tasks' => $tasks,
             'search' => $search,
+            'units' => $dropdownData['units']->pluck('unit_name')->unique()->values()->toArray(),
+            'cities' => $dropdownData['cities'],
+            'unitsByCity' => $dropdownData['unitsByCity'],
+            'vendors' => $dropdownData['vendors'],
         ]);
     }
 

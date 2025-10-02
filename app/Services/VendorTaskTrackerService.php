@@ -42,7 +42,33 @@ class VendorTaskTrackerService
 
     public function deleteTask(VendorTaskTracker $task): bool
     {
-        return $task->delete();
+        return $task->archive();
+    }
+
+    public function archiveTask(VendorTaskTracker $task): bool
+    {
+        return $task->archive();
+    }
+
+    public function restoreTask(VendorTaskTracker $task): bool
+    {
+        return $task->restore();
+    }
+
+    public function getArchivedTasks(int $perPage = 15): LengthAwarePaginator
+    {
+        return VendorTaskTracker::onlyArchived()
+                               ->orderBy('task_submission_date', 'desc')
+                               ->orderBy('created_at', 'desc')
+                               ->paginate($perPage);
+    }
+
+    public function getAllTasksWithArchived(int $perPage = 15): LengthAwarePaginator
+    {
+        return VendorTaskTracker::withArchived()
+                               ->orderBy('task_submission_date', 'desc')
+                               ->orderBy('created_at', 'desc')
+                               ->paginate($perPage);
     }
 
     public function getDropdownData(): array

@@ -14,7 +14,7 @@ export interface VendorTaskTracker {
     updated_at: string;
 }
 
-export interface VendorTaskTrackerFormData {
+export type VendorTaskTrackerFormData = {
     city: string;
     task_submission_date: string;
     vendor_name: string;
@@ -25,7 +25,7 @@ export interface VendorTaskTrackerFormData {
     task_ending_date: string;
     status: string;
     urgent: 'Yes' | 'No';
-}
+} & Record<string, any>;
 
 export interface UnitData {
     city: string;
