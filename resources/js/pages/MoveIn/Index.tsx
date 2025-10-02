@@ -268,49 +268,49 @@ export default function Index({ moveIns, search, units }: Props) {
                                     <TableBody>
                                         {moveIns.data.map((moveIn) => (
                                             <TableRow key={moveIn.id} className="hover:bg-muted/50 border-border ">
-                                                <TableCell className="font-medium text-foreground border border-border bg-muted sticky left-0 z-10 min-w-[120px]">{moveIn.unit_name}</TableCell>
-                                                <TableCell className="border border-border">
+                                                <TableCell className="font-medium text-center text-foreground border border-border bg-muted sticky left-0 z-10 min-w-[120px]">{moveIn.unit_name}</TableCell>
+                                                <TableCell className="text-center border border-border">
                                                     {getYesNoBadge(moveIn.signed_lease)}
                                                 </TableCell>
-                                                <TableCell className="text-foreground border border-border">
+                                                <TableCell className="text-center text-foreground border border-border">
                                                     {formatDateUTC(moveIn.lease_signing_date)}
                                                 </TableCell>
-                                                <TableCell className="text-foreground border border-border">
+                                                <TableCell className="text-center text-foreground border border-border">
                                                     {formatDateUTC(moveIn.move_in_date)}
                                                 </TableCell>
-                                                <TableCell className="border border-border">
+                                                <TableCell className="text-center border border-border">
                                                     {getYesNoBadge(moveIn.paid_security_deposit_first_month_rent)}
                                                 </TableCell>
-                                                <TableCell className="text-foreground border border-border">
+                                                <TableCell className="text-center text-foreground border border-border">
                                                     {formatDateUTC(moveIn.scheduled_paid_time)}
                                                 </TableCell>
-                                                <TableCell className="border border-border">
+                                                <TableCell className="text-center border border-border">
                                                     {getYesNoBadge(moveIn.handled_keys)}
                                                 </TableCell>
-                                                <TableCell className="text-foreground border border-border">
+                                                <TableCell className="text-center text-foreground border border-border">
                                                     {formatDateUTC(moveIn.move_in_form_sent_date)}
                                                 </TableCell>
-                                                <TableCell className="border border-border">
+                                                <TableCell className="text-center border border-border">
                                                     {getYesNoBadge(moveIn.filled_move_in_form)}
                                                 </TableCell>
-                                                <TableCell className="text-foreground border border-border">
+                                                <TableCell className="text-center text-foreground border border-border">
                                                     {formatDateUTC(moveIn.date_of_move_in_form_filled)}
                                                 </TableCell>
-                                                <TableCell className="border border-border">
+                                                <TableCell className="text-center border border-border">
                                                     {getYesNoBadge(moveIn.submitted_insurance)}
                                                 </TableCell>
-                                                <TableCell className="text-foreground border border-border">
+                                                <TableCell className="text-center text-foreground border border-border">
                                                     {formatDateUTC(moveIn.date_of_insurance_expiration)}
                                                 </TableCell>
                                                 {hasAnyPermission(['move-in.show','move-in.edit','move-in.update','move-in.destroy']) && (
-                                                <TableCell className="border border-border">
+                                                <TableCell className="text-center border border-border">
                                                     <div className="flex gap-1">
-                                                        {hasPermission('move-in.show') && (
+                                                        {/* {hasPermission('move-in.show') && (
                                                         <Link href={route('move-in.show', moveIn.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
-                                                        </Link>)}
+                                                        </Link>)} */}
                                                         {hasAllPermissions(['move-in.edit','move-in.update']) && (
                                                         <Button 
                                                             variant="outline" 

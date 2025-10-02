@@ -41,7 +41,7 @@ class MoveInService
 
     public function deleteMoveIn(MoveIn $moveIn): bool
     {
-        return $moveIn->delete();
+        return $moveIn->archive();
     }
 
     public function getUnitsForDropdown(): array

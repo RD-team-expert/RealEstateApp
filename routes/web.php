@@ -62,7 +62,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('vendor-task-tracker', VendorTaskTrackerController::class);
 
-    Route::resource('move-in', MoveInController::class)->except(['create', 'edit']);
+    Route::resource('move-in', MoveInController::class)->except(['create', 'edit', 'show']);
 
     // Demo route for MoveIn Drawer component
     Route::get('move-in-drawer-demo', function () {
