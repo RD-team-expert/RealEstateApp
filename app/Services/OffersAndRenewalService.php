@@ -23,16 +23,37 @@ class OffersAndRenewalService
 
     public function delete(OffersAndRenewal $offer): void
     {
-        $offer->delete();
+        $offer->archive();
     }
 
     public function listAll()
     {
-        return OffersAndRenewal::all();
+        return OffersAndRenewal::notArchived()->get();
     }
 
     public function findById(int $id)
     {
-        return OffersAndRenewal::findOrFail($id);
+        return OffersAndRenewal::notArchived()->findOrFail($id);
+    }
+
+    public function listWithArchived()
+    {
+        return OffersAndRenewal::withArchived()->get();
+    }
+
+    public function listOnlyArchived()
+    {
+        return OffersAndRenewal::onlyArchived()->get();
+    }
+
+    public function restore(OffersAndRenewal $offer): OffersAndRenewal
+    {
+        $offer->restore();
+        return $offer;
+    }
+
+    public function forceDelete(OffersAndRenewal $offer): void
+    {
+        $offer->delete();
     }
 }

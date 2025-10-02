@@ -18,11 +18,54 @@ class OffersAndRenewal extends Model
 
     protected $table = 'offers_and_renewals';
 
+    /**
+     * Scope to filter out archived records by default
+     */
+    public function scopeNotArchived($query)
+    {
+        return $query->where('is_archived', false);
+    }
+
+    /**
+     * Scope to include archived records
+     */
+    public function scopeWithArchived($query)
+    {
+        return $query;
+    }
+
+    /**
+     * Scope to only show archived records
+     */
+    public function scopeOnlyArchived($query)
+    {
+        return $query->where('is_archived', true);
+    }
+
+    /**
+     * Soft delete by setting is_archived to true
+     */
+    public function archive()
+    {
+        $this->is_archived = true;
+        return $this->save();
+    }
+
+    /**
+     * Restore archived record
+     */
+    public function restore()
+    {
+        $this->is_archived = false;
+        return $this->save();
+    }
+
     protected $fillable = [
         'property','unit','tenant','date_sent_offer','status','date_of_acceptance',
         'last_notice_sent','notice_kind','lease_sent','date_sent_lease',
         'lease_signed','date_signed','last_notice_sent_2','notice_kind_2',
         'notes','how_many_days_left','expired','date_offer_expires','date_lease_expires',
+        'is_archived',
     ];
 
     protected $casts = [
@@ -36,6 +79,7 @@ class OffersAndRenewal extends Model
         'date_offer_expires'=> 'datetime',
         'date_lease_expires'=> 'datetime',
         'how_many_days_left'=> 'integer',
+        'is_archived'       => 'boolean',
     ];
 
     public function calculateExpiry(): void

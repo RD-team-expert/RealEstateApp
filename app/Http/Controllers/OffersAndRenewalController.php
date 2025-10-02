@@ -27,14 +27,18 @@ class OffersAndRenewalController extends Controller
 
     public function index()
     {
-        // Calculate expiration for all records when index is refreshed
-        OffersAndRenewal::all()->each(function ($offer) {
+        // Calculate expiration for all non-archived records when index is refreshed
+        OffersAndRenewal::notArchived()->get()->each(function ($offer) {
             $offer->calculateExpiry();
             $offer->save();
         });
 
         $offers = $this->service->listAll();
-        return Inertia::render('OffersAndRenewals/Index', ['offers' => $offers]);
+        $tenants = Tenant::all(['property_name','unit_number', 'first_name', 'last_name']);
+        return Inertia::render('OffersAndRenewals/Index', [
+            'offers' => $offers,
+            'tenants' => $tenants
+        ]);
     }
 
     // ... rest of your methods remain the same
@@ -69,12 +73,12 @@ class OffersAndRenewalController extends Controller
     public function update(OffersAndRenewalRequest $request, OffersAndRenewal $offers_and_renewal)
     {
         $offer = $this->service->update($offers_and_renewal, $request->validated());
-        return redirect()->route('offers_and_renewals.show', $offer->id)->with('success', 'Offer updated successfully.');
+        return redirect()->route('offers_and_renewals.index')->with('success', 'Offer updated successfully.');
     }
 
     public function destroy(OffersAndRenewal $offers_and_renewal)
     {
         $this->service->delete($offers_and_renewal);
-        return redirect()->route('offers_and_renewals.index')->with('success', 'Offer deleted successfully.');
+        return redirect()->route('offers_and_renewals.index')->with('success', 'Offer archived successfully.');
     }
 }

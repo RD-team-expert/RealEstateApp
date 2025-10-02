@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,9 +14,11 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
-import { OfferRenewal } from '@/types/OfferRenewal';
+import { OfferRenewal, Tenant } from '@/types/OfferRenewal';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
+import OffersAndRenewalsCreateDrawer from './OffersAndRenewalsCreateDrawer';
+import OffersAndRenewalsEditDrawer from './OffersAndRenewalsEditDrawer';
 
 // CSV Export utility function
 const exportToCSV = (data: OfferRenewal[], activeTab: string, filename: string = 'offers-renewals.csv') => {
@@ -95,7 +97,7 @@ const exportToCSV = (data: OfferRenewal[], activeTab: string, filename: string =
                     }
 
                     row = row.concat([
-                        `"${formatString(offer.how_many_days_left)}"`,
+                        `"${formatString(String(offer.how_many_days_left))}"`,
                         `"${formatString(offer.expired)}"`
                     ]);
 
@@ -129,6 +131,7 @@ const exportToCSV = (data: OfferRenewal[], activeTab: string, filename: string =
 
 interface Props {
   offers: OfferRenewal[];
+  tenants: Tenant[];
   search?: string;
 }
 
@@ -138,10 +141,13 @@ const TABS = [
   { label: 'Both', value: 'both' },
 ];
 
-const Index = ({ offers, search }: Props) => {
+const Index = ({ offers, tenants, search }: Props) => {
   const [searchTerm, setSearchTerm] = useState(search || '');
   const [activeTab, setActiveTab] = useState<'offers' | 'renewals' | 'both'>('offers');
   const [isExporting, setIsExporting] = useState(false);
+  const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState<OfferRenewal | null>(null);
 
   // Filtering logic, shows all by default
   const filtered = offers.filter(offer => {
@@ -167,6 +173,11 @@ const Index = ({ offers, search }: Props) => {
     }
   };
 
+  const handleEdit = (offer: OfferRenewal) => {
+    setSelectedOffer(offer);
+    setEditDrawerOpen(true);
+  };
+
   const handleCSVExport = () => {
     if (!filtered || filtered.length === 0) {
         alert('No data to export');
@@ -184,7 +195,7 @@ const Index = ({ offers, search }: Props) => {
         console.log('Export completed successfully');
     } catch (error) {
         console.error('Export failed:', error);
-        alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+        alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please check the console for details.`);
     } finally {
         setIsExporting(false);
     }
@@ -256,12 +267,10 @@ const Index = ({ offers, search }: Props) => {
                   </Button>
 
                   {hasAllPermissions(['offers-and-renewals.create','offers-and-renewals.store']) && (
-                    <Link href="/offers_and_renewals/create">
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add New
-                      </Button>
-                    </Link>
+                    <Button onClick={() => setCreateDrawerOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add New
+                    </Button>
                   )}
                 </div>
               </div>
@@ -344,7 +353,7 @@ const Index = ({ offers, search }: Props) => {
                                 : <span className="text-muted-foreground">N/A</span>}
                             </TableCell>
                             <TableCell>
-                              {getStatusBadge(offer.status)}
+                              {getStatusBadge(offer.status ?? null)}
                             </TableCell>
                             <TableCell className="text-foreground">
                               {offer.date_of_acceptance
@@ -362,7 +371,7 @@ const Index = ({ offers, search }: Props) => {
                         {(activeTab === 'renewals' || activeTab === 'both') && (
                           <>
                             <TableCell>
-                              {getYesNoBadge(offer.lease_sent)}
+                              {getYesNoBadge(offer.lease_sent ?? null)}
                             </TableCell>
                             <TableCell className="text-foreground">
                               {offer.date_sent_lease
@@ -370,7 +379,7 @@ const Index = ({ offers, search }: Props) => {
                                 : <span className="text-muted-foreground">N/A</span>}
                             </TableCell>
                             <TableCell>
-                              {getYesNoBadge(offer.lease_signed)}
+                              {getYesNoBadge(offer.lease_signed ?? null)}
                             </TableCell>
                             <TableCell className="text-foreground">
                               {offer.date_signed
@@ -392,7 +401,7 @@ const Index = ({ offers, search }: Props) => {
                         )}
                         {/* Status columns at the end */}
                         <TableCell>
-                          {getDaysLeftBadge(offer.how_many_days_left)}
+                          {getDaysLeftBadge(offer.how_many_days_left !== undefined ? String(offer.how_many_days_left) : null)}
                         </TableCell>
                         <TableCell>
                           <Badge variant={offer.expired === 'expired' ? 'destructive' : 'default'}>
@@ -409,11 +418,13 @@ const Index = ({ offers, search }: Props) => {
                               </Button>
                             </Link>)}
                             {hasAllPermissions(['offers-and-renewals.edit','offers-and-renewals.update']) && (
-                            <Link href={`/offers_and_renewals/${offer.id}/edit`}>
-                              <Button variant="outline" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </Link>)}
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEdit(offer)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>)}
                             {hasPermission('offers-and-renewals.destroy') && (
                             <Button
                               variant="outline"
@@ -447,6 +458,31 @@ const Index = ({ offers, search }: Props) => {
           </Card>
         </div>
       </div>
+
+      {/* Create Drawer */}
+      <OffersAndRenewalsCreateDrawer
+        tenants={tenants}
+        open={createDrawerOpen}
+        onOpenChange={setCreateDrawerOpen}
+        onSuccess={() => {
+          // Refresh the page to show the new offer
+          router.reload();
+        }}
+      />
+
+      {/* Edit Drawer */}
+      {selectedOffer && (
+        <OffersAndRenewalsEditDrawer
+          offer={selectedOffer}
+          tenants={tenants}
+          open={editDrawerOpen}
+          onOpenChange={setEditDrawerOpen}
+          onSuccess={() => {
+            // Refresh the page to show the updated offer
+            router.reload();
+          }}
+        />
+      )}
     </AppLayout>
   );
 };

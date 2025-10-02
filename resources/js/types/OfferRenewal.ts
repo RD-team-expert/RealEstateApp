@@ -18,6 +18,7 @@ export interface OfferRenewal {
   notes?: string;
   how_many_days_left?: number;
   expired?: string;
+  is_archived?: boolean;
   created_at?: string;
   updated_at?: string;
 }
