@@ -36,10 +36,32 @@ class ApplicationController extends Controller
         $applications = $this->applicationService->getAllPaginated($perPage, $filters);
         $statistics = $this->applicationService->getStatistics();
 
+        // Get units data for drawer component
+        $units = Unit::select('city', 'property', 'unit_name')
+            ->orderBy('city')
+            ->orderBy('property')
+            ->orderBy('unit_name')
+            ->get();
+
+        // Create separate arrays for each dropdown
+        $cities = $units->pluck('city')->unique()->values();
+        $properties = $units->groupBy('city')->map(function ($cityUnits) {
+            return $cityUnits->pluck('property')->unique()->values();
+        });
+        $unitsByProperty = $units->groupBy(['city', 'property'])->map(function ($cityGroup) {
+            return $cityGroup->map(function ($propertyGroup) {
+                return $propertyGroup->pluck('unit_name')->unique()->values();
+            });
+        });
+
         return Inertia::render('Applications/Index', [
             'applications' => $applications,
             'statistics' => $statistics,
             'filters' => $filters,
+            'units' => $units,
+            'cities' => $cities,
+            'properties' => $properties,
+            'unitsByProperty' => $unitsByProperty,
         ]);
     }
 
@@ -173,18 +195,15 @@ class ApplicationController extends Controller
         try {
             $application = $this->applicationService->findById((int) $id);
 
-            // Delete attachment file if exists
-            if ($application->attachment_path) {
-                Storage::disk('public')->delete($application->attachment_path);
-            }
-
+            // Use soft delete (archive) instead of hard delete
+            // Note: We don't delete the attachment file since it's a soft delete
             $this->applicationService->delete($application);
 
             return redirect()->route('applications.index')
-                ->with('success', 'Application deleted successfully');
+                ->with('success', 'Application archived successfully');
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Failed to delete application: ' . $e->getMessage());
+                ->with('error', 'Failed to archive application: ' . $e->getMessage());
         }
     }
 

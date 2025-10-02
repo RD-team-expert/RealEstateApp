@@ -1,24 +1,18 @@
 // resources/js/Pages/Applications/Index.tsx
-import React, { useState } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { usePermissions } from '@/hooks/usePermissions';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
-import { Application, PaginatedApplications, ApplicationFilters, ApplicationStatistics } from '@/types/application';
-import { PageProps } from '@/types/application';
-import { type BreadcrumbItem } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { usePermissions } from '@/hooks/usePermissions';
+import AppLayout from '@/layouts/app-layout';
+import { Application, ApplicationFilters, ApplicationStatistics, PaginatedApplications, UnitData } from '@/types/application';
+import { PageProps } from '@/types/auth';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Download, Edit, Eye, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import ApplicationCreateDrawer from './ApplicationCreateDrawer';
+import ApplicationEditDrawer from './ApplicationEditDrawer';
 
 // CSV Export utility function
 const exportToCSV = (data: Application[], filename: string = 'applications.csv') => {
@@ -37,42 +31,32 @@ const exportToCSV = (data: Application[], filename: string = 'applications.csv')
             return String(value).replace(/"/g, '""');
         };
 
-        const headers = [
-            'ID',
-            'City',
-            'Property',
-            'Unit',
-            'Name',
-            'Co-signer',
-            'Status',
-            'Date',
-            'Stage in Progress',
-            'Notes',
-            'Attachment Name'
-        ];
+        const headers = ['ID', 'City', 'Property', 'Unit', 'Name', 'Co-signer', 'Status', 'Date', 'Stage in Progress', 'Notes', 'Attachment Name'];
 
         const csvData = [
             headers.join(','),
-            ...data.map(application => {
-                try {
-                    return [
-                        application.id || '',
-                        `"${formatString(application.city)}"`,
-                        `"${formatString(application.property)}"`,
-                        `"${formatString(application.unit)}"`,
-                        `"${formatString(application.name)}"`,
-                        `"${formatString(application.co_signer)}"`,
-                        `"${formatString(application.status)}"`,
-                        `"${formatDate(application.date)}"`,
-                        `"${formatString(application.stage_in_progress)}"`,
-                        `"${formatString(application.notes)}"`,
-                        `"${formatString(application.attachment_name)}"`
-                    ].join(',');
-                } catch (rowError) {
-                    console.error('Error processing application row:', application, rowError);
-                    return ''; // Skip problematic rows
-                }
-            }).filter(row => row !== '') // Remove empty rows
+            ...data
+                .map((application) => {
+                    try {
+                        return [
+                            application.id || '',
+                            `"${formatString(application.city)}"`,
+                            `"${formatString(application.property)}"`,
+                            `"${formatString(application.unit)}"`,
+                            `"${formatString(application.name)}"`,
+                            `"${formatString(application.co_signer)}"`,
+                            `"${formatString(application.status)}"`,
+                            `"${formatDate(application.date)}"`,
+                            `"${formatString(application.stage_in_progress)}"`,
+                            `"${formatString(application.notes)}"`,
+                            `"${formatString(application.attachment_name)}"`,
+                        ].join(',');
+                    } catch (rowError) {
+                        console.error('Error processing application row:', application, rowError);
+                        return ''; // Skip problematic rows
+                    }
+                })
+                .filter((row) => row !== ''), // Remove empty rows
         ].join('\n');
 
         const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
@@ -99,11 +83,18 @@ interface Props extends PageProps {
     applications: PaginatedApplications;
     statistics: ApplicationStatistics;
     filters: ApplicationFilters;
+    units: UnitData[];
+    cities: string[];
+    properties: Record<string, string[]>;
+    unitsByProperty: Record<string, Record<string, string[]>>;
 }
 
-export default function Index({ auth, applications, statistics, filters }: Props) {
+export default function Index({ applications, statistics, filters, units, cities, properties, unitsByProperty }: Props) {
     const [searchFilters, setSearchFilters] = useState<ApplicationFilters>(filters);
     const [isExporting, setIsExporting] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+    const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
     const { flash } = usePage().props;
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
@@ -139,7 +130,7 @@ export default function Index({ auth, applications, statistics, filters }: Props
             console.log('Export completed successfully');
         } catch (error) {
             console.error('Export failed:', error);
-            alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+            alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please check the console for details.`);
         } finally {
             setIsExporting(false);
         }
@@ -150,25 +141,46 @@ export default function Index({ auth, applications, statistics, filters }: Props
         return <Badge variant="default">{status}</Badge>;
     };
 
+    const handleDrawerSuccess = () => {
+        // Refresh the page data after successful creation
+        router.get(route('applications.index'), searchFilters, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const handleEditDrawerSuccess = () => {
+        // Refresh the page data after successful edit
+        router.get(route('applications.index'), searchFilters, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+        setIsEditDrawerOpen(false);
+        setSelectedApplication(null);
+    };
+
+    const handleEditClick = (application: Application) => {
+        setSelectedApplication(application);
+        setIsEditDrawerOpen(true);
+    };
+
     return (
-        <AppLayout >
+        <AppLayout>
             <Head title="Applications" />
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     {/* Flash Messages */}
-                    {flash?.success && (
-                        <div className="mb-4 bg-chart-1/20 border border-chart-1 text-chart-1 px-4 py-3 rounded">
-                            {flash.success}
-                        </div>
+                    {(flash as any)?.success && (
+                        <div className="mb-4 rounded border border-chart-1 bg-chart-1/20 px-4 py-3 text-chart-1">{(flash as any)?.success}</div>
                     )}
-                    {flash?.error && (
-                        <div className="mb-4 bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded">
-                            {flash.error}
+                    {(flash as any)?.error && (
+                        <div className="mb-4 rounded border border-destructive bg-destructive/20 px-4 py-3 text-destructive">
+                            {(flash as any)?.error}
                         </div>
                     )}
 
                     {/* Statistics Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
                         <Card>
                             <CardContent className="p-6">
                                 <h3 className="text-lg font-semibold text-foreground">Total Applications</h3>
@@ -192,12 +204,14 @@ export default function Index({ auth, applications, statistics, filters }: Props
                             <CardContent className="p-6">
                                 <h3 className="text-lg font-semibold text-foreground">By Stage</h3>
                                 <div className="mt-2 space-y-1">
-                                    {Object.entries(statistics.stage_counts).slice(0, 5).map(([stage, count]) => (
-                                        <div key={stage} className="flex justify-between text-sm">
-                                            <span className="text-muted-foreground">{stage || 'No Stage'}:</span>
-                                            <span className="font-semibold text-foreground">{count}</span>
-                                        </div>
-                                    ))}
+                                    {Object.entries(statistics.stage_counts)
+                                        .slice(0, 5)
+                                        .map(([stage, count]) => (
+                                            <div key={stage} className="flex justify-between text-sm">
+                                                <span className="text-muted-foreground">{stage || 'No Stage'}:</span>
+                                                <span className="font-semibold text-foreground">{count}</span>
+                                            </div>
+                                        ))}
                                 </div>
                             </CardContent>
                         </Card>
@@ -205,9 +219,9 @@ export default function Index({ auth, applications, statistics, filters }: Props
 
                     <Card>
                         <CardHeader>
-                            <div className="flex justify-between items-center">
+                            <div className="flex items-center justify-between">
                                 <CardTitle className="text-2xl">Applications</CardTitle>
-                                <div className="flex gap-2 items-center">
+                                <div className="flex items-center gap-2">
                                     {/* Export Button */}
                                     <Button
                                         variant="outline"
@@ -216,24 +230,22 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                         disabled={isExporting || !applications?.data || applications.data.length === 0}
                                         className="flex items-center"
                                     >
-                                        <Download className="h-4 w-4 mr-2" />
+                                        <Download className="mr-2 h-4 w-4" />
                                         {isExporting ? 'Exporting...' : 'Export CSV'}
                                     </Button>
 
-                                    {hasAllPermissions(['applications.create','applications.store']) && (
-                                        <Link href={route('applications.create')}>
-                                            <Button>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add Application
-                                            </Button>
-                                        </Link>
+                                    {hasAllPermissions(['applications.create', 'applications.store']) && (
+                                        <Button onClick={() => setIsDrawerOpen(true)}>
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Add Application
+                                        </Button>
                                     )}
                                 </div>
                             </div>
 
                             {/* Filters */}
-                            <div className="space-y-4 mt-4">
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="mt-4 space-y-4">
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                                     <Input
                                         type="text"
                                         placeholder="Property"
@@ -259,7 +271,7 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                         onChange={(e) => handleFilterChange('status', e.target.value)}
                                     />
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                                     <Input
                                         type="text"
                                         placeholder="Co-signer"
@@ -303,8 +315,12 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                             <TableHead>Stage</TableHead>
                                             <TableHead>Note</TableHead>
                                             <TableHead>Attachment</TableHead>
-                                            {hasAnyPermission(['applications.show','applications.edit','applications.update','applications.destroy']) && (
-                                            <TableHead>Actions</TableHead>)}
+                                            {hasAnyPermission([
+                                                'applications.show',
+                                                'applications.edit',
+                                                'applications.update',
+                                                'applications.destroy',
+                                            ]) && <TableHead>Actions</TableHead>}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -315,55 +331,59 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                                 <TableCell>{application.unit}</TableCell>
                                                 <TableCell>{application.name}</TableCell>
                                                 <TableCell>{application.co_signer}</TableCell>
-                                                <TableCell>
-                                                    {getStatusBadge(application.status)}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {application.date
-                                                        ? new Date(application.date).toLocaleDateString()
-                                                        : 'N/A'
-                                                    }
-                                                </TableCell>
+                                                <TableCell>{getStatusBadge(application.status)}</TableCell>
+                                                <TableCell>{application.date ? new Date(application.date).toLocaleDateString() : 'N/A'}</TableCell>
                                                 <TableCell>{application.stage_in_progress || 'N/A'}</TableCell>
                                                 <TableCell>{application.notes || 'N/A'}</TableCell>
                                                 <TableCell>
                                                     {application.attachment_name ? (
                                                         <a
                                                             href={`/applications/${application.id}/download`}
-                                                            className="text-primary hover:underline text-sm"
+                                                            className="text-sm text-primary hover:underline"
                                                         >
                                                             {application.attachment_name}
                                                         </a>
                                                     ) : (
-                                                        <span className="text-muted-foreground text-sm">No attachment</span>
+                                                        <span className="text-sm text-muted-foreground">No attachment</span>
                                                     )}
                                                 </TableCell>
-                                                {hasAnyPermission(['applications.show','applications.edit','applications.update','applications.destroy']) && (
-                                                <TableCell>
-                                                    <div className="flex gap-1">
-                                                        {hasPermission('applications.show') && (
-                                                        <Link href={route('applications.show', application.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>)}
-                                                        {hasAnyPermission(['applications.edit','applications.update']) && (
-                                                        <Link href={route('applications.edit', application.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>)}
-                                                        {hasPermission('applications.destroy') && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(application)}
-                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>)}
-                                                    </div>
-                                                </TableCell>)}
+                                                {hasAnyPermission([
+                                                    'applications.show',
+                                                    'applications.edit',
+                                                    'applications.update',
+                                                    'applications.destroy',
+                                                ]) && (
+                                                    <TableCell>
+                                                        <div className="flex gap-1">
+                                                            {hasPermission('applications.show') && (
+                                                                <Link href={route('applications.show', application.id)}>
+                                                                    <Button variant="outline" size="sm">
+                                                                        <Eye className="h-4 w-4" />
+                                                                    </Button>
+                                                                </Link>
+                                                            )}
+                                                            {hasAnyPermission(['applications.edit', 'applications.update']) && (
+                                                                <Button 
+                                                                    variant="outline" 
+                                                                    size="sm"
+                                                                    onClick={() => handleEditClick(application)}
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {hasPermission('applications.destroy') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => handleDelete(application)}
+                                                                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                )}
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -371,7 +391,7 @@ export default function Index({ auth, applications, statistics, filters }: Props
                             </div>
 
                             {applications.data.length === 0 && (
-                                <div className="text-center py-8 text-muted-foreground">
+                                <div className="py-8 text-center text-muted-foreground">
                                     <p className="text-lg">No applications found.</p>
                                     <p className="text-sm">Try adjusting your search criteria.</p>
                                 </div>
@@ -386,12 +406,12 @@ export default function Index({ auth, applications, statistics, filters }: Props
                                                 key={index}
                                                 onClick={() => link.url && router.get(link.url)}
                                                 disabled={!link.url}
-                                                className={`px-3 py-2 text-sm rounded ${
+                                                className={`rounded px-3 py-2 text-sm ${
                                                     link.active
                                                         ? 'bg-primary text-primary-foreground'
                                                         : link.url
-                                                        ? 'bg-muted text-foreground hover:bg-accent'
-                                                        : 'bg-muted text-muted-foreground cursor-not-allowed'
+                                                          ? 'bg-muted text-foreground hover:bg-accent'
+                                                          : 'cursor-not-allowed bg-muted text-muted-foreground'
                                                 }`}
                                                 dangerouslySetInnerHTML={{ __html: link.label }}
                                             />
@@ -401,17 +421,42 @@ export default function Index({ auth, applications, statistics, filters }: Props
                             )}
 
                             {/* Pagination info */}
-                            {applications.meta && (
+                            {/* {applications.meta && (
                                 <div className="mt-6 flex justify-between items-center">
                                     <div className="text-sm text-muted-foreground">
                                         Showing {applications.meta.from || 0} to {applications.meta.to || 0} of {applications.meta.total || 0} results
                                     </div>
                                 </div>
-                            )}
+                            )} */}
                         </CardContent>
                     </Card>
                 </div>
             </div>
+
+            {/* Application Create Drawer */}
+            <ApplicationCreateDrawer
+                units={units}
+                cities={cities}
+                properties={properties}
+                unitsByProperty={unitsByProperty}
+                open={isDrawerOpen}
+                onOpenChange={setIsDrawerOpen}
+                onSuccess={handleDrawerSuccess}
+            />
+
+            {/* Application Edit Drawer */}
+            {selectedApplication && (
+                <ApplicationEditDrawer
+                    application={selectedApplication}
+                    units={units}
+                    cities={cities}
+                    properties={properties}
+                    unitsByProperty={unitsByProperty}
+                    open={isEditDrawerOpen}
+                    onOpenChange={setIsEditDrawerOpen}
+                    onSuccess={handleEditDrawerSuccess}
+                />
+            )}
         </AppLayout>
     );
 }

@@ -18,7 +18,7 @@ export interface Application {
     updated_at: string;
 }
 
-export interface ApplicationFormData {
+export type ApplicationFormData = {
 
     city: string;
     property: string;
@@ -76,4 +76,17 @@ export interface StatusOption {
 export interface StageOption {
     value: string;
     label: string;
+}
+
+export interface ApplicationFilters {
+    city?: string;
+    property?: string;
+    name?: string;
+    co_signer?: string;
+    unit?: string;
+    status?: string;
+    stage_in_progress?: string;
+    date_from?: string;
+    date_to?: string;
+    [key: string]: string | undefined;
 }

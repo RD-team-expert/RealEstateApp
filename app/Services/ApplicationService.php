@@ -11,7 +11,7 @@ class ApplicationService
 {
     public function getAllPaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
-        $query = Application::query();
+        $query = Application::query()->notArchived(); // Only get non-archived records
 
         // Apply filters
 
@@ -62,7 +62,7 @@ class ApplicationService
 
     public function findById(int $id): Application
     {
-        return Application::findOrFail($id);
+        return Application::notArchived()->findOrFail($id);
     }
 
     public function update(Application $application, array $data): Application
@@ -75,32 +75,47 @@ class ApplicationService
 
     public function delete(Application $application): bool
     {
-        return $application->delete();
+        // Use soft delete by archiving instead of hard delete
+        return $application->archive();
+    }
+
+    public function archive(Application $application): bool
+    {
+        return $application->archive();
+    }
+
+    public function restore(Application $application): bool
+    {
+        return $application->restore();
     }
 
     public function getByStatus(string $status): Collection
     {
-        return Application::where('status', $status)
+        return Application::notArchived()
+            ->where('status', $status)
             ->orderBy('date', 'desc')
             ->get();
     }
 
     public function getByStage(string $stage): Collection
     {
-        return Application::where('stage_in_progress', $stage)
+        return Application::notArchived()
+            ->where('stage_in_progress', $stage)
             ->orderBy('date', 'desc')
             ->get();
     }
 
     public function getStatistics(): array
     {
-        $total = Application::count();
-        $statusCounts = Application::selectRaw('status, COUNT(*) as count')
+        $total = Application::notArchived()->count();
+        $statusCounts = Application::notArchived()
+            ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->pluck('count', 'status')
             ->toArray();
 
-        $stageCounts = Application::selectRaw('stage_in_progress, COUNT(*) as count')
+        $stageCounts = Application::notArchived()
+            ->selectRaw('stage_in_progress, COUNT(*) as count')
             ->groupBy('stage_in_progress')
             ->pluck('count', 'stage_in_progress')
             ->toArray();
@@ -114,14 +129,16 @@ class ApplicationService
 
     public function getRecentApplications(int $limit = 10): Collection
     {
-        return Application::orderBy('date', 'desc')
+        return Application::notArchived()
+            ->orderBy('date', 'desc')
             ->limit($limit)
             ->get();
     }
 
     public function getApplicationsThisMonth(): Collection
     {
-        return Application::whereMonth('date', now()->month)
+        return Application::notArchived()
+            ->whereMonth('date', now()->month)
             ->whereYear('date', now()->year)
             ->orderBy('date', 'desc')
             ->get();

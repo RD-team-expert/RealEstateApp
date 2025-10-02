@@ -27,10 +27,12 @@ class Application extends Model
         'notes',
         'attachment_name',
         'attachment_path',
+        'is_archived',
     ];
 
     protected $casts = [
         'date' => 'date',
+        'is_archived' => 'boolean',
     ];
 
     // Accessor for formatted date
@@ -49,6 +51,30 @@ class Application extends Model
     public function scopeByStage($query, $stage)
     {
         return $stage ? $query->where('stage_in_progress', $stage) : $query;
+    }
+
+    // Scope to exclude archived records (default behavior)
+    public function scopeNotArchived($query)
+    {
+        return $query->where('is_archived', false);
+    }
+
+    // Scope to include only archived records
+    public function scopeArchived($query)
+    {
+        return $query->where('is_archived', true);
+    }
+
+    // Soft delete method - archives the record instead of deleting
+    public function archive(): bool
+    {
+        return $this->update(['is_archived' => true]);
+    }
+
+    // Restore archived record
+    public function restore(): bool
+    {
+        return $this->update(['is_archived' => false]);
     }
 
     // Get applications by date range
