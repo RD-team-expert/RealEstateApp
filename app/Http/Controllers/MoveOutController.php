@@ -33,9 +33,15 @@ class MoveOutController extends Controller
             ? $this->moveOutService->searchMoveOuts($search)
             : $this->moveOutService->getAllMoveOuts();
 
+        // Get dropdown data for the create drawer
+        $dropdownData = $this->moveOutService->getDropdownData();
+
         return Inertia::render('MoveOut/Index', [
             'moveOuts' => $moveOuts,
             'search' => $search,
+            'tenants' => $dropdownData['tenants'],
+            'unitsByTenant' => $dropdownData['unitsByTenant'],
+            'tenantsData' => $dropdownData['tenantsData'],
         ]);
     }
 

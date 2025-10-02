@@ -1,22 +1,16 @@
-import React, { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
-import { MoveOut } from '@/types/move-out';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/hooks/usePermissions';
-import { type BreadcrumbItem } from '@/types';
+import AppLayout from '@/layouts/app-layout';
+import { MoveOut } from '@/types/move-out';
+import { Head, Link, router } from '@inertiajs/react';
+import { Download, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import MoveOutCreateDrawer from './MoveOutCreateDrawer';
+import MoveOutEditDrawer from './MoveOutEditDrawer';
 
 // CSV Export utility function
 const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
@@ -51,36 +45,38 @@ const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
             'Notes',
             'Cleaning',
             'List the Unit',
-            'Move Out Form'
+            'Move Out Form',
         ];
 
         const csvData = [
             headers.join(','),
-            ...data.map(moveOut => {
-                try {
-                    return [
-                        moveOut.id || '',
-                        `"${formatString(moveOut.units_name)}"`,
-                        `"${formatString(moveOut.tenants_name)}"`,
-                        `"${formatDate(moveOut.move_out_date)}"`,
-                        `"${formatString(moveOut.lease_status)}"`,
-                        `"${formatDate(moveOut.date_lease_ending_on_buildium)}"`,
-                        `"${formatString(moveOut.keys_location)}"`,
-                        `"${formatString(moveOut.utilities_under_our_name)}"`,
-                        `"${formatDate(moveOut.date_utility_put_under_our_name)}"`,
-                        `"${formatString(moveOut.walkthrough)}"`,
-                        `"${formatString(moveOut.repairs)}"`,
-                        `"${formatString(moveOut.send_back_security_deposit)}"`,
-                        `"${formatString(moveOut.notes)}"`,
-                        `"${formatString(moveOut.cleaning)}"`,
-                        `"${formatString(moveOut.list_the_unit)}"`,
-                        `"${formatString(moveOut.move_out_form)}"`
-                    ].join(',');
-                } catch (rowError) {
-                    console.error('Error processing move-out row:', moveOut, rowError);
-                    return ''; // Skip problematic rows
-                }
-            }).filter(row => row !== '') // Remove empty rows
+            ...data
+                .map((moveOut) => {
+                    try {
+                        return [
+                            moveOut.id || '',
+                            `"${formatString(moveOut.units_name)}"`,
+                            `"${formatString(moveOut.tenants_name)}"`,
+                            `"${formatDate(moveOut.move_out_date)}"`,
+                            `"${formatString(moveOut.lease_status)}"`,
+                            `"${formatDate(moveOut.date_lease_ending_on_buildium)}"`,
+                            `"${formatString(moveOut.keys_location)}"`,
+                            `"${formatString(moveOut.utilities_under_our_name)}"`,
+                            `"${formatDate(moveOut.date_utility_put_under_our_name)}"`,
+                            `"${formatString(moveOut.walkthrough)}"`,
+                            `"${formatString(moveOut.repairs)}"`,
+                            `"${formatString(moveOut.send_back_security_deposit)}"`,
+                            `"${formatString(moveOut.notes)}"`,
+                            `"${formatString(moveOut.cleaning)}"`,
+                            `"${formatString(moveOut.list_the_unit)}"`,
+                            `"${formatString(moveOut.move_out_form)}"`,
+                        ].join(',');
+                    } catch (rowError) {
+                        console.error('Error processing move-out row:', moveOut, rowError);
+                        return ''; // Skip problematic rows
+                    }
+                })
+                .filter((row) => row !== ''), // Remove empty rows
         ].join('\n');
 
         const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
@@ -110,11 +106,17 @@ interface Props {
         meta: any;
     };
     search: string | null;
+    tenants: string[];
+    unitsByTenant: Record<string, string[]>;
+    tenantsData: any[];
 }
 
-export default function Index({ moveOuts, search }: Props) {
+export default function Index({ moveOuts, search, tenants, unitsByTenant, tenantsData }: Props) {
     const [searchTerm, setSearchTerm] = useState(search || '');
     const [isExporting, setIsExporting] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+    const [selectedMoveOut, setSelectedMoveOut] = useState<MoveOut | null>(null);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -144,20 +146,38 @@ export default function Index({ moveOuts, search }: Props) {
             console.log('Export completed successfully');
         } catch (error) {
             console.error('Export failed:', error);
-            alert(`Export failed: ${error.message || 'Unknown error'}. Please check the console for details.`);
+            alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please check the console for details.`);
         } finally {
             setIsExporting(false);
         }
     };
 
+    const handleDrawerSuccess = () => {
+        // Refresh the page data after successful creation
+        router.reload();
+    };
+
+    const handleEditDrawerSuccess = () => {
+        // Refresh the page data after successful update
+        router.reload();
+    };
+
+    const handleEditClick = (moveOut: MoveOut) => {
+        setSelectedMoveOut(moveOut);
+        setIsEditDrawerOpen(true);
+    };
+
     const getYesNoBadge = (value: 'Yes' | 'No' | null) => {
         if (value === null) return <Badge variant="outline">N/A</Badge>;
         return (
-            <Badge variant={value === 'Yes' ? 'default' : 'secondary'} className={
-                value === 'Yes'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-            }>
+            <Badge
+                variant={value === 'Yes' ? 'default' : 'secondary'}
+                className={
+                    value === 'Yes'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                }
+            >
                 {value}
             </Badge>
         );
@@ -166,11 +186,14 @@ export default function Index({ moveOuts, search }: Props) {
     const getCleaningBadge = (value: 'cleaned' | 'uncleaned' | null) => {
         if (value === null) return <Badge variant="outline">N/A</Badge>;
         return (
-            <Badge variant={value === 'cleaned' ? 'default' : 'secondary'} className={
-                value === 'cleaned'
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-                    : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
-            }>
+            <Badge
+                variant={value === 'cleaned' ? 'default' : 'secondary'}
+                className={
+                    value === 'cleaned'
+                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                        : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
+                }
+            >
                 {value}
             </Badge>
         );
@@ -179,11 +202,14 @@ export default function Index({ moveOuts, search }: Props) {
     const getFormBadge = (value: 'filled' | 'not filled' | null) => {
         if (value === null) return <Badge variant="outline">N/A</Badge>;
         return (
-            <Badge variant={value === 'filled' ? 'default' : 'secondary'} className={
-                value === 'filled'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-            }>
+            <Badge
+                variant={value === 'filled' ? 'default' : 'secondary'}
+                className={
+                    value === 'filled'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                }
+            >
                 {value}
             </Badge>
         );
@@ -197,16 +223,16 @@ export default function Index({ moveOuts, search }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
     return (
-        <AppLayout >
+        <AppLayout>
             <Head title="Move-Out Management" />
 
-            <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
-                <div className="max-w-[100vw] mx-auto sm:px-6 lg:px-8">
+            <div className="min-h-screen bg-background py-12 text-foreground transition-colors">
+                <div className="mx-auto max-w-[100vw] sm:px-6 lg:px-8">
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
-                            <div className="flex justify-between items-center">
+                            <div className="flex items-center justify-between">
                                 <CardTitle className="text-2xl">Move-Out Management</CardTitle>
-                                <div className="flex gap-2 items-center">
+                                <div className="flex items-center gap-2">
                                     {/* Export Button */}
                                     <Button
                                         variant="outline"
@@ -215,29 +241,27 @@ export default function Index({ moveOuts, search }: Props) {
                                         disabled={isExporting || !moveOuts?.data || moveOuts.data.length === 0}
                                         className="flex items-center"
                                     >
-                                        <Download className="h-4 w-4 mr-2" />
+                                        <Download className="mr-2 h-4 w-4" />
                                         {isExporting ? 'Exporting...' : 'Export CSV'}
                                     </Button>
 
-                                    {hasAllPermissions(['move-out.create','move-out.store']) && (
-                                        <Link href={route('move-out.create')}>
-                                            <Button>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add Move-Out Record
-                                            </Button>
-                                        </Link>
+                                    {hasAllPermissions(['move-out.create', 'move-out.store']) && (
+                                        <Button onClick={() => setIsDrawerOpen(true)}>
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Add Move-Out Record
+                                        </Button>
                                     )}
                                 </div>
                             </div>
 
-                            <form onSubmit={handleSearch} className="flex gap-2 mt-4">
+                            <form onSubmit={handleSearch} className="mt-4 flex gap-2">
                                 <div className="flex-1">
                                     <Input
                                         type="text"
                                         placeholder="Search by tenant name, unit, or status..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="bg-input text-input-foreground"
+                                        className="text-input-foreground bg-input"
                                     />
                                 </div>
                                 <Button type="submit">
@@ -266,91 +290,101 @@ export default function Index({ moveOuts, search }: Props) {
                                             <TableHead className="min-w-[100px] text-muted-foreground">Cleaning</TableHead>
                                             <TableHead className="min-w-[120px] text-muted-foreground">List the Unit</TableHead>
                                             <TableHead className="min-w-[120px] text-muted-foreground">Move Out Form</TableHead>
-                                            {hasAnyPermission(['move-out.show','move-out.edit','move-out.update','move-out.destroy']) && (
-                                            <TableHead className="min-w-[120px] text-muted-foreground">Actions</TableHead>)}
+                                            {hasAnyPermission(['move-out.show', 'move-out.edit', 'move-out.update', 'move-out.destroy']) && (
+                                                <TableHead className="min-w-[120px] text-muted-foreground">Actions</TableHead>
+                                            )}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {moveOuts.data.map((moveOut) => (
-                                            <TableRow key={moveOut.id} className="hover:bg-muted/50 border-border">
+                                            <TableRow key={moveOut.id} className="border-border hover:bg-muted/50">
                                                 <TableCell className="text-foreground">{moveOut.units_name}</TableCell>
                                                 <TableCell className="font-medium text-foreground">{moveOut.tenants_name}</TableCell>
                                                 <TableCell className="text-foreground">{formatDate(moveOut.move_out_date)}</TableCell>
                                                 <TableCell>
                                                     {moveOut.lease_status ? (
                                                         <Badge variant="outline">{moveOut.lease_status}</Badge>
-                                                    ) : <span className="text-muted-foreground">N/A</span>}
+                                                    ) : (
+                                                        <span className="text-muted-foreground">N/A</span>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell className="text-foreground">{formatDate(moveOut.date_lease_ending_on_buildium)}</TableCell>
-                                                <TableCell className="text-foreground">{moveOut.keys_location || <span className="text-muted-foreground">N/A</span>}</TableCell>
-                                                <TableCell>
-                                                    {getYesNoBadge(moveOut.utilities_under_our_name)}
+                                                <TableCell className="text-foreground">
+                                                    {moveOut.keys_location || <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">{formatDate(moveOut.date_utility_put_under_our_name)}</TableCell>
+                                                <TableCell>{getYesNoBadge(moveOut.utilities_under_our_name)}</TableCell>
+                                                <TableCell className="text-foreground">
+                                                    {formatDate(moveOut.date_utility_put_under_our_name)}
+                                                </TableCell>
                                                 <TableCell className="max-w-[150px] truncate text-foreground">
                                                     {moveOut.walkthrough ? (
                                                         <span title={moveOut.walkthrough}>
                                                             {moveOut.walkthrough.length > 50
                                                                 ? `${moveOut.walkthrough.substring(0, 50)}...`
-                                                                : moveOut.walkthrough
-                                                            }
+                                                                : moveOut.walkthrough}
                                                         </span>
-                                                    ) : <span className="text-muted-foreground">N/A</span>}
+                                                    ) : (
+                                                        <span className="text-muted-foreground">N/A</span>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell className="max-w-[120px] truncate text-foreground">
                                                     {moveOut.repairs ? (
                                                         <span title={moveOut.repairs}>
-                                                            {moveOut.repairs.length > 30
-                                                                ? `${moveOut.repairs.substring(0, 30)}...`
-                                                                : moveOut.repairs
-                                                            }
+                                                            {moveOut.repairs.length > 30 ? `${moveOut.repairs.substring(0, 30)}...` : moveOut.repairs}
                                                         </span>
-                                                    ) : <span className="text-muted-foreground">N/A</span>}
+                                                    ) : (
+                                                        <span className="text-muted-foreground">N/A</span>
+                                                    )}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">{moveOut.send_back_security_deposit || <span className="text-muted-foreground">N/A</span>}</TableCell>
+                                                <TableCell className="text-foreground">
+                                                    {moveOut.send_back_security_deposit || <span className="text-muted-foreground">N/A</span>}
+                                                </TableCell>
                                                 <TableCell className="max-w-[120px] truncate text-foreground">
                                                     {moveOut.notes ? (
                                                         <span title={moveOut.notes}>
-                                                            {moveOut.notes.length > 30
-                                                                ? `${moveOut.notes.substring(0, 30)}...`
-                                                                : moveOut.notes
-                                                            }
+                                                            {moveOut.notes.length > 30 ? `${moveOut.notes.substring(0, 30)}...` : moveOut.notes}
                                                         </span>
-                                                    ) : <span className="text-muted-foreground">N/A</span>}
+                                                    ) : (
+                                                        <span className="text-muted-foreground">N/A</span>
+                                                    )}
                                                 </TableCell>
-                                                <TableCell>
-                                                    {getCleaningBadge(moveOut.cleaning)}
+                                                <TableCell>{getCleaningBadge(moveOut.cleaning)}</TableCell>
+                                                <TableCell className="text-foreground">
+                                                    {moveOut.list_the_unit || <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">{moveOut.list_the_unit || <span className="text-muted-foreground">N/A</span>}</TableCell>
-                                                <TableCell>
-                                                    {getFormBadge(moveOut.move_out_form)}
-                                                </TableCell>
-                                                {hasAnyPermission(['move-out.show','move-out.edit','move-out.update','move-out.destroy']) && (
-                                                <TableCell>
-                                                    <div className="flex gap-1">
-                                                        {hasPermission('move-out.show') && (
-                                                        <Link href={route('move-out.show', moveOut.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>)}
-                                                        {hasAllPermissions(['move-out.edit','move-out.update']) && (
-                                                        <Link href={route('move-out.edit', moveOut.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>)}
-                                                        {hasPermission('move-out.destroy') && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(moveOut)}
-                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>)}
-                                                    </div>
-                                                </TableCell>)}
+                                                <TableCell>{getFormBadge(moveOut.move_out_form)}</TableCell>
+                                                {hasAnyPermission(['move-out.show', 'move-out.edit', 'move-out.update', 'move-out.destroy']) && (
+                                                    <TableCell>
+                                                        <div className="flex gap-1">
+                                                            {hasPermission('move-out.show') && (
+                                                                <Link href={route('move-out.show', moveOut.id)}>
+                                                                    <Button variant="outline" size="sm">
+                                                                        <Eye className="h-4 w-4" />
+                                                                    </Button>
+                                                                </Link>
+                                                            )}
+                                                            {hasAllPermissions(['move-out.edit', 'move-out.update']) && (
+                                                                <Button 
+                                                                    variant="outline" 
+                                                                    size="sm"
+                                                                    onClick={() => handleEditClick(moveOut)}
+                                                                >
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {hasPermission('move-out.destroy') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => handleDelete(moveOut)}
+                                                                    className="border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                )}
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -358,7 +392,7 @@ export default function Index({ moveOuts, search }: Props) {
                             </div>
 
                             {moveOuts.data.length === 0 && (
-                                <div className="text-center py-8 text-muted-foreground">
+                                <div className="py-8 text-center text-muted-foreground">
                                     <p className="text-lg">No move-out records found.</p>
                                     <p className="text-sm">Try adjusting your search criteria.</p>
                                 </div>
@@ -366,7 +400,7 @@ export default function Index({ moveOuts, search }: Props) {
 
                             {/* Pagination info */}
                             {moveOuts.meta && (
-                                <div className="mt-6 flex justify-between items-center border-t border-border pt-4">
+                                <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
                                     <div className="text-sm text-muted-foreground">
                                         Showing {moveOuts.meta.from || 0} to {moveOuts.meta.to || 0} of {moveOuts.meta.total || 0} results
                                     </div>
@@ -376,6 +410,27 @@ export default function Index({ moveOuts, search }: Props) {
                     </Card>
                 </div>
             </div>
+
+            {/* Move-Out Create Drawer */}
+            <MoveOutCreateDrawer
+                tenants={tenants}
+                unitsByTenant={unitsByTenant}
+                tenantsData={tenantsData}
+                open={isDrawerOpen}
+                onOpenChange={setIsDrawerOpen}
+                onSuccess={handleDrawerSuccess}
+            />
+
+            {/* Move-Out Edit Drawer */}
+            <MoveOutEditDrawer
+                open={isEditDrawerOpen}
+                onOpenChange={setIsEditDrawerOpen}
+                onSuccess={handleEditDrawerSuccess}
+                moveOut={selectedMoveOut}
+                tenants={tenants}
+                unitsByTenant={unitsByTenant}
+                tenantsData={tenantsData}
+            />
         </AppLayout>
     );
 }

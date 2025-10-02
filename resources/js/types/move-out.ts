@@ -19,7 +19,7 @@ export interface MoveOut {
     updated_at: string;
 }
 
-export interface MoveOutFormData {
+export type MoveOutFormData = {
     tenants_name: string;
     units_name: string;
     move_out_date: string;
@@ -35,7 +35,7 @@ export interface MoveOutFormData {
     cleaning: 'cleaned' | 'uncleaned' | '';
     list_the_unit: string;
     move_out_form: 'filled' | 'not filled' | '';
-}
+} & Record<string, any>;
 
 export interface TenantData {
     full_name: string;

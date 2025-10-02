@@ -43,7 +43,25 @@ class MoveOutService
 
     public function deleteMoveOut(MoveOut $moveOut): bool
     {
-        return $moveOut->delete();
+        return $moveOut->archive();
+    }
+
+    public function archiveMoveOut(MoveOut $moveOut): bool
+    {
+        return $moveOut->archive();
+    }
+
+    public function restoreMoveOut(MoveOut $moveOut): bool
+    {
+        return $moveOut->restore();
+    }
+
+    public function getArchivedMoveOuts(int $perPage = 15): LengthAwarePaginator
+    {
+        return MoveOut::onlyArchived()
+                      ->orderBy('move_out_date', 'desc')
+                      ->orderBy('created_at', 'desc')
+                      ->paginate($perPage);
     }
 
     public function getDropdownData(): array
