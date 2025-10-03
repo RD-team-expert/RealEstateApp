@@ -23,4 +23,24 @@ class Cities extends Model
     {
         return $this->hasMany(PropertyInfoWithoutInsurance::class, 'city_id');
     }
+
+    /**
+     * Validation rules for the model
+     */
+    public static function validationRules(): array
+    {
+        return [
+            'city' => 'required|string|max:255|unique:cities,city',
+        ];
+    }
+
+    /**
+     * Validation rules for updating the model
+     */
+    public static function updateValidationRules($id = null): array
+    {
+        return [
+            'city' => 'sometimes|required|string|max:255|unique:cities,city,' . $id,
+        ];
+    }
 }

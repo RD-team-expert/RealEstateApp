@@ -12,7 +12,7 @@ class PropertyInfoWithoutInsuranceService
     /**
      * Get all properties with pagination and filters
      */
-    public function getAllPaginated(int $perPage = 10, array $filters = []): LengthAwarePaginator
+    public function getAllPaginated(int $perPage = 100, array $filters = []): LengthAwarePaginator
     {
         $query = PropertyInfoWithoutInsurance::with('city');
 

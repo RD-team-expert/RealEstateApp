@@ -1,5 +1,5 @@
 // PropertyInfoWithoutInsurance/Index.tsx
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { PropertyInfoWithoutInsurance, PaginatedPropertyInfoWithoutInsurance, PropertyInfoWithoutInsuranceFilters } from '@/types/PropertyInfoWithoutInsurance';
 import { City } from '@/types/City';
@@ -36,7 +36,10 @@ import {
     XCircle,
     Edit,
     MapPin,
-    Home
+    Home,
+    Upload,
+    FileSpreadsheet,
+    Loader2
 } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -44,6 +47,14 @@ interface Props {
     properties: PaginatedPropertyInfoWithoutInsurance;
     cities: City[];
     filters: PropertyInfoWithoutInsuranceFilters;
+    importStats?: {
+        total_rows: number;
+        cities_created: number;
+        cities_updated: number;
+        properties_created: number;
+        properties_updated: number;
+        errors: string[];
+    };
 }
 
 // Custom Notification Component
@@ -134,6 +145,270 @@ const useNotification = () => {
         showNotification,
         hideNotification
     };
+};
+
+// Import Stats Component
+const ImportStatsCard: React.FC<{ stats: Props['importStats']; onClose: () => void }> = ({ 
+    stats, 
+    onClose 
+}) => {
+    if (!stats) return null;
+
+    return (
+        <Card className="mb-6 border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800">
+            <CardHeader className="pb-4">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <CardTitle className="text-lg font-semibold text-green-800 dark:text-green-200">
+                            Import Completed Successfully
+                        </CardTitle>
+                    </div>
+                    <Button 
+                        onClick={onClose} 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-green-600 hover:text-green-800 dark:text-green-400"
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                            {stats.total_rows}
+                        </div>
+                        <div className="text-sm text-green-600 dark:text-green-400">Total Rows</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                            {stats.cities_created}
+                        </div>
+                        <div className="text-sm text-blue-600 dark:text-blue-400">Cities Created</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+                            {stats.cities_updated}
+                        </div>
+                        <div className="text-sm text-orange-600 dark:text-orange-400">Cities Updated</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                            {stats.properties_created}
+                        </div>
+                        <div className="text-sm text-emerald-600 dark:text-emerald-400">Properties Created</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                            {stats.properties_updated}
+                        </div>
+                        <div className="text-sm text-purple-600 dark:text-purple-400">Properties Updated</div>
+                    </div>
+                </div>
+                
+                {stats.errors && stats.errors.length > 0 && (
+                    <div className="mt-4">
+                        <h4 className="font-semibold text-red-700 dark:text-red-300 mb-2">
+                            Import Errors ({stats.errors.length}):
+                        </h4>
+                        <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md p-3 max-h-40 overflow-y-auto">
+                            {stats.errors.slice(0, 5).map((error, index) => (
+                                <div key={index} className="text-sm text-red-700 dark:text-red-300 mb-1">
+                                    • {error}
+                                </div>
+                            ))}
+                            {stats.errors.length > 5 && (
+                                <div className="text-sm text-red-600 dark:text-red-400 italic">
+                                    ... and {stats.errors.length - 5} more errors
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+};
+
+// Import Modal Component
+const ImportModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmit: (file: File) => void;
+    isLoading: boolean;
+}> = ({ isOpen, onClose, onSubmit, isLoading }) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [dragOver, setDragOver] = useState(false);
+
+    const handleFileSelect = (file: File) => {
+        if (file && file.type === 'text/csv') {
+            setSelectedFile(file);
+        } else {
+            alert('Please select a valid CSV file.');
+        }
+    };
+
+    const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            handleFileSelect(file);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            handleFileSelect(file);
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (selectedFile) {
+            onSubmit(selectedFile);
+        }
+    };
+
+    const resetModal = () => {
+        setSelectedFile(null);
+        setDragOver(false);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleClose = () => {
+        resetModal();
+        onClose();
+    };
+
+    useEffect(() => {
+        if (!isOpen) {
+            resetModal();
+        }
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md bg-background">
+                <CardHeader className="pb-4">
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <FileSpreadsheet className="h-5 w-5 text-primary" />
+                            <CardTitle>Import Properties from CSV</CardTitle>
+                        </div>
+                        <Button 
+                            onClick={handleClose} 
+                            variant="ghost" 
+                            size="sm"
+                            disabled={isLoading}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>CSV File</Label>
+                            <div 
+                                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                                    dragOver 
+                                        ? 'border-primary bg-primary/5' 
+                                        : 'border-muted-foreground/25 hover:border-primary/50'
+                                }`}
+                                onDrop={handleDrop}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    setDragOver(true);
+                                }}
+                                onDragLeave={() => setDragOver(false)}
+                            >
+                                {selectedFile ? (
+                                    <div className="space-y-2">
+                                        <FileSpreadsheet className="h-8 w-8 text-green-600 mx-auto" />
+                                        <p className="font-medium text-green-700">{selectedFile.name}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {(selectedFile.size / 1024).toFixed(1)} KB
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <Upload className="h-8 w-8 text-muted-foreground mx-auto" />
+                                        <p className="text-muted-foreground">
+                                            Drop your CSV file here or{' '}
+                                            <Button
+                                                type="button"
+                                                variant="link"
+                                                className="p-0 h-auto text-primary"
+                                                onClick={() => fileInputRef.current?.click()}
+                                            >
+                                                browse files
+                                            </Button>
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            CSV files only, max 10MB
+                                        </p>
+                                    </div>
+                                )}
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept=".csv"
+                                    onChange={handleFileInputChange}
+                                    className="hidden"
+                                    disabled={isLoading}
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="bg-muted/50 rounded-lg p-3">
+                            <h4 className="font-medium mb-2 text-sm">Required CSV Columns:</h4>
+                            <ul className="text-xs text-muted-foreground space-y-1">
+                                <li>• <strong>Property name</strong> - Name of the property</li>
+                                <li>• <strong>City/Locality</strong> - City where property is located</li>
+                            </ul>
+                        </div>
+
+                        <div className="flex gap-2 pt-2">
+                            <Button 
+                                type="submit" 
+                                disabled={!selectedFile || isLoading}
+                                className="flex-1"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Importing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="h-4 w-4 mr-2" />
+                                        Import CSV
+                                    </>
+                                )}
+                            </Button>
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                onClick={handleClose}
+                                disabled={isLoading}
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
+        </div>
+    );
 };
 
 // Separate form component for better organization
@@ -438,8 +713,10 @@ const Pagination: React.FC<{
     );
 };
 
-const Index: React.FC<Props> = ({ properties, cities, filters }) => {
+const Index: React.FC<Props> = ({ properties, cities, filters, importStats }) => {
     const [showForm, setShowForm] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [showImportStats, setShowImportStats] = useState(!!importStats);
     const [editingProperty, setEditingProperty] = useState<PropertyInfoWithoutInsurance | null>(null);
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [cityFilter, setCityFilter] = useState(filters.city_filter?.toString() || '');
@@ -449,12 +726,17 @@ const Index: React.FC<Props> = ({ properties, cities, filters }) => {
         city_id: null as number | null,
     });
 
+    const importForm = useForm({
+        csv_file: null as File | null,
+    });
+
     const { hasPermission, hasAllPermissions } = usePermissions();
 
     const canCreate = hasAllPermissions(['all-properties.store', 'all-properties.create']);
     const canEdit = hasPermission('all-properties.update');
     const canDelete = hasPermission('all-properties.destroy');
     const canView = hasPermission('all-properties.show');
+    const canImport = hasPermission('all-properties.import'); // Add this permission check
 
     const handleSubmit = useCallback((formData: { property_name: string; city_id: number | null }) => {
         if (editingProperty) {
@@ -484,6 +766,29 @@ const Index: React.FC<Props> = ({ properties, cities, filters }) => {
             });
         }
     }, [editingProperty, reset, showNotification]);
+
+    const handleImport = useCallback((file: File) => {
+        importForm.setData('csv_file', file);
+        
+        router.post('/all-properties/import', 
+            { csv_file: file }, 
+            {
+                forceFormData: true,
+                onSuccess: (page) => {
+                    setShowImportModal(false);
+                    importForm.reset();
+                    showNotification('success', 'CSV file imported successfully!');
+                },
+                onError: (errors) => {
+                    const errorMessage = errors.csv_file || 'Failed to import CSV file. Please try again.';
+                    showNotification('error', errorMessage);
+                },
+                onFinish: () => {
+                    importForm.clearErrors();
+                }
+            }
+        );
+    }, [importForm, showNotification]);
 
     const handleDelete = useCallback((id: number) => {
         const propertyToDelete = properties.data.find(property => property.id === id);
@@ -543,8 +848,24 @@ const Index: React.FC<Props> = ({ properties, cities, filters }) => {
                 />
             )}
 
+            {/* Import Modal */}
+            <ImportModal
+                isOpen={showImportModal}
+                onClose={() => setShowImportModal(false)}
+                onSubmit={handleImport}
+                isLoading={importForm.processing}
+            />
+
             <div className="min-h-screen bg-background">
                 <div className="container mx-auto px-4 py-8 max-w-7xl">
+                    {/* Import Stats */}
+                    {showImportStats && importStats && (
+                        <ImportStatsCard 
+                            stats={importStats} 
+                            onClose={() => setShowImportStats(false)} 
+                        />
+                    )}
+
                     {/* Header */}
                     <div className="mb-8">
                         <div className="flex items-center justify-between">
@@ -557,29 +878,42 @@ const Index: React.FC<Props> = ({ properties, cities, filters }) => {
                                     Manage properties that don't require insurance coverage
                                 </p>
                             </div>
-                            {canCreate && (
-                                <Button
-                                    onClick={() => {
-                                        setEditingProperty(null);
-                                        setShowForm(!showForm);
-                                    }}
-                                    variant={showForm ? "outline" : "default"}
-                                    size="lg"
-                                    className="shadow-lg"
-                                >
-                                    {showForm ? (
-                                        <>
-                                            <X className="h-4 w-4 mr-2" />
-                                            Cancel
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            Add Property
-                                        </>
-                                    )}
-                                </Button>
-                            )}
+                            <div className="flex gap-3">
+                                {canImport && (
+                                    <Button
+                                        onClick={() => setShowImportModal(true)}
+                                        variant="outline"
+                                        size="lg"
+                                        className="shadow-lg border-primary/20 hover:border-primary/40"
+                                    >
+                                        <Upload className="h-4 w-4 mr-2" />
+                                        Import CSV
+                                    </Button>
+                                )}
+                                {canCreate && (
+                                    <Button
+                                        onClick={() => {
+                                            setEditingProperty(null);
+                                            setShowForm(!showForm);
+                                        }}
+                                        variant={showForm ? "outline" : "default"}
+                                        size="lg"
+                                        className="shadow-lg"
+                                    >
+                                        {showForm ? (
+                                            <>
+                                                <X className="h-4 w-4 mr-2" />
+                                                Cancel
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Add Property
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </div>
 

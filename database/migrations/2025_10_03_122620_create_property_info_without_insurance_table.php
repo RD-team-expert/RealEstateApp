@@ -14,12 +14,11 @@ return new class extends Migration
         Schema::create('property_info_without_insurance', function (Blueprint $table) {
             $table->id();
             $table->foreignId('city_id')->nullable()->constrained('cities')->onDelete('set null');
-            $table->string('property_name');
+            $table->string('property_name')->unique(); // Add unique constraint her
             $table->timestamps();
             
             // Add indexes for better query performance
             $table->index('city_id');
-            $table->index('property_name');
         });
     }
 

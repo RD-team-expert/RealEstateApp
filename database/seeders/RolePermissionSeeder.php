@@ -151,6 +151,16 @@ class RolePermissionSeeder extends Seeder
             'cities.create',
             'cities.store',
             'cities.destroy',
+
+            //all-properties
+            'all-properties.index',
+            'all-properties.create',
+            'all-properties.store',
+            'all-properties.show',
+            'all-properties.edit',
+            'all-properties.update',
+            'all-properties.destroy',
+            'all-properties.import',
         ];
 
         // Create permissions

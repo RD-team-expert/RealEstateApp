@@ -22,7 +22,7 @@ use App\Http\Controllers\DashboardController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return redirect()-> Route('login');
+    return redirect()->Route('login');
 })->name('home');
 
 Route::middleware(['auth'])->group(function () {
@@ -59,10 +59,17 @@ Route::middleware(['auth'])->group(function () {
 
     // Property Info Without Insurance routes
     Route::resource('all-properties', PropertyInfoWithoutInsuranceController::class);
-    
+
     // API route for getting properties by city
     Route::get('/api/all-properties/by-city/{city}', [PropertyInfoWithoutInsuranceController::class, 'getByCity'])
         ->name('api.all-properties.by-city');
+
+    Route::get('/all-properties/import', [PropertyInfoWithoutInsuranceController::class, 'showImport'])
+        ->name('all-properties.import');
+
+    Route::post('/all-properties/import', [PropertyInfoWithoutInsuranceController::class, 'import'])
+        ->name('all-properties.import.store');
+
 
     Route::resource('units', UnitController::class);
 
@@ -91,7 +98,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('applications', ApplicationController::class);
 
     Route::get('/applications/{application}/download', [ApplicationController::class, 'downloadAttachment'])
-    ->name('applications.download');
+        ->name('applications.download');
 
     Route::resource('vendors', VendorInfoController::class);
 
@@ -107,5 +114,5 @@ Route::middleware(['auth'])->group(function () {
 // Property Info CRUD routes
 
 
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
+require __DIR__ . '/settings.php';
+require __DIR__ . '/auth.php';

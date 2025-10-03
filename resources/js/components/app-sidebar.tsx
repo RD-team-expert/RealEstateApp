@@ -48,6 +48,12 @@ const mainNavCategories: NavCategory[] = [
                 permission: 'cities.index'
             },
             {
+                title: 'Properties',
+                href: '/all-properties',
+                icon: Building,
+                permission: 'all-properties.index'
+            },
+            {
                 title: 'properties Insurances',
                 href: '/properties-info',
                 icon: Building,

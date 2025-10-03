@@ -23,7 +23,7 @@ class UpdatePropertyInfoWithoutInsuranceRequest extends FormRequest
     {
         return [
             'city_id' => 'sometimes|nullable|integer|exists:cities,id',
-            'property_name' => 'sometimes|required|string|max:255',
+            'property_name' => 'sometimes|required|string|max:255|unique:property_info_without_insurance,property_name,' . $this->route('property_info_without_insurance'),
         ];
     }
 
@@ -40,8 +40,10 @@ class UpdatePropertyInfoWithoutInsuranceRequest extends FormRequest
             'property_name.required' => 'The property name field is required.',
             'property_name.string' => 'The property name must be a string.',
             'property_name.max' => 'The property name may not be greater than 255 characters.',
+            'property_name.unique' => 'The property name has already been taken.',
         ];
     }
+
 
     /**
      * Get custom attribute names for validation errors.

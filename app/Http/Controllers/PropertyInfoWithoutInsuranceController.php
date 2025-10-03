@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePropertyInfoWithoutInsuranceRequest;
 use App\Http\Requests\UpdatePropertyInfoWithoutInsuranceRequest;
+use App\Http\Requests\ImportPropertyCsvRequest;
 use App\Services\PropertyInfoWithoutInsuranceService;
+use App\Services\CsvImportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -13,10 +15,12 @@ use Inertia\Response;
 class PropertyInfoWithoutInsuranceController extends Controller
 {
     protected PropertyInfoWithoutInsuranceService $service;
+    protected CsvImportService $csvImportService;
 
-    public function __construct(PropertyInfoWithoutInsuranceService $service)
+    public function __construct(PropertyInfoWithoutInsuranceService $service, CsvImportService $csvImportService)
     {
         $this->service = $service;
+        $this->csvImportService = $csvImportService;
     }
 
     /**
@@ -59,7 +63,7 @@ class PropertyInfoWithoutInsuranceController extends Controller
         try {
             $this->service->create($request->validated());
 
-            return redirect()->route('property-info-without-insurance.index')
+            return redirect()->route('all-properties.index')
                 ->with('success', 'Property created successfully');
         } catch (\Exception $e) {
             return redirect()->back()
@@ -103,7 +107,7 @@ class PropertyInfoWithoutInsuranceController extends Controller
             $property = $this->service->findById($id);
             $this->service->update($property, $request->validated());
 
-            return redirect()->route('property-info-without-insurance.index')
+            return redirect()->route('all-properties.index')
                 ->with('success', 'Property updated successfully');
         } catch (\Exception $e) {
             return redirect()->back()
@@ -121,7 +125,7 @@ class PropertyInfoWithoutInsuranceController extends Controller
             $property = $this->service->findById($id);
             $this->service->delete($property);
 
-            return redirect()->route('property-info-without-insurance.index')
+            return redirect()->route('all-properties.index')
                 ->with('success', 'Property deleted successfully');
         } catch (\Exception $e) {
             return redirect()->back()
@@ -136,5 +140,36 @@ class PropertyInfoWithoutInsuranceController extends Controller
     {
         $properties = $this->service->getByCity($cityId);
         return response()->json($properties);
+    }
+
+     /**
+     * Show import form
+     */
+    public function showImport(): Response
+    {
+        return Inertia::render('PropertyInfoWithoutInsurance/Import');
+    }
+
+    /**
+     * Handle CSV import
+     */
+    public function import(ImportPropertyCsvRequest $request): RedirectResponse
+    {
+        try {
+            $results = $this->csvImportService->importFromCsv($request->file('csv_file'));
+
+            if ($results['success']) {
+                return redirect()->route('all-properties.index')
+                    ->with('success', $results['message'])
+                    ->with('import_stats', $results['stats']);
+            } else {
+                return redirect()->back()
+                    ->with('error', $results['message'])
+                    ->with('import_stats', $results['stats']);
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Import failed: ' . $e->getMessage());
+        }
     }
 }
