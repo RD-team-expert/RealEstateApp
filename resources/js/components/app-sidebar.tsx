@@ -10,6 +10,7 @@ import {
     Folder,
     LayoutGrid,
     Home,
+    Map,
     Building,
     Users,
     Wrench,
@@ -41,6 +42,12 @@ const mainNavCategories: NavCategory[] = [
         icon: Building,
         items: [
             {
+                title: 'Cities',
+                href: '/cities',
+                icon: Map,
+                permission: 'cities.index'
+            },
+            {
                 title: 'properties Insurances',
                 href: '/properties-info',
                 icon: Building,
@@ -53,7 +60,7 @@ const mainNavCategories: NavCategory[] = [
                 permission: 'units.index'
             },
         ],
-        permissions: ['properties.index','units.index']
+        permissions: ['cities.index','properties.index','units.index']
     },
     {
         title: 'People',

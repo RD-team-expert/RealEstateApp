@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PropertyInfoController;
+use App\Http\Controllers\PropertyInfoWithoutInsuranceController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\VendorInfoController;
 use App\Http\Controllers\TenantController;
@@ -55,6 +56,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/units-by-property', [TenantController::class, 'getUnitsByProperty'])->name('api.units-by-property');
 
     Route::resource('properties-info', PropertyInfoController::class);
+
+    // Property Info Without Insurance routes
+    Route::resource('all-properties', PropertyInfoWithoutInsuranceController::class);
+    
+    // API route for getting properties by city
+    Route::get('/api/all-properties/by-city/{city}', [PropertyInfoWithoutInsuranceController::class, 'getByCity'])
+        ->name('api.all-properties.by-city');
 
     Route::resource('units', UnitController::class);
 
