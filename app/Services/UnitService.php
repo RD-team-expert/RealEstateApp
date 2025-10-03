@@ -63,7 +63,7 @@ class UnitService
 
     public function delete(Unit $unit): bool
     {
-        return $unit->delete();
+        return $unit->archive();
     }
 
     public function getStatistics(): array

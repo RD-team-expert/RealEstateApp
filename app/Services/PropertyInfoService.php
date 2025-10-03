@@ -57,7 +57,7 @@ class PropertyInfoService
 
     public function delete(PropertyInfo $propertyInfo): bool
     {
-        return $propertyInfo->delete();
+        return $propertyInfo->archive();
     }
 
     public function getExpired(): Collection

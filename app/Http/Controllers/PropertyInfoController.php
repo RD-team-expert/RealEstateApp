@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePropertyInfoRequest;
 use App\Http\Requests\UpdatePropertyInfoRequest;
 use App\Services\PropertyInfoService;
+use App\Services\PropertyInfoWithoutInsuranceService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,7 +15,8 @@ use Illuminate\Http\RedirectResponse;
 class PropertyInfoController extends Controller
 {
     public function __construct(
-        private PropertyInfoService $propertyInfoService
+        private PropertyInfoService $propertyInfoService,
+        private PropertyInfoWithoutInsuranceService $propertyInfoWithoutInsuranceService
     ) {
         $this->middleware('permission:properties.index')->only('index');
         $this->middleware('permission:properties.create')->only('create');
@@ -36,11 +38,13 @@ class PropertyInfoController extends Controller
 
         $properties = $this->propertyInfoService->getAllPaginated($perPage, $filters);
         $statistics = $this->propertyInfoService->getStatistics();
+        $cities = $this->propertyInfoWithoutInsuranceService->getAllCities();
 
         return Inertia::render('Properties/Index', [
             'properties' => $properties,
             'statistics' => $statistics,
             'filters' => $filters,
+            'cities' => $cities,
         ]);
     }
 

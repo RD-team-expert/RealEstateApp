@@ -1,7 +1,7 @@
 // resources/js/Pages/Properties/Index.tsx
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,11 +14,13 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Download } from 'lucide-react';
 import { Property, PaginatedProperties, PropertyFilters, PropertyStatistics } from '@/types/property';
-import type { PageProps } from '@/types/property';
+import type { PageProps } from '@/types/auth';
 import { usePermissions } from '@/hooks/usePermissions';
-import { type BreadcrumbItem } from '@/types';
+import { City } from '@/types/City';
+import PropertyCreateDrawer from './PropertyCreateDrawer';
+import PropertyEditDrawer from './PropertyEditDrawer';
 
 // CSV Export utility function
 const exportToCSV = (data: Property[], filename: string = 'properties.csv') => {
@@ -75,12 +77,16 @@ interface Props extends PageProps {
     properties: PaginatedProperties;
     statistics: PropertyStatistics;
     filters: PropertyFilters;
+    cities: City[];
 }
 
-export default function Index({ auth, properties, statistics, filters }: Props) {
+export default function Index({  properties,  filters, cities = [] }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchFilters, setSearchFilters] = useState<PropertyFilters>(filters);
     const [isExporting, setIsExporting] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+    const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
     const { flash } = usePage().props;
 
     const handleFilterChange = (key: keyof PropertyFilters, value: string) => {
@@ -116,6 +122,21 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
         }
     };
 
+    const handleDrawerSuccess = () => {
+        // Refresh the page to show the new property
+        router.reload();
+    };
+
+    const handleEditDrawerSuccess = () => {
+        // Refresh the page to show the updated property
+        router.reload();
+    };
+
+    const handleEdit = (property: Property) => {
+        setSelectedProperty(property);
+        setIsEditDrawerOpen(true);
+    };
+
     const getStatusBadge = (property: Property) => {
         if (property.status === 'Expired') {
             return <Badge variant="destructive">Expired</Badge>;
@@ -147,72 +168,50 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     {/* Flash Messages */}
-                    {flash?.success && (
+                    {(flash as any)?.success && (
                         <Card className="mb-4 border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
                             <CardContent className="p-4">
-                                <div className="text-green-700 dark:text-green-300">{flash.success}</div>
+                                <div className="text-green-700 dark:text-green-300">{(flash as any)?.success}</div>
                             </CardContent>
                         </Card>
                     )}
-                    {flash?.error && (
+                    {(flash as any)?.error && (
                         <Card className="mb-4 border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800">
                             <CardContent className="p-4">
-                                <div className="text-red-700 dark:text-red-300">{flash.error}</div>
+                                <div className="text-red-700 dark:text-red-300">{(flash as any)?.error}</div>
                             </CardContent>
                         </Card>
                     )}
 
-                    {/* Statistics Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <Card className="bg-card text-card-foreground">
-                            <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-foreground">Total Properties</h3>
-                                <p className="text-3xl font-bold text-primary">{statistics.total}</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-card text-card-foreground">
-                            <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-foreground">Active</h3>
-                                <p className="text-3xl font-bold text-green-600 dark:text-green-400">{statistics.active}</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-card text-card-foreground">
-                            <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-foreground">Expired</h3>
-                                <p className="text-3xl font-bold text-destructive">{statistics.expired}</p>
-                            </CardContent>
-                        </Card>
+                    {/* Title and Buttons Section */}
+                    <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-2xl font-bold text-foreground">Property Insurance List</h1>
+                        <div className="flex gap-2 items-center">
+                            {/* Export Button */}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCSVExport}
+                                disabled={isExporting || properties.data.length === 0}
+                                className="flex items-center"
+                            >
+                                <Download className="h-4 w-4 mr-2" />
+                                {isExporting ? 'Exporting...' : 'Export CSV'}
+                            </Button>
+
+                            {hasAllPermissions(['properties.create','properties.store']) && (
+                                <Button onClick={() => setIsDrawerOpen(true)}>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Property
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
-                            <div className="flex justify-between items-center">
-                                <CardTitle className="text-2xl">Property Insurance List</CardTitle>
-                                <div className="flex gap-2 items-center">
-                                    {/* Export Button */}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleCSVExport}
-                                        disabled={isExporting || properties.data.length === 0}
-                                        className="flex items-center"
-                                    >
-                                        <Download className="h-4 w-4 mr-2" />
-                                        {isExporting ? 'Exporting...' : 'Export CSV'}
-                                    </Button>
-
-                                    {hasAllPermissions(['properties.create','properties.store']) && (
-                                        <Link href={route('properties-info.create')}>
-                                            <Button>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add Property
-                                            </Button>
-                                        </Link>
-                                    )}
-                                </div>
-                            </div>
                             {/* Filters */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <Input
                                     type="text"
                                     placeholder="Property Name"
@@ -246,54 +245,50 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="overflow-x-auto">
-                                <Table>
+                            <div className="overflow-x-auto relative">
+                                <Table className="border-collapse border border-border rounded-md">
                                     <TableHeader>
                                         <TableRow className="border-border">
-                                            <TableHead className="text-muted-foreground">Property Name</TableHead>
-                                            <TableHead className="text-muted-foreground">Insurance Company</TableHead>
-                                            <TableHead className="text-muted-foreground">Amount</TableHead>
-                                            <TableHead className="text-muted-foreground">Effective Date</TableHead>
-                                            <TableHead className="text-muted-foreground">Policy Number</TableHead>
-                                            <TableHead className="text-muted-foreground">Expiration Date</TableHead>
-                                            <TableHead className="text-muted-foreground">Days Left</TableHead>
-                                            <TableHead className="text-muted-foreground">Status</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted sticky left-0 z-10 min-w-[120px]">Property Name</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Insurance Company</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Amount</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Effective Date</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Policy Number</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Expiration Date</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Days Left</TableHead>
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Status</TableHead>
                                             {hasAnyPermission(['properties.destroy','properties.update','properties.edit','properties.show']) && (
-                                            <TableHead className="text-muted-foreground">Actions</TableHead>)}
+                                            <TableHead className="text-muted-foreground border border-border bg-muted">Actions</TableHead>)}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {properties.data.map((property) => (
                                             <TableRow key={property.id} className="hover:bg-muted/50 border-border">
-                                                <TableCell className="font-medium text-foreground">{property.property_name}</TableCell>
-                                                <TableCell className="text-foreground">{property.insurance_company_name}</TableCell>
-                                                <TableCell className="text-foreground">{property.formatted_amount}</TableCell>
-                                                <TableCell className="text-foreground">{property.effective_date}</TableCell>
-                                                <TableCell className="text-foreground">{property.policy_number}</TableCell>
-                                                <TableCell className="text-foreground">
+                                                <TableCell className="font-medium text-center text-foreground border border-border bg-muted sticky left-0 z-10 min-w-[120px]">{property.property_name}</TableCell>
+                                                <TableCell className="text-center text-foreground border border-border">{property.insurance_company_name}</TableCell>
+                                                <TableCell className="text-center text-foreground border border-border">{property.formatted_amount}</TableCell>
+                                                <TableCell className="text-center text-foreground border border-border">{property.effective_date}</TableCell>
+                                                <TableCell className="text-center text-foreground border border-border">{property.policy_number}</TableCell>
+                                                <TableCell className="text-center text-foreground border border-border">
                                                     {property.expiration_date}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="text-center border border-border">
                                                     {getDaysLeftBadge(calculateDaysLeft(property.expiration_date))}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="text-center border border-border">
                                                     {getStatusBadge(property)}
                                                 </TableCell>
                                                 {hasAnyPermission(['properties.destroy','properties.update','properties.edit','properties.show']) && (
-                                                <TableCell>
+                                                <TableCell className="text-center border border-border">
                                                     <div className="flex gap-1">
-                                                        {hasPermission('properties.show') && (
-                                                        <Link href={route('properties-info.show', property.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>)}
                                                         {hasAllPermissions(['properties.update','properties.edit']) && (
-                                                        <Link href={route('properties-info.edit', property.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>)}
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="sm"
+                                                            onClick={() => handleEdit(property)}
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>)}
                                                         {hasPermission('properties.destroy') && (
                                                         <Button
                                                             variant="outline"
@@ -339,17 +334,35 @@ export default function Index({ auth, properties, statistics, filters }: Props) 
                                 </div>
                             )}
                             {/* Pagination info */}
-                            {properties.meta && (
+                            {/* {properties.meta && (
                                 <div className="mt-6 flex justify-between items-center border-t border-border pt-4">
                                     <div className="text-sm text-muted-foreground">
                                         Showing {properties.meta.from || 0} to {properties.meta.to || 0} of {properties.meta.total || 0} results
                                     </div>
                                 </div>
-                            )}
+                            )} */}
                         </CardContent>
                     </Card>
                 </div>
             </div>
+
+            {/* Property Create Drawer */}
+            <PropertyCreateDrawer
+                open={isDrawerOpen}
+                onOpenChange={setIsDrawerOpen}
+                cities={cities}
+                onSuccess={handleDrawerSuccess}
+            />
+
+            {/* Property Edit Drawer */}
+            {selectedProperty && (
+                <PropertyEditDrawer
+                    open={isEditDrawerOpen}
+                    onOpenChange={setIsEditDrawerOpen}
+                    property={selectedProperty}
+                    onSuccess={handleEditDrawerSuccess}
+                />
+            )}
         </AppLayout>
     );
 }

@@ -11,9 +11,9 @@ class CityService
         return Cities::create($data);
     }
 
-    public function delete(Cities $city): void
+    public function delete(Cities $city): bool
     {
-        $city->delete();
+        return $city->archive();
     }
 
     public function listAll()

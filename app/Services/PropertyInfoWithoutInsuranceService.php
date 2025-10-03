@@ -65,7 +65,7 @@ class PropertyInfoWithoutInsuranceService
      */
     public function delete(PropertyInfoWithoutInsurance $property): bool
     {
-        return $property->delete();
+        return $property->archive();
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
 
 class PropertyInfo extends Model
@@ -20,14 +21,49 @@ class PropertyInfo extends Model
         'policy_number',
         'effective_date',
         'expiration_date',
-        'status'
+        'status',
+        'is_archived'
     ];
 
     // Remove the date casting to prevent timezone conversion
     protected $casts = [
-        'amount' => 'decimal:2'
-
+        'amount' => 'decimal:2',
+        'is_archived' => 'boolean'
     ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('not_archived', function (Builder $builder) {
+            $builder->where('is_archived', false);
+        });
+    }
+
+    /**
+     * Scope to include archived records
+     */
+    public function scopeWithArchived(Builder $query): Builder
+    {
+        return $query->withoutGlobalScope('not_archived');
+    }
+
+    /**
+     * Scope to get only archived records
+     */
+    public function scopeOnlyArchived(Builder $query): Builder
+    {
+        return $query->withoutGlobalScope('not_archived')->where('is_archived', true);
+    }
+
+    /**
+     * Soft delete by setting is_archived to true
+     */
+    public function archive(): bool
+    {
+        return $this->update(['is_archived' => true]);
+    }
 
     // Add custom accessors to handle dates properly
     public function getEffectiveDateAttribute($value)
@@ -51,22 +87,23 @@ class PropertyInfo extends Model
         $this->attributes['expiration_date'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
     }
 
-    // Rest of your methods remain the same...
     public function getFormattedAmountAttribute(): string
     {
-        if (is_null($this->amount)) {
-            return '$0.00';
-        }
-        return '$' . number_format((float) $this->amount, 2);
+        return '$' . number_format($this->amount, 2);
     }
 
     public function getIsExpiredAttribute(): bool
     {
+        return Carbon::now()->startOfDay()->gt(Carbon::parse($this->attributes['expiration_date'])->startOfDay());
+    }
+
+    public function getIsExpiringSoonAttribute(): bool
+    {
         $today = Carbon::now()->startOfDay();
         $expirationDate = Carbon::parse($this->attributes['expiration_date'])->startOfDay();
+        $daysLeft = $today->diffInDays($expirationDate, false);
 
-        // Expired when expiration date is today or in the past
-        return $today->gte($expirationDate);
+        return $daysLeft >= 0 && $daysLeft <= 30;
     }
 
     public function getDaysLeftAttribute(): int

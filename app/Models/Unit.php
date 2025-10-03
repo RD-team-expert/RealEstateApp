@@ -5,6 +5,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 
 class Unit extends Model
 {
@@ -29,6 +30,7 @@ class Unit extends Model
         'vacant',
         'listed',
         'total_applications',
+        'is_archived',
     ];
 
     protected $casts = [
@@ -39,22 +41,51 @@ class Unit extends Model
         'count_beds' => 'integer',
         'count_baths' => 'integer',
         'total_applications' => 'integer',
+        'is_archived' => 'boolean',
     ];
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('not_archived', function (Builder $builder) {
+            $builder->where('is_archived', false);
+        });
+
+        static::saving(function ($unit) {
+            $unit->calculateFields();
+        });
+    }
+
+    /**
+     * Scope to include archived records
+     */
+    public function scopeWithArchived(Builder $query): Builder
+    {
+        return $query->withoutGlobalScope('not_archived');
+    }
+
+    /**
+     * Scope to get only archived records
+     */
+    public function scopeOnlyArchived(Builder $query): Builder
+    {
+        return $query->withoutGlobalScope('not_archived')->where('is_archived', true);
+    }
+
+    /**
+     * Soft delete by setting is_archived to true
+     */
+    public function archive(): bool
+    {
+        return $this->update(['is_archived' => true]);
+    }
 
     // Relationship with applications
     public function applications()
     {
         return $this->hasMany(Application::class, 'unit', 'unit_name');
-    }
-
-    // Boot method to handle calculated fields
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::saving(function ($unit) {
-            $unit->calculateFields();
-        });
     }
 
     public function calculateFields()

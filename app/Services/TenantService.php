@@ -30,7 +30,7 @@ class TenantService
 
     public function deleteTenant(Tenant $tenant): bool
     {
-        return $tenant->delete();
+        return $tenant->archive();
     }
 
     public function findTenant(int $id): ?Tenant
