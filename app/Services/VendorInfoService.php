@@ -4,6 +4,7 @@
 namespace App\Services;
 
 use App\Models\VendorInfo;
+use App\Models\Cities;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Collection as SupportCollection;
@@ -56,7 +57,9 @@ class VendorInfoService
 
     public function delete(VendorInfo $vendorInfo): bool
     {
-        return $vendorInfo->delete();
+        // Use soft delete by setting is_archived to true
+        $vendorInfo->archive();
+        return true;
     }
 
     public function getByCity(string $city): Collection
@@ -95,11 +98,9 @@ class VendorInfoService
 
     public function getCities(): SupportCollection
     {
-        return VendorInfo::query()
-            ->whereNotNull('city')
-            ->distinct()
+        return Cities::query()
             ->orderBy('city', 'asc')
-            ->pluck('city'); // returns Illuminate\Support\Collection
+            ->get(['id', 'city']); // returns Collection with id and city
     }
 
     private function cleanEmptyStringsForNullableFields(array $data): array

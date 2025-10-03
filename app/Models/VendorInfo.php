@@ -17,8 +17,45 @@ class VendorInfo extends Model
         'vendor_name',
         'number',
         'email',
-        'service_type'
+        'service_type',
+        'is_archived'
     ];
+
+    protected $casts = [
+        'is_archived' => 'boolean',
+    ];
+
+    // Global scope to exclude archived records by default
+    protected static function booted()
+    {
+        static::addGlobalScope('active', function ($query) {
+            $query->where('is_archived', false);
+        });
+    }
+
+    // Scope to include archived records when needed
+    public function scopeWithArchived($query)
+    {
+        return $query->withoutGlobalScope('active');
+    }
+
+    // Scope to get only archived records
+    public function scopeOnlyArchived($query)
+    {
+        return $query->withoutGlobalScope('active')->where('is_archived', true);
+    }
+
+    // Soft delete method
+    public function archive()
+    {
+        $this->update(['is_archived' => true]);
+    }
+
+    // Restore method
+    public function restore()
+    {
+        $this->update(['is_archived' => false]);
+    }
 
     // Scope for filtering by city
     public function scopeByCity($query, $city)

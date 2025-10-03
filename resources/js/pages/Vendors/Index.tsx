@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,10 +13,11 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
+import { Trash2, Edit, Eye, Plus, Download } from 'lucide-react';
 import { VendorInfo, PaginatedVendors, VendorFilters, VendorStatistics } from '@/types/vendor';
 import { PageProps } from '@/types/vendor';
-import { type BreadcrumbItem } from '@/types';
+import VendorCreateDrawer from './VendorCreateDrawer';
+import VendorEditDrawer from './VendorEditDrawer';
 
 // CSV Export utility function
 const exportToCSV = (data: VendorInfo[], filename: string = 'vendors.csv') => {
@@ -59,12 +60,15 @@ interface Props extends PageProps {
     vendors: PaginatedVendors;
     statistics: VendorStatistics;
     filters: VendorFilters;
-    cities: string[];
+    cities: Array<{ id: number; city: string }>;
 }
 
 export default function Index({ auth, vendors, statistics, filters, cities }: Props) {
     const [searchFilters, setSearchFilters] = useState<VendorFilters>(filters);
     const [isExporting, setIsExporting] = useState(false);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+    const [selectedVendor, setSelectedVendor] = useState<VendorInfo | null>(null);
     const { flash } = usePage().props;
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
@@ -101,6 +105,21 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
         }
     };
 
+    const handleDrawerSuccess = () => {
+        // Refresh the page to show the new vendor
+        router.reload();
+    };
+
+    const handleEditVendor = (vendor: VendorInfo) => {
+        setSelectedVendor(vendor);
+        setIsEditDrawerOpen(true);
+    };
+
+    const handleEditDrawerSuccess = () => {
+        // Refresh the page to show the updated vendor
+        router.reload();
+    };
+
     return (
         <AppLayout >
             <Head title="Vendors" />
@@ -108,14 +127,14 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     {/* Flash Messages */}
-                    {flash?.success && (
+                    {(flash as any)?.success && (
                         <div className="mb-4 bg-chart-1/20 border border-chart-1 text-chart-1 px-4 py-3 rounded">
-                            {flash.success}
+                            {(flash as any)?.success}
                         </div>
                     )}
-                    {flash?.error && (
+                    {(flash as any)?.error && (
                         <div className="mb-4 bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded">
-                            {flash.error}
+                            {(flash as any)?.error}
                         </div>
                     )}
 
@@ -181,12 +200,10 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                     </Button>
 
                                     {hasAllPermissions(['vendors.create','vendors.store']) && (
-                                        <Link href={route('vendors.create')}>
-                                            <Button>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add Vendor
-                                            </Button>
-                                        </Link>
+                                        <Button onClick={() => setIsDrawerOpen(true)}>
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Add Vendor
+                                        </Button>
                                     )}
                                 </div>
                             </div>
@@ -257,11 +274,13 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                                             </Button>
                                                         </Link>)}
                                                         {hasAllPermissions(['vendors.edit','vendors.update']) && (
-                                                        <Link href={route('vendors.edit', vendor.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="sm"
+                                                            onClick={() => handleEditVendor(vendor)}
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
                                                         )}
                                                         {hasPermission('vendors.destroy') && (
                                                         <Button
@@ -317,6 +336,23 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                     </Card>
                 </div>
             </div>
+
+            {/* Vendor Create Drawer */}
+            <VendorCreateDrawer
+                cities={cities}
+                open={isDrawerOpen}
+                onOpenChange={setIsDrawerOpen}
+                onSuccess={handleDrawerSuccess}
+            />
+
+            {/* Vendor Edit Drawer */}
+            <VendorEditDrawer
+                vendor={selectedVendor}
+                cities={cities}
+                open={isEditDrawerOpen}
+                onOpenChange={setIsEditDrawerOpen}
+                onSuccess={handleEditDrawerSuccess}
+            />
         </AppLayout>
     );
 }
