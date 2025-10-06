@@ -38,10 +38,14 @@ class UnitController extends Controller
         $units = $this->unitService->getAllPaginated($perPage, $filters);
         $statistics = $this->unitService->getStatistics();
 
+        // Get cities data for drawer component
+        $cities = \App\Models\Cities::all();
+
         return Inertia::render('Units/Index', [
             'units' => $units,
             'statistics' => $statistics,
             'filters' => $filters,
+            'cities' => $cities,
         ]);
     }
 

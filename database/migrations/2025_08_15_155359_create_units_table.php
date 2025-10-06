@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('tenants')->nullable();
             $table->date('lease_start')->nullable();
             $table->date('lease_end')->nullable();
-            $table->integer('count_beds')->nullable();
-            $table->integer('count_baths')->nullable();
+            $table->decimal('count_beds', 3, 1)->nullable(); // 3 digits total, 1 decimal place (e.g., 10.5)
+            $table->decimal('count_baths', 3, 1)->nullable();
             $table->string('lease_status')->nullable();
             $table->decimal('monthly_rent', 15, 2)->nullable();
             $table->string('recurring_transaction')->nullable();

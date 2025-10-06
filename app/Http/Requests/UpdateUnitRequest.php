@@ -19,7 +19,8 @@ class UpdateUnitRequest extends FormRequest
             'city' => [
                 'required',
                 'string',
-                Rule::exists('cities', 'city')],
+                Rule::exists('cities', 'city')
+            ],
             'property' => 'required|string|max:255',
             'unit_name' => [
                 'required',
@@ -30,8 +31,8 @@ class UpdateUnitRequest extends FormRequest
             'tenants' => 'nullable|string|max:255',
             'lease_start' => 'nullable|date',
             'lease_end' => 'nullable|date|after_or_equal:lease_start',
-            'count_beds' => 'nullable|integer|min:0',
-            'count_baths' => 'nullable|integer|min:0',
+            'count_beds' => 'nullable|numeric|min:0|regex:/^\d+(\.\d{1})?$/',   // Changed from 'integer'
+            'count_baths' => 'nullable|numeric|min:0|regex:/^\d+(\.\d{1})?$/',  // Changed from 'integer'
             'lease_status' => 'nullable|string|max:255',
             'monthly_rent' => 'nullable|numeric|min:0',
             'recurring_transaction' => 'nullable|string|max:255',
@@ -50,8 +51,10 @@ class UpdateUnitRequest extends FormRequest
             'unit_name.required' => 'Unit name is required.',
             'unit_name.unique' => 'Unit name already exists.',
             'lease_end.after_or_equal' => 'Lease end date must be after or equal to lease start date.',
-            'count_beds.integer' => 'Count beds must be a number.',
-            'count_baths.integer' => 'Count baths must be a number.',
+            'count_beds.numeric' => 'Count beds must be a valid number.',
+            'count_beds.regex' => 'Count beds must have at most 1 decimal place.',
+            'count_baths.numeric' => 'Count baths must be a valid number.',
+            'count_baths.regex' => 'Count baths must have at most 1 decimal place.',
             'monthly_rent.numeric' => 'Monthly rent must be a valid amount.',
         ];
     }

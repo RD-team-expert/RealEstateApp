@@ -215,8 +215,8 @@ class UnitImportService
         // Parse patterns like "4 Bed/3.5 Bath" or "3 Bed/1 Bath"
         if (preg_match('/(\d+)\s*Bed\/(\d+(?:\.\d+)?)\s*Bath/', $bedBath, $matches)) {
             return [
-                'beds' => (int)$matches[1],
-                'baths' => (int)round((float)$matches[2])
+                'beds' => (float)$matches[1],
+                'baths' => (float)$matches[2]
             ];
         }
 
@@ -224,7 +224,7 @@ class UnitImportService
         if (preg_match('/\'-\s*\/(\d+(?:\.\d+)?)\s*Bath/', $bedBath, $matches)) {
             return [
                 'beds' => null,
-                'baths' => (int)round((float)$matches[1])
+                'baths' => (float)$matches[1]
             ];
         }
 

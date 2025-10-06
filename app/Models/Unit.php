@@ -38,8 +38,8 @@ class Unit extends Model
         'lease_end' => 'date',
         'insurance_expiration_date' => 'date',
         'monthly_rent' => 'decimal:2',
-        'count_beds' => 'integer',
-        'count_baths' => 'integer',
+        'count_beds' => 'decimal:1',      // Changed from 'integer'
+        'count_baths' => 'decimal:1',     // Changed from 'integer'
         'total_applications' => 'integer',
         'is_archived' => 'boolean',
     ];

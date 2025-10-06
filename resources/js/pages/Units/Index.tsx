@@ -1,25 +1,35 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Head, Link, router, usePage, useForm } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Trash2, Edit, Eye, Plus, Search, Download, Upload, FileSpreadsheet, Loader2, CheckCircle, XCircle, AlertCircle, X } from 'lucide-react';
-import { Unit, PaginatedUnits, UnitFilters, UnitStatistics } from '@/types/unit';
-import { PageProps } from '@/types/unit';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/hooks/usePermissions';
-import { type BreadcrumbItem } from '@/types';
+import AppLayout from '@/layouts/app-layout';
+import { PageProps, PaginatedUnits, Unit, UnitFilters, UnitStatistics } from '@/types/unit';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { format } from 'date-fns';
+import { AlertCircle, CheckCircle, Download, Edit, FileSpreadsheet, Loader2, Plus, Search, Trash2, Upload, X, XCircle, ChevronDown } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import UnitCreateDrawer from './UnitCreateDrawer';
+import UnitEditDrawer from './UnitEditDrawer';
+
+/**
+ * Always treat the value as a date-only (no time, no TZ).
+ * Works for "YYYY-MM-DD" and for ISO strings by grabbing the first 10 chars.
+ */
+const formatDateOnly = (value?: string | null, fallback = '-'): string => {
+    if (!value) return fallback;
+
+    // Grab YYYY-MM-DD from the front (works for "2025-10-01" and "2025-10-01T00:00:00Z")
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    if (!m) return fallback;
+
+    const [, y, mo, d] = m;
+    // Construct a local calendar date (no timezone shifting)
+    const date = new Date(Number(y), Number(mo) - 1, Number(d));
+    return format(date, 'P'); // localized short date (or use 'MM/dd/yyyy' if you want fixed format)
+};
 
 // CSV Export utility function
 const exportToCSV = (data: Unit[], filename: string = 'units.csv') => {
@@ -42,32 +52,36 @@ const exportToCSV = (data: Unit[], filename: string = 'units.csv') => {
         'Insurance Expiration',
         'Vacant',
         'Listed',
-        'Applications'
+        'Applications',
     ];
+
+    // Handles either "YYYY-MM-DD" (date-only) or full ISO timestamps
 
     const csvData = [
         headers.join(','),
-        ...data.map(unit => [
-            unit.id,
-            `"${unit.city}"`,
-            `"${unit.property}"`,
-            `"${unit.unit_name}"`,
-            `"${unit.tenants || ''}"`,
-            `"${unit.lease_start ? new Date(unit.lease_start).toLocaleDateString() : ''}"`,
-            `"${unit.lease_end ? new Date(unit.lease_end).toLocaleDateString() : ''}"`,
-            unit.count_beds || '',
-            unit.count_baths || '',
-            `"${unit.lease_status || ''}"`,
-            `"${unit.formatted_monthly_rent || ''}"`,
-            `"${(unit.recurring_transaction || '').replace(/"/g, '""')}"`,
-            `"${(unit.utility_status || '').replace(/"/g, '""')}"`,
-            `"${(unit.account_number || '').replace(/"/g, '""')}"`,
-            `"${unit.insurance || ''}"`,
-            `"${unit.insurance_expiration_date ? new Date(unit.insurance_expiration_date).toLocaleDateString() : ''}"`,
-            `"${unit.vacant}"`,
-            `"${unit.listed}"`,
-            unit.total_applications || 0
-        ].join(','))
+        ...data.map((unit) =>
+            [
+                unit.id,
+                `"${unit.city}"`,
+                `"${unit.property}"`,
+                `"${unit.unit_name}"`,
+                `"${unit.tenants || ''}"`,
+                `"${formatDateOnly(unit.lease_start, '')}"`,
+                `"${formatDateOnly(unit.lease_end, '')}"`,
+                unit.count_beds || '',
+                unit.count_baths || '',
+                `"${unit.lease_status || ''}"`,
+                `"${unit.formatted_monthly_rent || ''}"`,
+                `"${(unit.recurring_transaction || '').replace(/"/g, '""')}"`,
+                `"${(unit.utility_status || '').replace(/"/g, '""')}"`,
+                `"${(unit.account_number || '').replace(/"/g, '""')}"`,
+                `"${unit.insurance || ''}"`,
+                `"${formatDateOnly(unit.insurance_expiration_date, '')}"`,
+                `"${unit.vacant}"`,
+                `"${unit.listed}"`,
+                unit.total_applications || 0,
+            ].join(','),
+        ),
     ].join('\n');
 
     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
@@ -128,7 +142,9 @@ const Notification: React.FC<NotificationProps> = ({ type, message, onClose, dur
     };
 
     return (
-        <div className={`fixed top-4 right-4 z-50 min-w-80 max-w-md p-4 rounded-lg border shadow-lg transform transition-all duration-300 ease-in-out ${getBgColor()}`}>
+        <div
+            className={`fixed top-4 right-4 z-50 max-w-md min-w-80 transform rounded-lg border p-4 shadow-lg transition-all duration-300 ease-in-out ${getBgColor()}`}
+        >
             <div className="flex items-start gap-3">
                 {getIcon()}
                 <div className="flex-1">
@@ -162,14 +178,12 @@ const ImportStatsCard: React.FC<{ stats: any; onClose: () => void }> = ({ stats,
     if (!stats) return null;
 
     return (
-        <Card className="mb-6 border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800">
+        <Card className="mb-6 border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20">
             <CardHeader className="pb-4">
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <CheckCircle className="h-5 w-5 text-green-600" />
-                        <CardTitle className="text-lg font-semibold text-green-800 dark:text-green-200">
-                            Import Completed Successfully
-                        </CardTitle>
+                        <CardTitle className="text-lg font-semibold text-green-800 dark:text-green-200">Import Completed Successfully</CardTitle>
                     </div>
                     <Button onClick={onClose} variant="ghost" size="sm" className="text-green-600 hover:text-green-800 dark:text-green-400">
                         <X className="h-4 w-4" />
@@ -177,7 +191,7 @@ const ImportStatsCard: React.FC<{ stats: any; onClose: () => void }> = ({ stats,
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="mb-4 grid grid-cols-2 gap-4 md:grid-cols-4">
                     <div className="text-center">
                         <div className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.success_count}</div>
                         <div className="text-sm text-green-600 dark:text-green-400">Success</div>
@@ -264,10 +278,10 @@ const ImportModal: React.FC<{
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <Card className="w-full max-w-md bg-background">
                 <CardHeader className="pb-4">
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <FileSpreadsheet className="h-5 w-5 text-primary" />
                             <CardTitle>Import Units from CSV</CardTitle>
@@ -282,7 +296,7 @@ const ImportModal: React.FC<{
                         <div className="space-y-2">
                             <Label>CSV File</Label>
                             <div
-                                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                                className={`rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
                                     dragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
                                 }`}
                                 onDrop={handleDrop}
@@ -294,21 +308,19 @@ const ImportModal: React.FC<{
                             >
                                 {selectedFile ? (
                                     <div className="space-y-2">
-                                        <FileSpreadsheet className="h-8 w-8 text-green-600 mx-auto" />
+                                        <FileSpreadsheet className="mx-auto h-8 w-8 text-green-600" />
                                         <p className="font-medium text-green-700">{selectedFile.name}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            {(selectedFile.size / 1024).toFixed(1)} KB
-                                        </p>
+                                        <p className="text-sm text-muted-foreground">{(selectedFile.size / 1024).toFixed(1)} KB</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-2">
-                                        <Upload className="h-8 w-8 text-muted-foreground mx-auto" />
+                                        <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
                                         <p className="text-muted-foreground">
                                             Drop your CSV file here or{' '}
                                             <Button
                                                 type="button"
                                                 variant="link"
-                                                className="p-0 h-auto text-primary"
+                                                className="h-auto p-0 text-primary"
                                                 onClick={() => fileInputRef.current?.click()}
                                             >
                                                 browse files
@@ -328,17 +340,33 @@ const ImportModal: React.FC<{
                             </div>
                         </div>
 
-                        <div className="bg-muted/50 rounded-lg p-3">
-                            <h4 className="font-medium mb-2 text-sm">Required CSV Columns</h4>
-                            <ul className="text-xs text-muted-foreground space-y-1">
-                                <li><strong>PropertyName</strong> - Name of the property</li>
-                                <li><strong>number</strong> - Unit number/name</li>
-                                <li><strong>BedBath</strong> - Bedroom/bathroom info (e.g., "4 Bed/3.5 Bath")</li>
-                                <li><strong>Residents</strong> - Tenant names or "VACANT"</li>
-                                <li><strong>LeaseStartRaw</strong> - Lease start date</li>
-                                <li><strong>LeaseEndRaw</strong> - Lease end date</li>
-                                <li><strong>rent</strong> - Monthly rent amount</li>
-                                <li><strong>recurringCharges</strong> - Recurring charges</li>
+                        <div className="rounded-lg bg-muted/50 p-3">
+                            <h4 className="mb-2 text-sm font-medium">Required CSV Columns</h4>
+                            <ul className="space-y-1 text-xs text-muted-foreground">
+                                <li>
+                                    <strong>PropertyName</strong> - Name of the property
+                                </li>
+                                <li>
+                                    <strong>number</strong> - Unit number/name
+                                </li>
+                                <li>
+                                    <strong>BedBath</strong> - Bedroom/bathroom info (e.g., "4 Bed/3.5 Bath")
+                                </li>
+                                <li>
+                                    <strong>Residents</strong> - Tenant names or "VACANT"
+                                </li>
+                                <li>
+                                    <strong>LeaseStartRaw</strong> - Lease start date
+                                </li>
+                                <li>
+                                    <strong>LeaseEndRaw</strong> - Lease end date
+                                </li>
+                                <li>
+                                    <strong>rent</strong> - Monthly rent amount
+                                </li>
+                                <li>
+                                    <strong>recurringCharges</strong> - Recurring charges
+                                </li>
                             </ul>
                         </div>
 
@@ -346,12 +374,12 @@ const ImportModal: React.FC<{
                             <Button type="submit" disabled={!selectedFile || isLoading} className="flex-1">
                                 {isLoading ? (
                                     <>
-                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Importing...
                                     </>
                                 ) : (
                                     <>
-                                        <Upload className="h-4 w-4 mr-2" />
+                                        <Upload className="mr-2 h-4 w-4" />
                                         Import CSV
                                     </>
                                 )}
@@ -371,6 +399,7 @@ interface Props extends PageProps {
     units: PaginatedUnits;
     statistics: UnitStatistics;
     filters: UnitFilters;
+    cities?: Array<{ id: number; city: string }>;
     importStats?: {
         success_count: number;
         error_count: number;
@@ -379,13 +408,33 @@ interface Props extends PageProps {
     };
 }
 
-export default function Index({ auth, units, statistics, filters, importStats }: Props) {
+export default function Index({ auth, units, statistics, filters, cities, importStats }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchFilters, setSearchFilters] = useState<UnitFilters>(filters);
+    const [tempFilters, setTempFilters] = useState<UnitFilters>(filters);
     const [isExporting, setIsExporting] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
     const [showImportStats, setShowImportStats] = useState(!!importStats);
+    const [showCreateDrawer, setShowCreateDrawer] = useState(false);
+    const [showEditDrawer, setShowEditDrawer] = useState(false);
+    const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
     const { flash } = usePage().props;
+
+    // City autocomplete states
+    const [cityInput, setCityInput] = useState(tempFilters.city || '');
+    const [showCityDropdown, setShowCityDropdown] = useState(false);
+    const [filteredCities, setFilteredCities] = useState<Array<{ id: number; city: string }>>([]);
+    const cityInputRef = useRef<HTMLInputElement>(null);
+    const cityDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Property autocomplete states
+    const [propertyInput, setPropertyInput] = useState(tempFilters.property || '');
+    const [, setShowPropertyDropdown] = useState(false);
+    const [availableProperties, setAvailableProperties] = useState<string[]>([]);
+    const [, setFilteredProperties] = useState<string[]>([]);
+    const [, setLoadingProperties] = useState(false);
+    const propertyInputRef = useRef<HTMLInputElement>(null);
+    const propertyDropdownRef = useRef<HTMLDivElement>(null);
 
     // Notification system
     const { notification, showNotification, hideNotification } = useNotification();
@@ -397,10 +446,109 @@ export default function Index({ auth, units, statistics, filters, importStats }:
         update_existing: false,
     });
 
-    const handleFilterChange = (key: keyof UnitFilters, value: string) => {
-        const newFilters = { ...searchFilters, [key]: value };
-        setSearchFilters(newFilters);
-        router.get(route('units.index'), newFilters, {
+    // Filter cities based on input
+    useEffect(() => {
+        if (!cities) return;
+        
+        if (cityInput.trim() === '') {
+            setFilteredCities(cities);
+        } else {
+            const filtered = cities.filter(city =>
+                city.city.toLowerCase().includes(cityInput.toLowerCase())
+            );
+            setFilteredCities(filtered);
+        }
+    }, [cityInput, cities]);
+
+    // Filter properties based on input
+    useEffect(() => {
+        if (propertyInput.trim() === '') {
+            setFilteredProperties(availableProperties);
+        } else {
+            const filtered = availableProperties.filter(property =>
+                property.toLowerCase().includes(propertyInput.toLowerCase())
+            );
+            setFilteredProperties(filtered);
+        }
+    }, [propertyInput, availableProperties]);
+
+    // Fetch properties when city changes
+    useEffect(() => {
+        if (cityInput && filteredCities.some(city => city.city === cityInput)) {
+            setLoadingProperties(true);
+            fetch(`/api/properties-by-city?city=${encodeURIComponent(cityInput)}`)
+                .then(response => response.json())
+                .then((properties: string[]) => {
+                    setAvailableProperties(properties);
+                    setLoadingProperties(false);
+                })
+                .catch(error => {
+                    console.error('Error fetching properties:', error);
+                    setAvailableProperties([]);
+                    setLoadingProperties(false);
+                });
+        } else {
+            setAvailableProperties([]);
+            // Clear property input if city is cleared or invalid
+            if (!cityInput || !filteredCities.some(city => city.city === cityInput)) {
+                setPropertyInput('');
+                handleTempFilterChange('property', '');
+            }
+        }
+    }, [cityInput, filteredCities]);
+
+    // Handle clicks outside dropdowns
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (cityDropdownRef.current && !cityDropdownRef.current.contains(event.target as Node) &&
+                cityInputRef.current && !cityInputRef.current.contains(event.target as Node)) {
+                setShowCityDropdown(false);
+            }
+            if (propertyDropdownRef.current && !propertyDropdownRef.current.contains(event.target as Node) &&
+                propertyInputRef.current && !propertyInputRef.current.contains(event.target as Node)) {
+                setShowPropertyDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleTempFilterChange = (key: keyof UnitFilters, value: string) => {
+        setTempFilters({ ...tempFilters, [key]: value });
+    };
+
+    const handleCitySelect = (city: string) => {
+        setCityInput(city);
+        handleTempFilterChange('city', city);
+        setShowCityDropdown(false);
+    };
+
+
+    const handleCityInputChange = (value: string) => {
+        setCityInput(value);
+        handleTempFilterChange('city', value);
+        setShowCityDropdown(true);
+    };
+
+    const handlePropertyInputChange = (value: string) => {
+        setPropertyInput(value);
+        handleTempFilterChange('property', value);
+        setShowPropertyDropdown(true);
+    };
+
+    const handleSearchClick = () => {
+        setSearchFilters(tempFilters);
+
+        // Convert UnitFilters to a plain object
+        const filterParams: Record<string, string> = {};
+        Object.entries(tempFilters).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                filterParams[key] = String(value);
+            }
+        });
+
+        router.get(route('units.index'), filterParams, {
             preserveState: true,
             preserveScroll: true,
         });
@@ -410,6 +558,16 @@ export default function Index({ auth, units, statistics, filters, importStats }:
         if (confirm('Are you sure you want to delete this unit?')) {
             router.delete(route('units.destroy', unit.id));
         }
+    };
+
+    const handleEdit = (unit: Unit) => {
+        setSelectedUnit(unit);
+        setShowEditDrawer(true);
+    };
+
+    const handleEditSuccess = () => {
+        // Refresh the page data after successful edit
+        router.reload({ only: ['units', 'statistics'] });
     };
 
     const handleCSVExport = () => {
@@ -431,69 +589,75 @@ export default function Index({ auth, units, statistics, filters, importStats }:
     };
 
     // Handle import
-    const handleImport = useCallback((file: File) => {
-        importForm.setData('file', file);
-        
-        router.post(route('units.import'), {
-            file: file,
-            skip_duplicates: importForm.data.skip_duplicates,
-            update_existing: importForm.data.update_existing,
-        }, {
-            forceFormData: true,
-            onSuccess: () => {
-                setShowImportModal(false);
-                importForm.reset();
-                showNotification('success', 'CSV file imported successfully!');
-            },
-            onError: (errors) => {
-                const errorMessage = errors.file || 'Failed to import CSV file. Please try again.';
-                showNotification('error', errorMessage);
-            },
-            onFinish: () => {
-                importForm.clearErrors();
-            },
-        });
-    }, [importForm, showNotification]);
+    const handleImport = useCallback(
+        (file: File) => {
+            importForm.setData('file', file);
+
+            router.post(
+                route('units.import'),
+                {
+                    file: file,
+                    skip_duplicates: importForm.data.skip_duplicates,
+                    update_existing: importForm.data.update_existing,
+                },
+                {
+                    forceFormData: true,
+                    onSuccess: () => {
+                        setShowImportModal(false);
+                        importForm.reset();
+                        showNotification('success', 'CSV file imported successfully!');
+                    },
+                    onError: (errors) => {
+                        const errorMessage = (errors as any).file || 'Failed to import CSV file. Please try again.';
+                        showNotification('error', errorMessage as string);
+                    },
+                    onFinish: () => {
+                        importForm.clearErrors();
+                    },
+                },
+            );
+        },
+        [importForm, showNotification],
+    );
 
     const getVacantBadge = (vacant: string) => {
         if (!vacant) return <Badge variant="outline">-</Badge>;
-        return (
-            <Badge variant={vacant === 'Yes' ? 'destructive' : 'default'}>
-                {vacant}
-            </Badge>
-        );
+        return <Badge variant={vacant === 'Yes' ? 'destructive' : 'default'}>{vacant}</Badge>;
     };
 
     const getListedBadge = (listed: string) => {
         if (!listed) return <Badge variant="outline">-</Badge>;
-        return (
-            <Badge variant={listed === 'Yes' ? 'default' : 'secondary'}>
-                {listed}
-            </Badge>
-        );
+        return <Badge variant={listed === 'Yes' ? 'default' : 'secondary'}>{listed}</Badge>;
     };
 
     const getInsuranceBadge = (insurance: string | null) => {
         if (!insurance || insurance === '-') return <Badge variant="outline">N/A</Badge>;
-        return (
-            <Badge variant={insurance === 'Yes' ? 'default' : 'destructive'}>
-                {insurance}
-            </Badge>
-        );
+        return <Badge variant={insurance === 'Yes' ? 'default' : 'destructive'}>{insurance}</Badge>;
+    };
+
+    /**
+     * Always treat the value as a date-only (no time, no TZ).
+     * Works for "YYYY-MM-DD" and for ISO strings by grabbing the first 10 chars.
+     */
+    const formatDateOnly = (value?: string | null, fallback = '-'): string => {
+        if (!value) return fallback;
+
+        // Grab YYYY-MM-DD from the front (works for "2025-10-01" and "2025-10-01T00:00:00Z")
+        const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+        if (!m) return fallback;
+
+        const [, y, mo, d] = m;
+        // Construct a local calendar date (no timezone shifting)
+        const date = new Date(Number(y), Number(mo) - 1, Number(d));
+        return format(date, 'P'); // localized short date (or use 'MM/dd/yyyy' if you want fixed format)
     };
 
     return (
         <AppLayout>
             <Head title="Units" />
-            
+
             {/* Custom Notification */}
-            {notification && (
-                <Notification
-                    type={notification.type}
-                    message={notification.message}
-                    onClose={hideNotification}
-                />
-            )}
+            {notification && <Notification type={notification.type} message={notification.message} onClose={hideNotification} />}
 
             {/* Import Modal */}
             <ImportModal
@@ -503,260 +667,264 @@ export default function Index({ auth, units, statistics, filters, importStats }:
                 isLoading={importForm.processing}
             />
 
-            <div className="py-12">
-                <div className="max-w-full mx-auto sm:px-6 lg:px-8">
+            <div className="min-h-screen bg-background py-12 text-foreground transition-colors">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     {/* Flash Messages */}
-                    {flash?.success && (
-                        <div className="mb-4 bg-chart-1/20 border border-chart-1 text-chart-1 px-4 py-3 rounded">
-                            {flash.success}
-                        </div>
+                    {(flash as any)?.success && (
+                        <Card className="mb-4 border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+                            <CardContent className="p-4">
+                                <div className="text-green-700 dark:text-green-300">{(flash as any)?.success}</div>
+                            </CardContent>
+                        </Card>
                     )}
-                    {flash?.error && (
-                        <div className="mb-4 bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded">
-                            {flash.error}
-                        </div>
+                    {(flash as any)?.error && (
+                        <Card className="mb-4 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
+                            <CardContent className="p-4">
+                                <div className="text-red-700 dark:text-red-300">{(flash as any)?.error}</div>
+                            </CardContent>
+                        </Card>
                     )}
 
                     {/* Import Stats */}
-                    {showImportStats && importStats && (
-                        <ImportStatsCard
-                            stats={importStats}
-                            onClose={() => setShowImportStats(false)}
-                        />
-                    )}
+                    {showImportStats && importStats && <ImportStatsCard stats={importStats} onClose={() => setShowImportStats(false)} />}
 
-                    {/* Statistics Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-                        <Card>
-                            <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-foreground">Total Units</h3>
-                                <p className="text-3xl font-bold text-primary">{statistics.total}</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-foreground">Vacant</h3>
-                                <p className="text-3xl font-bold text-destructive">{statistics.vacant}</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-foreground">Occupied</h3>
-                                <p className="text-3xl font-bold text-chart-1">{statistics.occupied}</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-foreground">Listed</h3>
-                                <p className="text-3xl font-bold text-chart-2">{statistics.listed}</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardContent className="p-6">
-                                <h3 className="text-lg font-semibold text-foreground">Total Applications</h3>
-                                <p className="text-3xl font-bold text-chart-3">{statistics.total_applications}</p>
-                            </CardContent>
-                        </Card>
+                    {/* Title and Buttons Section */}
+                    <div className="mb-6 flex items-center justify-between">
+                        <h1 className="text-2xl font-bold text-foreground">Units List</h1>
+                        <div className="flex items-center gap-2">
+                            {/* Export Button */}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCSVExport}
+                                disabled={isExporting || units.data.length === 0}
+                                className="flex items-center"
+                            >
+                                <Download className="mr-2 h-4 w-4" />
+                                {isExporting ? 'Exporting...' : 'Export CSV'}
+                            </Button>
+
+                            {/* Import Button */}
+                            {hasPermission('units.import') && (
+                                <Button onClick={() => setShowImportModal(true)} variant="outline" size="sm" className="flex items-center">
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Import CSV
+                                </Button>
+                            )}
+
+                            {hasAnyPermission(['units.store', 'units.create']) && (
+                                <Button onClick={() => setShowCreateDrawer(true)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Unit
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
-                    <Card>
+                    <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
-                            <div className="flex justify-between items-center">
-                                <CardTitle className="text-2xl">Units List</CardTitle>
-                                <div className="flex gap-2 items-center">
-                                    {/* Export Button */}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleCSVExport}
-                                        disabled={isExporting || units.data.length === 0}
-                                        className="flex items-center"
-                                    >
-                                        <Download className="h-4 w-4 mr-2" />
-                                        {isExporting ? 'Exporting...' : 'Export CSV'}
-                                    </Button>
-
-                                    {/* Import Button */}
-                                    {hasPermission('units.import') && (
-                                        <Button
-                                            onClick={() => setShowImportModal(true)}
-                                            variant="outline"
-                                            size="sm"
-                                            className="flex items-center"
+                            {/* Filters */}
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
+                                {/* City Filter with Autocomplete */}
+                                <div className="relative">
+                                    <Input
+                                        ref={cityInputRef}
+                                        type="text"
+                                        placeholder="City"
+                                        value={cityInput}
+                                        onChange={(e) => handleCityInputChange(e.target.value)}
+                                        onFocus={() => setShowCityDropdown(true)}
+                                        className="text-input-foreground bg-input pr-8"
+                                    />
+                                    <ChevronDown className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    
+                                    {showCityDropdown && filteredCities.length > 0 && (
+                                        <div
+                                            ref={cityDropdownRef}
+                                            className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
                                         >
-                                            <Upload className="h-4 w-4 mr-2" />
-                                            Import CSV
-                                        </Button>
-                                    )}
-
-                                    {hasAnyPermission(['units.store','units.create']) && (
-                                        <Link href={route('units.create')}>
-                                            <Button>
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Add Unit
-                                            </Button>
-                                        </Link>
+                                            {filteredCities.map((city) => (
+                                                <div
+                                                    key={city.id}
+                                                    className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                                    onClick={() => handleCitySelect(city.city)}
+                                                >
+                                                    {city.city}
+                                                </div>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
-                            </div>
-                            {/* Filters */}
-                            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mt-4">
-                                <Input
-                                    type="text"
-                                    placeholder="City"
-                                    value={searchFilters.city || ''}
-                                    onChange={(e) => handleFilterChange('city', e.target.value)}
-                                />
-                                <Input
-                                    type="text"
-                                    placeholder="Property"
-                                    value={searchFilters.property || ''}
-                                    onChange={(e) => handleFilterChange('property', e.target.value)}
-                                />
+
+                                {/* Property Filter with Autocomplete */}
+                                <div className="relative">
+                                    <Input
+                                        ref={propertyInputRef}
+                                        type="text"
+                                        placeholder="Property"
+                                        value={propertyInput}
+                                        onChange={(e) => handlePropertyInputChange(e.target.value)}
+                                        onFocus={() => setShowPropertyDropdown(true)}
+                                        className="text-input-foreground bg-input pr-8"
+                                    />
+                                    
+                                </div>
                                 <Input
                                     type="text"
                                     placeholder="Unit Name"
-                                    value={searchFilters.unit_name || ''}
-                                    onChange={(e) => handleFilterChange('unit_name', e.target.value)}
+                                    value={tempFilters.unit_name || ''}
+                                    onChange={(e) => handleTempFilterChange('unit_name', e.target.value)}
+                                    className="text-input-foreground bg-input"
                                 />
                                 <select
-                                    value={searchFilters.vacant || ''}
-                                    onChange={(e) => handleFilterChange('vacant', e.target.value)}
-                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                                    value={tempFilters.vacant || ''}
+                                    onChange={(e) => handleTempFilterChange('vacant', e.target.value)}
+                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <option value="">All Vacant Status</option>
                                     <option value="Yes">Vacant</option>
                                     <option value="No">Occupied</option>
                                 </select>
                                 <select
-                                    value={searchFilters.listed || ''}
-                                    onChange={(e) => handleFilterChange('listed', e.target.value)}
-                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                                    value={tempFilters.listed || ''}
+                                    onChange={(e) => handleTempFilterChange('listed', e.target.value)}
+                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <option value="">All Listed Status</option>
                                     <option value="Yes">Listed</option>
                                     <option value="No">Not Listed</option>
                                 </select>
-                                <select
-                                    value={searchFilters.insurance || ''}
-                                    onChange={(e) => handleFilterChange('insurance', e.target.value)}
-                                    className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-                                >
-                                    <option value="">All Insurance</option>
-                                    <option value="Yes">Has Insurance</option>
-                                    <option value="No">No Insurance</option>
-                                </select>
+                                <Button onClick={handleSearchClick} variant="default" className="flex items-center">
+                                    <Search className="mr-2 h-4 w-4" />
+                                    Search
+                                </Button>
                             </div>
                         </CardHeader>
-
                         <CardContent>
-                            <div className="overflow-x-auto">
-                                <Table>
+                            <div className="relative overflow-x-auto">
+                                <Table className="border-collapse rounded-md border border-border">
                                     <TableHeader>
-                                        <TableRow>
-                                            <TableHead>City</TableHead>
-                                            <TableHead>Property</TableHead>
-                                            <TableHead>Unit Name</TableHead>
-                                            <TableHead>Tenants</TableHead>
-                                            <TableHead>Lease Start</TableHead>
-                                            <TableHead>Lease End</TableHead>
-                                            <TableHead>Beds</TableHead>
-                                            <TableHead>Baths</TableHead>
-                                            <TableHead>Lease Status</TableHead>
-                                            <TableHead>Monthly Rent</TableHead>
-                                            <TableHead>Recurring Transaction</TableHead>
-                                            <TableHead>Utility Status</TableHead>
-                                            <TableHead>Account Number</TableHead>
-                                            <TableHead>Insurance</TableHead>
-                                            <TableHead>Insurance Exp.</TableHead>
-                                            <TableHead>Vacant</TableHead>
-                                            <TableHead>Listed</TableHead>
-                                            <TableHead>Applications</TableHead>
-                                            {hasAnyPermission(['units.show','units.edit','units.update','units.destroy']) && (
-                                            <TableHead>Actions</TableHead>
+                                        <TableRow className="border-border">
+                                            <TableHead className="sticky left-0 z-10 min-w-[120px] border border-border bg-muted text-muted-foreground">
+                                                City
+                                            </TableHead>
+                                            <TableHead className="sticky left-[120px] z-10 min-w-[120px] border border-border bg-muted text-muted-foreground">
+                                                Property
+                                            </TableHead>
+                                            <TableHead className="sticky left-[240px] z-10 min-w-[120px] border border-border bg-muted text-muted-foreground">
+                                                Unit Name
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Tenants</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Lease Start</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Lease End</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Beds</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Baths</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Lease Status</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Monthly Rent</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">
+                                                Recurring Transaction
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Utility Status</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Account Number</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Insurance</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Insurance Exp.</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Vacant</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Listed</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Applications</TableHead>
+                                            {hasAnyPermission(['units.show', 'units.edit', 'units.update', 'units.destroy']) && (
+                                                <TableHead className="border border-border bg-muted text-muted-foreground">Actions</TableHead>
                                             )}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {units.data.map((unit) => (
-                                            <TableRow key={unit.id} className="hover:bg-muted/50">
-                                                <TableCell className="font-medium">{unit.city}</TableCell>
-                                                <TableCell>{unit.property}</TableCell>
-                                                <TableCell>
-                                                    <span className="font-medium">{unit.unit_name}</span>
+                                            <TableRow key={unit.id} className="border-border hover:bg-muted/50">
+                                                <TableCell className="sticky left-0 z-10 min-w-[120px] border border-border bg-muted text-center font-medium text-foreground">
+                                                    {unit.city}
                                                 </TableCell>
-                                                <TableCell>{unit.tenants || '-'}</TableCell>
-                                                <TableCell>
-                                                    {unit.lease_start ? new Date(unit.lease_start).toLocaleDateString() : '-'}
+                                                <TableCell className="sticky left-[120px] z-10 min-w-[120px] border border-border bg-muted text-center font-medium text-foreground">
+                                                    {unit.property}
                                                 </TableCell>
-                                                <TableCell>
-                                                    {unit.lease_end ? new Date(unit.lease_end).toLocaleDateString() : '-'}
+                                                <TableCell className="sticky left-[240px] z-10 min-w-[120px] border border-border bg-muted text-center font-medium text-foreground">
+                                                    {unit.unit_name}
                                                 </TableCell>
-                                                <TableCell>{unit.count_beds || '-'}</TableCell>
-                                                <TableCell>{unit.count_baths || '-'}</TableCell>
-                                                <TableCell>{unit.lease_status || '-'}</TableCell>
-                                                <TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {unit.tenants || '-'}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {formatDateOnly(unit.lease_start)}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {formatDateOnly(unit.lease_end)}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {unit.count_beds || '-'}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {unit.count_baths || '-'}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {unit.lease_status || '-'}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     <span className="font-medium">{unit.formatted_monthly_rent}</span>
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     <div className="max-w-32 truncate" title={unit.recurring_transaction || ''}>
                                                         {unit.recurring_transaction || '-'}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     <div className="max-w-24 truncate" title={unit.utility_status || ''}>
                                                         {unit.utility_status || '-'}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     <div className="max-w-24 truncate" title={unit.account_number || ''}>
                                                         {unit.account_number || '-'}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="border border-border text-center">
                                                     {getInsuranceBadge(unit.insurance)}
                                                 </TableCell>
-                                                <TableCell>
-                                                    {unit.insurance_expiration_date ?
-                                                        new Date(unit.insurance_expiration_date).toLocaleDateString() : '-'}
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {unit.insurance_expiration_date ? formatDateOnly(unit.insurance_expiration_date) : '-'}
                                                 </TableCell>
-                                                <TableCell>
-                                                    {getVacantBadge(unit.vacant)}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {getListedBadge(unit.listed)}
-                                                </TableCell>
-                                                <TableCell>
+                                                <TableCell className="border border-border text-center">{getVacantBadge(unit.vacant)}</TableCell>
+                                                <TableCell className="border border-border text-center">{getListedBadge(unit.listed)}</TableCell>
+                                                <TableCell className="border border-border text-center">
                                                     <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
                                                         {unit.total_applications}
                                                     </Badge>
                                                 </TableCell>
-                                                {hasAnyPermission(['units.show','units.edit','units.update','units.destroy']) && (
-                                                <TableCell>
-                                                    <div className="flex gap-1">
-                                                        {hasPermission('units.show') && (
-                                                        <Link href={route('units.show', unit.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>)}
-                                                        {hasAllPermissions(['units.edit','units.update']) && (
-                                                        <Link href={route('units.edit', unit.id)}>
-                                                            <Button variant="outline" size="sm">
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        </Link>)}
-                                                        {hasPermission('units.destroy') && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(unit)}
-                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>)}
-                                                    </div>
-                                                </TableCell>)}
+                                                {hasAnyPermission(['units.show', 'units.edit', 'units.update', 'units.destroy']) && (
+                                                    <TableCell className="border border-border text-center">
+                                                        <div className="flex gap-1">
+                                                            {/* {hasPermission('units.show') && (
+                                                                <Link href={route('units.show', unit.id)}>
+                                                                    <Button variant="outline" size="sm">
+                                                                        <Eye className="h-4 w-4" />
+                                                                    </Button>
+                                                                </Link>
+                                                            )} */}
+                                                            {hasAllPermissions(['units.edit', 'units.update']) && (
+                                                                <Button variant="outline" size="sm" onClick={() => handleEdit(unit)}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {hasPermission('units.destroy') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => handleDelete(unit)}
+                                                                    className="border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                )}
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -764,7 +932,7 @@ export default function Index({ auth, units, statistics, filters, importStats }:
                             </div>
 
                             {units.data.length === 0 && (
-                                <div className="text-center py-8 text-muted-foreground">
+                                <div className="py-8 text-center text-muted-foreground">
                                     <p className="text-lg">No units found matching your criteria.</p>
                                     <p className="text-sm">Try adjusting your search filters.</p>
                                 </div>
@@ -779,12 +947,12 @@ export default function Index({ auth, units, statistics, filters, importStats }:
                                                 key={index}
                                                 onClick={() => link.url && router.get(link.url)}
                                                 disabled={!link.url}
-                                                className={`px-3 py-2 text-sm rounded ${
+                                                className={`rounded px-3 py-2 text-sm transition-colors ${
                                                     link.active
                                                         ? 'bg-primary text-primary-foreground'
                                                         : link.url
-                                                        ? 'bg-muted text-foreground hover:bg-accent'
-                                                        : 'bg-muted text-muted-foreground cursor-not-allowed'
+                                                          ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                                                          : 'cursor-not-allowed bg-muted text-muted-foreground'
                                                 }`}
                                                 dangerouslySetInnerHTML={{ __html: link.label }}
                                             />
@@ -794,13 +962,27 @@ export default function Index({ auth, units, statistics, filters, importStats }:
                             )}
 
                             {/* Total count */}
-                            <div className="mt-4 text-sm text-muted-foreground text-center">
+                            <div className="mt-4 text-center text-sm text-muted-foreground">
                                 Showing {units.from || 0} to {units.to || 0} of {units.total || 0} units
                             </div>
                         </CardContent>
                     </Card>
                 </div>
             </div>
+
+            {/* Unit Create Drawer */}
+            <UnitCreateDrawer open={showCreateDrawer} onOpenChange={setShowCreateDrawer} cities={cities || []} />
+
+            {/* Unit Edit Drawer */}
+            {selectedUnit && (
+                <UnitEditDrawer
+                    unit={selectedUnit}
+                    cities={cities || []}
+                    open={showEditDrawer}
+                    onOpenChange={setShowEditDrawer}
+                    onSuccess={handleEditSuccess}
+                />
+            )}
         </AppLayout>
     );
 }
