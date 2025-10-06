@@ -48,6 +48,7 @@ class RolePermissionSeeder extends Seeder
             'units.edit',
             'units.update',
             'units.destroy',
+            'units.import',
 
             //payments
             'payments.index',
@@ -135,6 +136,7 @@ class RolePermissionSeeder extends Seeder
             'tenants.edit',
             'tenants.update',
             'tenants.destroy',
+            'tenants.import',
 
 
             //payment-plans

@@ -12,28 +12,29 @@ class Tenant extends Model
     use HasFactory;
 
     protected $fillable = [
-        'first_name',
-        'last_name',
-        'email',
-        'phone',
-        'city',
-        'property',
-        'unit',
-        'lease_start',
-        'lease_end',
-        'monthly_rent',
-        'security_deposit',
-        'emergency_contact_name',
-        'emergency_contact_phone',
-        'emergency_contact_relationship',
-        'is_archived',
-    ];
+    'property_name',
+    'unit_number',
+    'first_name',
+    'last_name',
+    'street_address_line',
+    'login_email',
+    'alternate_email',
+    'mobile',
+    'emergency_phone',
+    'cash_or_check',
+    'has_insurance',
+    'sensitive_communication',
+    'has_assistance',
+    'assistance_amount',
+    'assistance_company',
+];
 
     protected $casts = [
-        'lease_start' => 'date',
-        'lease_end' => 'date',
-        'monthly_rent' => 'decimal:2',
-        'security_deposit' => 'decimal:2',
+        'cash_or_check' => 'string',
+        'has_insurance' => 'string',
+        'sensitive_communication' => 'string',
+        'has_assistance' => 'string',
+        'assistance_amount' => 'decimal:2',
         'is_archived' => 'boolean',
     ];
 

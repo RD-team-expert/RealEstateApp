@@ -5,18 +5,22 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTenantRequest;
 use App\Http\Requests\UpdateTenantRequest;
+use App\Http\Requests\ImportTenantsRequest;
 use App\Models\Tenant;
-use App\Models\Unit; // Add this import
+use App\Models\Unit;
 use App\Services\TenantService;
+use App\Services\TenantImportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Inertia\Inertia;
-use Inertia\Response;
+use Inertia\Response as InertiaResponse;
 
 class TenantController extends Controller
 {
     public function __construct(
-        protected TenantService $tenantService
+        protected TenantService $tenantService,
+        protected TenantImportService $tenantImportService
     ) {
         $this->middleware('permission:tenants.index')->only('index');
         $this->middleware('permission:tenants.create')->only('create');
@@ -25,9 +29,10 @@ class TenantController extends Controller
         $this->middleware('permission:tenants.edit')->only('edit');
         $this->middleware('permission:tenants.update')->only('update');
         $this->middleware('permission:tenants.destroy')->only('destroy');
+        $this->middleware('permission:tenants.import')->only(['import', 'processImport', 'downloadTemplate']);
     }
 
-    public function index(Request $request): Response
+    public function index(Request $request): InertiaResponse
     {
         $search = $request->get('search');
 
@@ -41,7 +46,7 @@ class TenantController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(): InertiaResponse
     {
         // Get units data for dropdowns
         $units = Unit::select('property', 'unit_name')
@@ -71,14 +76,14 @@ class TenantController extends Controller
             ->with('success', 'Tenant created successfully.');
     }
 
-    public function show(Tenant $tenant): Response
+    public function show(Tenant $tenant): InertiaResponse
     {
         return Inertia::render('Tenants/Show', [
             'tenant' => $tenant
         ]);
     }
 
-    public function edit(Tenant $tenant): Response
+    public function edit(Tenant $tenant): InertiaResponse
     {
         // Get units data for dropdowns
         $units = Unit::select('property', 'unit_name')
@@ -130,5 +135,62 @@ class TenantController extends Controller
             ->pluck('unit_name');
 
         return response()->json($units);
+    }
+
+    // Import functionality
+    public function import(): InertiaResponse
+    {
+        return Inertia::render('Tenants/Import');
+    }
+
+    public function processImport(ImportTenantsRequest $request): RedirectResponse
+    {
+        $skipDuplicates = $request->boolean('skip_duplicates', false);
+        
+        $result = $this->tenantImportService->importFromCsv(
+            $request->file('file'),
+            $skipDuplicates
+        );
+
+        if ($result['success']) {
+            $redirectResponse = redirect()
+                ->route('tenants.index')
+                ->with('success', $result['message']);
+
+            if (!empty($result['errors'])) {
+                $redirectResponse->with('import_errors', $result['errors']);
+            }
+
+            if (!empty($result['warnings'])) {
+                $redirectResponse->with('import_warnings', $result['warnings']);
+            }
+
+            return $redirectResponse->with('import_stats', $result['stats']);
+        } else {
+            return redirect()
+                ->back()
+                ->withErrors(['import' => $result['message']])
+                ->withInput()
+                ->with('import_errors', $result['errors']);
+        }
+    }
+
+    public function downloadTemplate(): Response
+    {
+        $headers = $this->tenantImportService->getImportTemplate();
+        
+        $filename = 'tenant_import_template.csv';
+        
+        $handle = fopen('php://temp', 'w+');
+        fputcsv($handle, $headers);
+        
+        rewind($handle);
+        $csvContent = stream_get_contents($handle);
+        fclose($handle);
+
+        return response($csvContent, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
     }
 }

@@ -70,6 +70,17 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/all-properties/import', [PropertyInfoWithoutInsuranceController::class, 'import'])
         ->name('all-properties.import.store');
 
+    // Import routes (add these)
+    Route::get('/units/import', [UnitController::class, 'showImport'])
+        ->name('units.import.show');
+    Route::post('/units/import', [UnitController::class, 'import'])
+        ->name('units.import');
+
+    // Additional tenant routes
+    Route::get('tenants/units-by-property', [TenantController::class, 'getUnitsByProperty'])->name('tenants.units-by-property');
+    Route::get('tenants/import/form', [TenantController::class, 'import'])->name('tenants.import');
+    Route::post('tenants/import/process', [TenantController::class, 'processImport'])->name('tenants.import.process');
+    Route::get('tenants/import/template', [TenantController::class, 'downloadTemplate'])->name('tenants.import.template');
 
     Route::resource('units', UnitController::class);
 
