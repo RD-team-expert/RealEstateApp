@@ -14,8 +14,11 @@ import React, { useState, useRef } from 'react';
 
 interface Props {
     units: string[];
-    cities: string[];
+    cities: Array<{ id: number; city: string }>;
     unitsByCity: Record<string, string[]>;
+    propertiesByCity: Record<string, string[]>;
+    unitsByProperty: Record<string, Record<string, string[]>>;
+    vendorsByCity: Record<string, string[]>;
     vendors: string[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -26,6 +29,9 @@ export default function VendorTaskTrackerCreateDrawer({
     units, 
     cities, 
     unitsByCity, 
+    propertiesByCity,
+    unitsByProperty,
+    vendorsByCity,
     vendors, 
     open, 
     onOpenChange, 
@@ -43,6 +49,8 @@ export default function VendorTaskTrackerCreateDrawer({
     const [taskSubmissionDateValidationError, setTaskSubmissionDateValidationError] = useState<string>('');
     const [assignedTasksValidationError, setAssignedTasksValidationError] = useState<string>('');
     const [availableUnits, setAvailableUnits] = useState<string[]>([]);
+    const [availableProperties, setAvailableProperties] = useState<string[]>([]);
+    const [availableVendors, setAvailableVendors] = useState<string[]>([]);
     
     const [calendarStates, setCalendarStates] = useState({
         task_submission_date: false,
@@ -56,6 +64,7 @@ export default function VendorTaskTrackerCreateDrawer({
 
     const { data, setData, post, processing, errors, reset } = useForm<VendorTaskTrackerFormData>({
         city: '',
+        property: '',
         task_submission_date: '',
         vendor_name: '',
         unit_name: '',
@@ -69,12 +78,43 @@ export default function VendorTaskTrackerCreateDrawer({
 
     const handleCityChange = (city: string) => {
         setData('city', city);
+        setData('property', '');
         setData('unit_name', '');
+        setData('vendor_name', '');
         setValidationError('');
         setUnitValidationError('');
+        setVendorValidationError('');
 
-        if (city && unitsByCity[city]) {
-            setAvailableUnits(unitsByCity[city]);
+        if (city) {
+            // Set available properties for the selected city
+            if (propertiesByCity[city]) {
+                setAvailableProperties(propertiesByCity[city]);
+            } else {
+                setAvailableProperties([]);
+            }
+
+            // Set available vendors for the selected city
+            if (vendorsByCity[city]) {
+                setAvailableVendors(vendorsByCity[city]);
+            } else {
+                setAvailableVendors([]);
+            }
+        } else {
+            setAvailableProperties([]);
+            setAvailableVendors([]);
+        }
+
+        // Clear units since property is reset
+        setAvailableUnits([]);
+    };
+
+    const handlePropertyChange = (property: string) => {
+        setData('property', property);
+        setData('unit_name', '');
+        setUnitValidationError('');
+
+        if (data.city && property && unitsByProperty[data.city] && unitsByProperty[data.city][property]) {
+            setAvailableUnits(unitsByProperty[data.city][property]);
         } else {
             setAvailableUnits([]);
         }
@@ -175,6 +215,8 @@ export default function VendorTaskTrackerCreateDrawer({
                 setTaskSubmissionDateValidationError('');
                 setAssignedTasksValidationError('');
                 setAvailableUnits([]);
+                setAvailableProperties([]);
+                setAvailableVendors([]);
                 onOpenChange(false);
                 onSuccess?.();
             },
@@ -189,6 +231,8 @@ export default function VendorTaskTrackerCreateDrawer({
         setTaskSubmissionDateValidationError('');
         setAssignedTasksValidationError('');
         setAvailableUnits([]);
+        setAvailableProperties([]);
+        setAvailableVendors([]);
         onOpenChange(false);
     };
 
@@ -211,14 +255,40 @@ export default function VendorTaskTrackerCreateDrawer({
                                     </SelectTrigger>
                                     <SelectContent>
                                         {cities?.map((city) => (
-                                            <SelectItem key={city} value={city}>
-                                                {city}
+                                            <SelectItem key={city.id} value={city.city}>
+                                                {city.city}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
                                 </Select>
                                 {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
                                 {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
+                            </div>
+
+                            {/* Property Information */}
+                            <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
+                                <div className="mb-2">
+                                    <Label htmlFor="property" className="text-base font-semibold">
+                                        Property *
+                                    </Label>
+                                </div>
+                                <Select
+                                    onValueChange={handlePropertyChange}
+                                    value={data.property}
+                                    disabled={!data.city}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select property" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableProperties?.map((property) => (
+                                            <SelectItem key={property} value={property}>
+                                                {property}
+                                            </SelectItem>
+                                        )) || []}
+                                    </SelectContent>
+                                </Select>
+                                {errors.property && <p className="mt-1 text-sm text-red-600">{errors.property}</p>}
                             </div>
 
                             <div className="rounded-lg border-l-4 border-l-green-500 p-4">
@@ -230,7 +300,7 @@ export default function VendorTaskTrackerCreateDrawer({
                                 <Select
                                     onValueChange={handleUnitChange}
                                     value={data.unit_name}
-                                    disabled={!data.city}
+                                    disabled={!data.property}
                                 >
                                     <SelectTrigger ref={unitRef}>
                                         <SelectValue placeholder="Select unit" />
@@ -254,12 +324,16 @@ export default function VendorTaskTrackerCreateDrawer({
                                         Vendor Name *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleVendorChange} value={data.vendor_name}>
+                                <Select 
+                                    onValueChange={handleVendorChange} 
+                                    value={data.vendor_name}
+                                    disabled={!data.city}
+                                >
                                     <SelectTrigger ref={vendorRef}>
                                         <SelectValue placeholder="Select vendor" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {vendors?.map((vendor) => (
+                                        {availableVendors?.map((vendor) => (
                                             <SelectItem key={vendor} value={vendor}>
                                                 {vendor}
                                             </SelectItem>

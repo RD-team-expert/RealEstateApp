@@ -15,8 +15,11 @@ import React, { useState, useRef, useEffect } from 'react';
 interface Props {
     task: VendorTaskTracker;
     units: string[];
-    cities: string[];
+    cities: Array<{ id: number; city: string }>;
     unitsByCity: Record<string, string[]>;
+    propertiesByCity: Record<string, string[]>;
+    unitsByProperty: Record<string, Record<string, string[]>>;
+    vendorsByCity: Record<string, string[]>;
     vendors: string[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -28,6 +31,9 @@ export default function VendorTaskTrackerEditDrawer({
     units, 
     cities, 
     unitsByCity, 
+    propertiesByCity,
+    unitsByProperty,
+    vendorsByCity,
     vendors, 
     open, 
     onOpenChange, 
@@ -45,6 +51,54 @@ export default function VendorTaskTrackerEditDrawer({
     const [taskSubmissionDateValidationError, setTaskSubmissionDateValidationError] = useState<string>('');
     const [assignedTasksValidationError, setAssignedTasksValidationError] = useState<string>('');
     const [availableUnits, setAvailableUnits] = useState<string[]>([]);
+    const [availableProperties, setAvailableProperties] = useState<string[]>([]);
+    const [availableVendors, setAvailableVendors] = useState<string[]>([]);
+    
+    // Helper function to safely parse dates
+    const safeParseDateString = (dateString: string | null | undefined): Date | undefined => {
+        if (!dateString || dateString.trim() === '') {
+            return undefined;
+        }
+
+        try {
+            // Grab YYYY-MM-DD from the front (works for "2025-10-01" and "2025-10-01T00:00:00Z")
+            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateString);
+            if (m) {
+                const [, y, mo, d] = m;
+                // Construct a local calendar date (no timezone shifting)
+                const date = new Date(Number(y), Number(mo) - 1, Number(d));
+                if (isValid(date)) {
+                    return date;
+                }
+            }
+            
+            // Fallback: Try parsing as YYYY-MM-DD format with date-fns
+            const parsedDate = parse(dateString, 'yyyy-MM-dd', new Date(2000, 0, 1));
+            if (isValid(parsedDate)) {
+                return parsedDate;
+            }
+            
+            return undefined;
+        } catch (error) {
+            console.warn('Failed to parse date:', dateString, error);
+            return undefined;
+        }
+    };
+
+    // Helper function to safely format dates for display
+    const safeFormatDate = (dateString: string | null | undefined): string => {
+        const parsedDate = safeParseDateString(dateString);
+        if (!parsedDate) {
+            return 'Pick a date';
+        }
+
+        try {
+            return format(parsedDate, 'PPP');
+        } catch (error) {
+            console.warn('Failed to format date:', dateString, error);
+            return 'Pick a date';
+        }
+    };
     
     const [calendarStates, setCalendarStates] = useState({
         task_submission_date: false,
@@ -58,6 +112,7 @@ export default function VendorTaskTrackerEditDrawer({
 
     const { data, setData, put, processing, errors, reset } = useForm<VendorTaskTrackerFormData>({
         city: task.city ?? '',
+        property: task.property ?? '',
         task_submission_date: task.task_submission_date ?? '',
         vendor_name: task.vendor_name ?? '',
         unit_name: task.unit_name ?? '',
@@ -71,21 +126,76 @@ export default function VendorTaskTrackerEditDrawer({
 
     // Initialize available units when component mounts or task changes
     useEffect(() => {
-        if (task.city && unitsByCity[task.city]) {
-            setAvailableUnits(unitsByCity[task.city]);
+        if (task.city) {
+            // Set available properties for the selected city
+            if (propertiesByCity[task.city]) {
+                setAvailableProperties(propertiesByCity[task.city]);
+            } else {
+                setAvailableProperties([]);
+            }
+
+            // Set available vendors for the selected city
+            if (vendorsByCity[task.city]) {
+                setAvailableVendors(vendorsByCity[task.city]);
+            } else {
+                setAvailableVendors([]);
+            }
+
+            // Set available units based on city and property
+            if (task.property && unitsByProperty[task.city] && unitsByProperty[task.city][task.property]) {
+                setAvailableUnits(unitsByProperty[task.city][task.property]);
+            } else if (unitsByCity[task.city]) {
+                // Fallback to old behavior if property is not set
+                setAvailableUnits(unitsByCity[task.city]);
+            } else {
+                setAvailableUnits([]);
+            }
         } else {
+            setAvailableProperties([]);
+            setAvailableVendors([]);
             setAvailableUnits([]);
         }
-    }, [task.city, unitsByCity]);
+    }, [task.city, task.property, unitsByCity, propertiesByCity, unitsByProperty, vendorsByCity]);
 
     const handleCityChange = (city: string) => {
         setData('city', city);
+        setData('property', '');
         setData('unit_name', '');
+        setData('vendor_name', '');
         setValidationError('');
         setUnitValidationError('');
+        setVendorValidationError('');
 
-        if (city && unitsByCity[city]) {
-            setAvailableUnits(unitsByCity[city]);
+        if (city) {
+            // Set available properties for the selected city
+            if (propertiesByCity[city]) {
+                setAvailableProperties(propertiesByCity[city]);
+            } else {
+                setAvailableProperties([]);
+            }
+
+            // Set available vendors for the selected city
+            if (vendorsByCity[city]) {
+                setAvailableVendors(vendorsByCity[city]);
+            } else {
+                setAvailableVendors([]);
+            }
+        } else {
+            setAvailableProperties([]);
+            setAvailableVendors([]);
+        }
+
+        // Clear units since property is reset
+        setAvailableUnits([]);
+    };
+
+    const handlePropertyChange = (property: string) => {
+        setData('property', property);
+        setData('unit_name', '');
+        setUnitValidationError('');
+
+        if (data.city && property && unitsByProperty[data.city] && unitsByProperty[data.city][property]) {
+            setAvailableUnits(unitsByProperty[data.city][property]);
         } else {
             setAvailableUnits([]);
         }
@@ -236,14 +346,40 @@ export default function VendorTaskTrackerEditDrawer({
                                     </SelectTrigger>
                                     <SelectContent>
                                         {cities?.map((city) => (
-                                            <SelectItem key={city} value={city}>
-                                                {city}
+                                            <SelectItem key={city.id} value={city.city}>
+                                                {city.city}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
                                 </Select>
                                 {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
                                 {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
+                            </div>
+
+                            {/* Property Information */}
+                            <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
+                                <div className="mb-2">
+                                    <Label htmlFor="property" className="text-base font-semibold">
+                                        Property *
+                                    </Label>
+                                </div>
+                                <Select
+                                    onValueChange={handlePropertyChange}
+                                    value={data.property || undefined}
+                                    disabled={!data.city}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select property" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableProperties?.map((property) => (
+                                            <SelectItem key={property} value={property}>
+                                                {property}
+                                            </SelectItem>
+                                        )) || []}
+                                    </SelectContent>
+                                </Select>
+                                {errors.property && <p className="mt-1 text-sm text-red-600">{errors.property}</p>}
                             </div>
 
                             <div className="rounded-lg border-l-4 border-l-green-500 p-4">
@@ -255,7 +391,7 @@ export default function VendorTaskTrackerEditDrawer({
                                 <Select
                                     onValueChange={handleUnitChange}
                                     value={data.unit_name || undefined}
-                                    disabled={!data.city}
+                                    disabled={!data.property}
                                 >
                                     <SelectTrigger ref={unitRef}>
                                         <SelectValue placeholder="Select unit" />
@@ -279,12 +415,16 @@ export default function VendorTaskTrackerEditDrawer({
                                         Vendor Name *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleVendorChange} value={data.vendor_name || undefined}>
+                                <Select 
+                                    onValueChange={handleVendorChange} 
+                                    value={data.vendor_name || undefined}
+                                    disabled={!data.city}
+                                >
                                     <SelectTrigger ref={vendorRef}>
                                         <SelectValue placeholder="Select vendor" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {vendors?.map((vendor) => (
+                                        {availableVendors?.map((vendor) => (
                                             <SelectItem key={vendor} value={vendor}>
                                                 {vendor}
                                             </SelectItem>
@@ -314,27 +454,13 @@ export default function VendorTaskTrackerEditDrawer({
                                             className={`w-full justify-start text-left font-normal ${!data.task_submission_date && 'text-muted-foreground'}`}
                                         >
                                             <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.task_submission_date ? (() => {
-                                                try {
-                                                    const parsedDate = parse(data.task_submission_date, 'yyyy-MM-dd', new Date());
-                                                    return isValid(parsedDate) ? format(parsedDate, 'PPP') : 'Invalid date';
-                                                } catch {
-                                                    return 'Invalid date';
-                                                }
-                                            })() : 'Pick a date'}
+                                            {safeFormatDate(data.task_submission_date)}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
                                         <Calendar
                                             mode="single"
-                                            selected={data.task_submission_date ? (() => {
-                                                try {
-                                                    const parsedDate = parse(data.task_submission_date, 'yyyy-MM-dd', new Date());
-                                                    return isValid(parsedDate) ? parsedDate : undefined;
-                                                } catch {
-                                                    return undefined;
-                                                }
-                                            })() : undefined}
+                                            selected={safeParseDateString(data.task_submission_date)}
                                             onSelect={(date) => {
                                                 if (date) {
                                                     setData('task_submission_date', format(date, 'yyyy-MM-dd'));
@@ -367,27 +493,13 @@ export default function VendorTaskTrackerEditDrawer({
                                             className={`w-full justify-start text-left font-normal ${!data.any_scheduled_visits && 'text-muted-foreground'}`}
                                         >
                                             <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.any_scheduled_visits ? (() => {
-                                                try {
-                                                    const parsedDate = parse(data.any_scheduled_visits, 'yyyy-MM-dd', new Date());
-                                                    return isValid(parsedDate) ? format(parsedDate, 'PPP') : 'Invalid date';
-                                                } catch {
-                                                    return 'Invalid date';
-                                                }
-                                            })() : 'Pick a date'}
+                                            {safeFormatDate(data.any_scheduled_visits)}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
                                         <Calendar
                                             mode="single"
-                                            selected={data.any_scheduled_visits ? (() => {
-                                                try {
-                                                    const parsedDate = parse(data.any_scheduled_visits, 'yyyy-MM-dd', new Date());
-                                                    return isValid(parsedDate) ? parsedDate : undefined;
-                                                } catch {
-                                                    return undefined;
-                                                }
-                                            })() : undefined}
+                                            selected={safeParseDateString(data.any_scheduled_visits)}
                                             onSelect={(date) => {
                                                 if (date) {
                                                     setData('any_scheduled_visits', format(date, 'yyyy-MM-dd'));
@@ -418,27 +530,13 @@ export default function VendorTaskTrackerEditDrawer({
                                             className={`w-full justify-start text-left font-normal ${!data.task_ending_date && 'text-muted-foreground'}`}
                                         >
                                             <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.task_ending_date ? (() => {
-                                                try {
-                                                    const parsedDate = parse(data.task_ending_date, 'yyyy-MM-dd', new Date());
-                                                    return isValid(parsedDate) ? format(parsedDate, 'PPP') : 'Invalid date';
-                                                } catch {
-                                                    return 'Invalid date';
-                                                }
-                                            })() : 'Pick a date'}
+                                            {safeFormatDate(data.task_ending_date)}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
                                         <Calendar
                                             mode="single"
-                                            selected={data.task_ending_date ? (() => {
-                                                try {
-                                                    const parsedDate = parse(data.task_ending_date, 'yyyy-MM-dd', new Date());
-                                                    return isValid(parsedDate) ? parsedDate : undefined;
-                                                } catch {
-                                                    return undefined;
-                                                }
-                                            })() : undefined}
+                                            selected={safeParseDateString(data.task_ending_date)}
                                             onSelect={(date) => {
                                                 if (date) {
                                                     setData('task_ending_date', format(date, 'yyyy-MM-dd'));

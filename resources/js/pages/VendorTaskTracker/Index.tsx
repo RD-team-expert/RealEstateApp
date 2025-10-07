@@ -1,56 +1,89 @@
-import React, { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
-import { VendorTaskTracker } from '@/types/vendor-task-tracker';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/hooks/usePermissions';
-import { type BreadcrumbItem } from '@/types';
+import AppLayout from '@/layouts/app-layout';
+import { VendorTaskTracker } from '@/types/vendor-task-tracker';
+import { Head, Link, router } from '@inertiajs/react';
+import { format } from 'date-fns';
+import { ChevronDown, Download, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import VendorTaskTrackerCreateDrawer from './VendorTaskTrackerCreateDrawer';
 import VendorTaskTrackerEditDrawer from './VendorTaskTrackerEditDrawer';
 
+/**
+ * Always treat the value as a date-only (no time, no TZ).
+ * Works for "YYYY-MM-DD" and for ISO strings by grabbing the first 10 chars.
+ */
+const formatDateOnly = (value?: string | null, fallback = '-'): string => {
+    if (!value) return fallback;
+
+    // Grab YYYY-MM-DD from the front (works for "2025-10-01" and "2025-10-01T00:00:00Z")
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    if (!m) return fallback;
+
+    const [, y, mo, d] = m;
+    // Construct a local calendar date (no timezone shifting)
+    const date = new Date(Number(y), Number(mo) - 1, Number(d));
+    return format(date, 'P'); // localized short date (or use 'MM/dd/yyyy' if you want fixed format)
+};
+
 // Export utility functions
-const exportToCSV = (data: VendorTaskTracker[], filename: string = 'vendor-tasks.csv') => {
+const exportToCSV = (
+    data: VendorTaskTracker[],
+    filename: string = 'vendor-tasks.csv',
+    properties: Array<{ id: number; property_name: string; city: { city: string } }>,
+    units: string[],
+    unitsByProperty: Record<string, Record<string, string[]>>,
+) => {
     const headers = [
         'ID',
         'City',
-        'Submission Date',
-        'Vendor Name',
+        'Property',
         'Unit Name',
+        'Vendor Name',
+        'Submission Date',
         'Assigned Tasks',
         'Scheduled Visits',
         'Task End Date',
         'Notes',
         'Status',
-        'Urgent'
+        'Urgent',
     ];
 
     const csvData = [
         headers.join(','),
-        ...data.map(task => [
-            task.id,
-            `"${task.city}"`,
-            `"${new Date(task.task_submission_date).toLocaleDateString()}"`,
-            `"${task.vendor_name}"`,
-            `"${task.unit_name}"`,
-            `"${(task.assigned_tasks || '').replace(/"/g, '""')}"`,
-            `"${task.any_scheduled_visits ? new Date(task.any_scheduled_visits).toLocaleDateString() : 'N/A'}"`,
-            `"${task.task_ending_date ? new Date(task.task_ending_date).toLocaleDateString() : 'N/A'}"`,
-            `"${(task.notes || '').replace(/"/g, '""')}"`,
-            `"${task.status || ''}"`,
-            `"${task.urgent}"`
-        ].join(','))
+        ...data.map((task) => {
+            // Find property for this task
+            const property =
+                properties.find((p) =>
+                    units.some(
+                        (u) =>
+                            u === task.unit_name &&
+                            p.property_name &&
+                            unitsByProperty[task.city] &&
+                            unitsByProperty[task.city][p.property_name] &&
+                            unitsByProperty[task.city][p.property_name].includes(task.unit_name),
+                    ),
+                )?.property_name || '';
+
+            return [
+                task.id,
+                `"${task.city}"`,
+                `"${property}"`,
+                `"${task.unit_name}"`,
+                `"${task.vendor_name}"`,
+                `"${formatDateOnly(task.task_submission_date, '')}"`,
+                `"${(task.assigned_tasks || '').replace(/"/g, '""')}"`,
+                `"${formatDateOnly(task.any_scheduled_visits, '')}"`,
+                `"${formatDateOnly(task.task_ending_date, '')}"`,
+                `"${(task.notes || '').replace(/"/g, '""')}"`,
+                `"${task.status || ''}"`,
+                `"${task.urgent}"`,
+            ].join(',');
+        }),
     ].join('\n');
 
     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
@@ -67,28 +100,101 @@ const exportToCSV = (data: VendorTaskTracker[], filename: string = 'vendor-tasks
     URL.revokeObjectURL(url);
 };
 
-
-
 interface Props {
     tasks: {
         data: VendorTaskTracker[];
         links: any[];
         meta: any;
     };
-    search: string | null;
+    filters: {
+        search?: string;
+        city?: string;
+        property?: string;
+        unit_name?: string;
+    };
     units: string[];
-    cities: string[];
+    cities: Array<{ id: number; city: string }>;
+    properties: Array<{ id: number; property_name: string; city: { city: string } }>;
     unitsByCity: Record<string, string[]>;
+    propertiesByCity: Record<string, string[]>;
+    unitsByProperty: Record<string, Record<string, string[]>>;
+    vendorsByCity: Record<string, string[]>;
     vendors: string[];
 }
 
-export default function Index({ tasks, search, units, cities, unitsByCity, vendors }: Props) {
+export default function Index({
+    tasks,
+    filters,
+    units,
+    cities,
+    properties,
+    unitsByCity,
+    propertiesByCity,
+    unitsByProperty,
+    vendorsByCity,
+    vendors,
+}: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
-    const [searchTerm, setSearchTerm] = useState(search || '');
+
+    // Filter states
+    const [tempFilters, setTempFilters] = useState(filters);
     const [isExporting, setIsExporting] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<VendorTaskTracker | null>(null);
+
+    // City autocomplete states
+    const [cityInput, setCityInput] = useState(filters.city || '');
+    const [showCityDropdown, setShowCityDropdown] = useState(false);
+    const [filteredCities, setFilteredCities] = useState<Array<{ id: number; city: string }>>([]);
+    const cityInputRef = useRef<HTMLInputElement>(null);
+    const cityDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Property autocomplete states
+    const [propertyInput, setPropertyInput] = useState(filters.property || '');
+    const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
+    const propertyInputRef = useRef<HTMLInputElement>(null);
+    const propertyDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Filter cities based on input
+    useEffect(() => {
+        if (!cities) return;
+
+        if (cityInput.trim() === '') {
+            setFilteredCities(cities);
+        } else {
+            const filtered = cities.filter((city) => city.city.toLowerCase().includes(cityInput.toLowerCase()));
+            setFilteredCities(filtered);
+        }
+    }, [cityInput, cities]);
+
+    // Filter properties based on input
+    const filteredProperties = properties?.filter((property) => property.property_name.toLowerCase().includes(propertyInput.toLowerCase())) || [];
+
+    // Handle clicks outside dropdowns
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                cityDropdownRef.current &&
+                !cityDropdownRef.current.contains(event.target as Node) &&
+                cityInputRef.current &&
+                !cityInputRef.current.contains(event.target as Node)
+            ) {
+                setShowCityDropdown(false);
+            }
+            if (
+                propertyDropdownRef.current &&
+                !propertyDropdownRef.current.contains(event.target as Node) &&
+                propertyInputRef.current &&
+                !propertyInputRef.current.contains(event.target as Node)
+            ) {
+                setShowPropertyDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleDrawerSuccess = () => {
         // Refresh the page data after successful creation
@@ -107,9 +213,53 @@ export default function Index({ tasks, search, units, cities, unitsByCity, vendo
         setIsEditDrawerOpen(true);
     };
 
+    const handleTempFilterChange = (key: keyof typeof tempFilters, value: string) => {
+        setTempFilters({ ...tempFilters, [key]: value });
+    };
+
+    const handleCitySelect = (city: string) => {
+        setCityInput(city);
+        handleTempFilterChange('city', city);
+        setShowCityDropdown(false);
+    };
+
+    const handleCityInputChange = (value: string) => {
+        setCityInput(value);
+        handleTempFilterChange('city', value);
+        setShowCityDropdown(true);
+    };
+
+    const handlePropertyInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setPropertyInput(value);
+        handleTempFilterChange('property', value);
+        setShowPropertyDropdown(value.length > 0);
+    };
+
+    const handlePropertySelect = (property: { property_name: string }) => {
+        setPropertyInput(property.property_name);
+        handleTempFilterChange('property', property.property_name);
+        setShowPropertyDropdown(false);
+    };
+
+    const handleSearchClick = () => {
+        // Convert filters to a plain object
+        const filterParams: Record<string, string> = {};
+        Object.entries(tempFilters).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                filterParams[key] = String(value);
+            }
+        });
+
+        router.get(route('vendor-task-tracker.index'), filterParams, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        router.get(route('vendor-task-tracker.index'), { search: searchTerm }, { preserveState: true });
+        handleSearchClick();
     };
 
     const handleDelete = (task: VendorTaskTracker) => {
@@ -127,7 +277,7 @@ export default function Index({ tasks, search, units, cities, unitsByCity, vendo
         setIsExporting(true);
         try {
             const filename = `vendor-tasks-${new Date().toISOString().split('T')[0]}.csv`;
-            exportToCSV(tasks.data, filename);
+            exportToCSV(tasks.data, filename, properties, units, unitsByProperty);
         } catch (error) {
             console.error('Export failed:', error);
             alert('Export failed. Please try again.');
@@ -136,129 +286,225 @@ export default function Index({ tasks, search, units, cities, unitsByCity, vendo
         }
     };
 
-
-
     const getUrgentBadge = (urgent: 'Yes' | 'No') => {
-        return (
-            <Badge variant={urgent === 'Yes' ? 'destructive' : 'secondary'}>
-                {urgent}
-            </Badge>
-        );
+        return <Badge variant={urgent === 'Yes' ? 'destructive' : 'secondary'}>{urgent}</Badge>;
     };
 
     const getStatusBadge = (status: string | null) => {
         if (!status) return null;
 
-        const variant = status.toLowerCase().includes('completed') ? 'default' :
-                      status.toLowerCase().includes('pending') ? 'secondary' : 'outline';
+        const variant = status.toLowerCase().includes('completed') ? 'default' : status.toLowerCase().includes('pending') ? 'secondary' : 'outline';
 
         return <Badge variant={variant}>{status}</Badge>;
     };
 
     return (
-        <AppLayout >
+        <AppLayout>
             <Head title="Vendor Task Tracker" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <Card>
+            <div className="min-h-screen bg-background py-12 text-foreground transition-colors">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    {/* Title and Buttons Section */}
+                    <div className="mb-6 flex items-center justify-between">
+                        <h1 className="text-2xl font-bold text-foreground">Vendor Task Tracker</h1>
+                        <div className="flex items-center gap-2">
+                            {/* Export Button */}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCSVExport}
+                                disabled={isExporting || tasks.data.length === 0}
+                                className="flex items-center"
+                            >
+                                <Download className="mr-2 h-4 w-4" />
+                                {isExporting ? 'Exporting...' : 'Export CSV'}
+                            </Button>
+
+                            {hasAllPermissions(['vendor-task-tracker.create', 'vendor-task-tracker.store']) && (
+                                <Button onClick={() => setIsDrawerOpen(true)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Task
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+
+                    <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
-                            <div className="flex justify-between items-center">
-                                <CardTitle className="text-2xl text-foreground">Vendor Task Tracker</CardTitle>
-                                <div className="flex gap-2 items-center">
-                                    {/* Export Buttons */}
-                                    <div className="flex gap-1">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleCSVExport}
-                                            disabled={isExporting || tasks.data.length === 0}
-                                            className="flex items-center"
+                            {/* Filters */}
+                            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-5">
+                                {/* City Filter with Autocomplete */}
+                                <div className="relative">
+                                    <Input
+                                        ref={cityInputRef}
+                                        type="text"
+                                        placeholder="City"
+                                        value={cityInput}
+                                        onChange={(e) => handleCityInputChange(e.target.value)}
+                                        onFocus={() => setShowCityDropdown(true)}
+                                        className="text-input-foreground bg-input pr-8"
+                                    />
+                                    <ChevronDown className="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                                    {showCityDropdown && filteredCities.length > 0 && (
+                                        <div
+                                            ref={cityDropdownRef}
+                                            className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
                                         >
-                                            <Download className="h-4 w-4 mr-2" />
-                                            {isExporting ? 'Exporting...' : 'Export CSV'}
-                                        </Button>
-
-                                    </div>
-
-                                    {hasAllPermissions(['vendor-task-tracker.create', 'vendor-task-tracker.store']) && (
-                                        <Button onClick={() => setIsDrawerOpen(true)}>
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            Add Task
-                                        </Button>
+                                            {filteredCities.map((city) => (
+                                                <div
+                                                    key={city.id}
+                                                    className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                                    onClick={() => handleCitySelect(city.city)}
+                                                >
+                                                    {city.city}
+                                                </div>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
-                            </div>
 
-                            <form onSubmit={handleSearch} className="flex gap-2 mt-4">
-                                <div className="flex-1">
+                                {/* Property Filter with Autocomplete */}
+                                <div className="relative">
                                     <Input
+                                        ref={propertyInputRef}
                                         type="text"
-                                        placeholder="Search tasks by city, vendor, unit, or status..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="bg-background text-foreground placeholder:text-muted-foreground"
+                                        placeholder="Property"
+                                        value={propertyInput}
+                                        onChange={handlePropertyInputChange}
+                                        onFocus={() => setShowPropertyDropdown(true)}
+                                        className="text-input-foreground bg-input pr-8"
                                     />
+                                    <ChevronDown className="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                                    {showPropertyDropdown && filteredProperties.length > 0 && (
+                                        <div
+                                            ref={propertyDropdownRef}
+                                            className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
+                                        >
+                                            {filteredProperties.map((property) => (
+                                                <div
+                                                    key={property.id}
+                                                    className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                                    onClick={() => handlePropertySelect(property)}
+                                                >
+                                                    {property.property_name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                                <Button type="submit">
-                                    <Search className="h-4 w-4" />
+
+                                {/* Unit Name Filter */}
+                                <Input
+                                    type="text"
+                                    placeholder="Unit Name"
+                                    value={tempFilters.unit_name || ''}
+                                    onChange={(e) => handleTempFilterChange('unit_name', e.target.value)}
+                                    className="text-input-foreground bg-input"
+                                />
+
+                                {/* Search Filter */}
+                                <Input
+                                    type="text"
+                                    placeholder="vendor"
+                                    value={tempFilters.search || ''}
+                                    onChange={(e) => handleTempFilterChange('search', e.target.value)}
+                                    className="text-input-foreground bg-input"
+                                />
+
+                                {/* Search Button */}
+                                <Button onClick={handleSearchClick} variant="default" className="flex items-center">
+                                    <Search className="mr-2 h-4 w-4" />
+                                    Search
                                 </Button>
-                            </form>
+                            </div>
                         </CardHeader>
 
                         <CardContent>
-                            <div className="overflow-x-auto">
-                                <Table>
+                            <div className="relative overflow-x-auto">
+                                <Table className="border-collapse rounded-md border border-border">
                                     <TableHeader>
                                         <TableRow className="border-border">
-                                            <TableHead className="text-muted-foreground">City</TableHead>
-                                            <TableHead className="text-muted-foreground">Submission Date</TableHead>
-                                            <TableHead className="text-muted-foreground">Vendor Name</TableHead>
-                                            <TableHead className="text-muted-foreground">Unit Name</TableHead>
-                                            <TableHead className="text-muted-foreground">Assigned Tasks</TableHead>
-                                            <TableHead className="text-muted-foreground">Scheduled Visits</TableHead>
-                                            <TableHead className="text-muted-foreground">Task End Date</TableHead>
-                                            <TableHead className="text-muted-foreground">Note</TableHead>
-                                            <TableHead className="text-muted-foreground">Status</TableHead>
-                                            <TableHead className="text-muted-foreground">Urgent</TableHead>
-                                            {hasAnyPermission(['vendor-task-tracker.show', 'vendor-task-tracker.edit', 'vendor-task-tracker.update', 'vendor-task-tracker.destroy']) && (
-                                                <TableHead className="text-muted-foreground">Actions</TableHead>
-                                            )}
+                                            <TableHead className="sticky left-0 z-10 w-[80px] border border-border bg-muted text-muted-foreground">
+                                                City
+                                            </TableHead>
+                                            <TableHead className="sticky w-[140px] left-[80px] z-10 border border-border bg-muted text-muted-foreground">
+                                                Property
+                                            </TableHead>
+                                            <TableHead className="sticky w-[80px] left-[220px] z-10 border border-border bg-muted text-muted-foreground">
+                                                Unit Name
+                                            </TableHead>
+                                            <TableHead className="sticky left-[300px] z-10 border border-border bg-muted text-muted-foreground">
+                                                Vendor Name
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Submission Date</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Assigned Tasks</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Scheduled Visits</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Task End Date</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Note</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Status</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Urgent</TableHead>
+                                            {hasAnyPermission([
+                                                'vendor-task-tracker.show',
+                                                'vendor-task-tracker.edit',
+                                                'vendor-task-tracker.update',
+                                                'vendor-task-tracker.destroy',
+                                            ]) && <TableHead className="border border-border bg-muted text-muted-foreground">Actions</TableHead>}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {tasks.data.map((task) => (
-                                            <TableRow key={task.id} className="hover:bg-muted/50 border-border">
-                                                <TableCell className="font-medium text-foreground">{task.city}</TableCell>
-                                                <TableCell className="text-foreground">
-                                                    {new Date(task.task_submission_date).toLocaleDateString()}
+                                            <TableRow key={task.id} className="border-border hover:bg-muted/50">
+                                                <TableCell className="sticky w-[80px] left-0 z-10 border border-border bg-muted text-muted-foreground">
+                                                    {task.city}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">{task.vendor_name}</TableCell>
-                                                <TableCell className="text-foreground">{task.unit_name}</TableCell>
-                                                <TableCell className="max-w-xs truncate text-foreground">
-                                                    {task.assigned_tasks}
+                                                <TableCell className="sticky w-[140px] left-[80px] z-10 border border-border bg-muted text-muted-foreground">
+                                                    {properties.find((p) =>
+                                                        units.some(
+                                                            (u) =>
+                                                                u === task.unit_name &&
+                                                                p.property_name &&
+                                                                unitsByProperty[task.city] &&
+                                                                unitsByProperty[task.city][p.property_name] &&
+                                                                unitsByProperty[task.city][p.property_name].includes(task.unit_name),
+                                                        ),
+                                                    )?.property_name || '-'}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">
-                                                    {task.any_scheduled_visits
-                                                        ? new Date(task.any_scheduled_visits).toLocaleDateString()
-                                                        : 'N/A'
-                                                    }
+                                                <TableCell className="sticky w-[80px] left-[220px] z-10 border border-border bg-muted text-muted-foreground">
+                                                    {task.unit_name}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">
-                                                    {task.task_ending_date
-                                                        ? new Date(task.task_ending_date).toLocaleDateString()
-                                                        : 'N/A'
-                                                    }
+                                                <TableCell className="sticky left-[300px] z-10 border border-border bg-muted text-muted-foreground">
+                                                    {task.vendor_name}
                                                 </TableCell>
-                                                <TableCell className="font-medium text-foreground">{task.notes}</TableCell>
-                                                <TableCell>
-                                                    {getStatusBadge(task.status)}
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {formatDateOnly(task.task_submission_date)}
                                                 </TableCell>
-                                                <TableCell>
-                                                    {getUrgentBadge(task.urgent)}
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    <div className="max-w-32 truncate" title={task.assigned_tasks || ''}>
+                                                        {task.assigned_tasks}
+                                                    </div>
                                                 </TableCell>
-                                                {hasAnyPermission(['vendor-task-tracker.show', 'vendor-task-tracker.edit', 'vendor-task-tracker.update', 'vendor-task-tracker.destroy']) && (
-                                                    <TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {formatDateOnly(task.any_scheduled_visits)}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {formatDateOnly(task.task_ending_date)}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    <div className="max-w-24 truncate" title={task.notes || ''}>
+                                                        {task.notes}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center">{getStatusBadge(task.status)}</TableCell>
+                                                <TableCell className="border border-border text-center">{getUrgentBadge(task.urgent)}</TableCell>
+                                                {hasAnyPermission([
+                                                    'vendor-task-tracker.show',
+                                                    'vendor-task-tracker.edit',
+                                                    'vendor-task-tracker.update',
+                                                    'vendor-task-tracker.destroy',
+                                                ]) && (
+                                                    <TableCell className="border border-border text-center">
                                                         <div className="flex gap-1">
                                                             {hasPermission('vendor-task-tracker.show') && (
                                                                 <Link href={route('vendor-task-tracker.show', task.id)}>
@@ -268,20 +514,16 @@ export default function Index({ tasks, search, units, cities, unitsByCity, vendo
                                                                 </Link>
                                                             )}
                                                             {hasAllPermissions(['vendor-task-tracker.edit', 'vendor-task-tracker.update']) && (
-                                                <Button 
-                                                    variant="outline" 
-                                                    size="sm"
-                                                    onClick={() => handleEditTask(task)}
-                                                >
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                            )}
+                                                                <Button variant="outline" size="sm" onClick={() => handleEditTask(task)}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
                                                             {hasPermission('vendor-task-tracker.destroy') && (
                                                                 <Button
                                                                     variant="outline"
                                                                     size="sm"
                                                                     onClick={() => handleDelete(task)}
-                                                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                    className="border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                                                 >
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </Button>
@@ -296,18 +538,16 @@ export default function Index({ tasks, search, units, cities, unitsByCity, vendo
                             </div>
 
                             {tasks.data.length === 0 && (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    <p className="text-lg">No tasks found.</p>
-                                    <p className="text-sm">Try adjusting your search criteria.</p>
+                                <div className="py-8 text-center text-muted-foreground">
+                                    <p className="text-lg">No tasks found matching your criteria.</p>
+                                    <p className="text-sm">Try adjusting your search filters.</p>
                                 </div>
                             )}
 
                             {/* Pagination info */}
                             {tasks.meta && (
-                                <div className="mt-6 flex justify-between items-center">
-                                    <div className="text-sm text-muted-foreground">
-                                        Showing {tasks.meta.from || 0} to {tasks.meta.to || 0} of {tasks.meta.total || 0} results
-                                    </div>
+                                <div className="mt-4 text-center text-sm text-muted-foreground">
+                                    Showing {tasks.meta.from || 0} to {tasks.meta.to || 0} of {tasks.meta.total || 0} results
                                 </div>
                             )}
                         </CardContent>
@@ -320,6 +560,9 @@ export default function Index({ tasks, search, units, cities, unitsByCity, vendo
                 units={units}
                 cities={cities}
                 unitsByCity={unitsByCity}
+                propertiesByCity={propertiesByCity}
+                unitsByProperty={unitsByProperty}
+                vendorsByCity={vendorsByCity}
                 vendors={vendors}
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
@@ -333,6 +576,9 @@ export default function Index({ tasks, search, units, cities, unitsByCity, vendo
                     units={units}
                     cities={cities}
                     unitsByCity={unitsByCity}
+                    propertiesByCity={propertiesByCity}
+                    unitsByProperty={unitsByProperty}
+                    vendorsByCity={vendorsByCity}
                     vendors={vendors}
                     open={isEditDrawerOpen}
                     onOpenChange={setIsEditDrawerOpen}

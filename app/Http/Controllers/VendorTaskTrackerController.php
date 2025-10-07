@@ -27,21 +27,37 @@ class VendorTaskTrackerController extends Controller
 
     public function index(Request $request): Response
     {
-        $search = $request->get('search');
+        $perPage = $request->get('per_page', 15);
+        $filters = $request->only(['search', 'city', 'property', 'unit_name']);
 
-        $tasks = $search
-            ? $this->vendorTaskTrackerService->searchTasks($search)
-            : $this->vendorTaskTrackerService->getAllTasks();
+        // Check if any filters are applied
+        $hasFilters = array_filter($filters, function($value) {
+            return !empty($value);
+        });
+
+        $tasks = $hasFilters
+            ? $this->vendorTaskTrackerService->filterTasks($filters, $perPage)
+            : $this->vendorTaskTrackerService->getAllTasks($perPage);
 
         // Get dropdown data for the create drawer
         $dropdownData = $this->vendorTaskTrackerService->getDropdownData();
 
+        // Get cities data for filter dropdown
+        $cities = \App\Models\Cities::all();
+
+        // Get properties data for filter dropdown
+        $properties = \App\Models\PropertyInfoWithoutInsurance::with('city')->get();
+
         return Inertia::render('VendorTaskTracker/Index', [
             'tasks' => $tasks,
-            'search' => $search,
+            'filters' => $filters,
             'units' => $dropdownData['units']->pluck('unit_name')->unique()->values()->toArray(),
-            'cities' => $dropdownData['cities'],
+            'cities' => $cities,
+            'properties' => $properties,
             'unitsByCity' => $dropdownData['unitsByCity'],
+            'propertiesByCity' => $dropdownData['propertiesByCity'],
+            'unitsByProperty' => $dropdownData['unitsByProperty'],
+            'vendorsByCity' => $dropdownData['vendorsByCity'],
             'vendors' => $dropdownData['vendors'],
         ]);
     }
@@ -53,6 +69,9 @@ class VendorTaskTrackerController extends Controller
         return Inertia::render('VendorTaskTracker/Create', [
             'cities' => $dropdownData['cities'],
             'unitsByCity' => $dropdownData['unitsByCity'],
+            'propertiesByCity' => $dropdownData['propertiesByCity'],
+            'unitsByProperty' => $dropdownData['unitsByProperty'],
+            'vendorsByCity' => $dropdownData['vendorsByCity'],
             'vendors' => $dropdownData['vendors'],
             'units' => $dropdownData['units'],
         ]);
@@ -82,6 +101,9 @@ class VendorTaskTrackerController extends Controller
             'task' => $vendorTaskTracker,
             'cities' => $dropdownData['cities'],
             'unitsByCity' => $dropdownData['unitsByCity'],
+            'propertiesByCity' => $dropdownData['propertiesByCity'],
+            'unitsByProperty' => $dropdownData['unitsByProperty'],
+            'vendorsByCity' => $dropdownData['vendorsByCity'],
             'vendors' => $dropdownData['vendors'],
             'units' => $dropdownData['units'],
         ]);
