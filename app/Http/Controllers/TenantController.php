@@ -34,15 +34,43 @@ class TenantController extends Controller
 
     public function index(Request $request): InertiaResponse
     {
-        $search = $request->get('search');
+        $filters = [
+            'search' => $request->get('search'),
+            'city' => $request->get('city'),
+            'property' => $request->get('property'),
+            'unit_name' => $request->get('unit_name'),
+        ];
 
-        $tenants = $search
-            ? $this->tenantService->searchTenants($search)
+        // Check if any filters are applied
+        $hasFilters = array_filter($filters, function($value) {
+            return !empty($value);
+        });
+
+        $tenants = $hasFilters
+            ? $this->tenantService->filterTenants($filters)
             : $this->tenantService->getAllTenants();
+
+        // Get dropdown data for the create drawer
+        $cities = \App\Models\Cities::all();
+        $properties = \App\Models\PropertyInfoWithoutInsurance::with('city')->get();
+        
+        // Get units data for dropdowns
+        $units = \App\Models\Unit::select('property', 'unit_name')
+            ->orderBy('property')
+            ->orderBy('unit_name')
+            ->get();
+
+        // Create arrays for dropdowns
+        $unitsByProperty = $units->groupBy('property')->map(function ($propertyUnits) {
+            return $propertyUnits->pluck('unit_name')->unique()->values();
+        });
 
         return Inertia::render('Tenants/Index', [
             'tenants' => $tenants,
-            'search' => $search,
+            'search' => $filters['search'],
+            'cities' => $cities,
+            'properties' => $properties,
+            'unitsByProperty' => $unitsByProperty,
         ]);
     }
 
@@ -135,6 +163,42 @@ class TenantController extends Controller
             ->pluck('unit_name');
 
         return response()->json($units);
+    }
+
+    // API endpoint for getting cities for autocomplete
+    public function getCitiesForAutocomplete(Request $request)
+    {
+        $search = $request->get('search', '');
+        
+        $cities = \App\Models\Cities::where('city', 'like', "%{$search}%")
+            ->orderBy('city')
+            ->limit(10)
+            ->get(['id', 'city']);
+
+        return response()->json($cities);
+    }
+
+    // API endpoint for getting properties for autocomplete
+    public function getPropertiesForAutocomplete(Request $request)
+    {
+        $search = $request->get('search', '');
+        $cityId = $request->get('city_id');
+        
+        $query = \App\Models\PropertyInfoWithoutInsurance::query();
+        
+        if ($search) {
+            $query->where('property_name', 'like', "%{$search}%");
+        }
+        
+        if ($cityId) {
+            $query->where('city_id', $cityId);
+        }
+        
+        $properties = $query->orderBy('property_name')
+            ->limit(10)
+            ->get(['id', 'property_name', 'city_id']);
+
+        return response()->json($properties);
     }
 
     // Import functionality

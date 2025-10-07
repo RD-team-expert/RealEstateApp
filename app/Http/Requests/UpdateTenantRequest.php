@@ -58,7 +58,7 @@ class UpdateTenantRequest extends FormRequest
             'has_insurance' => 'nullable|in:Yes,No',
             'sensitive_communication' => 'nullable|in:Yes,No',
             'has_assistance' => 'nullable|in:Yes,No',
-            'assistance_amount' => 'nullable|numeric|min:0',
+            'assistance_amount' => 'nullable|numeric|min:0|max:999999.99',
             'assistance_company' => 'nullable|string|max:255',
         ];
     }
@@ -73,6 +73,7 @@ class UpdateTenantRequest extends FormRequest
             'login_email.email' => 'Login email must be a valid email address.',
             'login_email.unique' => 'This login email is already taken.',
             'alternate_email.email' => 'Alternate email must be a valid email address.',
+            'assistance_amount.max' => 'Assistance amount cannot exceed $999,999.99.',
         ];
     }
 }

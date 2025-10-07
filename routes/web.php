@@ -55,6 +55,10 @@ Route::middleware(['auth'])->group(function () {
     // API route for dynamic unit loading
     Route::get('/api/units-by-property', [TenantController::class, 'getUnitsByProperty'])->name('api.units-by-property');
 
+    // API routes for tenant filtering autocomplete
+    Route::get('/api/tenants/cities', [TenantController::class, 'getCitiesForAutocomplete'])->name('api.tenants.cities');
+    Route::get('/api/tenants/properties', [TenantController::class, 'getPropertiesForAutocomplete'])->name('api.tenants.properties');
+
     Route::resource('properties-info', PropertyInfoController::class);
 
     // Property Info Without Insurance routes

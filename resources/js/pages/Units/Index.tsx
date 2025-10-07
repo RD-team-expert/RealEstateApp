@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { usePermissions } from '@/hooks/usePermissions';
 import AppLayout from '@/layouts/app-layout';
 import { PageProps, PaginatedUnits, Unit, UnitFilters, UnitStatistics } from '@/types/unit';
+import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { AlertCircle, CheckCircle, Download, Edit, FileSpreadsheet, Loader2, Plus, Search, Trash2, Upload, X, XCircle, ChevronDown } from 'lucide-react';
@@ -400,6 +401,7 @@ interface Props extends PageProps {
     statistics: UnitStatistics;
     filters: UnitFilters;
     cities?: Array<{ id: number; city: string }>;
+    properties?: PropertyInfoWithoutInsurance[];
     importStats?: {
         success_count: number;
         error_count: number;
@@ -408,7 +410,7 @@ interface Props extends PageProps {
     };
 }
 
-export default function Index({ auth, units, statistics, filters, cities, importStats }: Props) {
+export default function Index({ auth, units, statistics, filters, cities, properties, importStats }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [searchFilters, setSearchFilters] = useState<UnitFilters>(filters);
     const [tempFilters, setTempFilters] = useState<UnitFilters>(filters);
@@ -429,10 +431,7 @@ export default function Index({ auth, units, statistics, filters, cities, import
 
     // Property autocomplete states
     const [propertyInput, setPropertyInput] = useState(tempFilters.property || '');
-    const [, setShowPropertyDropdown] = useState(false);
-    const [availableProperties, setAvailableProperties] = useState<string[]>([]);
-    const [, setFilteredProperties] = useState<string[]>([]);
-    const [, setLoadingProperties] = useState(false);
+    const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
     const propertyInputRef = useRef<HTMLInputElement>(null);
     const propertyDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -461,41 +460,9 @@ export default function Index({ auth, units, statistics, filters, cities, import
     }, [cityInput, cities]);
 
     // Filter properties based on input
-    useEffect(() => {
-        if (propertyInput.trim() === '') {
-            setFilteredProperties(availableProperties);
-        } else {
-            const filtered = availableProperties.filter(property =>
-                property.toLowerCase().includes(propertyInput.toLowerCase())
-            );
-            setFilteredProperties(filtered);
-        }
-    }, [propertyInput, availableProperties]);
-
-    // Fetch properties when city changes
-    useEffect(() => {
-        if (cityInput && filteredCities.some(city => city.city === cityInput)) {
-            setLoadingProperties(true);
-            fetch(`/api/properties-by-city?city=${encodeURIComponent(cityInput)}`)
-                .then(response => response.json())
-                .then((properties: string[]) => {
-                    setAvailableProperties(properties);
-                    setLoadingProperties(false);
-                })
-                .catch(error => {
-                    console.error('Error fetching properties:', error);
-                    setAvailableProperties([]);
-                    setLoadingProperties(false);
-                });
-        } else {
-            setAvailableProperties([]);
-            // Clear property input if city is cleared or invalid
-            if (!cityInput || !filteredCities.some(city => city.city === cityInput)) {
-                setPropertyInput('');
-                handleTempFilterChange('property', '');
-            }
-        }
-    }, [cityInput, filteredCities]);
+    const filteredProperties = properties?.filter(property =>
+        property.property_name.toLowerCase().includes(propertyInput.toLowerCase())
+    ) || [];
 
     // Handle clicks outside dropdowns
     useEffect(() => {
@@ -531,10 +498,17 @@ export default function Index({ auth, units, statistics, filters, cities, import
         setShowCityDropdown(true);
     };
 
-    const handlePropertyInputChange = (value: string) => {
+    const handlePropertyInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
         setPropertyInput(value);
         handleTempFilterChange('property', value);
-        setShowPropertyDropdown(true);
+        setShowPropertyDropdown(value.length > 0);
+    };
+
+    const handlePropertySelect = (property: PropertyInfoWithoutInsurance) => {
+        setPropertyInput(property.property_name);
+        handleTempFilterChange('property', property.property_name);
+        setShowPropertyDropdown(false);
     };
 
     const handleSearchClick = () => {
@@ -763,11 +737,28 @@ export default function Index({ auth, units, statistics, filters, cities, import
                                         type="text"
                                         placeholder="Property"
                                         value={propertyInput}
-                                        onChange={(e) => handlePropertyInputChange(e.target.value)}
+                                        onChange={handlePropertyInputChange}
                                         onFocus={() => setShowPropertyDropdown(true)}
                                         className="text-input-foreground bg-input pr-8"
                                     />
+                                    <ChevronDown className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                     
+                                    {showPropertyDropdown && filteredProperties.length > 0 && (
+                                        <div
+                                            ref={propertyDropdownRef}
+                                            className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
+                                        >
+                                            {filteredProperties.map((property) => (
+                                                <div
+                                                    key={property.id}
+                                                    className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                                    onClick={() => handlePropertySelect(property)}
+                                                >
+                                                    {property.property_name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 <Input
                                     type="text"

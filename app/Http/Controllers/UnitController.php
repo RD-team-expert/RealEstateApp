@@ -41,20 +41,24 @@ class UnitController extends Controller
         // Get cities data for drawer component
         $cities = \App\Models\Cities::all();
 
+        // Get properties data for filter dropdown
+        $properties = \App\Models\PropertyInfoWithoutInsurance::with('city')->get();
+
         return Inertia::render('Units/Index', [
             'units' => $units,
             'statistics' => $statistics,
             'filters' => $filters,
             'cities' => $cities,
+            'properties' => $properties,
         ]);
     }
 
     public function create(): Response
     {
         $cities = Cities::all();
-        return Inertia::render('Units/Create',[
-        'cities' => $cities
-    ]);
+        return Inertia::render('Units/Create', [
+            'cities' => $cities
+        ]);
     }
 
     public function store(StoreUnitRequest $request): RedirectResponse
@@ -150,7 +154,7 @@ class UnitController extends Controller
 
             if ($result['success']) {
                 $message = $result['message'];
-                
+
                 if (!empty($result['warnings'])) {
                     $message .= ' Warnings: ' . implode('; ', array_slice($result['warnings'], 0, 3));
                     if (count($result['warnings']) > 3) {
@@ -175,7 +179,6 @@ class UnitController extends Controller
                     ->with('import_errors', $result['errors'] ?? [])
                     ->with('import_statistics', $result['statistics'] ?? []);
             }
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Import failed: ' . $e->getMessage());
