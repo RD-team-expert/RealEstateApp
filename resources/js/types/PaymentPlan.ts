@@ -2,6 +2,7 @@
 export interface PaymentPlan {
   id: number;
   property: string;
+  city_name?: string;
   unit: string;
   tenant: string;
   amount: number;
@@ -16,6 +17,7 @@ export interface PaymentPlan {
 
 export type PaymentPlanFormData =  {
   property: string;
+  city_name?: string;
   unit: string;
   tenant: string;
   amount: number;
@@ -25,6 +27,7 @@ export type PaymentPlanFormData =  {
 } 
 
 export interface DropdownData {
+  cities: Record<string, string>;
   properties: Record<string, string>;
   units: Record<string, string>;
   tenants: Record<string, string>;

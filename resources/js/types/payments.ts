@@ -2,6 +2,7 @@ export interface Payment {
     id: number;
     date: string;
     city: string;
+    property_name: string | null;
     unit_name: string;
     owes: number;
     paid: number | null;
@@ -17,6 +18,7 @@ export interface Payment {
 export interface PaymentFormData {
     date: string;
     city: string;
+    property_name: string;
     unit_name: string;
     owes: string;
     paid: string;

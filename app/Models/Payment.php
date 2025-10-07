@@ -13,6 +13,7 @@ class Payment extends Model
     protected $fillable = [
         'date',
         'city',
+        'property_name',
         'unit_name',
         'owes',
         'paid',

@@ -22,6 +22,7 @@ class UpdatePaymentRequest extends FormRequest
                 'max:255',
                 Rule::exists('units', 'city')
             ],
+            'property_name' => ['nullable', 'string', 'max:255'],
             'unit_name' => [
                 'required',
                 'string',

@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 const Edit: React.FC<PaymentPlanEditProps> = ({ paymentPlan, dropdownData }) => {
   const { data, setData, put, processing, errors } = useForm<PaymentPlanFormData>({
     property: paymentPlan.property,
+    city_name: paymentPlan.city_name || '',
     unit: paymentPlan.unit,
     tenant: paymentPlan.tenant,
     amount: paymentPlan.amount,
@@ -71,6 +72,28 @@ const Edit: React.FC<PaymentPlanEditProps> = ({ paymentPlan, dropdownData }) => 
                     )}
                   </div>
 
+                  <div>
+                    <Label htmlFor="city_name">City</Label>
+                    <Select
+                      onValueChange={value => setData('city_name', value)}
+                      value={data.city_name}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select city" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(dropdownData.cities).map(([key, value]) => (
+                          <SelectItem key={key} value={key}>{value}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.city_name && (
+                      <p className="text-red-600 text-sm mt-1">{errors.city_name}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="unit">Unit *</Label>
                     <Select

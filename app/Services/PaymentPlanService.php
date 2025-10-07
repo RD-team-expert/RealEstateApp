@@ -16,6 +16,7 @@ class PaymentPlanService
     {
         return PaymentPlan::where(function ($query) use ($search) {
                     $query->where('property', 'like', "%{$search}%")
+                          ->orWhere('city_name', 'like', "%{$search}%")
                           ->orWhere('unit', 'like', "%{$search}%")
                           ->orWhere('tenant', 'like', "%{$search}%")
                           ->orWhere('status', 'like', "%{$search}%")
@@ -51,6 +52,10 @@ class PaymentPlanService
     public function getDropdownData()
     {
         return [
+            'cities' => DB::table('cities')
+                ->where('is_archived', false)
+                ->distinct()
+                ->pluck('city', 'city'),
             'properties' => DB::table('tenants')
                 ->distinct()
                 ->pluck('property_name', 'property_name'),

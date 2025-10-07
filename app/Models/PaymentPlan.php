@@ -12,6 +12,7 @@ class PaymentPlan extends Model
 
     protected $fillable = [
         'property',
+        'city_name',
         'unit',
         'tenant',
         'amount',

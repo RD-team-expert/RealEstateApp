@@ -226,6 +226,23 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
                                 {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
                             </div>
 
+                            {/* Property Name Field */}
+                            <div className="rounded-lg border-l-4 border-l-orange-500 p-4">
+                                <div className="mb-2">
+                                    <Label htmlFor="property_name" className="text-base font-semibold">
+                                        Property Name
+                                    </Label>
+                                </div>
+                                <Input
+                                    id="property_name"
+                                    type="text"
+                                    value={data.property_name || ''}
+                                    onChange={(e) => setData('property_name', e.target.value)}
+                                    placeholder="Enter property name"
+                                />
+                                {errors.property_name && <p className="mt-1 text-sm text-red-600">{errors.property_name}</p>}
+                            </div>
+
                             <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="unit_name" className="text-base font-semibold">

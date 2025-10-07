@@ -206,12 +206,12 @@ export default function Index({ paymentPlans, search, dropdownData }: Props) {
                             <form onSubmit={handleSearch} className="flex gap-2 mt-4">
                                 <div className="flex-1">
                                     <Input
-                                        type="text"
-                                        placeholder="Search by property, unit, tenant, status, or notes..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="bg-input text-input-foreground"
-                                    />
+                                    type="text"
+                                    placeholder="Search by property, city, unit, tenant, status, or notes..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="bg-input text-input-foreground"
+                                />
                                 </div>
                                 <Button type="submit">
                                     <Search className="h-4 w-4" />
@@ -225,6 +225,7 @@ export default function Index({ paymentPlans, search, dropdownData }: Props) {
                                     <TableHeader>
                                         <TableRow className="border-border">
                                             <TableHead className="text-muted-foreground">Property</TableHead>
+                                            <TableHead className="text-muted-foreground">City</TableHead>
                                             <TableHead className="text-muted-foreground">Unit</TableHead>
                                             <TableHead className="text-muted-foreground">Tenant</TableHead>
                                             <TableHead className="text-right text-muted-foreground">Amount</TableHead>
@@ -241,6 +242,7 @@ export default function Index({ paymentPlans, search, dropdownData }: Props) {
                                         {paymentPlans.data.map((plan: PaymentPlan) => (
                                             <TableRow key={plan.id} className="hover:bg-muted/50 border-border">
                                                 <TableCell className="text-foreground">{plan.property}</TableCell>
+                                                <TableCell className="text-foreground">{plan.city_name || 'N/A'}</TableCell>
                                                 <TableCell className="text-foreground">{plan.unit}</TableCell>
                                                 <TableCell className="text-foreground">{plan.tenant}</TableCell>
                                                 <TableCell className="text-right font-medium text-blue-600 dark:text-blue-400">

@@ -111,6 +111,20 @@ export default function Edit({ payment, units, cities, unitsByCity }: Props) {
 
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div>
+                                        <Label htmlFor="property_name">Property Name</Label>
+                                        <Input
+                                            id="property_name"
+                                            type="text"
+                                            value={data.property_name}
+                                            onChange={(e) => setData('property_name', e.target.value)}
+                                            error={errors.property_name}
+                                            placeholder="Enter property name"
+                                        />
+                                        {errors.property_name && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.property_name}</p>
+                                        )}
+                                    </div>
+                                    <div>
                                         <Label htmlFor="unit_name">Unit Name *</Label>
                                         <Select
                                             onValueChange={(value) => setData('unit_name', value)}
@@ -132,7 +146,9 @@ export default function Edit({ payment, units, cities, unitsByCity }: Props) {
                                             <p className="text-red-600 text-sm mt-1">{errors.unit_name}</p>
                                         )}
                                     </div>
+                                </div>
 
+                                <div className="grid md:grid-cols-2 gap-4">
                                     {/* <div>
                                         <Label htmlFor="status">Status</Label>
                                         <Select

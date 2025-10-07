@@ -20,6 +20,7 @@ class PaymentService
     {
         return Payment::where(function ($query) use ($search) {
                          $query->where('city', 'like', "%{$search}%")
+                               ->orWhere('property_name', 'like', "%{$search}%")
                                ->orWhere('unit_name', 'like', "%{$search}%")
                                ->orWhere('status', 'like', "%{$search}%")
                                ->orWhere('notes', 'like', "%{$search}%");

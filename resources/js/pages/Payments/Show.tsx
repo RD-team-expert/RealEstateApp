@@ -65,6 +65,10 @@ export default function Show({ payment }: Props) {
                                         <p className="font-medium">{payment.city}</p>
                                     </div>
                                     <div>
+                                        <p className="text-sm text-muted-foreground">Property Name</p>
+                                        <p className="font-medium">{payment.property_name || 'N/A'}</p>
+                                    </div>
+                                    <div>
                                         <p className="text-sm text-muted-foreground">Unit Name</p>
                                         <p className="font-medium">{payment.unit_name}</p>
                                     </div>

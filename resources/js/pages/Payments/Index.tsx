@@ -46,6 +46,7 @@ const exportToCSV = (data: Payment[], filename: string = 'payments.csv') => {
             'ID',
             'Date',
             'City',
+            'Property Name',
             'Unit Name',
             'Owes',
             'Paid',
@@ -64,6 +65,7 @@ const exportToCSV = (data: Payment[], filename: string = 'payments.csv') => {
                         payment.id || '',
                         `"${formatDate(payment.date)}"`,
                         `"${formatString(payment.city)}"`,
+                        `"${formatString(payment.property_name)}"`,
                         `"${formatString(payment.unit_name)}"`,
                         formatCurrency(payment.owes),
                         formatCurrency(payment.paid),
@@ -254,6 +256,7 @@ export default function Index({ payments, search, units, cities, unitsByCity }: 
                                         <TableRow className="border-border">
                                             <TableHead className="text-muted-foreground">Date</TableHead>
                                             <TableHead className="text-muted-foreground">City</TableHead>
+                                            <TableHead className="text-muted-foreground">Property Name</TableHead>
                                             <TableHead className="text-muted-foreground">Unit Name</TableHead>
                                             <TableHead className="text-right text-muted-foreground">Owes</TableHead>
                                             <TableHead className="text-right text-muted-foreground">Paid</TableHead>
@@ -273,6 +276,7 @@ export default function Index({ payments, search, units, cities, unitsByCity }: 
                                                     {new Date(payment.date).toLocaleDateString()}
                                                 </TableCell>
                                                 <TableCell className="font-medium text-foreground">{payment.city}</TableCell>
+                                                <TableCell className="text-foreground">{payment.property_name || 'N/A'}</TableCell>
                                                 <TableCell className="text-foreground">{payment.unit_name}</TableCell>
                                                 <TableCell className="text-right font-medium text-red-600 dark:text-red-400">
                                                     {formatCurrency(payment.owes)}

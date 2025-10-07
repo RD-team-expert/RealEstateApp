@@ -59,6 +59,10 @@ const Show: React.FC<PaymentPlanShowProps> = ({ paymentPlan }) => {
                     <p className="font-medium">{paymentPlan.property}</p>
                   </div>
                   <div>
+                    <p className="text-sm text-muted-foreground">City</p>
+                    <p className="font-medium">{paymentPlan.city_name || 'N/A'}</p>
+                  </div>
+                  <div>
                     <p className="text-sm text-muted-foreground">Unit</p>
                     <p className="font-medium">{paymentPlan.unit}</p>
                   </div>
