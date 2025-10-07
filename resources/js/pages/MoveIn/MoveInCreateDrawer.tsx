@@ -5,23 +5,34 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup } from '@/components/ui/radioGroup';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { City } from '@/types/City';
 import { MoveInFormData } from '@/types/move-in';
+import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { useForm } from '@inertiajs/react';
 import { format, parse } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 
 interface Props {
     units: string[];
+    cities: City[];
+    properties: PropertyInfoWithoutInsurance[];
+    unitsByProperty: Record<string, string[]>;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
 }
 
-export default function MoveInCreateDrawer({ units, open, onOpenChange, onSuccess }: Props) {
+export default function MoveInCreateDrawer({ units, cities, properties, unitsByProperty, open, onOpenChange, onSuccess }: Props) {
     const unitNameRef = useRef<HTMLButtonElement>(null);
+    const cityRef = useRef<HTMLButtonElement>(null);
+    const propertyRef = useRef<HTMLButtonElement>(null);
     const [validationError, setValidationError] = useState<string>('');
-    
+    const [cityValidationError, setCityValidationError] = useState<string>('');
+    const [propertyValidationError, setPropertyValidationError] = useState<string>('');
+    const [availableUnits, setAvailableUnits] = useState<string[]>([]);
+    const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
+
     const [calendarStates, setCalendarStates] = useState({
         lease_signing_date: false,
         move_in_date: false,
@@ -48,29 +59,103 @@ export default function MoveInCreateDrawer({ units, open, onOpenChange, onSucces
         date_of_move_in_form_filled: '',
         submitted_insurance: 'No',
         date_of_insurance_expiration: '',
+        city_id: '',
+        property_name: '',
     });
+
+    // Comprehensive reset function to clear all form state
+    const resetFormState = () => {
+        reset();
+        setValidationError('');
+        setCityValidationError('');
+        setPropertyValidationError('');
+        setAvailableUnits([]);
+        setAvailableProperties([]);
+    };
+
+    // Filter properties based on selected city
+    const handleCityChange = (cityId: string) => {
+        setData('city_id', cityId);
+        setData('property_name', '');
+        setData('unit_name', '');
+        setCityValidationError('');
+        setPropertyValidationError('');
+        setValidationError('');
+
+        if (cityId) {
+            const filteredProperties = properties.filter((property) => property.city_id?.toString() === cityId);
+            setAvailableProperties(filteredProperties);
+        } else {
+            setAvailableProperties([]);
+        }
+        setAvailableUnits([]);
+    };
+
+    const handlePropertyChange = (propertyName: string) => {
+        setData('property_name', propertyName);
+        setData('unit_name', '');
+        setPropertyValidationError('');
+        setValidationError('');
+
+        if (propertyName && unitsByProperty && unitsByProperty[propertyName]) {
+            setAvailableUnits(unitsByProperty[propertyName]);
+        } else {
+            setAvailableUnits([]);
+        }
+    };
+
+    const handleUnitChange = (unitName: string) => {
+        setData('unit_name', unitName);
+        setValidationError('');
+    };
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         // Clear any previous validation errors
         setValidationError('');
-        
+        setCityValidationError('');
+        setPropertyValidationError('');
+
+        let hasValidationErrors = false;
+
+        // Validate city is selected
+        if (!data.city_id || data.city_id.trim() === '') {
+            setCityValidationError('Please select a city before submitting the form.');
+            if (cityRef.current) {
+                cityRef.current.focus();
+                cityRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            hasValidationErrors = true;
+        }
+
+        // Validate property is selected
+        if (!data.property_name || data.property_name.trim() === '') {
+            setPropertyValidationError('Please select a property before submitting the form.');
+            if (propertyRef.current) {
+                propertyRef.current.focus();
+                propertyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            hasValidationErrors = true;
+        }
+
         // Validate unit_name is not empty
         if (!data.unit_name || data.unit_name.trim() === '') {
             setValidationError('Please select a unit before submitting the form.');
-            // Focus on the unit name field
             if (unitNameRef.current) {
                 unitNameRef.current.focus();
                 unitNameRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
+            hasValidationErrors = true;
+        }
+
+        if (hasValidationErrors) {
             return;
         }
-        
+
         post(route('move-in.store'), {
             onSuccess: () => {
-                reset();
-                setValidationError('');
+                resetFormState();
                 onOpenChange(false);
                 onSuccess?.();
             },
@@ -78,8 +163,7 @@ export default function MoveInCreateDrawer({ units, open, onOpenChange, onSucces
     };
 
     const handleCancel = () => {
-        reset();
-        setValidationError('');
+        resetFormState();
         onOpenChange(false);
     };
 
@@ -89,6 +173,52 @@ export default function MoveInCreateDrawer({ units, open, onOpenChange, onSucces
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={submit} className="space-y-4">
+                            {/* City Selection */}
+                            <div className="rounded-lg border-l-4 border-l-slate-500 p-4">
+                                <div className="mb-2">
+                                    <Label htmlFor="city_id" className="text-base font-semibold">
+                                        City *
+                                    </Label>
+                                </div>
+                                <Select onValueChange={handleCityChange} value={data.city_id}>
+                                    <SelectTrigger ref={cityRef}>
+                                        <SelectValue placeholder="Select city" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {cities.map((city) => (
+                                            <SelectItem key={city.id} value={city.id.toString()}>
+                                                {city.city}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.city_id && <p className="mt-1 text-sm text-red-600">{errors.city_id}</p>}
+                                {cityValidationError && <p className="mt-1 text-sm text-red-600">{cityValidationError}</p>}
+                            </div>
+
+                            {/* Property Selection */}
+                            <div className="rounded-lg border-l-4 border-l-gray-500 p-4">
+                                <div className="mb-2">
+                                    <Label htmlFor="property_name" className="text-base font-semibold">
+                                        Property *
+                                    </Label>
+                                </div>
+                                <Select onValueChange={handlePropertyChange} value={data.property_name} disabled={!data.city_id}>
+                                    <SelectTrigger ref={propertyRef}>
+                                        <SelectValue placeholder={data.city_id ? 'Select property' : 'Select city first'} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableProperties.map((property) => (
+                                            <SelectItem key={property.property_name} value={property.property_name}>
+                                                {property.property_name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.property_name && <p className="mt-1 text-sm text-red-600">{errors.property_name}</p>}
+                                {propertyValidationError && <p className="mt-1 text-sm text-red-600">{propertyValidationError}</p>}
+                            </div>
+
                             {/* Unit and Lease Information */}
                             <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
                                 <div className="mb-2">
@@ -96,15 +226,12 @@ export default function MoveInCreateDrawer({ units, open, onOpenChange, onSucces
                                         Unit Name *
                                     </Label>
                                 </div>
-                                <Select onValueChange={(value) => {
-                                    setData('unit_name', value);
-                                    setValidationError(''); // Clear validation error when user selects a unit
-                                }} value={data.unit_name}>
+                                <Select onValueChange={handleUnitChange} value={data.unit_name} disabled={!data.property_name}>
                                     <SelectTrigger ref={unitNameRef}>
-                                        <SelectValue placeholder="Select unit" />
+                                        <SelectValue placeholder={data.property_name ? 'Select unit' : 'Select property first'} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {units.map((unit) => (
+                                        {availableUnits.map((unit) => (
                                             <SelectItem key={unit} value={unit}>
                                                 {unit}
                                             </SelectItem>

@@ -52,4 +52,32 @@ class MoveInService
             'units' => $units
         ];
     }
+
+    public function getDropdownData(): array
+    {
+        // Get cities
+        $cities = \App\Models\Cities::all();
+        
+        // Get properties with city relationships
+        $properties = \App\Models\PropertyInfoWithoutInsurance::with('city')->get();
+        
+        // Get units data for dropdowns
+        $units = Unit::select('city', 'property', 'unit_name')
+            ->orderBy('city')
+            ->orderBy('property')
+            ->orderBy('unit_name')
+            ->get();
+
+        // Create arrays for dropdowns
+        $unitsByProperty = $units->groupBy('property')->map(function ($propertyUnits) {
+            return $propertyUnits->pluck('unit_name')->unique()->values();
+        });
+
+        return [
+            'cities' => $cities,
+            'properties' => $properties,
+            'unitsByProperty' => $unitsByProperty,
+            'units' => $units
+        ];
+    }
 }

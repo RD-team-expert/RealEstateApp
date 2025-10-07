@@ -1,26 +1,27 @@
-import React, { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    Table,
-    TableBody,  
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
-import { MoveIn } from '@/types/move-in';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/hooks/usePermissions';
+import AppLayout from '@/layouts/app-layout';
+import { City } from '@/types/City';
+import { MoveIn } from '@/types/move-in';
+import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
+import { Head, router } from '@inertiajs/react';
+import { Download, Edit, Plus, Search, Trash2 } from 'lucide-react';
+import React, { useRef, useState } from 'react';
 import MoveInCreateDrawer from './MoveInCreateDrawer';
 import MoveInEditDrawer from './MoveInEditDrawer';
 
 // CSV Export utility function
-const exportToCSV = (data: MoveIn[], filename: string = 'move-ins.csv') => {
+const exportToCSV = (
+    data: MoveIn[],
+    filename: string = 'move-ins.csv',
+    cities: City[],
+    properties: PropertyInfoWithoutInsurance[],
+    unitsByProperty: Record<string, string[]>,
+) => {
     try {
         const formatDate = (dateStr: string | null | undefined) => {
             if (!dateStr) return '';
@@ -36,8 +37,35 @@ const exportToCSV = (data: MoveIn[], filename: string = 'move-ins.csv') => {
             return String(value).replace(/"/g, '""');
         };
 
+        // Helper function to get city name from unit name
+        const getCityNameFromUnit = (unitName: string) => {
+            for (const [propertyId, unitNames] of Object.entries(unitsByProperty)) {
+                if (unitNames.includes(unitName)) {
+                    const property = properties.find((p) => p.id.toString() === propertyId);
+                    if (property) {
+                        const city = cities.find((c) => c.id === property.city_id);
+                        return city?.city || 'N/A';
+                    }
+                }
+            }
+            return 'N/A';
+        };
+
+        // Helper function to get property name from unit name
+        const getPropertyNameFromUnit = (unitName: string) => {
+            for (const [propertyId, unitNames] of Object.entries(unitsByProperty)) {
+                if (unitNames.includes(unitName)) {
+                    const property = properties.find((p) => p.id.toString() === propertyId);
+                    return property?.property_name || 'N/A';
+                }
+            }
+            return 'N/A';
+        };
+
         const headers = [
             'ID',
+            'City',
+            'Property Name',
             'Unit Name',
             'Signed Lease',
             'Lease Signing Date',
@@ -49,33 +77,37 @@ const exportToCSV = (data: MoveIn[], filename: string = 'move-ins.csv') => {
             'Filled Move-In Form',
             'Date of move in form filled in',
             'Submitted Insurance',
-            'Date of Insurance expiration'
+            'Date of Insurance expiration',
         ];
 
         const csvData = [
             headers.join(','),
-            ...data.map(moveIn => {
-                try {
-                    return [
-                        moveIn.id || '',
-                        `"${formatString(moveIn.unit_name)}"`,
-                        `"${formatString(moveIn.signed_lease)}"`,
-                        `"${formatDate(moveIn.lease_signing_date)}"`,
-                        `"${formatDate(moveIn.move_in_date)}"`,
-                        `"${formatString(moveIn.paid_security_deposit_first_month_rent)}"`,
-                        `"${formatDate(moveIn.scheduled_paid_time)}"`,
-                        `"${formatString(moveIn.handled_keys)}"`,
-                        `"${formatDate(moveIn.move_in_form_sent_date)}"`,
-                        `"${formatString(moveIn.filled_move_in_form)}"`,
-                        `"${formatDate(moveIn.date_of_move_in_form_filled)}"`,
-                        `"${formatString(moveIn.submitted_insurance)}"`,
-                        `"${formatDate(moveIn.date_of_insurance_expiration)}"`
-                    ].join(',');
-                } catch (rowError) {
-                    console.error('Error processing move-in row:', moveIn, rowError);
-                    return ''; // Skip problematic rows
-                }
-            }).filter(row => row !== '') // Remove empty rows
+            ...data
+                .map((moveIn) => {
+                    try {
+                        return [
+                            moveIn.id || '',
+                            `"${formatString(getCityNameFromUnit(moveIn.unit_name))}"`,
+                            `"${formatString(getPropertyNameFromUnit(moveIn.unit_name))}"`,
+                            `"${formatString(moveIn.unit_name)}"`,
+                            `"${formatString(moveIn.signed_lease)}"`,
+                            `"${formatDate(moveIn.lease_signing_date)}"`,
+                            `"${formatDate(moveIn.move_in_date)}"`,
+                            `"${formatString(moveIn.paid_security_deposit_first_month_rent)}"`,
+                            `"${formatDate(moveIn.scheduled_paid_time)}"`,
+                            `"${formatString(moveIn.handled_keys)}"`,
+                            `"${formatDate(moveIn.move_in_form_sent_date)}"`,
+                            `"${formatString(moveIn.filled_move_in_form)}"`,
+                            `"${formatDate(moveIn.date_of_move_in_form_filled)}"`,
+                            `"${formatString(moveIn.submitted_insurance)}"`,
+                            `"${formatDate(moveIn.date_of_insurance_expiration)}"`,
+                        ].join(',');
+                    } catch (rowError) {
+                        console.error('Error processing move-in row:', moveIn, rowError);
+                        return ''; // Skip problematic rows
+                    }
+                })
+                .filter((row) => row !== ''), // Remove empty rows
         ].join('\n');
 
         const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
@@ -106,20 +138,86 @@ interface Props {
     };
     search: string | null;
     units: string[];
+    cities: City[];
+    properties: PropertyInfoWithoutInsurance[];
+    unitsByProperty: Record<string, string[]>;
 }
 
-export default function Index({ moveIns, search, units }: Props) {
-    
-
+export default function Index({ moveIns, search, units, cities, properties, unitsByProperty }: Props) {
     const [searchTerm, setSearchTerm] = useState(search || '');
     const [isExporting, setIsExporting] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [selectedMoveIn, setSelectedMoveIn] = useState<MoveIn | null>(null);
 
+    // Filter states
+    const [tempFilters, setTempFilters] = useState({
+        city: '',
+        property: '',
+        search: search || '',
+    });
+    const [filters, setFilters] = useState({
+        city: '',
+        property: '',
+        search: search || '',
+    });
+
+    // Dropdown states
+    const [showCityDropdown, setShowCityDropdown] = useState(false);
+    const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
+
+    // Refs for dropdown management
+    const cityInputRef = useRef<HTMLInputElement>(null);
+    const propertyInputRef = useRef<HTMLInputElement>(null);
+
+    // Filter cities based on input
+    const filteredCities = cities.filter((city) => city.city.toLowerCase().includes(tempFilters.city.toLowerCase()));
+
+    // Filter properties based on input
+    const filteredProperties = properties.filter((property) => property.property_name.toLowerCase().includes(tempFilters.property.toLowerCase()));
+
+    // Helper function to get city name from unit name
+    const getCityNameFromUnit = (unitName: string) => {
+        for (const [propertyId, unitNames] of Object.entries(unitsByProperty)) {
+            if (unitNames.includes(unitName)) {
+                const property = properties.find((p) => p.id.toString() === propertyId);
+                if (property) {
+                    const city = cities.find((c) => c.id === property.city_id);
+                    return city?.city || 'N/A';
+                }
+            }
+        }
+        return 'N/A';
+    };
+
+    // Helper function to get property name from unit name
+    const getPropertyNameFromUnit = (unitName: string) => {
+        for (const [propertyId, unitNames] of Object.entries(unitsByProperty)) {
+            if (unitNames.includes(unitName)) {
+                const property = properties.find((p) => p.id.toString() === propertyId);
+                return property?.property_name || 'N/A';
+            }
+        }
+        return 'N/A';
+    };
+
+    const handleTempFilterChange = (key: string, value: string) => {
+        setTempFilters((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const handleSearchClick = () => {
+        setFilters(tempFilters);
+        const params: any = {};
+        if (tempFilters.search) params.search = tempFilters.search;
+        if (tempFilters.city) params.city = tempFilters.city;
+        if (tempFilters.property) params.property = tempFilters.property;
+
+        router.get(route('move-in.index'), params, { preserveState: true });
+    };
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        router.get(route('move-in.index'), { search: searchTerm }, { preserveState: true });
+        handleSearchClick();
     };
 
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
@@ -141,7 +239,7 @@ export default function Index({ moveIns, search, units }: Props) {
         try {
             console.log('Exporting move-in data:', moveIns.data); // Debug log
             const filename = `move-ins-${new Date().toISOString().split('T')[0]}.csv`;
-            exportToCSV(moveIns.data, filename);
+            exportToCSV(moveIns.data, filename, cities, properties, unitsByProperty);
 
             // Success feedback
             console.log('Export completed successfully');
@@ -170,41 +268,43 @@ export default function Index({ moveIns, search, units }: Props) {
     };
 
     const formatDateUTC = (dateStr?: string | null) => {
-  if (!dateStr) return 'N/A';
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return 'N/A';
-  return new Intl.DateTimeFormat(undefined, {
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(d);
-};
-
+        if (!dateStr) return 'N/A';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return 'N/A';
+        return new Intl.DateTimeFormat(undefined, {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            timeZone: 'UTC',
+        }).format(d);
+    };
 
     const getYesNoBadge = (value: 'Yes' | 'No' | null) => {
         if (value === null) return <Badge variant="outline">N/A</Badge>;
         return (
-            <Badge variant={value === 'Yes' ? 'default' : 'secondary'} className={
-                value === 'Yes'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-            }>
+            <Badge
+                variant={value === 'Yes' ? 'default' : 'secondary'}
+                className={
+                    value === 'Yes'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                }
+            >
                 {value}
             </Badge>
         );
     };
 
     return (
-        <AppLayout >
+        <AppLayout>
             <Head title="Move-In Management" />
 
-            <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div className="min-h-screen bg-background py-12 text-foreground transition-colors">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     {/* Title and Buttons Section */}
-                    <div className="flex justify-between items-center mb-6">
+                    <div className="mb-6 flex items-center justify-between">
                         <h1 className="text-2xl font-bold text-foreground">Move-In Management</h1>
-                        <div className="flex gap-2 items-center">
+                        <div className="flex items-center gap-2">
                             {/* Export Button */}
                             <Button
                                 variant="outline"
@@ -213,13 +313,13 @@ export default function Index({ moveIns, search, units }: Props) {
                                 disabled={isExporting || !moveIns?.data || moveIns.data.length === 0}
                                 className="flex items-center"
                             >
-                                <Download className="h-4 w-4 mr-2" />
+                                <Download className="mr-2 h-4 w-4" />
                                 {isExporting ? 'Exporting...' : 'Export CSV'}
                             </Button>
 
-                            {hasAllPermissions(['move-in.create','move-in.store']) && (
+                            {hasAllPermissions(['move-in.create', 'move-in.store']) && (
                                 <Button onClick={() => setIsDrawerOpen(true)}>
-                                    <Plus className="h-4 w-4 mr-2" />
+                                    <Plus className="mr-2 h-4 w-4" />
                                     Add Move-In Record
                                 </Button>
                             )}
@@ -228,108 +328,201 @@ export default function Index({ moveIns, search, units }: Props) {
 
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
-                            <form onSubmit={handleSearch} className="flex gap-2">
-                                <div className="flex-1">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                                {/* City Filter */}
+                                <div className="relative">
+                                    <Input
+                                        ref={cityInputRef}
+                                        type="text"
+                                        placeholder="City"
+                                        value={tempFilters.city}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            handleTempFilterChange('city', value);
+                                            setShowCityDropdown(value.length > 0);
+                                        }}
+                                        onFocus={() => setShowCityDropdown(tempFilters.city.length > 0)}
+                                        className="text-input-foreground bg-input"
+                                    />
+                                    {showCityDropdown && filteredCities.length > 0 && (
+                                        <div className="absolute top-full right-0 left-0 z-50 mb-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg">
+                                            {filteredCities.map((city) => (
+                                                <div
+                                                    key={city.id}
+                                                    className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                                    onClick={() => {
+                                                        handleTempFilterChange('city', city.city);
+                                                        setShowCityDropdown(false);
+                                                    }}
+                                                >
+                                                    {city.city}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Property Filter */}
+                                <div className="relative">
+                                    <Input
+                                        ref={propertyInputRef}
+                                        type="text"
+                                        placeholder="Property Name"
+                                        value={tempFilters.property}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            handleTempFilterChange('property', value);
+                                            setShowPropertyDropdown(value.length > 0);
+                                        }}
+                                        onFocus={() => setShowPropertyDropdown(tempFilters.property.length > 0)}
+                                        className="text-input-foreground bg-input"
+                                    />
+                                    {showPropertyDropdown && filteredProperties.length > 0 && (
+                                        <div className="absolute top-full right-0 left-0 z-50 mb-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg">
+                                            {filteredProperties.map((property) => (
+                                                <div
+                                                    key={property.id}
+                                                    className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                                    onClick={() => {
+                                                        handleTempFilterChange('property', property.property_name);
+                                                        setShowPropertyDropdown(false);
+                                                    }}
+                                                >
+                                                    {property.property_name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Search Filter */}
+                                <div className="flex gap-2 md:col-span-2">
                                     <Input
                                         type="text"
-                                        placeholder="Search by unit name "
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="bg-input text-input-foreground"
+                                        placeholder="Search by unit name..."
+                                        value={tempFilters.search}
+                                        onChange={(e) => handleTempFilterChange('search', e.target.value)}
+                                        className="text-input-foreground flex-1 bg-input"
                                     />
+                                    <Button type="button" onClick={handleSearchClick} size="sm">
+                                        <Search className="h-4 w-4" />
+                                    </Button>
                                 </div>
-                                <Button type="submit">
-                                    <Search className="h-4 w-4" />
-                                </Button>
-                            </form>
+                            </div>
                         </CardHeader>
 
                         <CardContent>
-                            <div className="overflow-x-auto relative">
-                                <Table className="border-collapse border border-border rounded-md">
+                            <div className="relative overflow-x-auto">
+                                <Table className="border-collapse rounded-md border border-border">
                                     <TableHeader>
                                         <TableRow className="border-border">
-                                            <TableHead className="text-muted-foreground border border-border bg-muted sticky left-0 z-10 min-w-[120px]">Unit Name</TableHead>
-                                            <TableHead className="text-muted-foreground border border-border bg-muted">Signed Lease</TableHead>
-                                            <TableHead className="text-muted-foreground border border-border bg-muted">Lease Signing Date</TableHead>
-                                            <TableHead className="text-muted-foreground border border-border bg-muted">Move-In Date</TableHead>
-                                            <TableHead className="text-muted-foreground border border-border bg-muted">Paid Security & First Month</TableHead>
-                                            <TableHead className="text-muted-foreground border border-border bg-muted">Scheduled Payment Date</TableHead>
-                                            <TableHead className="text-muted-foreground border border-border bg-muted">Handled Keys</TableHead>
-                                            <TableHead className="text-muted-foreground border border-border bg-muted">Move in form sent On</TableHead>
-                                            <TableHead className="text-muted-foreground border border-border bg-muted">Filled Move-In Form</TableHead>
-                                            <TableHead className="text-muted-foreground border border-border bg-muted">Date of move in form filled in</TableHead>
-                                            <TableHead className="text-muted-foreground border border-border bg-muted">Submitted Insurance</TableHead>
-                                            <TableHead className="text-muted-foreground border border-border bg-muted">Date of Insurance expiration</TableHead>
-                                            {hasAnyPermission(['move-in.show','move-in.edit','move-in.update','move-in.destroy']) && (
-                                            <TableHead className="text-muted-foreground border border-border bg-muted">Actions</TableHead>)}
+                                            <TableHead className="sticky left-0 z-10 min-w-[120px] border border-border bg-muted text-muted-foreground">
+                                                City
+                                            </TableHead>
+                                            <TableHead className="sticky left-[120px] z-10 min-w-[150px] border border-border bg-muted text-muted-foreground">
+                                                Property Name
+                                            </TableHead>
+                                            <TableHead className="sticky left-[270px] z-10 min-w-[120px] border border-border bg-muted text-muted-foreground">
+                                                Unit Name
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Signed Lease</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Lease Signing Date</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Move-In Date</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">
+                                                Paid Security & First Month
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">
+                                                Scheduled Payment Date
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Handled Keys</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">
+                                                Move in form sent On
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Filled Move-In Form</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">
+                                                Date of move in form filled in
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Submitted Insurance</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">
+                                                Date of Insurance expiration
+                                            </TableHead>
+                                            {hasAnyPermission(['move-in.show', 'move-in.edit', 'move-in.update', 'move-in.destroy']) && (
+                                                <TableHead className="border border-border bg-muted text-muted-foreground">Actions</TableHead>
+                                            )}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {moveIns.data.map((moveIn) => (
-                                            <TableRow key={moveIn.id} className="hover:bg-muted/50 border-border ">
-                                                <TableCell className="font-medium text-center text-foreground border border-border bg-muted sticky left-0 z-10 min-w-[120px]">{moveIn.unit_name}</TableCell>
-                                                <TableCell className="text-center border border-border">
+                                            <TableRow key={moveIn.id} className="border-border hover:bg-muted/50">
+                                                <TableCell className="sticky left-0 z-10 border border-border bg-muted text-center font-medium text-foreground">
+                                                    {getCityNameFromUnit(moveIn.unit_name)}
+                                                </TableCell>
+                                                <TableCell className="sticky left-[120px] z-10 border border-border bg-muted text-center font-medium text-foreground">
+                                                    {getPropertyNameFromUnit(moveIn.unit_name)}
+                                                </TableCell>
+                                                <TableCell className="sticky left-[270px] z-10 border border-border bg-muted text-center font-medium text-foreground">
+                                                    {moveIn.unit_name}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center">
                                                     {getYesNoBadge(moveIn.signed_lease)}
                                                 </TableCell>
-                                                <TableCell className="text-center text-foreground border border-border">
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     {formatDateUTC(moveIn.lease_signing_date)}
                                                 </TableCell>
-                                                <TableCell className="text-center text-foreground border border-border">
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     {formatDateUTC(moveIn.move_in_date)}
                                                 </TableCell>
-                                                <TableCell className="text-center border border-border">
+                                                <TableCell className="border border-border text-center">
                                                     {getYesNoBadge(moveIn.paid_security_deposit_first_month_rent)}
                                                 </TableCell>
-                                                <TableCell className="text-center text-foreground border border-border">
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     {formatDateUTC(moveIn.scheduled_paid_time)}
                                                 </TableCell>
-                                                <TableCell className="text-center border border-border">
+                                                <TableCell className="border border-border text-center">
                                                     {getYesNoBadge(moveIn.handled_keys)}
                                                 </TableCell>
-                                                <TableCell className="text-center text-foreground border border-border">
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     {formatDateUTC(moveIn.move_in_form_sent_date)}
                                                 </TableCell>
-                                                <TableCell className="text-center border border-border">
+                                                <TableCell className="border border-border text-center">
                                                     {getYesNoBadge(moveIn.filled_move_in_form)}
                                                 </TableCell>
-                                                <TableCell className="text-center text-foreground border border-border">
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     {formatDateUTC(moveIn.date_of_move_in_form_filled)}
                                                 </TableCell>
-                                                <TableCell className="text-center border border-border">
+                                                <TableCell className="border border-border text-center">
                                                     {getYesNoBadge(moveIn.submitted_insurance)}
                                                 </TableCell>
-                                                <TableCell className="text-center text-foreground border border-border">
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     {formatDateUTC(moveIn.date_of_insurance_expiration)}
                                                 </TableCell>
-                                                {hasAnyPermission(['move-in.show','move-in.edit','move-in.update','move-in.destroy']) && (
-                                                <TableCell className="text-center border border-border">
-                                                    <div className="flex gap-1">
-                                                        {/* {hasPermission('move-in.show') && (
+                                                {hasAnyPermission(['move-in.show', 'move-in.edit', 'move-in.update', 'move-in.destroy']) && (
+                                                    <TableCell className="border border-border text-center">
+                                                        <div className="flex gap-1">
+                                                            {/* {hasPermission('move-in.show') && (
                                                         <Link href={route('move-in.show', moveIn.id)}>
                                                             <Button variant="outline" size="sm">
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
                                                         </Link>)} */}
-                                                        {hasAllPermissions(['move-in.edit','move-in.update']) && (
-                                                        <Button 
-                                                            variant="outline" 
-                                                            size="sm"
-                                                            onClick={() => handleEdit(moveIn)}
-                                                        >
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>)}
-                                                        {hasPermission('move-in.destroy') && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(moveIn)}
-                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>)}
-                                                    </div>
-                                                </TableCell>)}
+                                                            {hasAllPermissions(['move-in.edit', 'move-in.update']) && (
+                                                                <Button variant="outline" size="sm" onClick={() => handleEdit(moveIn)}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                            {hasPermission('move-in.destroy') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() => handleDelete(moveIn)}
+                                                                    className="border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                )}
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -337,7 +530,7 @@ export default function Index({ moveIns, search, units }: Props) {
                             </div>
 
                             {moveIns.data.length === 0 && (
-                                <div className="text-center py-8 text-muted-foreground">
+                                <div className="py-8 text-center text-muted-foreground">
                                     <p className="text-lg">No move-in records found.</p>
                                     <p className="text-sm">Try adjusting your search criteria.</p>
                                 </div>
@@ -345,7 +538,7 @@ export default function Index({ moveIns, search, units }: Props) {
 
                             {/* Pagination info */}
                             {moveIns.meta && (
-                                <div className="mt-6 flex justify-between items-center border-t border-border pt-4">
+                                <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
                                     <div className="text-sm text-muted-foreground">
                                         Showing {moveIns.meta.from || 0} to {moveIns.meta.to || 0} of {moveIns.meta.total || 0} results
                                     </div>
@@ -359,6 +552,9 @@ export default function Index({ moveIns, search, units }: Props) {
             {/* Move-In Create Drawer */}
             <MoveInCreateDrawer
                 units={units}
+                cities={cities}
+                properties={properties}
+                unitsByProperty={unitsByProperty}
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
                 onSuccess={handleDrawerSuccess}
@@ -369,6 +565,9 @@ export default function Index({ moveIns, search, units }: Props) {
                 <MoveInEditDrawer
                     moveIn={selectedMoveIn}
                     units={units}
+                    cities={cities}
+                    properties={properties}
+                    unitsByProperty={unitsByProperty}
                     open={isEditDrawerOpen}
                     onOpenChange={setIsEditDrawerOpen}
                     onSuccess={handleEditDrawerSuccess}

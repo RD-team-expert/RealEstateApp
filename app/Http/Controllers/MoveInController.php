@@ -31,12 +31,15 @@ class MoveInController extends Controller
             ? $this->moveInService->searchMoveIns($search)
             : $this->moveInService->getAllMoveIns();
 
-        $dropdownData = $this->moveInService->getUnitsForDropdown();
+        $dropdownData = $this->moveInService->getDropdownData();
 
         return Inertia::render('MoveIn/Index', [
             'moveIns' => $moveIns,
             'search' => $search,
             'units' => $dropdownData['units'],
+            'cities' => $dropdownData['cities'],
+            'properties' => $dropdownData['properties'],
+            'unitsByProperty' => $dropdownData['unitsByProperty'],
         ]);
     }
 

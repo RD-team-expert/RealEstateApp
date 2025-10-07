@@ -1,29 +1,53 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/hooks/usePermissions';
 import AppLayout from '@/layouts/app-layout';
 import { MoveOut } from '@/types/move-out';
 import { Head, Link, router } from '@inertiajs/react';
-import { Download, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
-import React, { useState } from 'react';
+import { format } from 'date-fns';
+import { ChevronDown, Download, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import MoveOutCreateDrawer from './MoveOutCreateDrawer';
 import MoveOutEditDrawer from './MoveOutEditDrawer';
+
+/**
+ * Always treat the value as a date-only (no time, no TZ).
+ * Works for "YYYY-MM-DD" and for ISO strings by grabbing the first 10 chars.
+ */
+const formatDateOnly = (value?: string | null, fallback = '-'): string => {
+    if (!value) return fallback;
+
+    // Grab YYYY-MM-DD from the front (works for "2025-10-01" and "2025-10-01T00:00:00Z")
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    if (!m) return fallback;
+
+    const [, y, mo, d] = m;
+    // Construct a local calendar date (no timezone shifting)
+    const date = new Date(Number(y), Number(mo) - 1, Number(d));
+    return format(date, 'P'); // localized short date (or use 'MM/dd/yyyy' if you want fixed format)
+};
+
+/**
+ * Format date for HTML date input fields (YYYY-MM-DD format).
+ * Always treat as date-only to avoid timezone issues.
+ */
+const formatDateForInput = (value?: string | null): string => {
+    if (!value) return '';
+
+    // Grab YYYY-MM-DD from the front (works for "2025-10-01" and "2025-10-01T00:00:00Z")
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    if (!m) return '';
+
+    const [, y, mo, d] = m;
+    return `${y}-${mo}-${d}`;
+};
 
 // CSV Export utility function
 const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
     try {
-        const formatDate = (dateStr: string | null | undefined) => {
-            if (!dateStr) return '';
-            try {
-                return new Date(dateStr).toLocaleDateString();
-            } catch (error) {
-                return dateStr || '';
-            }
-        };
-
         const formatString = (value: string | null | undefined) => {
             if (value === null || value === undefined) return '';
             return String(value).replace(/"/g, '""');
@@ -57,12 +81,12 @@ const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
                             moveOut.id || '',
                             `"${formatString(moveOut.units_name)}"`,
                             `"${formatString(moveOut.tenants_name)}"`,
-                            `"${formatDate(moveOut.move_out_date)}"`,
+                            `"${formatDateOnly(moveOut.move_out_date, '')}"`,
                             `"${formatString(moveOut.lease_status)}"`,
-                            `"${formatDate(moveOut.date_lease_ending_on_buildium)}"`,
+                            `"${formatDateOnly(moveOut.date_lease_ending_on_buildium, '')}"`,
                             `"${formatString(moveOut.keys_location)}"`,
                             `"${formatString(moveOut.utilities_under_our_name)}"`,
-                            `"${formatDate(moveOut.date_utility_put_under_our_name)}"`,
+                            `"${formatDateOnly(moveOut.date_utility_put_under_our_name, '')}"`,
                             `"${formatString(moveOut.walkthrough)}"`,
                             `"${formatString(moveOut.repairs)}"`,
                             `"${formatString(moveOut.send_back_security_deposit)}"`,
@@ -106,21 +130,107 @@ interface Props {
         meta: any;
     };
     search: string | null;
-    tenants: string[];
-    unitsByTenant: Record<string, string[]>;
+    cities: any[];
+    properties: any[];
+    unitsByProperty: Record<string, string[]>;
+    tenantsByUnit: Record<string, Array<{ id: string; full_name: string }>>;
+    allUnits: Array<{ unit_number: string; city_name: string; property_name: string }>;
     tenantsData: any[];
 }
 
-export default function Index({ moveOuts, search, tenants, unitsByTenant, tenantsData }: Props) {
+export default function Index({ moveOuts, search, cities, properties, unitsByProperty, tenantsByUnit, allUnits, tenantsData }: Props) {
     const [searchTerm, setSearchTerm] = useState(search || '');
     const [isExporting, setIsExporting] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [selectedMoveOut, setSelectedMoveOut] = useState<MoveOut | null>(null);
 
+    // Filter states
+    const [tempFilters, setTempFilters] = useState({
+        city: '',
+        property: '',
+        search: search || '',
+    });
+
+    const [filters, setFilters] = useState({
+        city: '',
+        property: '',
+        search: search || '',
+    });
+
+    // Dropdown states
+    const [showCityDropdown, setShowCityDropdown] = useState(false);
+    const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
+
+    // Refs for dropdowns
+    const cityDropdownRef = useRef<HTMLDivElement>(null);
+    const propertyDropdownRef = useRef<HTMLDivElement>(null);
+    const cityInputRef = useRef<HTMLInputElement>(null);
+    const propertyInputRef = useRef<HTMLInputElement>(null);
+
+    // Handle clicks outside dropdowns
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                cityDropdownRef.current &&
+                !cityDropdownRef.current.contains(event.target as Node) &&
+                cityInputRef.current &&
+                !cityInputRef.current.contains(event.target as Node)
+            ) {
+                setShowCityDropdown(false);
+            }
+            if (
+                propertyDropdownRef.current &&
+                !propertyDropdownRef.current.contains(event.target as Node) &&
+                propertyInputRef.current &&
+                !propertyInputRef.current.contains(event.target as Node)
+            ) {
+                setShowPropertyDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Filter change handlers
+    const handleTempFilterChange = (key: string, value: string) => {
+        setTempFilters((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const handleCitySelect = (city: any) => {
+        handleTempFilterChange('city', city.city);
+        setShowCityDropdown(false);
+    };
+
+    const handleCityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        handleTempFilterChange('city', value);
+        setShowCityDropdown(value.length > 0);
+    };
+
+    const handlePropertyInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        handleTempFilterChange('property', value);
+        setShowPropertyDropdown(value.length > 0);
+    };
+
+    const handleSearchClick = () => {
+        setFilters(tempFilters);
+        router.get(
+            route('move-out.index'),
+            {
+                search: tempFilters.search,
+                city: tempFilters.city,
+                property: tempFilters.property,
+            },
+            { preserveState: true },
+        );
+    };
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        router.get(route('move-out.index'), { search: searchTerm }, { preserveState: true });
+        handleSearchClick();
     };
 
     const handleDelete = (moveOut: MoveOut) => {
@@ -215,146 +325,255 @@ export default function Index({ moveOuts, search, tenants, unitsByTenant, tenant
         );
     };
 
-    const formatDate = (date: string | null) => {
-        if (!date) return 'N/A';
-        return new Date(date).toLocaleDateString();
-    };
-
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+
+    // Filter cities based on input
+    const filteredCities = cities.filter((city) => city.city.toLowerCase().includes(tempFilters.city.toLowerCase()));
+
+    // Filter properties based on input
+    const filteredProperties = properties.filter((property) => property.property_name.toLowerCase().includes(tempFilters.property.toLowerCase()));
 
     return (
         <AppLayout>
             <Head title="Move-Out Management" />
 
             <div className="min-h-screen bg-background py-12 text-foreground transition-colors">
-                <div className="mx-auto max-w-[100vw] sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    {/* Title and Buttons Section - Outside of Card */}
+                    <div className="mb-6 flex items-center justify-between">
+                        <h1 className="text-2xl font-bold text-foreground">Move-Out Management</h1>
+                        <div className="flex items-center gap-2">
+                            {/* Export Button */}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCSVExport}
+                                disabled={isExporting || !moveOuts?.data || moveOuts.data.length === 0}
+                                className="flex items-center"
+                            >
+                                <Download className="mr-2 h-4 w-4" />
+                                {isExporting ? 'Exporting...' : 'Export CSV'}
+                            </Button>
+
+                            {hasAllPermissions(['move-out.create', 'move-out.store']) && (
+                                <Button onClick={() => setIsDrawerOpen(true)}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Move-Out Record
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Card with Filters and Table */}
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-2xl">Move-Out Management</CardTitle>
-                                <div className="flex items-center gap-2">
-                                    {/* Export Button */}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleCSVExport}
-                                        disabled={isExporting || !moveOuts?.data || moveOuts.data.length === 0}
-                                        className="flex items-center"
-                                    >
-                                        <Download className="mr-2 h-4 w-4" />
-                                        {isExporting ? 'Exporting...' : 'Export CSV'}
-                                    </Button>
+                            {/* Filters */}
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
+                                {/* City Filter with Autocomplete */}
+                                <div className="relative">
+                                    <Input
+                                        ref={cityInputRef}
+                                        type="text"
+                                        placeholder="City"
+                                        value={tempFilters.city}
+                                        onChange={handleCityInputChange}
+                                        onFocus={() => setShowCityDropdown(true)}
+                                        className="text-input-foreground bg-input pr-8"
+                                    />
+                                    <ChevronDown className="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
-                                    {hasAllPermissions(['move-out.create', 'move-out.store']) && (
-                                        <Button onClick={() => setIsDrawerOpen(true)}>
-                                            <Plus className="mr-2 h-4 w-4" />
-                                            Add Move-Out Record
-                                        </Button>
+                                    {showCityDropdown && filteredCities.length > 0 && (
+                                        <div
+                                            ref={cityDropdownRef}
+                                            className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
+                                        >
+                                            {filteredCities.map((city) => (
+                                                <div
+                                                    key={city.id}
+                                                    className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                                    onClick={() => handleCitySelect(city)}
+                                                >
+                                                    {city.city}
+                                                </div>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
-                            </div>
 
-                            <form onSubmit={handleSearch} className="mt-4 flex gap-2">
-                                <div className="flex-1">
+                                {/* Property Filter with Autocomplete */}
+                                <div className="relative">
                                     <Input
+                                        ref={propertyInputRef}
                                         type="text"
-                                        placeholder="Search by tenant name, unit, or status..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="text-input-foreground bg-input"
+                                        placeholder="Property"
+                                        value={tempFilters.property}
+                                        onChange={handlePropertyInputChange}
+                                        onFocus={() => setShowPropertyDropdown(true)}
+                                        className="text-input-foreground bg-input pr-8"
                                     />
+                                    <ChevronDown className="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                                    {showPropertyDropdown && filteredProperties.length > 0 && (
+                                        <div
+                                            ref={propertyDropdownRef}
+                                            className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
+                                        >
+                                            {filteredProperties.map((property) => (
+                                                <div
+                                                    key={property.id}
+                                                    className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                                    onClick={() => {
+                                                        handleTempFilterChange('property', property.property_name);
+                                                        setShowPropertyDropdown(false);
+                                                    }}
+                                                >
+                                                    {property.property_name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                                <Button type="submit">
-                                    <Search className="h-4 w-4" />
+
+                                {/* Unit Search Filter */}
+                                <Input
+                                    type="text"
+                                    placeholder="Unit"
+                                    value={tempFilters.search}
+                                    onChange={(e) => handleTempFilterChange('search', e.target.value)}
+                                    className="text-input-foreground bg-input"
+                                />
+
+                                {/* Placeholder columns for responsive grid */}
+                                <div className="hidden md:block"></div>
+                                <div className="hidden md:block"></div>
+
+                                {/* Search Button */}
+                                <Button onClick={handleSearchClick} variant="default" className="flex items-center">
+                                    <Search className="mr-2 h-4 w-4" />
+                                    Search
                                 </Button>
-                            </form>
+                            </div>
                         </CardHeader>
 
                         <CardContent>
-                            <div className="overflow-x-auto">
-                                <Table>
+                            <div className="relative overflow-x-auto">
+                                <Table className="border-collapse rounded-md border border-border">
                                     <TableHeader>
                                         <TableRow className="border-border">
-                                            <TableHead className="min-w-[120px] text-muted-foreground">Unit Name</TableHead>
-                                            <TableHead className="min-w-[150px] text-muted-foreground">Tenant Name</TableHead>
-                                            <TableHead className="min-w-[120px] text-muted-foreground">Move Out Date</TableHead>
-                                            <TableHead className="min-w-[120px] text-muted-foreground">Lease Status</TableHead>
-                                            <TableHead className="min-w-[150px] text-muted-foreground">Lease Ending on Buildium</TableHead>
-                                            <TableHead className="min-w-[120px] text-muted-foreground">Keys Location</TableHead>
-                                            <TableHead className="min-w-[140px] text-muted-foreground">Utilities Under Our Name</TableHead>
-                                            <TableHead className="min-w-[160px] text-muted-foreground">Date Utility Put Under Our Name</TableHead>
-                                            <TableHead className="min-w-[150px] text-muted-foreground">Walkthrough</TableHead>
-                                            <TableHead className="min-w-[120px] text-muted-foreground">Repairs</TableHead>
-                                            <TableHead className="min-w-[160px] text-muted-foreground">Send Back Security Deposit</TableHead>
-                                            <TableHead className="min-w-[120px] text-muted-foreground">Notes</TableHead>
-                                            <TableHead className="min-w-[100px] text-muted-foreground">Cleaning</TableHead>
-                                            <TableHead className="min-w-[120px] text-muted-foreground">List the Unit</TableHead>
-                                            <TableHead className="min-w-[120px] text-muted-foreground">Move Out Form</TableHead>
+                                            <TableHead className="sticky left-0 z-10 min-w-[120px] border border-border bg-muted text-muted-foreground">
+                                                City
+                                            </TableHead>
+                                            <TableHead className="sticky left-[120px] z-10 min-w-[150px] border border-border bg-muted text-muted-foreground">
+                                                Property Name
+                                            </TableHead>
+                                            <TableHead className="sticky left-[270px] z-10 min-w-[120px] border border-border bg-muted text-muted-foreground">
+                                                Unit Name
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Tenant Name</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Move Out Date</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Lease Status</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">
+                                                Lease Ending on Buildium
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Keys Location</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">
+                                                Utilities Under Our Name
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">
+                                                Date Utility Put Under Our Name
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Walkthrough</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Repairs</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">
+                                                Send Back Security Deposit
+                                            </TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Notes</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Cleaning</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">List the Unit</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Move Out Form</TableHead>
                                             {hasAnyPermission(['move-out.show', 'move-out.edit', 'move-out.update', 'move-out.destroy']) && (
-                                                <TableHead className="min-w-[120px] text-muted-foreground">Actions</TableHead>
+                                                <TableHead className="border border-border bg-muted text-muted-foreground">Actions</TableHead>
                                             )}
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {moveOuts.data.map((moveOut) => (
                                             <TableRow key={moveOut.id} className="border-border hover:bg-muted/50">
-                                                <TableCell className="text-foreground">{moveOut.units_name}</TableCell>
-                                                <TableCell className="font-medium text-foreground">{moveOut.tenants_name}</TableCell>
-                                                <TableCell className="text-foreground">{formatDate(moveOut.move_out_date)}</TableCell>
-                                                <TableCell>
+                                                <TableCell className="sticky left-0 z-10 border border-border bg-muted text-center font-medium text-foreground">
+                                                    {moveOut.city_name || 'N/A'}
+                                                </TableCell>
+                                                <TableCell className="sticky left-[120px] z-10 border border-border bg-muted text-center font-medium text-foreground">
+                                                    {moveOut.property_name || 'N/A'}
+                                                </TableCell>
+                                                <TableCell className="sticky left-[270px] z-10 border border-border bg-muted text-center font-medium text-foreground">
+                                                    {moveOut.units_name}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {moveOut.tenants_name}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {formatDateOnly(moveOut.move_out_date)}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center">
                                                     {moveOut.lease_status ? (
                                                         <Badge variant="outline">{moveOut.lease_status}</Badge>
                                                     ) : (
                                                         <span className="text-muted-foreground">N/A</span>
                                                     )}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">{formatDate(moveOut.date_lease_ending_on_buildium)}</TableCell>
-                                                <TableCell className="text-foreground">
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {formatDateOnly(moveOut.date_lease_ending_on_buildium)}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     {moveOut.keys_location || <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
-                                                <TableCell>{getYesNoBadge(moveOut.utilities_under_our_name)}</TableCell>
-                                                <TableCell className="text-foreground">
-                                                    {formatDate(moveOut.date_utility_put_under_our_name)}
+                                                <TableCell className="border border-border text-center">
+                                                    {getYesNoBadge(moveOut.utilities_under_our_name)}
                                                 </TableCell>
-                                                <TableCell className="max-w-[150px] truncate text-foreground">
+                                                <TableCell className="border border-border text-center text-foreground">
+                                                    {formatDateOnly(moveOut.date_utility_put_under_our_name)}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center">
                                                     {moveOut.walkthrough ? (
-                                                        <span title={moveOut.walkthrough}>
-                                                            {moveOut.walkthrough.length > 50
-                                                                ? `${moveOut.walkthrough.substring(0, 50)}...`
-                                                                : moveOut.walkthrough}
-                                                        </span>
+                                                        <div className="max-w-32 truncate" title={moveOut.walkthrough}>
+                                                            {moveOut.walkthrough}
+                                                        </div>
                                                     ) : (
                                                         <span className="text-muted-foreground">N/A</span>
                                                     )}
                                                 </TableCell>
-                                                <TableCell className="max-w-[120px] truncate text-foreground">
+                                                <TableCell className="border border-border text-center">
                                                     {moveOut.repairs ? (
-                                                        <span title={moveOut.repairs}>
-                                                            {moveOut.repairs.length > 30 ? `${moveOut.repairs.substring(0, 30)}...` : moveOut.repairs}
-                                                        </span>
+                                                        <div className="max-w-24 truncate" title={moveOut.repairs}>
+                                                            {moveOut.repairs}
+                                                        </div>
                                                     ) : (
                                                         <span className="text-muted-foreground">N/A</span>
                                                     )}
                                                 </TableCell>
-                                                <TableCell className="text-foreground">
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     {moveOut.send_back_security_deposit || <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
-                                                <TableCell className="max-w-[120px] truncate text-foreground">
+                                                <TableCell className="border border-border text-center">
                                                     {moveOut.notes ? (
-                                                        <span title={moveOut.notes}>
-                                                            {moveOut.notes.length > 30 ? `${moveOut.notes.substring(0, 30)}...` : moveOut.notes}
-                                                        </span>
+                                                        <div className="max-w-24 truncate" title={moveOut.notes}>
+                                                            {moveOut.notes}
+                                                        </div>
                                                     ) : (
                                                         <span className="text-muted-foreground">N/A</span>
                                                     )}
                                                 </TableCell>
-                                                <TableCell>{getCleaningBadge(moveOut.cleaning)}</TableCell>
-                                                <TableCell className="text-foreground">
+                                                <TableCell className="border border-border text-center">
+                                                    {getCleaningBadge(moveOut.cleaning)}
+                                                </TableCell>
+                                                <TableCell className="border border-border text-center text-foreground">
                                                     {moveOut.list_the_unit || <span className="text-muted-foreground">N/A</span>}
                                                 </TableCell>
-                                                <TableCell>{getFormBadge(moveOut.move_out_form)}</TableCell>
+                                                <TableCell className="border border-border text-center">
+                                                    {getFormBadge(moveOut.move_out_form)}
+                                                </TableCell>
                                                 {hasAnyPermission(['move-out.show', 'move-out.edit', 'move-out.update', 'move-out.destroy']) && (
-                                                    <TableCell>
+                                                    <TableCell className="border border-border text-center">
                                                         <div className="flex gap-1">
                                                             {hasPermission('move-out.show') && (
                                                                 <Link href={route('move-out.show', moveOut.id)}>
@@ -364,11 +583,7 @@ export default function Index({ moveOuts, search, tenants, unitsByTenant, tenant
                                                                 </Link>
                                                             )}
                                                             {hasAllPermissions(['move-out.edit', 'move-out.update']) && (
-                                                                <Button 
-                                                                    variant="outline" 
-                                                                    size="sm"
-                                                                    onClick={() => handleEditClick(moveOut)}
-                                                                >
+                                                                <Button variant="outline" size="sm" onClick={() => handleEditClick(moveOut)}>
                                                                     <Edit className="h-4 w-4" />
                                                                 </Button>
                                                             )}
@@ -413,8 +628,10 @@ export default function Index({ moveOuts, search, tenants, unitsByTenant, tenant
 
             {/* Move-Out Create Drawer */}
             <MoveOutCreateDrawer
-                tenants={tenants}
-                unitsByTenant={unitsByTenant}
+                cities={cities}
+                properties={properties}
+                unitsByProperty={unitsByProperty}
+                tenantsByUnit={tenantsByUnit}
                 tenantsData={tenantsData}
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
@@ -422,15 +639,25 @@ export default function Index({ moveOuts, search, tenants, unitsByTenant, tenant
             />
 
             {/* Move-Out Edit Drawer */}
-            <MoveOutEditDrawer
-                open={isEditDrawerOpen}
-                onOpenChange={setIsEditDrawerOpen}
-                onSuccess={handleEditDrawerSuccess}
-                moveOut={selectedMoveOut}
-                tenants={tenants}
-                unitsByTenant={unitsByTenant}
-                tenantsData={tenantsData}
-            />
+            {selectedMoveOut && (
+                <MoveOutEditDrawer
+                    cities={cities}
+                    properties={properties}
+                    unitsByProperty={unitsByProperty}
+                    tenantsByUnit={tenantsByUnit}
+                    allUnits={allUnits}
+                    tenantsData={tenantsData}
+                    moveOut={{
+                        ...selectedMoveOut,
+                        move_out_date: formatDateForInput(selectedMoveOut.move_out_date),
+                        date_lease_ending_on_buildium: formatDateForInput(selectedMoveOut.date_lease_ending_on_buildium),
+                        date_utility_put_under_our_name: formatDateForInput(selectedMoveOut.date_utility_put_under_our_name),
+                    }}
+                    open={isEditDrawerOpen}
+                    onOpenChange={setIsEditDrawerOpen}
+                    onSuccess={handleEditDrawerSuccess}
+                />
+            )}
         </AppLayout>
     );
 }

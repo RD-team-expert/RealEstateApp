@@ -20,6 +20,8 @@ export interface MoveOut {
 }
 
 export type MoveOutFormData = {
+    city_name?: string;
+    property_name?: string;
     tenants_name: string;
     units_name: string;
     move_out_date: string;
@@ -40,4 +42,5 @@ export type MoveOutFormData = {
 export interface TenantData {
     full_name: string;
     unit_number: string;
+    property_name?: string;
 }

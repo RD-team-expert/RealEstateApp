@@ -39,8 +39,11 @@ class MoveOutController extends Controller
         return Inertia::render('MoveOut/Index', [
             'moveOuts' => $moveOuts,
             'search' => $search,
-            'tenants' => $dropdownData['tenants'],
-            'unitsByTenant' => $dropdownData['unitsByTenant'],
+            'cities' => $dropdownData['cities'],
+            'properties' => $dropdownData['properties'],
+            'unitsByProperty' => $dropdownData['unitsByProperty'],
+            'tenantsByUnit' => $dropdownData['tenantsByUnit'],
+            'allUnits' => $dropdownData['allUnits'],
             'tenantsData' => $dropdownData['tenantsData'],
         ]);
     }
@@ -50,8 +53,11 @@ class MoveOutController extends Controller
         $dropdownData = $this->moveOutService->getDropdownData();
 
         return Inertia::render('MoveOut/Create', [
-            'tenants' => $dropdownData['tenants'],
-            'unitsByTenant' => $dropdownData['unitsByTenant'],
+            'cities' => $dropdownData['cities'],
+            'properties' => $dropdownData['properties'],
+            'unitsByProperty' => $dropdownData['unitsByProperty'],
+            'tenantsByUnit' => $dropdownData['tenantsByUnit'],
+            'allUnits' => $dropdownData['allUnits'],
             'tenantsData' => $dropdownData['tenantsData'],
         ]);
     }
@@ -78,8 +84,11 @@ class MoveOutController extends Controller
 
         return Inertia::render('MoveOut/Edit', [
             'moveOut' => $moveOut,
-            'tenants' => $dropdownData['tenants'],
-            'unitsByTenant' => $dropdownData['unitsByTenant'],
+            'cities' => $dropdownData['cities'],
+            'properties' => $dropdownData['properties'],
+            'unitsByProperty' => $dropdownData['unitsByProperty'],
+            'tenantsByUnit' => $dropdownData['tenantsByUnit'],
+            'allUnits' => $dropdownData['allUnits'],
             'tenantsData' => $dropdownData['tenantsData'],
         ]);
     }

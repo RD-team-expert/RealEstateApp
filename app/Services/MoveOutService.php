@@ -66,26 +66,61 @@ class MoveOutService
 
     public function getDropdownData(): array
     {
-        // Get tenants with their full names and unit numbers
+        // Get cities
+        $cities = \App\Models\Cities::all();
+        
+        // Get properties with city relationships
+        $properties = \App\Models\PropertyInfoWithoutInsurance::with('city')->get();
+        
+        // Get units data for dropdowns
+        $units = \App\Models\Unit::select('city', 'property', 'unit_name')
+            ->orderBy('city')
+            ->orderBy('property')
+            ->orderBy('unit_name')
+            ->get();
+
+        // Create arrays for dropdowns
+        $unitsByProperty = $units->groupBy('property')->map(function ($propertyUnits) {
+            return $propertyUnits->pluck('unit_name')->unique()->values();
+        });
+
+        // Get tenants with their full names, unit numbers, and property info
         $tenants = DB::table('tenants')
             ->select(
                 DB::raw("CONCAT(first_name, ' ', last_name) as full_name"),
-                'unit_number'
+                'unit_number',
+                'property_name'
             )
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get();
 
-        $tenantNames = $tenants->pluck('full_name')->unique()->values()->toArray();
+        // Group tenants by unit
+        $tenantsByUnit = $tenants->groupBy('unit_number')->map(function ($unitTenants) {
+            return $unitTenants->map(function ($tenant) {
+                return [
+                    'id' => $tenant->full_name, // Using full_name as ID for consistency
+                    'full_name' => $tenant->full_name
+                ];
+            })->values();
+        });
 
-        // Group units by tenant names
-        $unitsByTenant = $tenants->groupBy('full_name')->map(function ($tenantUnits) {
-            return $tenantUnits->pluck('unit_number')->unique()->values()->toArray();
-        })->toArray();
+        // Get all units with their city and property info for the edit drawer
+        $allUnits = $units->map(function ($unit) {
+            return [
+                'id' => $unit->unit_name,
+                'unit_number' => $unit->unit_name,
+                'property_name' => $unit->property,
+                'city' => $unit->city
+            ];
+        });
 
         return [
-            'tenants' => $tenantNames,
-            'unitsByTenant' => $unitsByTenant,
+            'cities' => $cities,
+            'properties' => $properties,
+            'unitsByProperty' => $unitsByProperty,
+            'tenantsByUnit' => $tenantsByUnit,
+            'allUnits' => $allUnits,
             'tenantsData' => $tenants
         ];
     }
