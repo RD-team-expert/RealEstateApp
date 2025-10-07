@@ -19,6 +19,8 @@ class MoveInService
     {
         return MoveIn::where(function ($query) use ($search) {
                          $query->where('unit_name', 'like', "%{$search}%")
+                               ->orWhere('city_name', 'like', "%{$search}%")
+                               ->orWhere('property_name', 'like', "%{$search}%")
                                ->orWhere('signed_lease', 'like', "%{$search}%")
                                ->orWhere('paid_security_deposit_first_month_rent', 'like', "%{$search}%")
                                ->orWhere('handled_keys', 'like', "%{$search}%")

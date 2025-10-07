@@ -61,6 +61,7 @@ export default function MoveInCreateDrawer({ units, cities, properties, unitsByP
         date_of_insurance_expiration: '',
         city_id: '',
         property_name: '',
+        city_name: '',
     });
 
     // Comprehensive reset function to clear all form state
@@ -81,6 +82,10 @@ export default function MoveInCreateDrawer({ units, cities, properties, unitsByP
         setCityValidationError('');
         setPropertyValidationError('');
         setValidationError('');
+
+        // Set city_name based on selected city
+        const selectedCity = cities.find(city => city.id.toString() === cityId);
+        setData('city_name', selectedCity ? selectedCity.city : '');
 
         if (cityId) {
             const filteredProperties = properties.filter((property) => property.city_id?.toString() === cityId);

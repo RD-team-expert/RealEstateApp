@@ -1,6 +1,7 @@
 export interface VendorTaskTracker {
     id: number;
     city: string;
+    property_name: string | null;
     task_submission_date: string;  // ISO string date
     vendor_name: string;
     unit_name: string;
@@ -16,6 +17,7 @@ export interface VendorTaskTracker {
 
 export type VendorTaskTrackerFormData = {
     city: string;
+    property_name: string;
     task_submission_date: string;
     vendor_name: string;
     unit_name: string;

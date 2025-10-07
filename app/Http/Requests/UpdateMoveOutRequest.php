@@ -48,6 +48,8 @@ class UpdateMoveOutRequest extends FormRequest
                     }
                 }
             ],
+            'city_name' => ['nullable', 'string', 'max:255'],
+            'property_name' => ['nullable', 'string', 'max:255'],
             'move_out_date' => ['nullable', 'date'],
             'lease_status' => ['nullable', 'string', 'max:255'],
             'date_lease_ending_on_buildium' => ['nullable', 'date'],

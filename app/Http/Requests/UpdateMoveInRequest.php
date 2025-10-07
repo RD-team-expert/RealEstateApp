@@ -21,6 +21,8 @@ class UpdateMoveInRequest extends FormRequest
                 'max:255',
                 Rule::exists('units', 'unit_name')
             ],
+            'city_name' => ['nullable', 'string', 'max:255'],
+            'property_name' => ['nullable', 'string', 'max:255'],
             'signed_lease' => ['required', 'string', Rule::in(['Yes', 'No'])],
             'lease_signing_date' => ['nullable', 'date'],
             'move_in_date' => ['nullable', 'date'],

@@ -14,6 +14,8 @@ class MoveIn extends Model
 
     protected $fillable = [
         'unit_name',
+        'city_name',
+        'property_name',
         'signed_lease',
         'lease_signing_date',
         'move_in_date',

@@ -112,7 +112,7 @@ export default function VendorTaskTrackerEditDrawer({
 
     const { data, setData, put, processing, errors, reset } = useForm<VendorTaskTrackerFormData>({
         city: task.city ?? '',
-        property: task.property ?? '',
+        property_name: task.property_name ?? '',
         task_submission_date: task.task_submission_date ?? '',
         vendor_name: task.vendor_name ?? '',
         unit_name: task.unit_name ?? '',
@@ -141,11 +141,11 @@ export default function VendorTaskTrackerEditDrawer({
                 setAvailableVendors([]);
             }
 
-            // Set available units based on city and property
-            if (task.property && unitsByProperty[task.city] && unitsByProperty[task.city][task.property]) {
-                setAvailableUnits(unitsByProperty[task.city][task.property]);
+            // Set available units based on city and property_name
+            if (task.property_name && unitsByProperty[task.city] && unitsByProperty[task.city][task.property_name]) {
+                setAvailableUnits(unitsByProperty[task.city][task.property_name]);
             } else if (unitsByCity[task.city]) {
-                // Fallback to old behavior if property is not set
+                // Fallback to old behavior if property_name is not set
                 setAvailableUnits(unitsByCity[task.city]);
             } else {
                 setAvailableUnits([]);
@@ -155,11 +155,11 @@ export default function VendorTaskTrackerEditDrawer({
             setAvailableVendors([]);
             setAvailableUnits([]);
         }
-    }, [task.city, task.property, unitsByCity, propertiesByCity, unitsByProperty, vendorsByCity]);
+    }, [task.city, task.property_name, unitsByCity, propertiesByCity, unitsByProperty, vendorsByCity]);
 
     const handleCityChange = (city: string) => {
         setData('city', city);
-        setData('property', '');
+        setData('property_name', '');
         setData('unit_name', '');
         setData('vendor_name', '');
         setValidationError('');
@@ -190,7 +190,7 @@ export default function VendorTaskTrackerEditDrawer({
     };
 
     const handlePropertyChange = (property: string) => {
-        setData('property', property);
+        setData('property_name', property);
         setData('unit_name', '');
         setUnitValidationError('');
 
@@ -304,6 +304,7 @@ export default function VendorTaskTrackerEditDrawer({
         // Reset form to original task data
         setData({
             city: task.city ?? '',
+            property_name: task.property_name ?? '',
             task_submission_date: task.task_submission_date ?? '',
             vendor_name: task.vendor_name ?? '',
             unit_name: task.unit_name ?? '',
@@ -365,7 +366,7 @@ export default function VendorTaskTrackerEditDrawer({
                                 </div>
                                 <Select
                                     onValueChange={handlePropertyChange}
-                                    value={data.property || undefined}
+                                    value={data.property_name || undefined}
                                     disabled={!data.city}
                                 >
                                     <SelectTrigger>
@@ -379,7 +380,7 @@ export default function VendorTaskTrackerEditDrawer({
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.property && <p className="mt-1 text-sm text-red-600">{errors.property}</p>}
+                                {errors.property_name && <p className="mt-1 text-sm text-red-600">{errors.property_name}</p>}
                             </div>
 
                             <div className="rounded-lg border-l-4 border-l-green-500 p-4">
@@ -391,7 +392,7 @@ export default function VendorTaskTrackerEditDrawer({
                                 <Select
                                     onValueChange={handleUnitChange}
                                     value={data.unit_name || undefined}
-                                    disabled={!data.property}
+                                    disabled={!data.property_name}
                                 >
                                     <SelectTrigger ref={unitRef}>
                                         <SelectValue placeholder="Select unit" />

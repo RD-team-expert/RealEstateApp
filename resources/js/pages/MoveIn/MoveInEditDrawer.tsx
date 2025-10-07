@@ -113,6 +113,7 @@ export default function MoveInEditDrawer({ moveIn, units, cities, properties, un
         date_of_insurance_expiration: moveIn.date_of_insurance_expiration ?? '',
         city_id: initialCityId,
         property_name: initialPropertyName,
+        city_name: moveIn.city_name ?? '',
     });
 
     // Initialize available properties and units based on the current move-in data
@@ -142,6 +143,10 @@ export default function MoveInEditDrawer({ moveIn, units, cities, properties, un
         setCityValidationError('');
         setPropertyValidationError('');
         setValidationError('');
+
+        // Set city_name based on selected city
+        const selectedCity = cities.find(city => city.id.toString() === cityId);
+        setData('city_name', selectedCity ? selectedCity.city : '');
 
         if (cityId) {
             const filteredProperties = properties.filter((property) => property.city_id?.toString() === cityId);

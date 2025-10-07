@@ -21,6 +21,11 @@ class StoreVendorTaskTrackerRequest extends FormRequest
                 'max:255',
                 Rule::exists('units', 'city')
             ],
+            'property_name' => [
+                'nullable',
+                'string',
+                'max:255'
+            ],
             'task_submission_date' => ['required', 'date'],
             'vendor_name' => [
                 'required',

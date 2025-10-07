@@ -455,10 +455,10 @@ export default function Index({ moveIns, search, units, cities, properties, unit
                                         {moveIns.data.map((moveIn) => (
                                             <TableRow key={moveIn.id} className="border-border hover:bg-muted/50">
                                                 <TableCell className="sticky left-0 z-10 border border-border bg-muted text-center font-medium text-foreground">
-                                                    {getCityNameFromUnit(moveIn.unit_name)}
+                                                    {moveIn.city_name || getCityNameFromUnit(moveIn.unit_name)}
                                                 </TableCell>
                                                 <TableCell className="sticky left-[120px] z-10 border border-border bg-muted text-center font-medium text-foreground">
-                                                    {getPropertyNameFromUnit(moveIn.unit_name)}
+                                                    {moveIn.property_name || getPropertyNameFromUnit(moveIn.unit_name)}
                                                 </TableCell>
                                                 <TableCell className="sticky left-[270px] z-10 border border-border bg-muted text-center font-medium text-foreground">
                                                     {moveIn.unit_name}

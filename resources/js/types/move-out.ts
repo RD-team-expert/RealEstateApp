@@ -2,6 +2,8 @@ export interface MoveOut {
     id: number;
     tenants_name: string;
     units_name: string;
+    city_name: string | null;
+    property_name: string | null;
     move_out_date: string | null;  // ISO string date
     lease_status: string | null;
     date_lease_ending_on_buildium: string | null;  // ISO string date

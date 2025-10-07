@@ -25,13 +25,9 @@ class VendorTaskTrackerService
             $query->where('city', 'like', "%{$filters['city']}%");
         }
 
-        // Apply property filter - need to join with units to get property info
+        // Apply property filter - now using property_name directly
         if (!empty($filters['property'])) {
-            $query->whereIn('unit_name', function ($subQuery) use ($filters) {
-                $subQuery->select('unit_name')
-                    ->from('units')
-                    ->where('property', 'like', "%{$filters['property']}%");
-            });
+            $query->where('property_name', 'like', "%{$filters['property']}%");
         }
 
         // Apply unit name filter
@@ -43,6 +39,7 @@ class VendorTaskTrackerService
         if (!empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
                 $q->where('city', 'like', "%{$filters['search']}%")
+                  ->orWhere('property_name', 'like', "%{$filters['search']}%")
                   ->orWhere('vendor_name', 'like', "%{$filters['search']}%")
                   ->orWhere('unit_name', 'like', "%{$filters['search']}%")
                   ->orWhere('assigned_tasks', 'like', "%{$filters['search']}%")

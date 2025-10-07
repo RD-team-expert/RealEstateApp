@@ -15,6 +15,8 @@ class MoveOut extends Model
     protected $fillable = [
         'tenants_name',
         'units_name',
+        'city_name',
+        'property_name',
         'move_out_date',
         'lease_status',
         'date_lease_ending_on_buildium',

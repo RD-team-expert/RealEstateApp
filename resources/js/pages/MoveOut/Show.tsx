@@ -81,6 +81,14 @@ export default function Show({ moveOut }: Props) {
                                         <p className="font-medium">{moveOut.units_name}</p>
                                     </div>
                                     <div>
+                                        <p className="text-sm text-muted-foreground">City Name</p>
+                                        <p className="font-medium">{moveOut.city_name || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Property Name</p>
+                                        <p className="font-medium">{moveOut.property_name || 'N/A'}</p>
+                                    </div>
+                                    <div>
                                         <p className="text-sm text-muted-foreground">Lease Status</p>
                                         <p className="font-medium">{moveOut.lease_status || 'N/A'}</p>
                                     </div>

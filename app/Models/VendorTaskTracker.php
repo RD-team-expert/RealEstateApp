@@ -15,6 +15,7 @@ class VendorTaskTracker extends Model
 
     protected $fillable = [
         'city',
+        'property_name',
         'task_submission_date',
         'vendor_name',
         'unit_name',

@@ -34,9 +34,6 @@ const formatDateOnly = (value?: string | null, fallback = '-'): string => {
 const exportToCSV = (
     data: VendorTaskTracker[],
     filename: string = 'vendor-tasks.csv',
-    properties: Array<{ id: number; property_name: string; city: { city: string } }>,
-    units: string[],
-    unitsByProperty: Record<string, Record<string, string[]>>,
 ) => {
     const headers = [
         'ID',
@@ -56,23 +53,10 @@ const exportToCSV = (
     const csvData = [
         headers.join(','),
         ...data.map((task) => {
-            // Find property for this task
-            const property =
-                properties.find((p) =>
-                    units.some(
-                        (u) =>
-                            u === task.unit_name &&
-                            p.property_name &&
-                            unitsByProperty[task.city] &&
-                            unitsByProperty[task.city][p.property_name] &&
-                            unitsByProperty[task.city][p.property_name].includes(task.unit_name),
-                    ),
-                )?.property_name || '';
-
             return [
                 task.id,
                 `"${task.city}"`,
-                `"${property}"`,
+                `"${task.property_name || ''}"`,
                 `"${task.unit_name}"`,
                 `"${task.vendor_name}"`,
                 `"${formatDateOnly(task.task_submission_date, '')}"`,
@@ -277,7 +261,7 @@ export default function Index({
         setIsExporting(true);
         try {
             const filename = `vendor-tasks-${new Date().toISOString().split('T')[0]}.csv`;
-            exportToCSV(tasks.data, filename, properties, units, unitsByProperty);
+            exportToCSV(tasks.data, filename);
         } catch (error) {
             console.error('Export failed:', error);
             alert('Export failed. Please try again.');
@@ -426,16 +410,16 @@ export default function Index({
                                 <Table className="border-collapse rounded-md border border-border">
                                     <TableHeader>
                                         <TableRow className="border-border">
-                                            <TableHead className="sticky left-0 z-10 w-[80px] border border-border bg-muted text-muted-foreground">
+                                            <TableHead className="sticky left-0 z-10 min-w-[120px] border border-border bg-muted text-muted-foreground">
                                                 City
                                             </TableHead>
-                                            <TableHead className="sticky w-[140px] left-[80px] z-10 border border-border bg-muted text-muted-foreground">
+                                            <TableHead className="sticky left-[120px] z-10 min-w-[150px] border border-border bg-muted text-muted-foreground">
                                                 Property
                                             </TableHead>
-                                            <TableHead className="sticky w-[80px] left-[220px] z-10 border border-border bg-muted text-muted-foreground">
+                                            <TableHead className="sticky left-[270px] z-10 min-w-[120px] border border-border bg-muted text-muted-foreground">
                                                 Unit Name
                                             </TableHead>
-                                            <TableHead className="sticky left-[300px] z-10 border border-border bg-muted text-muted-foreground">
+                                            <TableHead className="sticky left-[390px] z-10 min-w-[120px] border border-border bg-muted text-muted-foreground">
                                                 Vendor Name
                                             </TableHead>
                                             <TableHead className="border border-border bg-muted text-muted-foreground">Submission Date</TableHead>
@@ -456,25 +440,16 @@ export default function Index({
                                     <TableBody>
                                         {tasks.data.map((task) => (
                                             <TableRow key={task.id} className="border-border hover:bg-muted/50">
-                                                <TableCell className="sticky w-[80px] left-0 z-10 border border-border bg-muted text-muted-foreground">
+                                                <TableCell className="sticky left-0 z-10 border border-border bg-muted text-center font-medium text-foreground">
                                                     {task.city}
                                                 </TableCell>
-                                                <TableCell className="sticky w-[140px] left-[80px] z-10 border border-border bg-muted text-muted-foreground">
-                                                    {properties.find((p) =>
-                                                        units.some(
-                                                            (u) =>
-                                                                u === task.unit_name &&
-                                                                p.property_name &&
-                                                                unitsByProperty[task.city] &&
-                                                                unitsByProperty[task.city][p.property_name] &&
-                                                                unitsByProperty[task.city][p.property_name].includes(task.unit_name),
-                                                        ),
-                                                    )?.property_name || '-'}
+                                                <TableCell className="sticky left-[120px] z-10 border border-border bg-muted text-center font-medium text-foreground">
+                                                    {task.property_name || '-'}
                                                 </TableCell>
-                                                <TableCell className="sticky w-[80px] left-[220px] z-10 border border-border bg-muted text-muted-foreground">
+                                                <TableCell className="sticky left-[270px] z-10 border border-border bg-muted text-center font-medium text-foreground">
                                                     {task.unit_name}
                                                 </TableCell>
-                                                <TableCell className="sticky left-[300px] z-10 border border-border bg-muted text-muted-foreground">
+                                                <TableCell className="sticky left-[390px] z-10 border border-border bg-muted text-center font-medium text-foreground">
                                                     {task.vendor_name}
                                                 </TableCell>
                                                 <TableCell className="border border-border text-center text-foreground">

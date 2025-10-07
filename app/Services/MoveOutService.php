@@ -21,6 +21,8 @@ class MoveOutService
         return MoveOut::where(function ($query) use ($search) {
                           $query->where('tenants_name', 'like', "%{$search}%")
                                 ->orWhere('units_name', 'like', "%{$search}%")
+                                ->orWhere('city_name', 'like', "%{$search}%")
+                                ->orWhere('property_name', 'like', "%{$search}%")
                                 ->orWhere('lease_status', 'like', "%{$search}%")
                                 ->orWhere('keys_location', 'like', "%{$search}%")
                                 ->orWhere('walkthrough', 'like', "%{$search}%")
@@ -111,7 +113,7 @@ class MoveOutService
                 'id' => $unit->unit_name,
                 'unit_number' => $unit->unit_name,
                 'property_name' => $unit->property,
-                'city' => $unit->city
+                'city_name' => $unit->city
             ];
         });
 

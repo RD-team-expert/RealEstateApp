@@ -219,8 +219,10 @@ export default function MoveOutCreateDrawer({
             return;
         }
 
-        // Create form data without city_name and property_name for backend
+        // Create form data including city_name and property_name for backend
         const formData = {
+            city_name: data.city_name,
+            property_name: data.property_name,
             tenants_name: data.tenants_name,
             units_name: data.units_name,
             move_out_date: data.move_out_date,

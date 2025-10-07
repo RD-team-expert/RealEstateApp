@@ -103,8 +103,8 @@ export default function MoveOutEditDrawer({
     };
 
     const { data, setData, put, processing, errors, reset } = useForm<MoveOutFormData>({
-        city_name: '',
-        property_name: '',
+        city_name: moveOut.city_name || '',
+        property_name: moveOut.property_name || '',
         tenants_name: moveOut.tenants_name || '',
         units_name: moveOut.units_name || '',
         move_out_date: moveOut.move_out_date || '',
@@ -301,8 +301,10 @@ export default function MoveOutEditDrawer({
             return;
         }
 
-        // Create form data without city_name and property_name for backend
+        // Create form data including city_name and property_name for backend
         const formData = {
+            city_name: data.city_name,
+            property_name: data.property_name,
             tenants_name: data.tenants_name,
             units_name: data.units_name,
             move_out_date: data.move_out_date,
@@ -334,8 +336,8 @@ export default function MoveOutEditDrawer({
         const unitInfo = allUnits?.find(unit => unit.unit_number === moveOut.units_name);
         
         setData({
-            city_name: unitInfo?.city_name || '',
-            property_name: unitInfo?.property_name || '',
+            city_name: moveOut.city_name || '',
+            property_name: moveOut.property_name || '',
             tenants_name: moveOut.tenants_name || '',
             units_name: moveOut.units_name || '',
             move_out_date: moveOut.move_out_date || '',

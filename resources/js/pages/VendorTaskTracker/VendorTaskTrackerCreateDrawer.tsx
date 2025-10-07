@@ -64,7 +64,7 @@ export default function VendorTaskTrackerCreateDrawer({
 
     const { data, setData, post, processing, errors, reset } = useForm<VendorTaskTrackerFormData>({
         city: '',
-        property: '',
+        property_name: '',
         task_submission_date: '',
         vendor_name: '',
         unit_name: '',
@@ -78,7 +78,7 @@ export default function VendorTaskTrackerCreateDrawer({
 
     const handleCityChange = (city: string) => {
         setData('city', city);
-        setData('property', '');
+        setData('property_name', '');
         setData('unit_name', '');
         setData('vendor_name', '');
         setValidationError('');
@@ -109,7 +109,7 @@ export default function VendorTaskTrackerCreateDrawer({
     };
 
     const handlePropertyChange = (property: string) => {
-        setData('property', property);
+        setData('property_name', property);
         setData('unit_name', '');
         setUnitValidationError('');
 
@@ -274,7 +274,7 @@ export default function VendorTaskTrackerCreateDrawer({
                                 </div>
                                 <Select
                                     onValueChange={handlePropertyChange}
-                                    value={data.property}
+                                    value={data.property_name}
                                     disabled={!data.city}
                                 >
                                     <SelectTrigger>
@@ -288,7 +288,7 @@ export default function VendorTaskTrackerCreateDrawer({
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.property && <p className="mt-1 text-sm text-red-600">{errors.property}</p>}
+                                {errors.property_name && <p className="mt-1 text-sm text-red-600">{errors.property_name}</p>}
                             </div>
 
                             <div className="rounded-lg border-l-4 border-l-green-500 p-4">
@@ -300,7 +300,7 @@ export default function VendorTaskTrackerCreateDrawer({
                                 <Select
                                     onValueChange={handleUnitChange}
                                     value={data.unit_name}
-                                    disabled={!data.property}
+                                    disabled={!data.property_name}
                                 >
                                     <SelectTrigger ref={unitRef}>
                                         <SelectValue placeholder="Select unit" />

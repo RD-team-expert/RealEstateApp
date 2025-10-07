@@ -1,6 +1,8 @@
 export interface MoveIn {
     id: number;
     unit_name: string;
+    city_name?: string | null;
+    property_name?: string | null;
     signed_lease: 'Yes' | 'No';
     lease_signing_date: string | null;  // ISO string date
     move_in_date: string | null;  // ISO string date
@@ -18,6 +20,8 @@ export interface MoveIn {
 
 export type MoveInFormData = {
     unit_name: string;
+    city_name?: string;
+    property_name?: string;
     signed_lease: 'Yes' | 'No' | '';
     lease_signing_date: string;
     move_in_date: string;
