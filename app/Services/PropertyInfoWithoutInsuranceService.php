@@ -87,6 +87,17 @@ class PropertyInfoWithoutInsuranceService
     }
 
     /**
+     * Get all available properties for dropdown selection
+     * This method is used by PropertyInfoController for property selection
+     */
+    public function getAvailableProperties(): Collection
+    {
+        return PropertyInfoWithoutInsurance::with('city')
+            ->orderBy('property_name')
+            ->get();
+    }
+
+    /**
      * Get properties without city assigned
      */
     public function getPropertiesWithoutCity(): Collection

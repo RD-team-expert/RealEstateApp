@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('property_info_without_insurance', function (Blueprint $table) {
             $table->id();
             $table->foreignId('city_id')->nullable()->constrained('cities')->onDelete('set null');
-            $table->string('property_name')->unique(); // Add unique constraint her
+            $table->string('property_name')->unique(); // Add unique constraint here
+            $table->boolean('is_archived')->default(false)->nullable(false);
             $table->timestamps();
             
             // Add indexes for better query performance

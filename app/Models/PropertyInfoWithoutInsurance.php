@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Builder;
 
 class PropertyInfoWithoutInsurance extends Model
@@ -65,6 +66,15 @@ class PropertyInfoWithoutInsurance extends Model
     {
         return $this->belongsTo(Cities::class, 'city_id');
     }
+
+    /**
+     * Get the insurance info associated with the property.
+     */
+    public function insuranceInfo(): HasOne
+    {
+        return $this->hasOne(PropertyInfo::class, 'property_id');
+    }
+
 
     /**
      * Validation rules for the model

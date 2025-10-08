@@ -13,12 +13,13 @@ import {
     Calendar,
     Shield
 } from 'lucide-react';
-import { Property, PropertyFormData } from '@/types/property';
+import { Property, PropertyFormData, PropertyWithoutInsurance } from '@/types/property';
 
 interface PropertyEditDrawerProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     property: Property;
+    availableProperties: PropertyWithoutInsurance[]; // Added available properties
     onSuccess?: () => void;
 }
 
@@ -26,10 +27,11 @@ export default function PropertyEditDrawer({
     open, 
     onOpenChange, 
     property,
+    availableProperties = [], // Added with default value
     onSuccess 
 }: PropertyEditDrawerProps) {
     // Validation error states
-    const [propertyNameValidationError, setPropertyNameValidationError] = useState<string>('');
+    const [propertyIdValidationError, setPropertyIdValidationError] = useState<string>(''); // Changed from propertyNameValidationError
     const [insuranceCompanyValidationError, setInsuranceCompanyValidationError] = useState<string>('');
     const [amountValidationError, setAmountValidationError] = useState<string>('');
     const [policyNumberValidationError, setPolicyNumberValidationError] = useState<string>('');
@@ -37,7 +39,7 @@ export default function PropertyEditDrawer({
     const [expirationDateValidationError, setExpirationDateValidationError] = useState<string>('');
     
     // Refs for form fields
-    const propertyNameRef = useRef<HTMLInputElement>(null);
+    const propertyIdRef = useRef<HTMLSelectElement>(null); // Changed from HTMLInputElement to HTMLSelectElement
     const insuranceCompanyRef = useRef<HTMLInputElement>(null);
     const amountRef = useRef<HTMLInputElement>(null);
     const policyNumberRef = useRef<HTMLInputElement>(null);
@@ -45,7 +47,7 @@ export default function PropertyEditDrawer({
     const expirationDateRef = useRef<HTMLInputElement>(null);
 
     const { data, setData, put, processing, errors, reset, clearErrors } = useForm({
-        property_name: property.property_name,
+        property_id: property.property_id, // Changed from property_name
         insurance_company_name: property.insurance_company_name,
         amount: property.amount.toString(),
         policy_number: property.policy_number,
@@ -57,7 +59,7 @@ export default function PropertyEditDrawer({
     useEffect(() => {
         if (property) {
             setData({
-                property_name: property.property_name,
+                property_id: property.property_id, // Changed from property_name
                 insurance_company_name: property.insurance_company_name,
                 amount: property.amount.toString(),
                 policy_number: property.policy_number,
@@ -68,9 +70,9 @@ export default function PropertyEditDrawer({
     }, [property]);
 
     // Clear validation errors when data changes
-    const handlePropertyNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setData('property_name', e.target.value);
-        setPropertyNameValidationError('');
+    const handlePropertyIdChange = (e: React.ChangeEvent<HTMLSelectElement>) => { // Changed from HTMLInputElement to HTMLSelectElement
+        setData('property_id', parseInt(e.target.value)); // Parse as number
+        setPropertyIdValidationError('');
     };
 
     const handleInsuranceCompanyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +104,7 @@ export default function PropertyEditDrawer({
         e.preventDefault();
         
         // Clear any previous validation errors
-        setPropertyNameValidationError('');
+        setPropertyIdValidationError(''); // Changed from setPropertyNameValidationError
         setInsuranceCompanyValidationError('');
         setAmountValidationError('');
         setPolicyNumberValidationError('');
@@ -112,11 +114,11 @@ export default function PropertyEditDrawer({
         let hasValidationErrors = false;
         
         // Validate required fields
-        if (!data.property_name || data.property_name.trim() === '') {
-            setPropertyNameValidationError('Please enter a property name before submitting the form.');
-            if (propertyNameRef.current) {
-                propertyNameRef.current.focus();
-                propertyNameRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (!data.property_id || data.property_id === 0) { // Changed validation logic
+            setPropertyIdValidationError('Please select a property before submitting the form.');
+            if (propertyIdRef.current) {
+                propertyIdRef.current.focus();
+                propertyIdRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
             hasValidationErrors = true;
         }
@@ -172,7 +174,7 @@ export default function PropertyEditDrawer({
         
         put(route('properties-info.update', property.id), {
             onSuccess: () => {
-                setPropertyNameValidationError('');
+                setPropertyIdValidationError(''); // Changed from setPropertyNameValidationError
                 setInsuranceCompanyValidationError('');
                 setAmountValidationError('');
                 setPolicyNumberValidationError('');
@@ -192,7 +194,7 @@ export default function PropertyEditDrawer({
     const handleCancel = () => {
         // Reset to original property data
         setData({
-            property_name: property.property_name,
+            property_id: property.property_id, // Changed from property_name
             insurance_company_name: property.insurance_company_name,
             amount: property.amount.toString(),
             policy_number: property.policy_number,
@@ -200,7 +202,7 @@ export default function PropertyEditDrawer({
             expiration_date: property.expiration_date,
         });
         clearErrors();
-        setPropertyNameValidationError('');
+        setPropertyIdValidationError(''); // Changed from setPropertyNameValidationError
         setInsuranceCompanyValidationError('');
         setAmountValidationError('');
         setPolicyNumberValidationError('');
@@ -211,27 +213,35 @@ export default function PropertyEditDrawer({
 
     return (
         <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
-            <DrawerContent size="half" title={`Edit Property - ${property.property_name}`}>
+            <DrawerContent size="half" title={`Edit Property - ${property.property?.property_name || 'Unknown'}`}>
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Property Name */}
+                            {/* Property Selection */}
                             <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
                                 <div className="mb-2">
-                                    <Label htmlFor="property_name" className="text-base font-semibold">
+                                    <Label htmlFor="property_id" className="text-base font-semibold">
                                         <Building2 className="h-4 w-4 inline mr-1" />
-                                        Property Name *
+                                        Property *
                                     </Label>
                                 </div>
-                                <Input
-                                    ref={propertyNameRef}
-                                    id="property_name"
-                                    value={data.property_name}
-                                    onChange={handlePropertyNameChange}
-                                    placeholder="Enter property name"
-                                />
-                                {errors.property_name && <p className="mt-1 text-sm text-red-600">{errors.property_name}</p>}
-                                {propertyNameValidationError && <p className="mt-1 text-sm text-red-600">{propertyNameValidationError}</p>}
+                                <select
+                                    ref={propertyIdRef}
+                                    id="property_id"
+                                    value={data.property_id || ''}
+                                    onChange={handlePropertyIdChange}
+                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <option value="">Select a property...</option>
+                                    {availableProperties.map((availableProperty) => (
+                                        <option key={availableProperty.id} value={availableProperty.id}>
+                                            {availableProperty.property_name}
+                                            {availableProperty.city_id && ` (${availableProperty.city_id})`}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.property_id && <p className="mt-1 text-sm text-red-600">{errors.property_id}</p>}
+                                {propertyIdValidationError && <p className="mt-1 text-sm text-red-600">{propertyIdValidationError}</p>}
                             </div>
 
                             {/* Insurance Company */}

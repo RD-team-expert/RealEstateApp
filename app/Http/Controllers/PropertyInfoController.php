@@ -25,7 +25,6 @@ class PropertyInfoController extends Controller
         $this->middleware('permission:properties.edit')->only('edit');
         $this->middleware('permission:properties.update')->only('update');
         $this->middleware('permission:properties.destroy')->only('destroy');
-
     }
 
     public function index(Request $request): Response
@@ -39,18 +38,24 @@ class PropertyInfoController extends Controller
         $properties = $this->propertyInfoService->getAllPaginated($perPage, $filters);
         $statistics = $this->propertyInfoService->getStatistics();
         $cities = $this->propertyInfoWithoutInsuranceService->getAllCities();
+        $availableProperties = $this->propertyInfoWithoutInsuranceService->getAvailableProperties(); // Add this method
 
         return Inertia::render('Properties/Index', [
             'properties' => $properties,
             'statistics' => $statistics,
             'filters' => $filters,
             'cities' => $cities,
+            'availableProperties' => $availableProperties, // Pass available properties
         ]);
     }
 
     public function create(): Response
     {
-        return Inertia::render('Properties/Create');
+        $availableProperties = $this->propertyInfoWithoutInsuranceService->getAvailableProperties();
+        
+        return Inertia::render('Properties/Create', [
+            'availableProperties' => $availableProperties,
+        ]);
     }
 
     public function store(StorePropertyInfoRequest $request): RedirectResponse
@@ -79,9 +84,11 @@ class PropertyInfoController extends Controller
     public function edit(int $id): Response
     {
         $property = $this->propertyInfoService->findById($id);
+        $availableProperties = $this->propertyInfoWithoutInsuranceService->getAvailableProperties();
 
         return Inertia::render('Properties/Edit', [
             'property' => $property,
+            'availableProperties' => $availableProperties,
         ]);
     }
 

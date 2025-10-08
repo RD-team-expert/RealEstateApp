@@ -12,11 +12,14 @@ class PropertyInfoService
 {
     public function getAllPaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
-        $query = PropertyInfo::query();
+        $query = PropertyInfo::with('property'); // Eager load the property relationship
 
         // Apply filters
         if (!empty($filters['property_name'])) {
-            $query->where('property_name', 'like', '%' . $filters['property_name'] . '%');
+            // Filter by property name through relationship
+            $query->whereHas('property', function ($subQuery) use ($filters) {
+                $subQuery->where('property_name', 'like', '%' . $filters['property_name'] . '%');
+            });
         }
 
         if (!empty($filters['insurance_company_name'])) {
@@ -39,12 +42,12 @@ class PropertyInfoService
         $property = PropertyInfo::create($data);
         // Set initial status based on expiration date
         $property->updateStatus();
-        return $property;
+        return $property->load('property'); // Load relationship after creation
     }
 
     public function findById(int $id): PropertyInfo
     {
-        return PropertyInfo::findOrFail($id);
+        return PropertyInfo::with('property')->findOrFail($id);
     }
 
     public function update(PropertyInfo $propertyInfo, array $data): PropertyInfo
@@ -52,7 +55,7 @@ class PropertyInfoService
         $propertyInfo->update($data);
         // Update status after updating the property
         $propertyInfo->updateStatus();
-        return $propertyInfo->fresh();
+        return $propertyInfo->fresh('property'); // Refresh with relationship
     }
 
     public function delete(PropertyInfo $propertyInfo): bool
@@ -62,7 +65,8 @@ class PropertyInfoService
 
     public function getExpired(): Collection
     {
-        return PropertyInfo::where('status', 'Expired')
+        return PropertyInfo::with('property')
+            ->where('status', 'Expired')
             ->orderBy('expiration_date', 'asc')
             ->get();
     }

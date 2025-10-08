@@ -15,7 +15,7 @@ class StorePropertyInfoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'property_name' => 'required|string|max:255',
+            'property_id' => 'required|integer|exists:property_info_without_insurance,id',  // Changed from property_name
             'insurance_company_name' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0|max:999999999999.99',
             'policy_number' => 'required|string|max:255|unique:properties_info,policy_number',
@@ -27,7 +27,9 @@ class StorePropertyInfoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'property_name.required' => 'Property name is required.',
+            'property_id.required' => 'Property is required.',  // Updated message
+            'property_id.integer' => 'Property must be a valid selection.',  // Added message
+            'property_id.exists' => 'The selected property does not exist.',  // Added message
             'insurance_company_name.required' => 'Insurance company name is required.',
             'amount.required' => 'Amount is required.',
             'amount.numeric' => 'Amount must be a valid number.',

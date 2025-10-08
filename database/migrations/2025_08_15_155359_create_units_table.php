@@ -1,5 +1,4 @@
 <?php
-// database/migrations/xxxx_xx_xx_create_units_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -7,12 +6,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::create('units', function (Blueprint $table) {
             $table->id();
-            $table->string('city');
-            $table->string('property');
+            $table->foreignId('property_id')->nullable()->constrained('property_info_without_insurance')->onDelete('set null');
             $table->string('unit_name');
             $table->string('tenants')->nullable();
             $table->date('lease_start')->nullable();
@@ -29,10 +30,17 @@ return new class extends Migration
             $table->string('vacant'); // Calculated field
             $table->string('listed'); // Calculated field
             $table->integer('total_applications')->default(0); // Calculated field
+            $table->boolean('is_archived')->default(false)->nullable(false);
             $table->timestamps();
+            
+            // Add indexes for better query performance
+            $table->index('property_id');
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::dropIfExists('units');

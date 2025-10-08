@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('tenants', function (Blueprint $table) {
+        Schema::create('cities', function (Blueprint $table) {
+            $table->id();
+            $table->string('city')->unique();
             $table->boolean('is_archived')->default(false)->nullable(false);
+            $table->timestamps();
         });
     }
 
@@ -21,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('tenants', function (Blueprint $table) {
-            $table->dropColumn('is_archived');
-        });
+        Schema::dropIfExists('cities');
     }
 };

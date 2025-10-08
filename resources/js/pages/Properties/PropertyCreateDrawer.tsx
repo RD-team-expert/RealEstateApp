@@ -17,16 +17,20 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
     Building2, 
     MapPin, 
-    AlertCircle
+    AlertCircle,
+    DollarSign,
+    FileText,
+    Calendar,
+    Shield
 } from 'lucide-react';
-import { PropertyFormData } from '@/types/property';
+import { PropertyFormData, PropertyWithoutInsurance } from '@/types/property';
 import { City } from '@/types/City';
-import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 
 interface PropertyCreateDrawerProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     cities: City[];
+    availableProperties: PropertyWithoutInsurance[];
     onSuccess?: () => void;
 }
 
@@ -34,15 +38,14 @@ export default function PropertyCreateDrawer({
     open, 
     onOpenChange, 
     cities = [],
+    availableProperties = [],
     onSuccess 
 }: PropertyCreateDrawerProps) {
     const [selectedCityId, setSelectedCityId] = useState<string>('');
-    const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
-    const [loadingProperties, setLoadingProperties] = useState(false);
-    const [selectedPropertyName, setSelectedPropertyName] = useState<string>('');
+    const [filteredProperties, setFilteredProperties] = useState<PropertyWithoutInsurance[]>([]);
     
     // Validation error states
-    const [propertyNameValidationError, setPropertyNameValidationError] = useState<string>('');
+    const [propertyIdValidationError, setPropertyIdValidationError] = useState<string>('');
     const [insuranceCompanyValidationError, setInsuranceCompanyValidationError] = useState<string>('');
     const [amountValidationError, setAmountValidationError] = useState<string>('');
     const [policyNumberValidationError, setPolicyNumberValidationError] = useState<string>('');
@@ -50,55 +53,69 @@ export default function PropertyCreateDrawer({
     const [expirationDateValidationError, setExpirationDateValidationError] = useState<string>('');
     
     // Refs for form fields
-    const propertyNameRef = useRef<HTMLInputElement>(null);
+    const propertyIdRef = useRef<HTMLButtonElement>(null);
     const insuranceCompanyRef = useRef<HTMLInputElement>(null);
     const amountRef = useRef<HTMLInputElement>(null);
     const policyNumberRef = useRef<HTMLInputElement>(null);
     const effectiveDateRef = useRef<HTMLInputElement>(null);
     const expirationDateRef = useRef<HTMLInputElement>(null);
 
-    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
-        property_name: '',
+    // Define initial form values
+    const initialFormValues = {
+        property_id: 0,
         insurance_company_name: '',
         amount: '',
         policy_number: '',
         effective_date: '',
         expiration_date: '',
-    });
+    };
 
-    // Fetch properties when city is selected
+    const { data, setData, post, processing, errors, reset, clearErrors } = useForm(initialFormValues);
+
+    // Filter properties by selected city
     useEffect(() => {
         if (selectedCityId) {
-            setLoadingProperties(true);
-            fetch(`/api/all-properties/by-city/${selectedCityId}`)
-                .then(response => response.json())
-                .then((properties: PropertyInfoWithoutInsurance[]) => {
-                    setAvailableProperties(properties);
-                    setLoadingProperties(false);
-                })
-                .catch(error => {
-                    console.error('Error fetching properties:', error);
-                    setAvailableProperties([]);
-                    setLoadingProperties(false);
-                });
+            const filtered = availableProperties.filter(
+                property => property.city_id === parseInt(selectedCityId)
+            );
+            setFilteredProperties(filtered);
         } else {
-            setAvailableProperties([]);
-            setSelectedPropertyName('');
-            setData('property_name', '');
+            setFilteredProperties([]);
         }
-    }, [selectedCityId]);
+        // Reset property selection when city changes
+        setData('property_id', 0);
+    }, [selectedCityId, availableProperties]);
 
-    // Update property name when selected from dropdown
+    // Reset form when drawer opens
     useEffect(() => {
-        if (selectedPropertyName) {
-            setData('property_name', selectedPropertyName);
+        if (open) {
+            resetForm();
         }
-    }, [selectedPropertyName]);
+    }, [open]);
+
+    // Function to reset all form state
+    const resetForm = () => {
+        reset(); // Reset Inertia form
+        setSelectedCityId('');
+        setFilteredProperties([]);
+        clearAllValidationErrors();
+        clearErrors();
+    };
+
+    // Function to clear all validation errors
+    const clearAllValidationErrors = () => {
+        setPropertyIdValidationError('');
+        setInsuranceCompanyValidationError('');
+        setAmountValidationError('');
+        setPolicyNumberValidationError('');
+        setEffectiveDateValidationError('');
+        setExpirationDateValidationError('');
+    };
 
     // Clear validation errors when data changes
-    const handlePropertyNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setData('property_name', e.target.value);
-        setPropertyNameValidationError('');
+    const handlePropertyIdChange = (value: string) => {
+        setData('property_id', parseInt(value));
+        setPropertyIdValidationError('');
     };
 
     const handleInsuranceCompanyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,21 +147,16 @@ export default function PropertyCreateDrawer({
         e.preventDefault();
         
         // Clear any previous validation errors
-        setPropertyNameValidationError('');
-        setInsuranceCompanyValidationError('');
-        setAmountValidationError('');
-        setPolicyNumberValidationError('');
-        setEffectiveDateValidationError('');
-        setExpirationDateValidationError('');
+        clearAllValidationErrors();
         
         let hasValidationErrors = false;
         
         // Validate required fields
-        if (!data.property_name || data.property_name.trim() === '') {
-            setPropertyNameValidationError('Please enter a property name before submitting the form.');
-            if (propertyNameRef.current) {
-                propertyNameRef.current.focus();
-                propertyNameRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (!data.property_id || data.property_id === 0) {
+            setPropertyIdValidationError('Please select a property before submitting the form.');
+            if (propertyIdRef.current) {
+                propertyIdRef.current.focus();
+                propertyIdRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
             hasValidationErrors = true;
         }
@@ -200,17 +212,13 @@ export default function PropertyCreateDrawer({
         
         post(route('properties-info.store'), {
             onSuccess: () => {
-                reset();
-                setSelectedCityId('');
-                setSelectedPropertyName('');
-                setAvailableProperties([]);
-                setPropertyNameValidationError('');
-                setInsuranceCompanyValidationError('');
-                setAmountValidationError('');
-                setPolicyNumberValidationError('');
-                setEffectiveDateValidationError('');
-                setExpirationDateValidationError('');
+                // Reset the form completely after successful submission
+                resetForm();
+                
+                // Close the drawer
                 onOpenChange(false);
+                
+                // Call the success callback if provided
                 if (onSuccess) {
                     onSuccess();
                 }
@@ -222,29 +230,13 @@ export default function PropertyCreateDrawer({
     };
 
     const handleCancel = () => {
-        reset();
-        clearErrors();
-        setSelectedCityId('');
-        setSelectedPropertyName('');
-        setAvailableProperties([]);
-        setPropertyNameValidationError('');
-        setInsuranceCompanyValidationError('');
-        setAmountValidationError('');
-        setPolicyNumberValidationError('');
-        setEffectiveDateValidationError('');
-        setExpirationDateValidationError('');
+        resetForm();
         onOpenChange(false);
     };
 
     const handleCityChange = (value: string) => {
         setSelectedCityId(value);
-        setSelectedPropertyName('');
-        setData('property_name', '');
-        clearErrors();
-    };
-
-    const handlePropertyChange = (value: string) => {
-        setSelectedPropertyName(value);
+        setData('property_id', 0); // Reset property selection
         clearErrors();
     };
 
@@ -254,7 +246,7 @@ export default function PropertyCreateDrawer({
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Property Selection Section */}
+                            {/* City Selection Section */}
                             <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="city_select" className="text-base font-semibold">
@@ -276,39 +268,40 @@ export default function PropertyCreateDrawer({
                                 </Select>
                             </div>
 
+                            {/* Property Selection Section */}
                             <div className="rounded-lg border-l-4 border-l-green-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="property_select" className="text-base font-semibold">
                                         <Building2 className="h-4 w-4 inline mr-1" />
-                                        Select Property Name
+                                        Select Property *
                                     </Label>
                                 </div>
                                 <Select 
-                                    value={selectedPropertyName} 
-                                    onValueChange={handlePropertyChange}
-                                    disabled={!selectedCityId || loadingProperties}
+                                    value={data.property_id && data.property_id !== 0 ? data.property_id.toString() : ''} 
+                                    onValueChange={handlePropertyIdChange}
+                                    disabled={!selectedCityId}
                                 >
-                                    <SelectTrigger className="w-full">
+                                    <SelectTrigger className="w-full" ref={propertyIdRef}>
                                         <SelectValue 
                                             placeholder={
                                                 !selectedCityId 
                                                     ? "Select a city first..." 
-                                                    : loadingProperties 
-                                                    ? "Loading properties..." 
                                                     : "Choose a property..."
                                             } 
                                         />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {availableProperties.map((property) => (
-                                            <SelectItem key={property.id} value={property.property_name}>
+                                        {filteredProperties.map((property) => (
+                                            <SelectItem key={property.id} value={property.id.toString()}>
                                                 {property.property_name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {selectedCityId && availableProperties.length === 0 && !loadingProperties && (
-                                    <Alert>
+                                {errors.property_id && <p className="mt-1 text-sm text-red-600">{errors.property_id}</p>}
+                                {propertyIdValidationError && <p className="mt-1 text-sm text-red-600">{propertyIdValidationError}</p>}
+                                {selectedCityId && filteredProperties.length === 0 && (
+                                    <Alert className="mt-2">
                                         <AlertCircle className="h-4 w-4" />
                                         <AlertDescription>
                                             No properties found for the selected city.
@@ -317,28 +310,11 @@ export default function PropertyCreateDrawer({
                                 )}
                             </div>
 
-                            {/* Property Name Input */}
-                            <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="property_name" className="text-base font-semibold">
-                                        Property Name *
-                                    </Label>
-                                </div>
-                                <Input
-                                    ref={propertyNameRef}
-                                    id="property_name"
-                                    value={data.property_name}
-                                    onChange={handlePropertyNameChange}
-                                    placeholder="Enter property name or select from above"
-                                />
-                                {errors.property_name && <p className="mt-1 text-sm text-red-600">{errors.property_name}</p>}
-                                {propertyNameValidationError && <p className="mt-1 text-sm text-red-600">{propertyNameValidationError}</p>}
-                            </div>
-
                             {/* Insurance Company */}
                             <div className="rounded-lg border-l-4 border-l-orange-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="insurance_company_name" className="text-base font-semibold">
+                                        <Shield className="h-4 w-4 inline mr-1" />
                                         Insurance Company *
                                     </Label>
                                 </div>
@@ -358,6 +334,7 @@ export default function PropertyCreateDrawer({
                                 <div className="rounded-lg border-l-4 border-l-emerald-500 p-4">
                                     <div className="mb-2">
                                         <Label htmlFor="amount" className="text-base font-semibold">
+                                            <DollarSign className="h-4 w-4 inline mr-1" />
                                             Amount *
                                         </Label>
                                     </div>
@@ -378,6 +355,7 @@ export default function PropertyCreateDrawer({
                                 <div className="rounded-lg border-l-4 border-l-pink-500 p-4">
                                     <div className="mb-2">
                                         <Label htmlFor="policy_number" className="text-base font-semibold">
+                                            <FileText className="h-4 w-4 inline mr-1" />
                                             Policy Number *
                                         </Label>
                                     </div>
@@ -398,6 +376,7 @@ export default function PropertyCreateDrawer({
                                 <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
                                     <div className="mb-2">
                                         <Label htmlFor="effective_date" className="text-base font-semibold">
+                                            <Calendar className="h-4 w-4 inline mr-1" />
                                             Effective Date *
                                         </Label>
                                     </div>
@@ -415,6 +394,7 @@ export default function PropertyCreateDrawer({
                                 <div className="rounded-lg border-l-4 border-l-teal-500 p-4">
                                     <div className="mb-2">
                                         <Label htmlFor="expiration_date" className="text-base font-semibold">
+                                            <Calendar className="h-4 w-4 inline mr-1" />
                                             Expiration Date *
                                         </Label>
                                     </div>

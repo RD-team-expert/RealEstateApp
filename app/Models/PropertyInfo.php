@@ -5,6 +5,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
 
@@ -15,7 +16,7 @@ class PropertyInfo extends Model
     protected $table = 'properties_info';
     protected $appends = ['formatted_amount'];
     protected $fillable = [
-        'property_name',
+        'property_id',  // Changed from 'property_name'
         'insurance_company_name',
         'amount',
         'policy_number',
@@ -27,9 +28,12 @@ class PropertyInfo extends Model
 
     // Remove the date casting to prevent timezone conversion
     protected $casts = [
+        'property_id' => 'integer',  // Added this cast
         'amount' => 'decimal:2',
         'is_archived' => 'boolean'
     ];
+
+
 
     /**
      * The "booted" method of the model.
@@ -47,6 +51,14 @@ class PropertyInfo extends Model
     public function scopeWithArchived(Builder $query): Builder
     {
         return $query->withoutGlobalScope('not_archived');
+    }
+
+    /**
+     * Get the property that owns this insurance info.
+     */
+    public function property(): BelongsTo
+    {
+        return $this->belongsTo(PropertyInfoWithoutInsurance::class, 'property_id');
     }
 
     /**
