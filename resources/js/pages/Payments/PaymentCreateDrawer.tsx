@@ -4,13 +4,19 @@ import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup } from '@/components/ui/radioGroup';
-import { PaymentFormData, UnitData } from '@/types/payments';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { UnitData } from '@/types/payments';
 import { useForm } from '@inertiajs/react';
 import { format, parse } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
+
+interface PropertyInfo {
+    id: number;
+    property_name: string;
+    city_id: number;
+}
 
 interface Props {
     units: UnitData[];
@@ -23,20 +29,26 @@ interface Props {
 
 export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, onOpenChange, onSuccess }: Props) {
     const cityRef = useRef<HTMLButtonElement>(null);
+    const propertyRef = useRef<HTMLButtonElement>(null);
     const unitNameRef = useRef<HTMLButtonElement>(null);
     const dateRef = useRef<HTMLButtonElement>(null);
     const owesRef = useRef<HTMLInputElement>(null);
     const [validationError, setValidationError] = useState<string>('');
+    const [propertyValidationError, setPropertyValidationError] = useState<string>('');
     const [unitValidationError, setUnitValidationError] = useState<string>('');
     const [dateValidationError, setDateValidationError] = useState<string>('');
     const [owesValidationError, setOwesValidationError] = useState<string>('');
-    const [availableUnits, setAvailableUnits] = useState<string[]>([]);
-    
+
     const [calendarOpen, setCalendarOpen] = useState(false);
+    const [availableProperties, setAvailableProperties] = useState<PropertyInfo[]>([]);
+    const [availableUnits, setAvailableUnits] = useState<string[]>([]);
+    const [loadingProperties, setLoadingProperties] = useState<boolean>(false);
+    const [selectedCityId, setSelectedCityId] = useState<string>('');
 
     const { data, setData, post, processing, errors, reset } = useForm({
         date: '',
         city: '',
+        property_name: '',
         unit_name: '',
         owes: '',
         paid: '',
@@ -46,14 +58,53 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
         permanent: 'No',
     });
 
+    const fetchPropertiesForCity = async (cityName: string) => {
+        setLoadingProperties(true);
+        try {
+            // Get properties from the units data
+            const cityProperties = units
+                .filter((unit) => unit.city === cityName)
+                .map((unit) => unit.property)
+                .filter((property, index, self) => self.indexOf(property) === index) // unique properties
+                .map((property, index) => ({ id: index, property_name: property, city_id: 0 }));
+
+            setAvailableProperties(cityProperties);
+        } catch (error) {
+            console.error('Error fetching properties:', error);
+            setAvailableProperties([]);
+        } finally {
+            setLoadingProperties(false);
+        }
+    };
+
     const handleCityChange = (city: string) => {
         setData('city', city);
+        setData('property_name', '');
         setData('unit_name', '');
         setValidationError('');
+        setPropertyValidationError('');
         setUnitValidationError('');
 
-        if (city && unitsByCity && unitsByCity[city]) {
-            setAvailableUnits(unitsByCity[city]);
+        setSelectedCityId(city);
+        setAvailableUnits([]);
+
+        if (city) {
+            fetchPropertiesForCity(city);
+        } else {
+            setAvailableProperties([]);
+        }
+    };
+
+    const handlePropertyChange = (propertyName: string) => {
+        setData('property_name', propertyName);
+        setData('unit_name', '');
+        setPropertyValidationError('');
+        setUnitValidationError('');
+
+        if (propertyName && data.city) {
+            // Get units for this city and property
+            const propertyUnits = units.filter((unit) => unit.city === data.city && unit.property === propertyName).map((unit) => unit.unit_name);
+            setAvailableUnits(propertyUnits);
         } else {
             setAvailableUnits([]);
         }
@@ -79,15 +130,16 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         // Clear any previous validation errors
         setValidationError('');
+        setPropertyValidationError('');
         setUnitValidationError('');
         setDateValidationError('');
         setOwesValidationError('');
-        
+
         let hasValidationErrors = false;
-        
+
         // Validate date is not empty
         if (!data.date || data.date.trim() === '') {
             setDateValidationError('Please select a date before submitting the form.');
@@ -98,7 +150,7 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
             }
             hasValidationErrors = true;
         }
-        
+
         // Validate city is not empty
         if (!data.city || data.city.trim() === '') {
             setValidationError('Please select a city before submitting the form.');
@@ -109,7 +161,18 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
             }
             hasValidationErrors = true;
         }
-        
+
+        // Validate property_name is not empty
+        if (!data.property_name || data.property_name.trim() === '') {
+            setPropertyValidationError('Please select a property before submitting the form.');
+            // Focus on the property field
+            if (propertyRef.current) {
+                propertyRef.current.focus();
+                propertyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            hasValidationErrors = true;
+        }
+
         // Validate unit_name is not empty
         if (!data.unit_name || data.unit_name.trim() === '') {
             setUnitValidationError('Please select a unit before submitting the form.');
@@ -120,7 +183,7 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
             }
             hasValidationErrors = true;
         }
-        
+
         // Validate owes is not empty
         if (!data.owes || data.owes.trim() === '') {
             setOwesValidationError('Please enter the amount owed before submitting the form.');
@@ -131,19 +194,21 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
             }
             hasValidationErrors = true;
         }
-        
+
         if (hasValidationErrors) {
             return;
         }
-        
+
         post(route('payments.store'), {
             onSuccess: () => {
                 reset();
                 setValidationError('');
+                setPropertyValidationError('');
                 setUnitValidationError('');
                 setDateValidationError('');
                 setOwesValidationError('');
                 setAvailableUnits([]);
+                setAvailableProperties([]);
                 onOpenChange(false);
                 onSuccess?.();
             },
@@ -153,10 +218,12 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
     const handleCancel = () => {
         reset();
         setValidationError('');
+        setPropertyValidationError('');
         setUnitValidationError('');
         setDateValidationError('');
         setOwesValidationError('');
         setAvailableUnits([]);
+        setAvailableProperties([]);
         onOpenChange(false);
     };
 
@@ -166,43 +233,6 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={submit} className="space-y-4">
-                            {/* Date Field */}
-                            <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="date" className="text-base font-semibold">
-                                        Date *
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarOpen}
-                                    onOpenChange={setCalendarOpen}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            ref={dateRef}
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.date && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.date
-                                                ? format(parse(data.date, 'yyyy-MM-dd', new Date()), 'PPP')
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={data.date ? parse(data.date, 'yyyy-MM-dd', new Date()) : undefined}
-                                            onSelect={handleDateChange}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date}</p>}
-                                {dateValidationError && <p className="mt-1 text-sm text-red-600">{dateValidationError}</p>}
-                            </div>
-
                             {/* City and Unit Information */}
                             <div className="rounded-lg border-l-4 border-l-green-500 p-4">
                                 <div className="mb-2">
@@ -226,34 +256,37 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
                                 {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
                             </div>
 
-                            {/* Property Name Field */}
+                            {/* Property Selection */}
                             <div className="rounded-lg border-l-4 border-l-orange-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="property_name" className="text-base font-semibold">
-                                        Property Name
+                                        Property *
                                     </Label>
                                 </div>
-                                <Input
-                                    id="property_name"
-                                    type="text"
-                                    value={data.property_name || ''}
-                                    onChange={(e) => setData('property_name', e.target.value)}
-                                    placeholder="Enter property name"
-                                />
+                                <Select onValueChange={handlePropertyChange} value={data.property_name} disabled={!data.city || loadingProperties}>
+                                    <SelectTrigger ref={propertyRef}>
+                                        <SelectValue placeholder={loadingProperties ? 'Loading properties...' : 'Select property'} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableProperties?.map((property) => (
+                                            <SelectItem key={property.property_name} value={property.property_name}>
+                                                {property.property_name}
+                                            </SelectItem>
+                                        )) || []}
+                                    </SelectContent>
+                                </Select>
                                 {errors.property_name && <p className="mt-1 text-sm text-red-600">{errors.property_name}</p>}
+                                {propertyValidationError && <p className="mt-1 text-sm text-red-600">{propertyValidationError}</p>}
                             </div>
 
+                            {/* Unit Selection */}
                             <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="unit_name" className="text-base font-semibold">
                                         Unit Name *
                                     </Label>
                                 </div>
-                                <Select
-                                    onValueChange={handleUnitChange}
-                                    value={data.unit_name}
-                                    disabled={!data.city}
-                                >
+                                <Select onValueChange={handleUnitChange} value={data.unit_name} disabled={!data.property_name}>
                                     <SelectTrigger ref={unitNameRef}>
                                         <SelectValue placeholder="Select unit" />
                                     </SelectTrigger>
@@ -267,6 +300,37 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
                                 </Select>
                                 {errors.unit_name && <p className="mt-1 text-sm text-red-600">{errors.unit_name}</p>}
                                 {unitValidationError && <p className="mt-1 text-sm text-red-600">{unitValidationError}</p>}
+                            </div>
+
+                            {/* Date Field */}
+                            <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
+                                <div className="mb-2">
+                                    <Label htmlFor="date" className="text-base font-semibold">
+                                        Date *
+                                    </Label>
+                                </div>
+                                <Popover open={calendarOpen} onOpenChange={setCalendarOpen} modal={false}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            ref={dateRef}
+                                            variant="outline"
+                                            className={`w-full justify-start text-left font-normal ${!data.date && 'text-muted-foreground'}`}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {data.date ? format(parse(data.date, 'yyyy-MM-dd', new Date()), 'PPP') : 'Pick a date'}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+                                        <Calendar
+                                            mode="single"
+                                            selected={data.date ? parse(data.date, 'yyyy-MM-dd', new Date()) : undefined}
+                                            onSelect={handleDateChange}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                                {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date}</p>}
+                                {dateValidationError && <p className="mt-1 text-sm text-red-600">{dateValidationError}</p>}
                             </div>
 
                             {/* Financial Information */}
@@ -321,7 +385,7 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
                                     name="permanent"
                                     options={[
                                         { value: 'Yes', label: 'Yes' },
-                                        { value: 'No', label: 'No' }
+                                        { value: 'No', label: 'No' },
                                     ]}
                                 />
                                 {errors.permanent && <p className="mt-1 text-sm text-red-600">{errors.permanent}</p>}
@@ -352,7 +416,7 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
                                 </div>
                                 <textarea
                                     id="notes"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                     value={data.notes}
                                     onChange={(e) => setData('notes', e.target.value)}
                                     rows={3}
@@ -365,12 +429,7 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
 
                     <DrawerFooter className="border-t bg-muted/50 p-4">
                         <div className="flex justify-end gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleCancel}
-                                disabled={processing}
-                            >
+                            <Button type="button" variant="outline" onClick={handleCancel} disabled={processing}>
                                 Cancel
                             </Button>
                             <Button

@@ -64,7 +64,7 @@ class PaymentService
 
     public function getUnitsForDropdowns(): array
     {
-        $units = Unit::select('city', 'unit_name')->orderBy('city')->orderBy('unit_name')->get();
+        $units = Unit::select('city', 'property', 'unit_name')->orderBy('city')->orderBy('property')->orderBy('unit_name')->get();
 
         $cities = $units->pluck('city')->unique()->values()->toArray();
         $unitsByCity = $units->groupBy('city')->map(function ($cityUnits) {
@@ -76,6 +76,22 @@ class PaymentService
             'unitsByCity' => $unitsByCity,
             'units' => $units
         ];
+    }
+
+    /**
+     * Get all cities from the database
+     */
+    public function getAllCities(): array
+    {
+        return \App\Models\Cities::orderBy('city')->pluck('city')->toArray();
+    }
+
+    /**
+     * Get all properties from the database
+     */
+    public function getAllProperties(): array
+    {
+        return \App\Models\PropertyInfoWithoutInsurance::orderBy('property_name')->pluck('property_name')->toArray();
     }
 
     /**

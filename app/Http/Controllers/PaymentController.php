@@ -39,12 +39,18 @@ class PaymentController extends Controller
         // Get dropdown data for the create drawer
         $dropdownData = $this->paymentService->getUnitsForDropdowns();
 
+        // Get all cities and properties from database
+        $allCities = $this->paymentService->getAllCities();
+        $allProperties = $this->paymentService->getAllProperties();
+
         return Inertia::render('Payments/Index', [
             'payments' => $payments,
             'search' => $search,
             'cities' => $dropdownData['cities'],
             'unitsByCity' => $dropdownData['unitsByCity'],
             'units' => $dropdownData['units'],
+            'allCities' => $allCities,
+            'allProperties' => $allProperties,
         ]);
     }
 

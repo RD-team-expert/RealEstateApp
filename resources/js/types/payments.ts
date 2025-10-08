@@ -32,5 +32,6 @@ export interface PaymentFormData {
 
 export interface UnitData {
     city: string;
+    property: string;
     unit_name: string;
 }
