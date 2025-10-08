@@ -16,20 +16,19 @@ import React, { useState, useRef, useEffect } from 'react';
 interface Props {
     unit: Unit;
     cities: Array<{ id: number; city: string }>;
+    properties: PropertyInfoWithoutInsurance[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
 }
 
-export default function UnitEditDrawer({ unit, cities, open, onOpenChange, onSuccess }: Props) {
-    const cityRef = useRef<HTMLButtonElement>(null);
+export default function UnitEditDrawer({ unit, cities, properties, open, onOpenChange, onSuccess }: Props) {
     const propertyRef = useRef<HTMLButtonElement>(null);
     const unitNameRef = useRef<HTMLInputElement>(null);
     const [validationError, setValidationError] = useState<string>('');
     const [propertyValidationError, setPropertyValidationError] = useState<string>('');
     const [unitNameValidationError, setUnitNameValidationError] = useState<string>('');
     const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
-    const [loadingProperties, setLoadingProperties] = useState<boolean>(false);
     const [selectedCityId, setSelectedCityId] = useState<string>('');
     
     const [calendarStates, setCalendarStates] = useState({
@@ -83,8 +82,7 @@ export default function UnitEditDrawer({ unit, cities, open, onOpenChange, onSuc
     };
 
     const { data, setData, put, processing, errors, reset } = useForm({
-        city: unit.city || '',
-        property: unit.property || '',
+        property_id: unit.property_id?.toString() || '',
         unit_name: unit.unit_name || '',
         tenants: unit.tenants || '',
         lease_start: formatDateForInput(unit.lease_start),
@@ -100,42 +98,38 @@ export default function UnitEditDrawer({ unit, cities, open, onOpenChange, onSuc
         insurance_expiration_date: formatDateForInput(unit.insurance_expiration_date),
     });
 
-    // Initialize selected city ID and fetch properties when component opens
+    // Initialize selected city ID based on unit's property
     useEffect(() => {
-        if (open && unit.city) {
-            const selectedCity = cities.find(city => city.city === unit.city);
-            if (selectedCity) {
-                setSelectedCityId(selectedCity.id.toString());
+        if (open && unit.property_id && properties) {
+            const unitProperty = properties.find(p => p.id === unit.property_id);
+            if (unitProperty && unitProperty.city_id) {
+                setSelectedCityId(unitProperty.city_id.toString());
             }
         }
-    }, [open, unit.city, cities]);
+    }, [open, unit.property_id, properties]);
 
-    // Fetch properties when city is selected
+    // Filter properties when city is selected
     useEffect(() => {
-        if (selectedCityId) {
-            setLoadingProperties(true);
-            fetch(`/api/all-properties/by-city/${selectedCityId}`)
-                .then(response => response.json())
-                .then((properties: PropertyInfoWithoutInsurance[]) => {
-                    setAvailableProperties(properties);
-                    setLoadingProperties(false);
-                })
-                .catch(error => {
-                    console.error('Error fetching properties:', error);
-                    setAvailableProperties([]);
-                    setLoadingProperties(false);
-                });
+        if (selectedCityId && properties) {
+            const filteredProperties = properties.filter(
+                property => property.city_id?.toString() === selectedCityId
+            );
+            setAvailableProperties(filteredProperties);
+            
+            // Reset property selection if current property is not in the filtered list
+            if (data.property_id && !filteredProperties.find(p => p.id.toString() === data.property_id)) {
+                setData('property_id', '');
+            }
         } else {
             setAvailableProperties([]);
         }
-    }, [selectedCityId]);
+    }, [selectedCityId, properties]);
 
     // Reset form data when unit changes
     useEffect(() => {
         if (unit) {
             setData({
-                city: unit.city || '',
-                property: unit.property || '',
+                property_id: unit.property_id?.toString() || '',
                 unit_name: unit.unit_name || '',
                 tenants: unit.tenants || '',
                 lease_start: formatDateForInput(unit.lease_start),
@@ -153,24 +147,15 @@ export default function UnitEditDrawer({ unit, cities, open, onOpenChange, onSuc
         }
     }, [unit]);
 
-    const handleCityChange = (cityName: string) => {
-        setData('city', cityName);
-        setData('property', '');
+    const handleCityChange = (cityId: string) => {
+        setSelectedCityId(cityId);
         setValidationError('');
         setPropertyValidationError('');
-
-        // Find the city ID from the city name
-        const selectedCity = cities.find(city => city.city === cityName);
-        if (selectedCity) {
-            setSelectedCityId(selectedCity.id.toString());
-        } else {
-            setSelectedCityId('');
-            setAvailableProperties([]);
-        }
+        // Don't automatically clear property_id here since user might want to keep it
     };
 
-    const handlePropertyChange = (propertyName: string) => {
-        setData('property', propertyName);
+    const handlePropertyChange = (propertyId: string) => {
+        setData('property_id', propertyId);
         setPropertyValidationError('');
     };
 
@@ -189,18 +174,8 @@ export default function UnitEditDrawer({ unit, cities, open, onOpenChange, onSuc
         
         let hasValidationErrors = false;
         
-        // Validate city is not empty
-        if (!data.city || data.city.trim() === '') {
-            setValidationError('Please select a city before submitting the form.');
-            if (cityRef.current) {
-                cityRef.current.focus();
-                cityRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            hasValidationErrors = true;
-        }
-        
-        // Validate property is not empty
-        if (!data.property || data.property.trim() === '') {
+        // Validate property_id is not empty
+        if (!data.property_id || data.property_id.trim() === '') {
             setPropertyValidationError('Please select a property before submitting the form.');
             if (propertyRef.current) {
                 propertyRef.current.focus();
@@ -242,8 +217,7 @@ export default function UnitEditDrawer({ unit, cities, open, onOpenChange, onSuc
     const handleCancel = () => {
         // Reset to original unit data
         setData({
-            city: unit.city || '',
-            property: unit.property || '',
+            property_id: unit.property_id?.toString() || '',
             unit_name: unit.unit_name || '',
             tenants: unit.tenants || '',
             lease_start: formatDateForInput(unit.lease_start),
@@ -269,6 +243,17 @@ export default function UnitEditDrawer({ unit, cities, open, onOpenChange, onSuc
         onOpenChange(false);
     };
 
+    // Get current city name for display
+    const getCurrentCityName = () => {
+        if (unit.property_id && properties) {
+            const unitProperty = properties.find(p => p.id === unit.property_id);
+            if (unitProperty && unitProperty.city) {
+                return unitProperty.city.city;
+            }
+        }
+        return unit.city || 'Unknown';
+    };
+
     return (
         <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
             <DrawerContent size="half" title={`Edit Unit - ${unit.unit_name}`}>
@@ -282,52 +267,52 @@ export default function UnitEditDrawer({ unit, cities, open, onOpenChange, onSuc
                                 </p>
                             </div>
 
-                            {/* City and Property Information */}
+                            {/* City Selection */}
                             <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="city" className="text-base font-semibold">
                                         City *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleCityChange} value={data.city}>
-                                    <SelectTrigger ref={cityRef}>
+                                <Select onValueChange={handleCityChange} value={selectedCityId}>
+                                    <SelectTrigger>
                                         <SelectValue placeholder="Select a city" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {cities?.map((city) => (
-                                            <SelectItem key={city.id} value={city.city}>
+                                            <SelectItem key={city.id} value={city.id.toString()}>
                                                 {city.city}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
                                 {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
                             </div>
 
+                            {/* Property Selection */}
                             <div className="rounded-lg border-l-4 border-l-green-500 p-4">
                                 <div className="mb-2">
-                                    <Label htmlFor="property" className="text-base font-semibold">
+                                    <Label htmlFor="property_id" className="text-base font-semibold">
                                         Property *
                                     </Label>
                                 </div>
                                 <Select
                                     onValueChange={handlePropertyChange}
-                                    value={data.property}
-                                    disabled={!data.city || loadingProperties}
+                                    value={data.property_id}
+                                    disabled={!selectedCityId || availableProperties.length === 0}
                                 >
                                     <SelectTrigger ref={propertyRef}>
-                                        <SelectValue placeholder={loadingProperties ? "Loading properties..." : "Select property"} />
+                                        <SelectValue placeholder={!selectedCityId ? "Select city first" : "Select property"} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableProperties?.map((property) => (
-                                            <SelectItem key={property.id} value={property.property_name}>
+                                            <SelectItem key={property.id} value={property.id.toString()}>
                                                 {property.property_name}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.property && <p className="mt-1 text-sm text-red-600">{errors.property}</p>}
+                                {errors.property_id && <p className="mt-1 text-sm text-red-600">{errors.property_id}</p>}
                                 {propertyValidationError && <p className="mt-1 text-sm text-red-600">{propertyValidationError}</p>}
                             </div>
 

@@ -11,15 +11,19 @@ class UnitService
 {
     public function getAllPaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
-        $query = Unit::query();
+        $query = Unit::query()->with(['property.city']);
 
-        // Apply filters
+        // Apply filters with relationship joins
         if (!empty($filters['city'])) {
-            $query->where('city', 'like', '%' . $filters['city'] . '%');
+            $query->whereHas('property.city', function ($q) use ($filters) {
+                $q->where('city', 'like', '%' . $filters['city'] . '%');
+            });
         }
 
         if (!empty($filters['property'])) {
-            $query->where('property', 'like', '%' . $filters['property'] . '%');
+            $query->whereHas('property', function ($q) use ($filters) {
+                $q->where('property_name', 'like', '%' . $filters['property'] . '%');
+            });
         }
 
         if (!empty($filters['unit_name'])) {
@@ -38,7 +42,10 @@ class UnitService
             $query->where('insurance', $filters['insurance']);
         }
 
-        return $query->orderBy('city')->orderBy('property')->orderBy('unit_name')->paginate($perPage);
+        return $query->orderBy('property_id')
+                    ->orderBy('unit_name')
+                    ->paginate($perPage)
+                    ->appends(request()->query());
     }
 
     public function create(array $data): Unit
@@ -50,7 +57,7 @@ class UnitService
 
     public function findById(int $id): Unit
     {
-        return Unit::findOrFail($id);
+        return Unit::with(['property.city'])->findOrFail($id);
     }
 
     public function update(Unit $unit, array $data): Unit
@@ -58,7 +65,7 @@ class UnitService
         // Clean empty strings to null for nullable fields
         $data = $this->cleanEmptyStringsForNullableFields($data);
         $unit->update($data);
-        return $unit->fresh();
+        return $unit->fresh(['property.city']);
     }
 
     public function delete(Unit $unit): bool
@@ -74,10 +81,13 @@ class UnitService
         $listed = Unit::where('listed', 'Yes')->count();
         $totalApplications = Unit::sum('total_applications');
 
-        $cityStats = Unit::selectRaw('city, COUNT(*) as count')
-            ->groupBy('city')
-            ->orderBy('count', 'desc')
-            ->pluck('count', 'city')
+        $cityStats = Unit::with(['property.city'])
+            ->get()
+            ->groupBy('property.city.city')
+            ->map(function ($units) {
+                return $units->count();
+            })
+            ->sortDesc()
             ->toArray();
 
         return [
@@ -92,12 +102,20 @@ class UnitService
 
     public function getVacantUnits(): Collection
     {
-        return Unit::where('vacant', 'Yes')->orderBy('city')->orderBy('property')->get();
+        return Unit::with(['property.city'])
+            ->where('vacant', 'Yes')
+            ->orderBy('property_id')
+            ->orderBy('unit_name')
+            ->get();
     }
 
     public function getListedUnits(): Collection
     {
-        return Unit::where('listed', 'Yes')->orderBy('city')->orderBy('property')->get();
+        return Unit::with(['property.city'])
+            ->where('listed', 'Yes')
+            ->orderBy('property_id')
+            ->orderBy('unit_name')
+            ->get();
     }
 
     private function cleanEmptyStringsForNullableFields(array $data): array

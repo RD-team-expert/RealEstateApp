@@ -15,20 +15,19 @@ import React, { useState, useRef, useEffect } from 'react';
 
 interface Props {
     cities: Array<{ id: number; city: string }>;
+    properties: PropertyInfoWithoutInsurance[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
 }
 
-export default function UnitCreateDrawer({ cities, open, onOpenChange, onSuccess }: Props) {
-    const cityRef = useRef<HTMLButtonElement>(null);
+export default function UnitCreateDrawer({ cities, properties, open, onOpenChange, onSuccess }: Props) {
     const propertyRef = useRef<HTMLButtonElement>(null);
     const unitNameRef = useRef<HTMLInputElement>(null);
     const [validationError, setValidationError] = useState<string>('');
     const [propertyValidationError, setPropertyValidationError] = useState<string>('');
     const [unitNameValidationError, setUnitNameValidationError] = useState<string>('');
     const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
-    const [loadingProperties, setLoadingProperties] = useState<boolean>(false);
     const [selectedCityId, setSelectedCityId] = useState<string>('');
     
     const [calendarStates, setCalendarStates] = useState({
@@ -42,8 +41,7 @@ export default function UnitCreateDrawer({ cities, open, onOpenChange, onSuccess
     };
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        city: '',
-        property: '',
+        property_id: '',
         unit_name: '',
         tenants: '',
         lease_start: '',
@@ -59,45 +57,32 @@ export default function UnitCreateDrawer({ cities, open, onOpenChange, onSuccess
         insurance_expiration_date: '',
     });
 
-    // Fetch properties when city is selected
+    // Filter properties when city is selected
     useEffect(() => {
-        if (selectedCityId) {
-            setLoadingProperties(true);
-            fetch(`/api/all-properties/by-city/${selectedCityId}`)
-                .then(response => response.json())
-                .then((properties: PropertyInfoWithoutInsurance[]) => {
-                    setAvailableProperties(properties);
-                    setLoadingProperties(false);
-                })
-                .catch(error => {
-                    console.error('Error fetching properties:', error);
-                    setAvailableProperties([]);
-                    setLoadingProperties(false);
-                });
+        if (selectedCityId && properties) {
+            const filteredProperties = properties.filter(
+                property => property.city_id?.toString() === selectedCityId
+            );
+            setAvailableProperties(filteredProperties);
+            
+            // Reset property selection if current property is not in the filtered list
+            if (data.property_id && !filteredProperties.find(p => p.id.toString() === data.property_id)) {
+                setData('property_id', '');
+            }
         } else {
             setAvailableProperties([]);
-            setData('property', '');
+            setData('property_id', '');
         }
-    }, [selectedCityId]);
+    }, [selectedCityId, properties]);
 
-    const handleCityChange = (cityName: string) => {
-        setData('city', cityName);
-        setData('property', '');
+    const handleCityChange = (cityId: string) => {
+        setSelectedCityId(cityId);
         setValidationError('');
         setPropertyValidationError('');
-
-        // Find the city ID from the city name
-        const selectedCity = cities.find(city => city.city === cityName);
-        if (selectedCity) {
-            setSelectedCityId(selectedCity.id.toString());
-        } else {
-            setSelectedCityId('');
-            setAvailableProperties([]);
-        }
     };
 
-    const handlePropertyChange = (propertyName: string) => {
-        setData('property', propertyName);
+    const handlePropertyChange = (propertyId: string) => {
+        setData('property_id', propertyId);
         setPropertyValidationError('');
     };
 
@@ -116,18 +101,8 @@ export default function UnitCreateDrawer({ cities, open, onOpenChange, onSuccess
         
         let hasValidationErrors = false;
         
-        // Validate city is not empty
-        if (!data.city || data.city.trim() === '') {
-            setValidationError('Please select a city before submitting the form.');
-            if (cityRef.current) {
-                cityRef.current.focus();
-                cityRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            hasValidationErrors = true;
-        }
-        
-        // Validate property is not empty
-        if (!data.property || data.property.trim() === '') {
+        // Validate property_id is not empty
+        if (!data.property_id || data.property_id.trim() === '') {
             setPropertyValidationError('Please select a property before submitting the form.');
             if (propertyRef.current) {
                 propertyRef.current.focus();
@@ -190,52 +165,52 @@ export default function UnitCreateDrawer({ cities, open, onOpenChange, onSuccess
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={submit} className="space-y-4">
-                            {/* City and Property Information */}
+                            {/* City Selection */}
                             <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="city" className="text-base font-semibold">
                                         City *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleCityChange} value={data.city}>
-                                    <SelectTrigger ref={cityRef}>
+                                <Select onValueChange={handleCityChange} value={selectedCityId}>
+                                    <SelectTrigger>
                                         <SelectValue placeholder="Select a city" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {cities?.map((city) => (
-                                            <SelectItem key={city.id} value={city.city}>
+                                            <SelectItem key={city.id} value={city.id.toString()}>
                                                 {city.city}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
                                 {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
                             </div>
 
+                            {/* Property Selection */}
                             <div className="rounded-lg border-l-4 border-l-green-500 p-4">
                                 <div className="mb-2">
-                                    <Label htmlFor="property" className="text-base font-semibold">
+                                    <Label htmlFor="property_id" className="text-base font-semibold">
                                         Property *
                                     </Label>
                                 </div>
                                 <Select
                                     onValueChange={handlePropertyChange}
-                                    value={data.property}
-                                    disabled={!data.city || loadingProperties}
+                                    value={data.property_id}
+                                    disabled={!selectedCityId || availableProperties.length === 0}
                                 >
                                     <SelectTrigger ref={propertyRef}>
-                                        <SelectValue placeholder={loadingProperties ? "Loading properties..." : "Select property"} />
+                                        <SelectValue placeholder={!selectedCityId ? "Select city first" : "Select property"} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableProperties?.map((property) => (
-                                            <SelectItem key={property.id} value={property.property_name}>
+                                            <SelectItem key={property.id} value={property.id.toString()}>
                                                 {property.property_name}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.property && <p className="mt-1 text-sm text-red-600">{errors.property}</p>}
+                                {errors.property_id && <p className="mt-1 text-sm text-red-600">{errors.property_id}</p>}
                                 {propertyValidationError && <p className="mt-1 text-sm text-red-600">{propertyValidationError}</p>}
                             </div>
 

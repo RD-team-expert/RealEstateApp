@@ -5,6 +5,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 use Carbon\Carbon;
 
 /**
@@ -16,19 +18,18 @@ class Application extends Model
     use HasFactory;
 
     protected $fillable = [
-        'city',
-        'property',
-        'name',
-        'co_signer',
-        'unit',
-        'status',
-        'date',
-        'stage_in_progress',
-        'notes',
-        'attachment_name',
-        'attachment_path',
-        'is_archived',
-    ];
+    'unit_id',        // Changed from 'unit' to 'unit_id'
+    'name',
+    'co_signer',
+    'status',
+    'date',
+    'stage_in_progress',
+    'notes',
+    'attachment_name',
+    'attachment_path',
+    'is_archived',
+];
+
 
     protected $casts = [
         'date' => 'date',
@@ -40,6 +41,13 @@ class Application extends Model
     {
         return $this->date ? $this->date->format('M d, Y') : null;
     }
+
+    // Add this method to establish the belongsTo relationship
+public function unit(): BelongsTo
+{
+    return $this->belongsTo(Unit::class, 'unit_id');
+}
+
 
     // Scope for filtering by status
     public function scopeByStatus($query, $status)

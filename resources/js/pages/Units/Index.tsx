@@ -491,7 +491,6 @@ export default function Index({ auth, units, statistics, filters, cities, proper
         setShowCityDropdown(false);
     };
 
-
     const handleCityInputChange = (value: string) => {
         setCityInput(value);
         handleTempFilterChange('city', value);
@@ -528,6 +527,29 @@ export default function Index({ auth, units, statistics, filters, cities, proper
         });
     };
 
+    const handleClearFilters = () => {
+        // Reset all filter states
+        const emptyFilters: UnitFilters = {
+            city: '',
+            property: '',
+            unit_name: '',
+            vacant: '',
+            listed: '',
+            insurance: '',
+        };
+        
+        setTempFilters(emptyFilters);
+        setSearchFilters(emptyFilters);
+        setCityInput('');
+        setPropertyInput('');
+        
+        // Navigate to the page without any filters
+        router.get(route('units.index'), {}, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
     const handleDelete = (unit: Unit) => {
         if (confirm('Are you sure you want to delete this unit?')) {
             router.delete(route('units.destroy', unit.id));
@@ -541,6 +563,11 @@ export default function Index({ auth, units, statistics, filters, cities, proper
 
     const handleEditSuccess = () => {
         // Refresh the page data after successful edit
+        router.reload({ only: ['units', 'statistics'] });
+    };
+
+    const handleCreateSuccess = () => {
+        // Refresh the page data after successful creation
         router.reload({ only: ['units', 'statistics'] });
     };
 
@@ -607,23 +634,6 @@ export default function Index({ auth, units, statistics, filters, cities, proper
     const getInsuranceBadge = (insurance: string | null) => {
         if (!insurance || insurance === '-') return <Badge variant="outline">N/A</Badge>;
         return <Badge variant={insurance === 'Yes' ? 'default' : 'destructive'}>{insurance}</Badge>;
-    };
-
-    /**
-     * Always treat the value as a date-only (no time, no TZ).
-     * Works for "YYYY-MM-DD" and for ISO strings by grabbing the first 10 chars.
-     */
-    const formatDateOnly = (value?: string | null, fallback = '-'): string => {
-        if (!value) return fallback;
-
-        // Grab YYYY-MM-DD from the front (works for "2025-10-01" and "2025-10-01T00:00:00Z")
-        const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
-        if (!m) return fallback;
-
-        const [, y, mo, d] = m;
-        // Construct a local calendar date (no timezone shifting)
-        const date = new Date(Number(y), Number(mo) - 1, Number(d));
-        return format(date, 'P'); // localized short date (or use 'MM/dd/yyyy' if you want fixed format)
     };
 
     return (
@@ -698,7 +708,7 @@ export default function Index({ auth, units, statistics, filters, cities, proper
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
                             {/* Filters */}
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-7">
                                 {/* City Filter with Autocomplete */}
                                 <div className="relative">
                                     <Input
@@ -788,6 +798,10 @@ export default function Index({ auth, units, statistics, filters, cities, proper
                                 <Button onClick={handleSearchClick} variant="default" className="flex items-center">
                                     <Search className="mr-2 h-4 w-4" />
                                     Search
+                                </Button>
+                                <Button onClick={handleClearFilters} variant="outline" className="flex items-center">
+                                    <X className="mr-2 h-4 w-4" />
+                                    Clear
                                 </Button>
                             </div>
                         </CardHeader>
@@ -891,13 +905,6 @@ export default function Index({ auth, units, statistics, filters, cities, proper
                                                 {hasAnyPermission(['units.show', 'units.edit', 'units.update', 'units.destroy']) && (
                                                     <TableCell className="border border-border text-center">
                                                         <div className="flex gap-1">
-                                                            {/* {hasPermission('units.show') && (
-                                                                <Link href={route('units.show', unit.id)}>
-                                                                    <Button variant="outline" size="sm">
-                                                                        <Eye className="h-4 w-4" />
-                                                                    </Button>
-                                                                </Link>
-                                                            )} */}
                                                             {hasAllPermissions(['units.edit', 'units.update']) && (
                                                                 <Button variant="outline" size="sm" onClick={() => handleEdit(unit)}>
                                                                     <Edit className="h-4 w-4" />
@@ -962,13 +969,20 @@ export default function Index({ auth, units, statistics, filters, cities, proper
             </div>
 
             {/* Unit Create Drawer */}
-            <UnitCreateDrawer open={showCreateDrawer} onOpenChange={setShowCreateDrawer} cities={cities || []} />
+            <UnitCreateDrawer 
+                open={showCreateDrawer} 
+                onOpenChange={setShowCreateDrawer} 
+                cities={cities || []} 
+                properties={properties || []}
+                onSuccess={handleCreateSuccess}
+            />
 
             {/* Unit Edit Drawer */}
             {selectedUnit && (
                 <UnitEditDrawer
                     unit={selectedUnit}
                     cities={cities || []}
+                    properties={properties || []}
                     open={showEditDrawer}
                     onOpenChange={setShowEditDrawer}
                     onSuccess={handleEditSuccess}

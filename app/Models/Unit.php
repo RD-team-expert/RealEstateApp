@@ -1,10 +1,10 @@
 <?php
-// app/Models/Unit.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 
 class Unit extends Model
@@ -12,8 +12,7 @@ class Unit extends Model
     use HasFactory;
 
     protected $fillable = [
-        'city',
-        'property',
+        'property_id',
         'unit_name',
         'tenants',
         'lease_start',
@@ -38,10 +37,11 @@ class Unit extends Model
         'lease_end' => 'date',
         'insurance_expiration_date' => 'date',
         'monthly_rent' => 'decimal:2',
-        'count_beds' => 'decimal:1',      // Changed from 'integer'
-        'count_baths' => 'decimal:1',     // Changed from 'integer'
+        'count_beds' => 'decimal:1',
+        'count_baths' => 'decimal:1',
         'total_applications' => 'integer',
         'is_archived' => 'boolean',
+        'property_id' => 'integer',
     ];
 
     /**
@@ -82,27 +82,36 @@ class Unit extends Model
         return $this->update(['is_archived' => true]);
     }
 
+    /**
+     * Get the property that owns this unit.
+     */
+    public function property(): BelongsTo
+    {
+        return $this->belongsTo(PropertyInfoWithoutInsurance::class, 'property_id');
+    }
+
     // Relationship with applications
     public function applications()
     {
-        return $this->hasMany(Application::class, 'unit', 'unit_name');
+        return $this->hasMany(Application::class, 'unit_id');
     }
 
     public function calculateFields()
-    {
-        // Calculate Vacant
-        $this->vacant = empty($this->tenants) ? 'Yes' : 'No';
+{
+    // Calculate Vacant
+    $this->vacant = empty($this->tenants) ? 'Yes' : 'No';
 
-        // Calculate Listed
-        $this->listed = $this->vacant === 'Yes' ? 'Yes' : 'No';
+    // Calculate Listed
+    $this->listed = $this->vacant === 'Yes' ? 'Yes' : 'No';
 
-        // Calculate Total Applications
-        if ($this->listed === 'Yes') {
-            $this->total_applications = Application::where('unit', $this->unit_name)->count();
-        } else {
-            $this->total_applications = 0;
-        }
+    // Calculate Total Applications - use the proper relationship
+    if ($this->listed === 'Yes') {
+        $this->total_applications = $this->applications()->count();
+    } else {
+        $this->total_applications = 0;
     }
+}
+
 
     // Static method to update all units' application counts
     public static function updateAllApplicationCounts()
@@ -115,14 +124,15 @@ class Unit extends Model
     }
 
     // Method to update application count for specific unit
-    public static function updateApplicationCountForUnit($unitName)
-    {
-        $unit = static::where('unit_name', $unitName)->first();
-        if ($unit) {
-            $unit->calculateFields();
-            $unit->saveQuietly();
-        }
+public static function updateApplicationCountForUnit($unitId)
+{
+    $unit = static::find($unitId); // Use ID instead of name
+    if ($unit) {
+        $unit->calculateFields();
+        $unit->saveQuietly();
     }
+}
+
 
     // Accessor for formatted monthly rent
     public function getFormattedMonthlyRentAttribute(): string

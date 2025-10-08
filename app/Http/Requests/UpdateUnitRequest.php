@@ -16,23 +16,21 @@ class UpdateUnitRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'city' => [
+            'property_id' => [
                 'required',
-                'string',
-                Rule::exists('cities', 'city')
+                'integer',
+                Rule::exists('property_info_without_insurance', 'id')
             ],
-            'property' => 'required|string|max:255',
             'unit_name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('units', 'unit_name')->ignore($this->route('unit'))
             ],
             'tenants' => 'nullable|string|max:255',
             'lease_start' => 'nullable|date',
             'lease_end' => 'nullable|date|after_or_equal:lease_start',
-            'count_beds' => 'nullable|numeric|min:0|regex:/^\d+(\.\d{1})?$/',   // Changed from 'integer'
-            'count_baths' => 'nullable|numeric|min:0|regex:/^\d+(\.\d{1})?$/',  // Changed from 'integer'
+            'count_beds' => 'nullable|numeric|min:0|regex:/^\d+(\.\d{1})?$/',
+            'count_baths' => 'nullable|numeric|min:0|regex:/^\d+(\.\d{1})?$/',
             'lease_status' => 'nullable|string|max:255',
             'monthly_rent' => 'nullable|numeric|min:0',
             'recurring_transaction' => 'nullable|string|max:255',
@@ -46,10 +44,9 @@ class UpdateUnitRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'city.exists' => 'The selected city is not valid. Please choose from available cities.',
-            'property.required' => 'Property is required.',
+            'property_id.required' => 'Property is required.',
+            'property_id.exists' => 'The selected property is not valid. Please choose from available properties.',
             'unit_name.required' => 'Unit name is required.',
-            'unit_name.unique' => 'Unit name already exists.',
             'lease_end.after_or_equal' => 'Lease end date must be after or equal to lease start date.',
             'count_beds.numeric' => 'Count beds must be a valid number.',
             'count_beds.regex' => 'Count beds must have at most 1 decimal place.',

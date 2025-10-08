@@ -7,6 +7,7 @@ use App\Http\Requests\StoreUnitRequest;
 use App\Http\Requests\UpdateUnitRequest;
 use App\Http\Requests\ImportUnitsRequest;
 use App\Models\Cities;
+use App\Models\PropertyInfoWithoutInsurance;
 use App\Services\UnitService;
 use App\Services\UnitImportService;
 use Illuminate\Http\Request;
@@ -38,14 +39,23 @@ class UnitController extends Controller
         $units = $this->unitService->getAllPaginated($perPage, $filters);
         $statistics = $this->unitService->getStatistics();
 
+        // Transform units data to include property and city names for frontend
+        $transformedUnits = $units->toArray();
+        $transformedUnits['data'] = array_map(function ($unit) {
+            return array_merge($unit, [
+                'city' => $unit['property']['city']['city'] ?? 'Unknown',
+                'property' => $unit['property']['property_name'] ?? 'Unknown'
+            ]);
+        }, $transformedUnits['data']);
+
         // Get cities data for drawer component
-        $cities = \App\Models\Cities::all();
+        $cities = Cities::all();
 
         // Get properties data for filter dropdown
-        $properties = \App\Models\PropertyInfoWithoutInsurance::with('city')->get();
+        $properties = PropertyInfoWithoutInsurance::with('city')->get();
 
         return Inertia::render('Units/Index', [
-            'units' => $units,
+            'units' => $transformedUnits,
             'statistics' => $statistics,
             'filters' => $filters,
             'cities' => $cities,
@@ -56,8 +66,11 @@ class UnitController extends Controller
     public function create(): Response
     {
         $cities = Cities::all();
+        $properties = PropertyInfoWithoutInsurance::with('city')->get();
+        
         return Inertia::render('Units/Create', [
-            'cities' => $cities
+            'cities' => $cities,
+            'properties' => $properties
         ]);
     }
 
@@ -78,9 +91,15 @@ class UnitController extends Controller
     public function show(string $id): Response
     {
         $unit = $this->unitService->findById((int) $id);
+        
+        // Transform unit data to include property and city names
+        $transformedUnit = array_merge($unit->toArray(), [
+            'city' => $unit->property->city->city ?? 'Unknown',
+            'property' => $unit->property->property_name ?? 'Unknown'
+        ]);
 
         return Inertia::render('Units/Show', [
-            'unit' => $unit,
+            'unit' => $transformedUnit,
         ]);
     }
 
@@ -88,9 +107,18 @@ class UnitController extends Controller
     {
         $unit = $this->unitService->findById((int) $id);
         $cities = Cities::all();
+        $properties = PropertyInfoWithoutInsurance::with('city')->get();
+        
+        // Transform unit data to include property and city names
+        $transformedUnit = array_merge($unit->toArray(), [
+            'city' => $unit->property->city->city ?? 'Unknown',
+            'property' => $unit->property->property_name ?? 'Unknown'
+        ]);
+        
         return Inertia::render('Units/Edit', [
-            'unit' => $unit,
-            'cities' => $cities
+            'unit' => $transformedUnit,
+            'cities' => $cities,
+            'properties' => $properties
         ]);
     }
 
@@ -129,10 +157,25 @@ class UnitController extends Controller
         $vacantUnits = $this->unitService->getVacantUnits();
         $listedUnits = $this->unitService->getListedUnits();
 
+        // Transform units data to include property and city names
+        $transformedVacantUnits = $vacantUnits->map(function ($unit) {
+            return array_merge($unit->toArray(), [
+                'city' => $unit->property->city->city ?? 'Unknown',
+                'property' => $unit->property->property_name ?? 'Unknown'
+            ]);
+        });
+
+        $transformedListedUnits = $listedUnits->map(function ($unit) {
+            return array_merge($unit->toArray(), [
+                'city' => $unit->property->city->city ?? 'Unknown',
+                'property' => $unit->property->property_name ?? 'Unknown'
+            ]);
+        });
+
         return Inertia::render('Units/Dashboard', [
             'statistics' => $statistics,
-            'vacantUnits' => $vacantUnits,
-            'listedUnits' => $listedUnits,
+            'vacantUnits' => $transformedVacantUnits,
+            'listedUnits' => $transformedListedUnits,
         ]);
     }
 

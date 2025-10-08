@@ -8,6 +8,7 @@ use App\Models\PropertyInfoWithoutInsurance;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Exception;
 
 class UnitImportService
@@ -17,9 +18,6 @@ class UnitImportService
     protected int $successCount = 0;
     protected int $errorCount = 0;
     protected int $skippedCount = 0;
-
-
-    // In App\Services\UnitImportService
 
     protected function toUtf8(?string $value): ?string
     {
@@ -67,7 +65,7 @@ class UnitImportService
     protected function readCsvFile(UploadedFile $file): array
     {
         $csvData = [];
-        ini_set('auto_detect_line_endings', '1'); // helps with Mac line endings
+        ini_set('auto_detect_line_endings', '1');
 
         $handle = fopen($file->getRealPath(), 'r');
         if (!$handle) {
@@ -111,7 +109,6 @@ class UnitImportService
         return $csvData;
     }
 
-
     protected function processUnits(array $csvData, bool $skipDuplicates, bool $updateExisting): array
     {
         DB::beginTransaction();
@@ -146,19 +143,12 @@ class UnitImportService
     protected function transformCsvRowToUnitData(array $row, int $rowNumber): ?array
     {
         try {
-            // Get property and city information
+            // Get property information using property_id instead of property name
             $propertyName = trim($row['PropertyName']);
             $propertyInfo = PropertyInfoWithoutInsurance::where('property_name', $propertyName)->first();
 
             if (!$propertyInfo) {
                 $this->errors[] = "Row {$rowNumber}: Property '" . $this->toUtf8($propertyName) . "' not found in system.";
-                $this->errorCount++;
-                return null;
-            }
-
-            $city = $propertyInfo->city;
-            if (!$city) {
-                $this->errors[] = "Row {$rowNumber}: No city associated with property '{$propertyName}'.";
                 $this->errorCount++;
                 return null;
             }
@@ -179,9 +169,9 @@ class UnitImportService
             // Set tenants based on vacant status
             $tenants = $isVacant ? null : trim($row['Residents']);
 
-            return [
-                'city' => $city->city,
-                'property' => $propertyName,
+            // Build unit data matching the Unit model structure
+            $unitData = [
+                'property_id' => $propertyInfo->id, // Use property_id instead of property name
                 'unit_name' => trim($row['number']),
                 'tenants' => $tenants,
                 'lease_start' => $leaseStart,
@@ -195,7 +185,35 @@ class UnitImportService
                 'account_number' => null,
                 'insurance' => null,
                 'insurance_expiration_date' => null,
+                'is_archived' => false, // Add the is_archived field
             ];
+
+            // Validate the unit data using the same rules as StoreUnitRequest
+            $validator = Validator::make($unitData, [
+                'property_id' => 'required|integer|exists:property_info_without_insurance,id',
+                'unit_name' => 'required|string|max:255',
+                'tenants' => 'nullable|string|max:255',
+                'lease_start' => 'nullable|date',
+                'lease_end' => 'nullable|date|after_or_equal:lease_start',
+                'count_beds' => 'nullable|numeric|min:0|regex:/^\d+(\.\d{1})?$/',
+                'count_baths' => 'nullable|numeric|min:0|regex:/^\d+(\.\d{1})?$/',
+                'lease_status' => 'nullable|string|max:255',
+                'monthly_rent' => 'nullable|numeric|min:0',
+                'recurring_transaction' => 'nullable|string|max:255',
+                'utility_status' => 'nullable|string|max:255',
+                'account_number' => 'nullable|string|max:255',
+                'insurance' => 'nullable|in:Yes,No',
+                'insurance_expiration_date' => 'nullable|date',
+                'is_archived' => 'boolean',
+            ]);
+
+            if ($validator->fails()) {
+                $this->errors[] = "Row {$rowNumber}: Validation failed - " . implode(', ', $validator->errors()->all());
+                $this->errorCount++;
+                return null;
+            }
+
+            return $unitData;
         } catch (Exception $e) {
             $this->errors[] = "Row {$rowNumber}: Error processing data - " . $e->getMessage();
             $this->errorCount++;
@@ -264,8 +282,10 @@ class UnitImportService
 
     protected function processUnit(array $unitData, bool $skipDuplicates, bool $updateExisting, int $rowNumber): void
     {
-        $existingUnit = Unit::where('unit_name', $unitData['unit_name'])
-            ->where('property', $unitData['property'])
+        // Check for existing unit using property_id and unit_name (proper way)
+        $existingUnit = Unit::withArchived()
+            ->where('unit_name', $unitData['unit_name'])
+            ->where('property_id', $unitData['property_id'])
             ->first();
 
         if ($existingUnit) {
@@ -273,10 +293,10 @@ class UnitImportService
                 $existingUnit->update($unitData);
                 $this->successCount++;
             } elseif ($skipDuplicates) {
-                $this->warnings[] = "Row {$rowNumber}: Unit '{$unitData['unit_name']}' in property '{$unitData['property']}' already exists, skipped.";
+                $this->warnings[] = "Row {$rowNumber}: Unit '{$unitData['unit_name']}' in property already exists, skipped.";
                 $this->skippedCount++;
             } else {
-                $this->errors[] = "Row {$rowNumber}: Unit '{$unitData['unit_name']}' in property '{$unitData['property']}' already exists.";
+                $this->errors[] = "Row {$rowNumber}: Unit '{$unitData['unit_name']}' in property already exists.";
                 $this->errorCount++;
             }
         } else {
