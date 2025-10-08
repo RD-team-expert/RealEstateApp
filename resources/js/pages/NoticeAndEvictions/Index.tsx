@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { usePermissions } from '@/hooks/usePermissions';
 import AppLayout from '@/layouts/app-layout';
 import { Notice, NoticeAndEviction, Tenant } from '@/types/NoticeAndEviction';
+import { City, PropertyInfoWithoutInsurance } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { Download, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -32,6 +33,8 @@ const exportToCSV = (data: NoticeAndEviction[], filename: string = 'notice-evict
         const headers = [
             'ID',
             'Unit Name',
+            'City Name',
+            'Property Name',
             'Tenants Name',
             'Status',
             'Date',
@@ -54,6 +57,8 @@ const exportToCSV = (data: NoticeAndEviction[], filename: string = 'notice-evict
                         return [
                             record.id || '',
                             `"${formatString(record.unit_name)}"`,
+                            `"${formatString(record.city_name)}"`,
+                            `"${formatString(record.property_name)}"`,
                             `"${formatString(record.tenants_name)}"`,
                             `"${formatString(record.status)}"`,
                             `"${formatDate(record.date)}"`,
@@ -100,9 +105,11 @@ interface Props {
     search?: string;
     tenants?: Tenant[];
     notices?: Notice[];
+    cities?: City[];
+    properties?: PropertyInfoWithoutInsurance[];
 }
 
-const Index = ({ records, search, tenants = [], notices = [] }: Props) => {
+const Index = ({ records, search, tenants = [], notices = [], cities = [], properties = [] }: Props) => {
     const [searchTerm, setSearchTerm] = useState(search || '');
     const [isExporting, setIsExporting] = useState(false);
     const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
@@ -253,6 +260,8 @@ const Index = ({ records, search, tenants = [], notices = [] }: Props) => {
                                         <TableRow className="border-border">
                                             <TableHead className="text-muted-foreground">ID</TableHead>
                                             <TableHead className="text-muted-foreground">Unit Name</TableHead>
+                                            <TableHead className="text-muted-foreground">City Name</TableHead>
+                                            <TableHead className="text-muted-foreground">Property Name</TableHead>
                                             <TableHead className="text-muted-foreground">Tenants Name</TableHead>
                                             <TableHead className="text-muted-foreground">Status</TableHead>
                                             <TableHead className="text-muted-foreground">Date</TableHead>
@@ -278,6 +287,12 @@ const Index = ({ records, search, tenants = [], notices = [] }: Props) => {
                                             <TableRow key={record.id} className="border-border hover:bg-muted/50">
                                                 <TableCell className="font-medium text-foreground">{record.id}</TableCell>
                                                 <TableCell className="text-foreground">{record.unit_name}</TableCell>
+                                                <TableCell className="text-foreground">
+                                                    {record.city_name || <span className="text-muted-foreground">N/A</span>}
+                                                </TableCell>
+                                                <TableCell className="text-foreground">
+                                                    {record.property_name || <span className="text-muted-foreground">N/A</span>}
+                                                </TableCell>
                                                 <TableCell className="text-foreground">{record.tenants_name}</TableCell>
                                                 <TableCell>{getStatusBadge(record.status ?? null)}</TableCell>
                                                 <TableCell className="text-foreground">
@@ -372,7 +387,7 @@ const Index = ({ records, search, tenants = [], notices = [] }: Props) => {
             </div>
 
             {/* Create Drawer */}
-            <NoticeAndEvictionsCreateDrawer open={isCreateDrawerOpen} onOpenChange={setIsCreateDrawerOpen} tenants={tenants} notices={notices} />
+            <NoticeAndEvictionsCreateDrawer open={isCreateDrawerOpen} onOpenChange={setIsCreateDrawerOpen} tenants={tenants} notices={notices} cities={cities} properties={properties} />
 
             {/* Edit Drawer */}
             {selectedRecord && (
@@ -380,6 +395,8 @@ const Index = ({ records, search, tenants = [], notices = [] }: Props) => {
                     record={selectedRecord}
                     tenants={tenants}
                     notices={notices}
+                    cities={cities}
+                    properties={properties}
                     open={isEditDrawerOpen}
                     onOpenChange={setIsEditDrawerOpen}
                     onSuccess={handleEditSuccess}

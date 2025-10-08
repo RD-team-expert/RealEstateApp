@@ -15,6 +15,8 @@ class NoticeAndEviction extends Model
 
     protected $fillable = [
         'unit_name',
+        'city_name',
+        'property_name',
         'tenants_name',
         'status',
         'date',

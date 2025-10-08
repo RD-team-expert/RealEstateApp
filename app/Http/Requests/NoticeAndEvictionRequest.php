@@ -20,6 +20,8 @@ class NoticeAndEvictionRequest extends FormRequest
                 'required', 'string',
                 Rule::exists('tenants', 'unit_number'),
             ],
+            'city_name' => ['nullable', 'string', 'max:255'],
+            'property_name' => ['nullable', 'string', 'max:255'],
             'tenants_name' => [
                 'required', 'string', function($attribute, $value, $fail) {
                     $nameParts = explode(' ', $value, 2);

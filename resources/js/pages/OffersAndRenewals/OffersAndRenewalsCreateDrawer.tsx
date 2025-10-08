@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup } from '@/components/ui/radioGroup';
 import { OfferRenewal, Tenant } from '@/types/OfferRenewal';
+import { City } from '@/types/City';
 import { useForm } from '@inertiajs/react';
 import { format, parse } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
@@ -14,12 +15,13 @@ import React, { useState, useRef } from 'react';
 
 interface Props {
     tenants: Tenant[];
+    cities: City[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
 }
 
-export default function OffersAndRenewalsCreateDrawer({ tenants, open, onOpenChange, onSuccess }: Props) {
+export default function OffersAndRenewalsCreateDrawer({ tenants, cities, open, onOpenChange, onSuccess }: Props) {
     const propertyRef = useRef<HTMLButtonElement>(null);
     const unitRef = useRef<HTMLButtonElement>(null);
     const tenantRef = useRef<HTMLButtonElement>(null);
@@ -47,6 +49,7 @@ export default function OffersAndRenewalsCreateDrawer({ tenants, open, onOpenCha
         property: '',
         unit: '',
         tenant: '',
+        city_name: '',
         date_sent_offer: '',
         status: '',
         date_of_acceptance: '',
@@ -87,6 +90,11 @@ export default function OffersAndRenewalsCreateDrawer({ tenants, open, onOpenCha
     const handleTenantChange = (tenant: string) => {
         setData('tenant', tenant);
         setValidationErrors(prev => ({ ...prev, tenant: undefined }));
+    };
+
+    const handleCityChange = (cityId: string) => {
+        const selectedCity = cities.find(city => city.id.toString() === cityId);
+        setData('city_name', selectedCity ? selectedCity.city : '');
     };
 
     const handleDateSentOfferChange = (date: string) => {
@@ -228,6 +236,27 @@ export default function OffersAndRenewalsCreateDrawer({ tenants, open, onOpenCha
                                 </Select>
                                 {errors.tenant && <p className="mt-1 text-sm text-red-600">{errors.tenant}</p>}
                                 {validationErrors.tenant && <p className="mt-1 text-sm text-red-600">{validationErrors.tenant}</p>}
+                            </div>
+
+                            <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
+                                <div className="mb-2">
+                                    <Label htmlFor="city_name" className="text-base font-semibold">
+                                        City
+                                    </Label>
+                                </div>
+                                <Select onValueChange={handleCityChange} value={cities.find(city => city.city === data.city_name)?.id.toString() || ''}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select city" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {cities.map((city) => (
+                                            <SelectItem key={city.id} value={city.id.toString()}>
+                                                {city.city}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.city_name && <p className="mt-1 text-sm text-red-600">{errors.city_name}</p>}
                             </div>
 
                             {/* Offer Information */}

@@ -61,7 +61,7 @@ class OffersAndRenewal extends Model
     }
 
     protected $fillable = [
-        'property','unit','tenant','date_sent_offer','status','date_of_acceptance',
+        'property','city_name','unit','tenant','date_sent_offer','status','date_of_acceptance',
         'last_notice_sent','notice_kind','lease_sent','date_sent_lease',
         'lease_signed','date_signed','last_notice_sent_2','notice_kind_2',
         'notes','how_many_days_left','expired','date_offer_expires','date_lease_expires',

@@ -2,6 +2,7 @@
 export interface OfferRenewal {
   id: number;
   property: string;
+  city_name?: string;
   unit: string;
   tenant: string;
   date_sent_offer: string;

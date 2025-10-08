@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { type BreadcrumbItem } from '@/types';import { Head, useForm, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/Layouts/app-layout';
 import { NoticeAndEviction, Tenant, Notice } from '@/types/NoticeAndEviction';
+import { City } from '@/types/City';
+import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,11 +17,15 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePermissions } from '@/hooks/usePermissions';
 const Edit = () => {
-  const { record, tenants, notices } = usePage().props as {
+  const { record, tenants, notices, cities, properties } = usePage().props as {
     record: NoticeAndEviction;
     tenants: Tenant[];
     notices: Notice[];
+    cities: City[];
+    properties: PropertyInfoWithoutInsurance[];
   };
+
+  const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
 
   const { data, setData, put, processing, errors } = useForm<Partial<NoticeAndEviction>>({
     unit_name: record.unit_name || '',
@@ -35,12 +41,48 @@ const Edit = () => {
     evected_or_payment_plan: record.evected_or_payment_plan || '',
     if_left: record.if_left || '',
     writ_date: record.writ_date || '',
+    city_name: record.city_name || '',
+    property_name: record.property_name || '',
   });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     put(`/notice_and_evictions/${record.id}`);
   }
+
+  // Handle city change to filter properties
+  const handleCityChange = (cityId: string) => {
+    const selectedCity = cities.find(city => city.id.toString() === cityId);
+    setData('city_name', selectedCity ? selectedCity.city : '');
+    setData('property_name', '');
+    
+    if (cityId) {
+      const filteredProperties = properties.filter(
+        property => property.city_id?.toString() === cityId
+      );
+      setAvailableProperties(filteredProperties);
+    } else {
+      setAvailableProperties([]);
+    }
+  };
+
+  // Handle property change
+  const handlePropertyChange = (propertyName: string) => {
+    setData('property_name', propertyName);
+  };
+
+  // Initialize available properties based on existing city_name
+  useEffect(() => {
+    if (data.city_name) {
+      const selectedCity = cities.find(city => city.city === data.city_name);
+      if (selectedCity) {
+        const filteredProperties = properties.filter(
+          property => property.city_id?.toString() === selectedCity.id.toString()
+        );
+        setAvailableProperties(filteredProperties);
+      }
+    }
+  }, [data.city_name, cities, properties]);
 
   const unitOptions = Array.from(new Set(tenants.map(t => t.unit_number)));
   const tenantOptions = tenants.map(t => ({
@@ -76,6 +118,49 @@ const Edit = () => {
 
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* --- City and Property Information --- */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* City Name */}
+                  <div>
+                    <Label htmlFor="city_name">City Name</Label>
+                    <Select onValueChange={handleCityChange} value={cities.find(c => c.city === data.city_name)?.id.toString() || ''}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select city" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cities.map((city) => (
+                          <SelectItem key={city.id} value={city.id.toString()}>
+                            {city.city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.city_name && (
+                      <p className="text-red-600 text-sm mt-1">{errors.city_name}</p>
+                    )}
+                  </div>
+
+                  {/* Property Name */}
+                  <div>
+                    <Label htmlFor="property_name">Property Name</Label>
+                    <Select onValueChange={handlePropertyChange} value={data.property_name} disabled={!data.city_name}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select property" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableProperties.map((property) => (
+                          <SelectItem key={property.id} value={property.property_name}>
+                            {property.property_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.property_name && (
+                      <p className="text-red-600 text-sm mt-1">{errors.property_name}</p>
+                    )}
+                  </div>
+                </div>
+
                 {/* --- Basic Information --- */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>

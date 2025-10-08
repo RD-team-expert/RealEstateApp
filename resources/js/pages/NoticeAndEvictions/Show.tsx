@@ -72,13 +72,26 @@ const Show = () => {
                         </CardHeader>
                         <CardContent>
                             <div className="grid md:grid-cols-2 gap-6">
-                                {/* Basic Information */}
+                                {/* Location Information */}
                                 <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold text-foreground">Basic Information</h3>
+                                    <h3 className="text-lg font-semibold text-foreground">Location Information</h3>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">City Name</p>
+                                        <p className="font-medium text-foreground">{record.city_name || <span className="text-muted-foreground">N/A</span>}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">Property Name</p>
+                                        <p className="font-medium text-foreground">{record.property_name || <span className="text-muted-foreground">N/A</span>}</p>
+                                    </div>
                                     <div>
                                         <p className="text-sm text-muted-foreground">Unit Name</p>
                                         <p className="font-medium text-foreground">{record.unit_name}</p>
                                     </div>
+                                </div>
+
+                                {/* Basic Information */}
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-foreground">Basic Information</h3>
                                     <div>
                                         <p className="text-sm text-muted-foreground">Tenants Name</p>
                                         <p className="font-medium text-foreground">{record.tenants_name}</p>

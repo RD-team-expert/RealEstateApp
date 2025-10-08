@@ -7,6 +7,8 @@ use App\Models\NoticeAndEviction;
 use App\Services\NoticeAndEvictionService;
 use App\Models\Tenant; // For dropdowns in create/edit
 use App\Models\Notice; // For dropdowns in create/edit
+use App\Models\Cities; // For city dropdowns
+use App\Models\PropertyInfoWithoutInsurance; // For property dropdowns
 use Inertia\Inertia;
 
 class NoticeAndEvictionController extends Controller
@@ -55,10 +57,16 @@ class NoticeAndEvictionController extends Controller
         $tenants = Tenant::all(['unit_number', 'first_name', 'last_name']);
         $notices = Notice::all(['notice_name']);
         
+        // Get cities and properties for dropdowns
+        $cities = Cities::all(['id', 'city']);
+        $properties = PropertyInfoWithoutInsurance::with('city')->get(['id', 'city_id', 'property_name']);
+        
         return Inertia::render('NoticeAndEvictions/Index', [
             'records' => $records,
             'tenants' => $tenants,
             'notices' => $notices,
+            'cities' => $cities,
+            'properties' => $properties,
         ]);
     }
 
@@ -66,9 +74,16 @@ class NoticeAndEvictionController extends Controller
     {
         $tenants = Tenant::all(['unit_number', 'first_name', 'last_name']);
         $notices = Notice::all(['notice_name']);
+        
+        // Get cities and properties for dropdowns
+        $cities = Cities::all(['id', 'city']);
+        $properties = PropertyInfoWithoutInsurance::with('city')->get(['id', 'city_id', 'property_name']);
+        
         return Inertia::render('NoticeAndEvictions/Create', [
             'tenants' => $tenants,
             'notices' => $notices,
+            'cities' => $cities,
+            'properties' => $properties,
         ]);
     }
 
@@ -87,10 +102,17 @@ class NoticeAndEvictionController extends Controller
     {
         $tenants = Tenant::all(['unit_number', 'first_name', 'last_name']);
         $notices = Notice::all(['notice_name']);
+        
+        // Get cities and properties for dropdowns
+        $cities = Cities::all(['id', 'city']);
+        $properties = PropertyInfoWithoutInsurance::with('city')->get(['id', 'city_id', 'property_name']);
+        
         return Inertia::render('NoticeAndEvictions/Edit', [
             'record' => $notice_and_eviction,
             'tenants' => $tenants,
             'notices' => $notices,
+            'cities' => $cities,
+            'properties' => $properties,
         ]);
     }
 

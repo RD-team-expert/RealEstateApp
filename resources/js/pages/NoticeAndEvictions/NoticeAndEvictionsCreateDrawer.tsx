@@ -7,24 +7,28 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { RadioGroup } from '@/components/ui/radioGroup';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { NoticeAndEviction, Tenant, Notice } from '@/types/NoticeAndEviction';
+import { City, PropertyInfoWithoutInsurance } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { format, parse } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface Props {
     tenants: Tenant[];
     notices: Notice[];
+    cities: City[];
+    properties: PropertyInfoWithoutInsurance[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
 }
 
-export default function NoticeAndEvictionsCreateDrawer({ tenants, notices, open, onOpenChange, onSuccess }: Props) {
+export default function NoticeAndEvictionsCreateDrawer({ tenants, notices, cities, properties, open, onOpenChange, onSuccess }: Props) {
     const unitNameRef = useRef<HTMLButtonElement>(null);
     const tenantNameRef = useRef<HTMLButtonElement>(null);
     const [validationError, setValidationError] = useState<string>('');
     const [tenantValidationError, setTenantValidationError] = useState<string>('');
+    const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>(properties);
     
     const [calendarStates, setCalendarStates] = useState({
         date: false,
@@ -39,6 +43,8 @@ export default function NoticeAndEvictionsCreateDrawer({ tenants, notices, open,
     const { data, setData, post, processing, errors, reset } = useForm<Partial<NoticeAndEviction>>({
         unit_name: '',
         tenants_name: '',
+        city_name: '',
+        property_name: '',
         status: '',
         date: '',
         type_of_notice: '',
@@ -60,6 +66,19 @@ export default function NoticeAndEvictionsCreateDrawer({ tenants, notices, open,
     const handleTenantChange = (tenantName: string) => {
         setData('tenants_name', tenantName);
         setTenantValidationError('');
+    };
+
+    const handleCityChange = (cityName: string) => {
+        setData('city_name', cityName);
+        setData('property_name', ''); // Reset property when city changes
+        
+        // Filter properties based on selected city
+        const filteredProperties = properties.filter(property => property.city === cityName);
+        setAvailableProperties(filteredProperties);
+    };
+
+    const handlePropertyChange = (propertyName: string) => {
+        setData('property_name', propertyName);
     };
 
     const submit = (e: React.FormEvent) => {
@@ -170,6 +189,49 @@ export default function NoticeAndEvictionsCreateDrawer({ tenants, notices, open,
                                 </Select>
                                 {errors.tenants_name && <p className="mt-1 text-sm text-red-600">{errors.tenants_name}</p>}
                                 {tenantValidationError && <p className="mt-1 text-sm text-red-600">{tenantValidationError}</p>}
+                            </div>
+
+                            {/* City and Property Information */}
+                            <div className="rounded-lg border-l-4 border-l-teal-500 p-4">
+                                <div className="mb-2">
+                                    <Label htmlFor="city_name" className="text-base font-semibold">
+                                        City Name
+                                    </Label>
+                                </div>
+                                <Select onValueChange={handleCityChange} value={data.city_name}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select city" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {cities?.map((city) => (
+                                            <SelectItem key={city.id} value={city.city}>
+                                                {city.city}
+                                            </SelectItem>
+                                        )) || []}
+                                    </SelectContent>
+                                </Select>
+                                {errors.city_name && <p className="mt-1 text-sm text-red-600">{errors.city_name}</p>}
+                            </div>
+
+                            <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
+                                <div className="mb-2">
+                                    <Label htmlFor="property_name" className="text-base font-semibold">
+                                        Property Name
+                                    </Label>
+                                </div>
+                                <Select onValueChange={handlePropertyChange} value={data.property_name}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select property" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableProperties?.map((property) => (
+                                            <SelectItem key={property.id} value={property.property_name}>
+                                                {property.property_name}
+                                            </SelectItem>
+                                        )) || []}
+                                    </SelectContent>
+                                </Select>
+                                {errors.property_name && <p className="mt-1 text-sm text-red-600">{errors.property_name}</p>}
                             </div>
 
                             {/* Status and Date */}

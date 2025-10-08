@@ -19,6 +19,10 @@ class OffersAndRenewalRequest extends FormRequest
                 'required', 'string',
                 Rule::exists('tenants', 'property_name'),
             ],
+            'city_name' => [
+                'nullable', 'string',
+                Rule::exists('cities', 'city_name'),
+            ],
             'unit' => [
                 'required', 'string',
                 Rule::exists('tenants', 'unit_number'),

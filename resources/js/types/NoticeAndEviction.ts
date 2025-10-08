@@ -1,6 +1,8 @@
 export interface NoticeAndEviction {
   id: number;
   unit_name: string;
+  city_name?: string;
+  property_name?: string;
   tenants_name: string;
   status?: string;
   date?: string;

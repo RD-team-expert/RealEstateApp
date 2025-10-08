@@ -15,6 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Eye, Plus, Search, Download } from 'lucide-react';
 import { OfferRenewal, Tenant } from '@/types/OfferRenewal';
+import { City } from '@/types/City';
 import { usePermissions } from '@/hooks/usePermissions';
 import { type BreadcrumbItem } from '@/types';
 import OffersAndRenewalsCreateDrawer from './OffersAndRenewalsCreateDrawer';
@@ -132,6 +133,7 @@ const exportToCSV = (data: OfferRenewal[], activeTab: string, filename: string =
 interface Props {
   offers: OfferRenewal[];
   tenants: Tenant[];
+  cities: City[];
   search?: string;
 }
 
@@ -141,7 +143,7 @@ const TABS = [
   { label: 'Both', value: 'both' },
 ];
 
-const Index = ({ offers, tenants, search }: Props) => {
+const Index = ({ offers, tenants, cities, search }: Props) => {
   const [searchTerm, setSearchTerm] = useState(search || '');
   const [activeTab, setActiveTab] = useState<'offers' | 'renewals' | 'both'>('offers');
   const [isExporting, setIsExporting] = useState(false);
@@ -311,6 +313,7 @@ const Index = ({ offers, tenants, search }: Props) => {
                       <TableHead className="text-muted-foreground">Property</TableHead>
                       <TableHead className="text-muted-foreground">Unit</TableHead>
                       <TableHead className="text-muted-foreground">Tenant</TableHead>
+                      <TableHead className="text-muted-foreground">City</TableHead>
                       {/* Conditional columns */}
                       {(activeTab === 'offers' || activeTab === 'both') && (
                         <>
@@ -345,6 +348,7 @@ const Index = ({ offers, tenants, search }: Props) => {
                         <TableCell className="font-medium text-foreground">{offer.property}</TableCell>
                         <TableCell className="font-medium text-foreground">{offer.unit}</TableCell>
                         <TableCell className="text-foreground">{offer.tenant}</TableCell>
+                        <TableCell className="text-foreground">{offer.city_name || <span className="text-muted-foreground">N/A</span>}</TableCell>
                         {(activeTab === 'offers' || activeTab === 'both') && (
                           <>
                             <TableCell className="text-foreground">
@@ -462,6 +466,7 @@ const Index = ({ offers, tenants, search }: Props) => {
       {/* Create Drawer */}
       <OffersAndRenewalsCreateDrawer
         tenants={tenants}
+        cities={cities}
         open={createDrawerOpen}
         onOpenChange={setCreateDrawerOpen}
         onSuccess={() => {
@@ -475,6 +480,7 @@ const Index = ({ offers, tenants, search }: Props) => {
         <OffersAndRenewalsEditDrawer
           offer={selectedOffer}
           tenants={tenants}
+          cities={cities}
           open={editDrawerOpen}
           onOpenChange={setEditDrawerOpen}
           onSuccess={() => {

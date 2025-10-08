@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\OffersAndRenewalRequest;
 use App\Models\OffersAndRenewal;
 use App\Models\Tenant;
+use App\Models\Cities;
 use App\Services\OffersAndRenewalService;
 use Inertia\Inertia;
 
@@ -35,9 +36,11 @@ class OffersAndRenewalController extends Controller
 
         $offers = $this->service->listAll();
         $tenants = Tenant::all(['property_name','unit_number', 'first_name', 'last_name']);
+        $cities = Cities::all();
         return Inertia::render('OffersAndRenewals/Index', [
             'offers' => $offers,
-            'tenants' => $tenants
+            'tenants' => $tenants,
+            'cities' => $cities
         ]);
     }
 
@@ -45,8 +48,10 @@ class OffersAndRenewalController extends Controller
     public function create()
     {
         $tenants = Tenant::all(['property_name','unit_number', 'first_name', 'last_name']);
+        $cities = Cities::all();
         return Inertia::render('OffersAndRenewals/Create', [
-            'tenants' => $tenants
+            'tenants' => $tenants,
+            'cities' => $cities
         ]);
     }
 
@@ -64,9 +69,11 @@ class OffersAndRenewalController extends Controller
     public function edit(OffersAndRenewal $offers_and_renewal)
     {
         $tenants = Tenant::all(['property_name','unit_number', 'first_name', 'last_name']);
+        $cities = Cities::all();
         return Inertia::render('OffersAndRenewals/Edit', [
             'offer' => $offers_and_renewal,
-            'tenants' => $tenants
+            'tenants' => $tenants,
+            'cities' => $cities
         ]);
     }
 
