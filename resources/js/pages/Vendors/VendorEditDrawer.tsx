@@ -21,9 +21,10 @@ export default function VendorEditDrawer({ vendor, cities, open, onOpenChange, o
     const vendorNameRef = useRef<HTMLInputElement>(null);
     const [validationError, setValidationError] = useState<string>('');
     const [vendorNameValidationError, setVendorNameValidationError] = useState<string>('');
+    const [selectedCityName, setSelectedCityName] = useState<string>('');
 
     const { data, setData, put, processing, errors, reset } = useForm({
-        city: vendor?.city || '',
+        city_id: vendor?.city_id?.toString() || '',
         vendor_name: vendor?.vendor_name || '',
         number: vendor?.number || '',
         email: vendor?.email || '',
@@ -33,18 +34,28 @@ export default function VendorEditDrawer({ vendor, cities, open, onOpenChange, o
     // Update form data when vendor prop changes
     useEffect(() => {
         if (vendor) {
+            const cityId = vendor.city_id?.toString() || '';
+            const cityName = vendor.city?.city || '';
+            
             setData({
-                city: vendor.city,
+                city_id: cityId,
                 vendor_name: vendor.vendor_name,
                 number: vendor.number || '',
                 email: vendor.email || '',
                 service_type: vendor.service_type || ''
             });
+            
+            setSelectedCityName(cityName);
         }
     }, [vendor]);
 
-    const handleCityChange = (city: string) => {
-        setData('city', city);
+    const handleCityChange = (cityId: string) => {
+        setData('city_id', cityId);
+        
+        // Find and store the city name for display purposes
+        const selectedCity = cities.find(city => city.id.toString() === cityId);
+        setSelectedCityName(selectedCity ? selectedCity.city : '');
+        
         setValidationError('');
     };
 
@@ -64,8 +75,8 @@ export default function VendorEditDrawer({ vendor, cities, open, onOpenChange, o
         
         let hasValidationErrors = false;
         
-        // Validate city is not empty
-        if (!data.city || data.city.trim() === '') {
+        // Validate city_id is not empty
+        if (!data.city_id || data.city_id.trim() === '') {
             setValidationError('Please select a city before submitting the form.');
             // Focus on the city field
             if (cityRef.current) {
@@ -102,13 +113,18 @@ export default function VendorEditDrawer({ vendor, cities, open, onOpenChange, o
 
     const handleCancel = () => {
         if (vendor) {
+            const cityId = vendor.city_id?.toString() || '';
+            const cityName = vendor.city?.city || '';
+            
             setData({
-                city: vendor.city,
+                city_id: cityId,
                 vendor_name: vendor.vendor_name,
                 number: vendor.number || '',
                 email: vendor.email || '',
                 service_type: vendor.service_type || ''
             });
+            
+            setSelectedCityName(cityName);
         }
         setValidationError('');
         setVendorNameValidationError('');
@@ -126,23 +142,23 @@ export default function VendorEditDrawer({ vendor, cities, open, onOpenChange, o
                             {/* City and Vendor Name Information */}
                             <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
                                 <div className="mb-2">
-                                    <Label htmlFor="city" className="text-base font-semibold">
+                                    <Label htmlFor="city_id" className="text-base font-semibold">
                                         City *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleCityChange} value={data.city}>
+                                <Select onValueChange={handleCityChange} value={data.city_id}>
                                     <SelectTrigger ref={cityRef}>
                                         <SelectValue placeholder="Select a city" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {cities?.map((city) => (
-                                            <SelectItem key={city.id} value={city.city}>
+                                            <SelectItem key={city.id} value={city.id.toString()}>
                                                 {city.city}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
+                                {errors.city_id && <p className="mt-1 text-sm text-red-600">{errors.city_id}</p>}
                                 {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
                             </div>
 
@@ -212,7 +228,7 @@ export default function VendorEditDrawer({ vendor, cities, open, onOpenChange, o
                                         { value: 'Appliances', label: 'Appliances' },
                                         { value: 'Pest control', label: 'Pest control' },
                                         { value: 'HVAC Repairs', label: 'HVAC Repairs' },
-                                        { value: 'Plumping', label: 'Plumping' },
+                                        { value: 'Plumbing', label: 'Plumbing' },
                                         { value: 'Landscaping', label: 'Landscaping' },
                                         { value: 'Lock Smith', label: 'Lock Smith' },
                                         { value: 'Garage door', label: 'Garage door' }

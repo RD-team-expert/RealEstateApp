@@ -29,15 +29,15 @@ class VendorInfoController extends Controller
     public function index(Request $request): Response
     {
         $perPage = $request->get('per_page', 15);
-        $filters = $request->only(['city', 'vendor_name', 'number', 'email']);
+        $filters = $request->only(['city', 'city_id', 'vendor_name', 'number', 'email']);
 
         $vendors = $this->vendorInfoService->getAllPaginated($perPage, $filters);
-        $statistics = $this->vendorInfoService->getStatistics();
+        // $statistics = $this->vendorInfoService->getStatistics();
         $cities = $this->vendorInfoService->getCities();
 
         return Inertia::render('Vendors/Index', [
             'vendors' => $vendors,
-            'statistics' => $statistics,
+            // 'statistics' => $statistics,
             'filters' => $filters,
             'cities' => $cities,
         ]);
@@ -45,10 +45,10 @@ class VendorInfoController extends Controller
 
     public function create(): Response
     {
-        $cities = Cities::all();
-        return Inertia::render('Vendors/Create',[
-        'cities' => $cities
-    ]);
+        $cities = Cities::orderBy('city', 'asc')->get(['id', 'city']);
+        return Inertia::render('Vendors/Create', [
+            'cities' => $cities
+        ]);
     }
 
     public function store(StoreVendorInfoRequest $request): RedirectResponse
@@ -77,10 +77,10 @@ class VendorInfoController extends Controller
     public function edit(string $id): Response
     {
         $vendor = $this->vendorInfoService->findById((int) $id);
-        $cities = Cities::all();
+        $cities = Cities::orderBy('city', 'asc')->get(['id', 'city']);
         return Inertia::render('Vendors/Edit', [
             'vendor' => $vendor,
-            'cities'  => $cities
+            'cities' => $cities
         ]);
     }
 
@@ -115,11 +115,11 @@ class VendorInfoController extends Controller
 
     public function dashboard(): Response
     {
-        $statistics = $this->vendorInfoService->getStatistics();
+        // $statistics = $this->vendorInfoService->getStatistics();
         $recentVendors = $this->vendorInfoService->getRecentVendors(10);
 
         return Inertia::render('Vendors/Dashboard', [
-            'statistics' => $statistics,
+            // 'statistics' => $statistics,
             'recentVendors' => $recentVendors,
         ]);
     }
@@ -131,6 +131,17 @@ class VendorInfoController extends Controller
         return Inertia::render('Vendors/ByCity', [
             'vendors' => $vendors,
             'city' => $city,
+        ]);
+    }
+
+    public function byCityId(int $cityId): Response
+    {
+        $vendors = $this->vendorInfoService->getByCityId($cityId);
+        $city = Cities::findOrFail($cityId);
+
+        return Inertia::render('Vendors/ByCity', [
+            'vendors' => $vendors,
+            'city' => $city->city,
         ]);
     }
 }

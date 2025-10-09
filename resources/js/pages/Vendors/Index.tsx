@@ -6,7 +6,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import AppLayout from '@/layouts/app-layout';
 import { PageProps, PaginatedVendors, VendorFilters, VendorInfo, VendorStatistics } from '@/types/vendor';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Download, Edit, Plus, Search, Trash2 } from 'lucide-react';
+import { Download, Edit, Plus, Search, Trash2, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import VendorCreateDrawer from './VendorCreateDrawer';
 import VendorEditDrawer from './VendorEditDrawer';
@@ -20,11 +20,11 @@ const exportToCSV = (data: VendorInfo[], filename: string = 'vendors.csv') => {
         ...data.map((vendor) =>
             [
                 vendor.id,
-                `"${vendor.city}"`,
+                `"${vendor.city?.city || 'N/A'}"`,
                 `"${vendor.vendor_name}"`,
                 `"${vendor.number || ''}"`,
                 `"${vendor.email || ''}"`,
-                `"${vendor.service_type}"`,
+                `"${vendor.service_type || ''}"`,
             ].join(','),
         ),
     ].join('\n');
@@ -107,6 +107,20 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
         });
     };
 
+    const handleClearFilters = () => {
+        const clearedFilters = {
+            city: '',
+            vendor_name: '',
+        };
+        setTempFilters(clearedFilters);
+        setSearchFilters(clearedFilters);
+        setShowCityDropdown(false);
+        router.get(route('vendors.index'), {}, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
     const handleFilterChange = (key: keyof VendorFilters, value: string) => {
         const newFilters = { ...searchFilters, [key]: value };
         setSearchFilters(newFilters);
@@ -154,7 +168,7 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
     };
 
     return (
-        <AppLayout >
+        <AppLayout>
             <Head title="Vendors" />
 
             <div className="py-12">
@@ -233,11 +247,15 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                     />
                                 </div>
 
-                                {/* Search Button */}
-                                <div className="flex items-end">
-                                    <Button onClick={handleSearchClick} className="flex w-full items-center justify-center gap-2">
+                                {/* Search and Clear Buttons */}
+                                <div className="flex items-end gap-2">
+                                    <Button onClick={handleSearchClick} className="flex items-center justify-center gap-2">
                                         <Search className="h-4 w-4" />
                                         Search
+                                    </Button>
+                                    <Button onClick={handleClearFilters} variant="outline" className="flex items-center justify-center gap-2">
+                                        <X className="h-4 w-4" />
+                                        Clear
                                     </Button>
                                 </div>
                             </div>
@@ -259,6 +277,9 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                             <TableHead className="border-r border-gray-200 px-4 py-3 text-center font-semibold text-gray-900">
                                                 Email
                                             </TableHead>
+                                            <TableHead className="border-r border-gray-200 px-4 py-3 text-center font-semibold text-gray-900">
+                                                Service Type
+                                            </TableHead>
                                             <TableHead className="px-4 py-3 text-center font-semibold text-gray-900">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -267,7 +288,7 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                             vendors.data.map((vendor) => (
                                                 <TableRow key={vendor.id} className="border-b border-gray-200 hover:bg-gray-50">
                                                     <TableCell className="sticky left-0 z-10 border-r border-gray-200 bg-white px-4 py-3 text-center">
-                                                        {vendor.city || 'N/A'}
+                                                        {vendor.city?.city || 'N/A'}
                                                     </TableCell>
                                                     <TableCell className="sticky left-[120px] z-10 border-r border-gray-200 bg-white px-4 py-3 text-center font-medium">
                                                         {vendor.vendor_name}
@@ -277,6 +298,9 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                                     </TableCell>
                                                     <TableCell className="border-r border-gray-200 px-4 py-3 text-center">
                                                         {vendor.email || 'N/A'}
+                                                    </TableCell>
+                                                    <TableCell className="border-r border-gray-200 px-4 py-3 text-center">
+                                                        {vendor.service_type || 'N/A'}
                                                     </TableCell>
                                                     <TableCell className="px-4 py-3 text-center">
                                                         <div className="flex justify-center gap-2">
@@ -302,7 +326,7 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
                                             ))
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={5} className="py-8 text-center text-gray-500">
+                                                <TableCell colSpan={6} className="py-8 text-center text-gray-500">
                                                     No vendors found
                                                 </TableCell>
                                             </TableRow>

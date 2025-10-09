@@ -65,6 +65,14 @@ class Cities extends Model
     }
 
     /**
+     * Get the vendors for this city.
+     */
+    public function vendors(): HasMany
+    {
+        return $this->hasMany(VendorInfo::class, 'city_id');
+    }
+
+    /**
      * Validation rules for the model
      */
     public static function validationRules(): array

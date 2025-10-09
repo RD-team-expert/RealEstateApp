@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+
 class StoreVendorInfoRequest extends FormRequest
 {
     public function authorize(): bool
@@ -15,10 +16,13 @@ class StoreVendorInfoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'city' => [
+            'city_id' => [
                 'required',
-                'string',
-                Rule::exists('cities', 'city')],
+                'integer',
+                Rule::exists('cities', 'id')->where(function ($query) {
+                    $query->where('is_archived', false);
+                })
+            ],
             'vendor_name' => 'required|string|max:255',
             'number' => 'nullable|string|max:255',
             'service_type' => ['nullable', Rule::in(['Maintenance', 'Appliances', 'Pest control', 'HVAC Repairs',
@@ -30,8 +34,9 @@ class StoreVendorInfoRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'city.exists' => 'The selected city is not valid. Please choose from available cities.',
-            'city.max' => 'City cannot exceed 255 characters.',
+            'city_id.required' => 'City is required.',
+            'city_id.integer' => 'City must be a valid selection.',
+            'city_id.exists' => 'The selected city is not valid. Please choose from available cities.',
             'vendor_name.required' => 'Vendor name is required.',
             'vendor_name.max' => 'Vendor name cannot exceed 255 characters.',
             'number.max' => 'Number cannot exceed 255 characters.',

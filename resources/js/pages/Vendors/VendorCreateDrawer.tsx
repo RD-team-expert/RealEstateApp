@@ -20,17 +20,23 @@ export default function VendorCreateDrawer({ cities, open, onOpenChange, onSucce
     const vendorNameRef = useRef<HTMLInputElement>(null);
     const [validationError, setValidationError] = useState<string>('');
     const [vendorNameValidationError, setVendorNameValidationError] = useState<string>('');
+    const [selectedCityName, setSelectedCityName] = useState<string>('');
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        city: '',
+        city_id: '',
         vendor_name: '',
         number: '',
         email: '',
         service_type: ''
     });
 
-    const handleCityChange = (city: string) => {
-        setData('city', city);
+    const handleCityChange = (cityId: string) => {
+        setData('city_id', cityId);
+        
+        // Find and store the city name for display purposes
+        const selectedCity = cities.find(city => city.id.toString() === cityId);
+        setSelectedCityName(selectedCity ? selectedCity.city : '');
+        
         setValidationError('');
     };
 
@@ -48,8 +54,8 @@ export default function VendorCreateDrawer({ cities, open, onOpenChange, onSucce
         
         let hasValidationErrors = false;
         
-        // Validate city is not empty
-        if (!data.city || data.city.trim() === '') {
+        // Validate city_id is not empty
+        if (!data.city_id || data.city_id.trim() === '') {
             setValidationError('Please select a city before submitting the form.');
             // Focus on the city field
             if (cityRef.current) {
@@ -77,6 +83,7 @@ export default function VendorCreateDrawer({ cities, open, onOpenChange, onSucce
         post(route('vendors.store'), {
             onSuccess: () => {
                 reset();
+                setSelectedCityName('');
                 setValidationError('');
                 setVendorNameValidationError('');
                 onOpenChange(false);
@@ -87,6 +94,7 @@ export default function VendorCreateDrawer({ cities, open, onOpenChange, onSucce
 
     const handleCancel = () => {
         reset();
+        setSelectedCityName('');
         setValidationError('');
         setVendorNameValidationError('');
         onOpenChange(false);
@@ -101,23 +109,23 @@ export default function VendorCreateDrawer({ cities, open, onOpenChange, onSucce
                             {/* City and Vendor Name Information */}
                             <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
                                 <div className="mb-2">
-                                    <Label htmlFor="city" className="text-base font-semibold">
+                                    <Label htmlFor="city_id" className="text-base font-semibold">
                                         City *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleCityChange} value={data.city}>
+                                <Select onValueChange={handleCityChange} value={data.city_id}>
                                     <SelectTrigger ref={cityRef}>
                                         <SelectValue placeholder="Select a city" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {cities?.map((city) => (
-                                            <SelectItem key={city.id} value={city.city}>
+                                            <SelectItem key={city.id} value={city.id.toString()}>
                                                 {city.city}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
+                                {errors.city_id && <p className="mt-1 text-sm text-red-600">{errors.city_id}</p>}
                                 {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
                             </div>
 
@@ -187,10 +195,10 @@ export default function VendorCreateDrawer({ cities, open, onOpenChange, onSucce
                                         { value: 'Appliances', label: 'Appliances' },
                                         { value: 'Pest control', label: 'Pest control' },
                                         { value: 'HVAC Repairs', label: 'HVAC Repairs' },
-                                        { value: 'Plumping', label: 'Plumping' },
+                                        { value: 'Plumbing', label: 'Plumbing' },
                                         { value: 'Landscaping', label: 'Landscaping' },
                                         { value: 'Lock Smith', label: 'Lock Smith' },
-                                        { value: 'Garage door', label: 'Garage door' }
+                                        { value: 'Garage Door', label: 'Garage Door' }
                                     ]}
                                 />
                                 {errors.service_type && <p className="mt-1 text-sm text-red-600">{errors.service_type}</p>}
