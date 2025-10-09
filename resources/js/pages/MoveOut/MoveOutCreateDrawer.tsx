@@ -7,9 +7,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup } from '@/components/ui/radioGroup';
-import { MoveOutFormData, TenantData } from '@/types/move-out';
 import { City } from '@/types/City';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
+import { MoveOutFormData, TenantData } from '@/types/move-out';
 import { useForm } from '@inertiajs/react';
 import { format, parse } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
@@ -18,8 +18,9 @@ import React, { useState, useRef } from 'react';
 interface Props {
     cities: City[];
     properties: PropertyInfoWithoutInsurance[];
-    unitsByProperty: Record<string, string[]>;
-    tenantsByUnit: Record<string, Array<{ id: string; full_name: string }>>;
+    propertiesByCityId: Record<number, PropertyInfoWithoutInsurance[]>;
+    unitsByPropertyId: Record<number, Array<{ id: number; unit_name: string }>>;
+    tenantsByUnitId: Record<number, Array<{ id: number; full_name: string; tenant_id: number }>>;
     tenantsData: TenantData[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -29,8 +30,9 @@ interface Props {
 export default function MoveOutCreateDrawer({ 
     cities,
     properties,
-    unitsByProperty,
-    tenantsByUnit,
+    propertiesByCityId,
+    unitsByPropertyId,
+    tenantsByUnitId,
     tenantsData,
     open, 
     onOpenChange, 
@@ -48,9 +50,15 @@ export default function MoveOutCreateDrawer({
         tenant: ''
     });
     
+    // UI state for dropdowns
+    const [selectedCity, setSelectedCity] = useState<number | null>(null);
+    const [selectedProperty, setSelectedProperty] = useState<number | null>(null);
+    const [selectedUnit, setSelectedUnit] = useState<number | null>(null);
+    const [selectedTenant, setSelectedTenant] = useState<number | null>(null);
+    
     const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
-    const [availableUnits, setAvailableUnits] = useState<string[]>([]);
-    const [availableTenants, setAvailableTenants] = useState<Array<{ id: string; full_name: string }>>([]);
+    const [availableUnits, setAvailableUnits] = useState<Array<{ id: number; unit_name: string }>>([]);
+    const [availableTenants, setAvailableTenants] = useState<Array<{ id: number; full_name: string; tenant_id: number }>>([]);
     
     const [calendarStates, setCalendarStates] = useState({
         move_out_date: false,
@@ -59,10 +67,7 @@ export default function MoveOutCreateDrawer({
     });
 
     const { data, setData, post, processing, errors, reset } = useForm<MoveOutFormData>({
-        city_name: '',
-        property_name: '',
-        tenants_name: '',
-        units_name: '',
+        tenant_id: null,
         move_out_date: '',
         lease_status: '',
         date_lease_ending_on_buildium: '',
@@ -80,22 +85,17 @@ export default function MoveOutCreateDrawer({
 
     // Handle city selection
     const handleCityChange = (cityId: string) => {
-        const selectedCity = cities.find(c => c.id.toString() === cityId);
-        setData(prev => ({
-            ...prev,
-            city_name: selectedCity?.city || '',
-            property_name: '',
-            units_name: '',
-            tenants_name: ''
-        }));
+        const cityIdNum = parseInt(cityId);
+        setSelectedCity(cityIdNum);
+        setSelectedProperty(null);
+        setSelectedUnit(null);
+        setSelectedTenant(null);
+        setData('tenant_id', null);
         
         setValidationErrors(prev => ({ ...prev, city: '', property: '', unit: '', tenant: '' }));
 
-        if (cityId) {
-            const filteredProperties = properties.filter(
-                property => property.city_id?.toString() === cityId
-            );
-            setAvailableProperties(filteredProperties);
+        if (cityIdNum && propertiesByCityId[cityIdNum]) {
+            setAvailableProperties(propertiesByCityId[cityIdNum]);
         } else {
             setAvailableProperties([]);
         }
@@ -104,18 +104,17 @@ export default function MoveOutCreateDrawer({
     };
 
     // Handle property selection
-    const handlePropertyChange = (propertyName: string) => {
-        setData(prev => ({
-            ...prev,
-            property_name: propertyName,
-            units_name: '',
-            tenants_name: ''
-        }));
+    const handlePropertyChange = (propertyId: string) => {
+        const propertyIdNum = parseInt(propertyId);
+        setSelectedProperty(propertyIdNum);
+        setSelectedUnit(null);
+        setSelectedTenant(null);
+        setData('tenant_id', null);
         
         setValidationErrors(prev => ({ ...prev, property: '', unit: '', tenant: '' }));
 
-        if (propertyName && unitsByProperty && unitsByProperty[propertyName]) {
-            setAvailableUnits(unitsByProperty[propertyName]);
+        if (propertyIdNum && unitsByPropertyId[propertyIdNum]) {
+            setAvailableUnits(unitsByPropertyId[propertyIdNum]);
         } else {
             setAvailableUnits([]);
         }
@@ -123,26 +122,30 @@ export default function MoveOutCreateDrawer({
     };
 
     // Handle unit selection
-    const handleUnitChange = (unitName: string) => {
-        setData(prev => ({
-            ...prev,
-            units_name: unitName,
-            tenants_name: ''
-        }));
+    const handleUnitChange = (unitId: string) => {
+        const unitIdNum = parseInt(unitId);
+        setSelectedUnit(unitIdNum);
+        setSelectedTenant(null);
+        setData('tenant_id', null);
         
         setValidationErrors(prev => ({ ...prev, unit: '', tenant: '' }));
 
-        if (unitName && tenantsByUnit && tenantsByUnit[unitName]) {
-            setAvailableTenants(tenantsByUnit[unitName]);
+        if (unitIdNum && tenantsByUnitId[unitIdNum]) {
+            setAvailableTenants(tenantsByUnitId[unitIdNum]);
         } else {
             setAvailableTenants([]);
         }
     };
 
     // Handle tenant selection
-    const handleTenantChange = (tenantName: string) => {
-        setData('tenants_name', tenantName);
-        setValidationErrors(prev => ({ ...prev, tenant: '' }));
+    const handleTenantChange = (tenantId: string) => {
+        const tenantIdNum = parseInt(tenantId);
+        const tenant = availableTenants.find(t => t.id === tenantIdNum);
+        if (tenant) {
+            setSelectedTenant(tenantIdNum);
+            setData('tenant_id', tenant.id);
+            setValidationErrors(prev => ({ ...prev, tenant: '' }));
+        }
     };
 
     const handleCalendarToggle = (field: keyof typeof calendarStates) => {
@@ -176,7 +179,7 @@ export default function MoveOutCreateDrawer({
         let hasValidationErrors = false;
         
         // Validate city selection
-        if (!data.city_name || data.city_name.trim() === '') {
+        if (!selectedCity) {
             setValidationErrors(prev => ({ ...prev, city: 'Please select a city before submitting the form.' }));
             if (cityRef.current) {
                 cityRef.current.focus();
@@ -186,7 +189,7 @@ export default function MoveOutCreateDrawer({
         }
         
         // Validate property selection
-        if (!data.property_name || data.property_name.trim() === '') {
+        if (!selectedProperty) {
             setValidationErrors(prev => ({ ...prev, property: 'Please select a property before submitting the form.' }));
             if (propertyRef.current) {
                 propertyRef.current.focus();
@@ -196,7 +199,7 @@ export default function MoveOutCreateDrawer({
         }
         
         // Validate unit selection
-        if (!data.units_name || data.units_name.trim() === '') {
+        if (!selectedUnit) {
             setValidationErrors(prev => ({ ...prev, unit: 'Please select a unit before submitting the form.' }));
             if (unitRef.current) {
                 unitRef.current.focus();
@@ -206,7 +209,7 @@ export default function MoveOutCreateDrawer({
         }
         
         // Validate tenant selection
-        if (!data.tenants_name || data.tenants_name.trim() === '') {
+        if (!selectedTenant || !data.tenant_id) {
             setValidationErrors(prev => ({ ...prev, tenant: 'Please select a tenant before submitting the form.' }));
             if (tenantRef.current) {
                 tenantRef.current.focus();
@@ -219,29 +222,7 @@ export default function MoveOutCreateDrawer({
             return;
         }
 
-        // Create form data including city_name and property_name for backend
-        const formData = {
-            city_name: data.city_name,
-            property_name: data.property_name,
-            tenants_name: data.tenants_name,
-            units_name: data.units_name,
-            move_out_date: data.move_out_date,
-            lease_status: data.lease_status,
-            date_lease_ending_on_buildium: data.date_lease_ending_on_buildium,
-            keys_location: data.keys_location,
-            utilities_under_our_name: data.utilities_under_our_name,
-            date_utility_put_under_our_name: data.date_utility_put_under_our_name,
-            walkthrough: data.walkthrough,
-            repairs: data.repairs,
-            send_back_security_deposit: data.send_back_security_deposit,
-            notes: data.notes,
-            cleaning: data.cleaning,
-            list_the_unit: data.list_the_unit,
-            move_out_form: data.move_out_form,
-        };
-        
         post(route('move-out.store'), {
-            // data: formData,
             onSuccess: () => {
                 handleCancel();
                 onSuccess?.();
@@ -251,6 +232,10 @@ export default function MoveOutCreateDrawer({
 
     const handleCancel = () => {
         reset();
+        setSelectedCity(null);
+        setSelectedProperty(null);
+        setSelectedUnit(null);
+        setSelectedTenant(null);
         setValidationErrors({
             city: '',
             property: '',
@@ -276,7 +261,7 @@ export default function MoveOutCreateDrawer({
                                         City *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleCityChange} value={cities.find(c => c.city === data.city_name)?.id.toString() || ''}>
+                                <Select onValueChange={handleCityChange} value={selectedCity?.toString() || ''}>
                                     <SelectTrigger ref={cityRef}>
                                         <SelectValue placeholder="Select city" />
                                     </SelectTrigger>
@@ -300,15 +285,15 @@ export default function MoveOutCreateDrawer({
                                 </div>
                                 <Select 
                                     onValueChange={handlePropertyChange} 
-                                    value={data.property_name}
-                                    disabled={!data.city_name}
+                                    value={selectedProperty?.toString() || ''}
+                                    disabled={!selectedCity}
                                 >
                                     <SelectTrigger ref={propertyRef}>
                                         <SelectValue placeholder="Select property" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableProperties?.map((property) => (
-                                            <SelectItem key={property.id} value={property.property_name}>
+                                            <SelectItem key={property.id} value={property.id.toString()}>
                                                 {property.property_name}
                                             </SelectItem>
                                         )) || []}
@@ -321,21 +306,21 @@ export default function MoveOutCreateDrawer({
                             <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="units_name" className="text-base font-semibold">
-                                        Unit Number *
+                                        Unit Name *
                                     </Label>
                                 </div>
                                 <Select
                                     onValueChange={handleUnitChange}
-                                    value={data.units_name}
-                                    disabled={!data.property_name}
+                                    value={selectedUnit?.toString() || ''}
+                                    disabled={!selectedProperty}
                                 >
                                     <SelectTrigger ref={unitRef}>
                                         <SelectValue placeholder="Select unit" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableUnits?.map((unit) => (
-                                            <SelectItem key={unit} value={unit}>
-                                                {unit}
+                                            <SelectItem key={unit.id} value={unit.id.toString()}>
+                                                {unit.unit_name}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
@@ -352,15 +337,15 @@ export default function MoveOutCreateDrawer({
                                 </div>
                                 <Select 
                                     onValueChange={handleTenantChange} 
-                                    value={data.tenants_name}
-                                    disabled={!data.units_name}
+                                    value={selectedTenant?.toString() || ''}
+                                    disabled={!selectedUnit}
                                 >
                                     <SelectTrigger ref={tenantRef}>
                                         <SelectValue placeholder="Select tenant" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableTenants?.map((tenant) => (
-                                            <SelectItem key={tenant.id} value={tenant.full_name}>
+                                            <SelectItem key={tenant.id} value={tenant.id.toString()}>
                                                 {tenant.full_name}
                                             </SelectItem>
                                         )) || []}
@@ -530,11 +515,12 @@ export default function MoveOutCreateDrawer({
                                         Repairs
                                     </Label>
                                 </div>
-                                <Input
+                                <Textarea
                                     id="repairs"
                                     value={data.repairs}
                                     onChange={(e) => setData('repairs', e.target.value)}
                                     placeholder="Enter repair details"
+                                    className="min-h-[80px]"
                                 />
                                 {errors.repairs && <p className="mt-1 text-sm text-red-600">{errors.repairs}</p>}
                             </div>

@@ -18,9 +18,10 @@ import React, { useState, useRef, useEffect } from 'react';
 interface Props {
     cities: City[];
     properties: PropertyInfoWithoutInsurance[];
-    unitsByProperty: Record<string, string[]>;
-    tenantsByUnit: Record<string, Array<{ id: string; full_name: string }>>;
-    allUnits: Array<{ unit_number: string; city_name: string; property_name: string }>;
+    propertiesByCityId: Record<number, PropertyInfoWithoutInsurance[]>;
+    unitsByPropertyId: Record<number, Array<{ id: number; unit_name: string }>>;
+    tenantsByUnitId: Record<number, Array<{ id: number; full_name: string; tenant_id: number }>>;
+    allUnits: Array<{ id: number; unit_name: string; city_name: string; property_name: string }>;
     tenantsData: TenantData[];
     moveOut: MoveOut;
     open: boolean;
@@ -31,8 +32,9 @@ interface Props {
 export default function MoveOutEditDrawer({ 
     cities,
     properties,
-    unitsByProperty,
-    tenantsByUnit,
+    propertiesByCityId,
+    unitsByPropertyId,
+    tenantsByUnitId,
     allUnits,
     tenantsData,
     moveOut,
@@ -52,9 +54,15 @@ export default function MoveOutEditDrawer({
         tenant: ''
     });
     
+    // UI state for dropdowns
+    const [selectedCity, setSelectedCity] = useState<number | null>(null);
+    const [selectedProperty, setSelectedProperty] = useState<number | null>(null);
+    const [selectedUnit, setSelectedUnit] = useState<number | null>(null);
+    const [selectedTenant, setSelectedTenant] = useState<number | null>(null);
+    
     const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
-    const [availableUnits, setAvailableUnits] = useState<string[]>([]);
-    const [availableTenants, setAvailableTenants] = useState<Array<{ id: string; full_name: string }>>([]);
+    const [availableUnits, setAvailableUnits] = useState<Array<{ id: number; unit_name: string }>>([]);
+    const [availableTenants, setAvailableTenants] = useState<Array<{ id: number; full_name: string; tenant_id: number }>>([]);
     
     const [calendarStates, setCalendarStates] = useState({
         move_out_date: false,
@@ -103,10 +111,7 @@ export default function MoveOutEditDrawer({
     };
 
     const { data, setData, put, processing, errors, reset } = useForm<MoveOutFormData>({
-        city_name: moveOut.city_name || '',
-        property_name: moveOut.property_name || '',
-        tenants_name: moveOut.tenants_name || '',
-        units_name: moveOut.units_name || '',
+        tenant_id: moveOut.tenant_id || null,
         move_out_date: moveOut.move_out_date || '',
         lease_status: moveOut.lease_status || '',
         date_lease_ending_on_buildium: moveOut.date_lease_ending_on_buildium || '',
@@ -125,59 +130,60 @@ export default function MoveOutEditDrawer({
     // Initialize form data based on existing moveOut data
     useEffect(() => {
         if (moveOut && allUnits) {
-            // Find the unit info from allUnits
-            const unitInfo = allUnits.find(unit => unit.unit_number === moveOut.units_name);
+            // Find the unit info from allUnits using units_name
+            const unitInfo = allUnits.find(unit => unit.unit_name === moveOut.units_name);
             
             if (unitInfo) {
-                // Set city and property based on unit info
-                setData(prev => ({
-                    ...prev,
-                    city_name: unitInfo.city_name,
-                    property_name: unitInfo.property_name,
-                    tenants_name: moveOut.tenants_name || '',
-                    units_name: moveOut.units_name || '',
-                }));
-
-                // Find and set available properties for the city
-                const selectedCity = cities.find(c => c.city === unitInfo.city_name);
-                if (selectedCity) {
-                    const filteredProperties = properties.filter(
-                        property => property.city_id?.toString() === selectedCity.id.toString()
-                    );
-                    setAvailableProperties(filteredProperties);
+                // Find the corresponding city and property by their IDs
+                const selectedCityObj = cities.find(c => c.city === moveOut.city_name);
+                const selectedPropertyObj = properties.find(p => p.property_name === moveOut.property_name);
+                
+                // Set UI state with IDs
+                if (selectedCityObj) {
+                    setSelectedCity(selectedCityObj.id);
+                    // Set available properties for the city
+                    if (propertiesByCityId[selectedCityObj.id]) {
+                        setAvailableProperties(propertiesByCityId[selectedCityObj.id]);
+                    }
                 }
-
-                // Set available units for the property
-                if (unitsByProperty && unitsByProperty[unitInfo.property_name]) {
-                    setAvailableUnits(unitsByProperty[unitInfo.property_name]);
+                
+                if (selectedPropertyObj) {
+                    setSelectedProperty(selectedPropertyObj.id);
+                    // Set available units for the property
+                    if (unitsByPropertyId[selectedPropertyObj.id]) {
+                        setAvailableUnits(unitsByPropertyId[selectedPropertyObj.id]);
+                    }
                 }
-
+                
+                setSelectedUnit(unitInfo.id);
                 // Set available tenants for the unit
-                if (tenantsByUnit && tenantsByUnit[moveOut.units_name]) {
-                    setAvailableTenants(tenantsByUnit[moveOut.units_name]);
+                if (tenantsByUnitId[unitInfo.id]) {
+                    setAvailableTenants(tenantsByUnitId[unitInfo.id]);
+                }
+                
+                // Find tenant by name and set ID
+                const tenantObj = tenantsData.find(t => t.full_name === moveOut.tenants_name);
+                if (tenantObj) {
+                    setSelectedTenant(tenantObj.id);
+                    setData('tenant_id', tenantObj.id);
                 }
             }
         }
-    }, [moveOut, allUnits, cities, properties, unitsByProperty, tenantsByUnit]);
+    }, [moveOut, allUnits, cities, properties, propertiesByCityId, unitsByPropertyId, tenantsByUnitId, tenantsData]);
 
     // Handle city selection
     const handleCityChange = (cityId: string) => {
-        const selectedCity = cities.find(c => c.id.toString() === cityId);
-        setData(prev => ({
-            ...prev,
-            city_name: selectedCity?.city || '',
-            property_name: '',
-            units_name: '',
-            tenants_name: ''
-        }));
+        const cityIdNum = parseInt(cityId);
+        setSelectedCity(cityIdNum);
+        setSelectedProperty(null);
+        setSelectedUnit(null);
+        setSelectedTenant(null);
+        setData('tenant_id', null);
         
         setValidationErrors(prev => ({ ...prev, city: '', property: '', unit: '', tenant: '' }));
 
-        if (cityId) {
-            const filteredProperties = properties.filter(
-                property => property.city_id?.toString() === cityId
-            );
-            setAvailableProperties(filteredProperties);
+        if (cityIdNum && propertiesByCityId[cityIdNum]) {
+            setAvailableProperties(propertiesByCityId[cityIdNum]);
         } else {
             setAvailableProperties([]);
         }
@@ -186,18 +192,17 @@ export default function MoveOutEditDrawer({
     };
 
     // Handle property selection
-    const handlePropertyChange = (propertyName: string) => {
-        setData(prev => ({
-            ...prev,
-            property_name: propertyName,
-            units_name: '',
-            tenants_name: ''
-        }));
+    const handlePropertyChange = (propertyId: string) => {
+        const propertyIdNum = parseInt(propertyId);
+        setSelectedProperty(propertyIdNum);
+        setSelectedUnit(null);
+        setSelectedTenant(null);
+        setData('tenant_id', null);
         
         setValidationErrors(prev => ({ ...prev, property: '', unit: '', tenant: '' }));
 
-        if (propertyName && unitsByProperty && unitsByProperty[propertyName]) {
-            setAvailableUnits(unitsByProperty[propertyName]);
+        if (propertyIdNum && unitsByPropertyId[propertyIdNum]) {
+            setAvailableUnits(unitsByPropertyId[propertyIdNum]);
         } else {
             setAvailableUnits([]);
         }
@@ -205,26 +210,30 @@ export default function MoveOutEditDrawer({
     };
 
     // Handle unit selection
-    const handleUnitChange = (unitName: string) => {
-        setData(prev => ({
-            ...prev,
-            units_name: unitName,
-            tenants_name: ''
-        }));
+    const handleUnitChange = (unitId: string) => {
+        const unitIdNum = parseInt(unitId);
+        setSelectedUnit(unitIdNum);
+        setSelectedTenant(null);
+        setData('tenant_id', null);
         
         setValidationErrors(prev => ({ ...prev, unit: '', tenant: '' }));
 
-        if (unitName && tenantsByUnit && tenantsByUnit[unitName]) {
-            setAvailableTenants(tenantsByUnit[unitName]);
+        if (unitIdNum && tenantsByUnitId[unitIdNum]) {
+            setAvailableTenants(tenantsByUnitId[unitIdNum]);
         } else {
             setAvailableTenants([]);
         }
     };
 
     // Handle tenant selection
-    const handleTenantChange = (tenantName: string) => {
-        setData('tenants_name', tenantName);
-        setValidationErrors(prev => ({ ...prev, tenant: '' }));
+    const handleTenantChange = (tenantId: string) => {
+        const tenantIdNum = parseInt(tenantId);
+        const tenant = availableTenants.find(t => t.id === tenantIdNum);
+        if (tenant) {
+            setSelectedTenant(tenantIdNum);
+            setData('tenant_id', tenant.id);
+            setValidationErrors(prev => ({ ...prev, tenant: '' }));
+        }
     };
 
     const handleCalendarToggle = (field: keyof typeof calendarStates) => {
@@ -258,27 +267,27 @@ export default function MoveOutEditDrawer({
         let hasValidationErrors = false;
         
         // Validate city selection
-        // if (!data.city_name || data.city_name.trim() === '') {
-        //     setValidationErrors(prev => ({ ...prev, city: 'Please select a city before submitting the form.' }));
-        //     if (cityRef.current) {
-        //         cityRef.current.focus();
-        //         cityRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        //     }
-        //     hasValidationErrors = true;
-        // }
+        if (!selectedCity) {
+            setValidationErrors(prev => ({ ...prev, city: 'Please select a city before submitting the form.' }));
+            if (cityRef.current) {
+                cityRef.current.focus();
+                cityRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            hasValidationErrors = true;
+        }
         
         // Validate property selection
-        // if (!data.property_name || data.property_name.trim() === '') {
-        //     setValidationErrors(prev => ({ ...prev, property: 'Please select a property before submitting the form.' }));
-        //     if (propertyRef.current) {
-        //         propertyRef.current.focus();
-        //         propertyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        //     }
-        //     hasValidationErrors = true;
-        // }
+        if (!selectedProperty) {
+            setValidationErrors(prev => ({ ...prev, property: 'Please select a property before submitting the form.' }));
+            if (propertyRef.current) {
+                propertyRef.current.focus();
+                propertyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            hasValidationErrors = true;
+        }
         
         // Validate unit selection
-        if (!data.units_name || data.units_name.trim() === '') {
+        if (!selectedUnit) {
             setValidationErrors(prev => ({ ...prev, unit: 'Please select a unit before submitting the form.' }));
             if (unitRef.current) {
                 unitRef.current.focus();
@@ -288,7 +297,7 @@ export default function MoveOutEditDrawer({
         }
         
         // Validate tenant selection
-        if (!data.tenants_name || data.tenants_name.trim() === '') {
+        if (!selectedTenant || !data.tenant_id) {
             setValidationErrors(prev => ({ ...prev, tenant: 'Please select a tenant before submitting the form.' }));
             if (tenantRef.current) {
                 tenantRef.current.focus();
@@ -301,29 +310,7 @@ export default function MoveOutEditDrawer({
             return;
         }
 
-        // Create form data including city_name and property_name for backend
-        const formData = {
-            city_name: data.city_name,
-            property_name: data.property_name,
-            tenants_name: data.tenants_name,
-            units_name: data.units_name,
-            move_out_date: data.move_out_date,
-            lease_status: data.lease_status,
-            date_lease_ending_on_buildium: data.date_lease_ending_on_buildium,
-            keys_location: data.keys_location,
-            utilities_under_our_name: data.utilities_under_our_name,
-            date_utility_put_under_our_name: data.date_utility_put_under_our_name,
-            walkthrough: data.walkthrough,
-            repairs: data.repairs,
-            send_back_security_deposit: data.send_back_security_deposit,
-            notes: data.notes,
-            cleaning: data.cleaning,
-            list_the_unit: data.list_the_unit,
-            move_out_form: data.move_out_form,
-        };
-        
         put(route('move-out.update', moveOut.id), {
-            // data: formData,
             onSuccess: () => {
                 handleCancel();
                 onSuccess?.();
@@ -333,13 +320,8 @@ export default function MoveOutEditDrawer({
 
     const handleCancel = () => {
         // Reset to original moveOut data
-        const unitInfo = allUnits?.find(unit => unit.unit_number === moveOut.units_name);
-        
         setData({
-            city_name: moveOut.city_name || '',
-            property_name: moveOut.property_name || '',
-            tenants_name: moveOut.tenants_name || '',
-            units_name: moveOut.units_name || '',
+            tenant_id: moveOut.tenant_id || null,
             move_out_date: moveOut.move_out_date || '',
             lease_status: moveOut.lease_status || '',
             date_lease_ending_on_buildium: moveOut.date_lease_ending_on_buildium || '',
@@ -378,7 +360,7 @@ export default function MoveOutEditDrawer({
                                         City *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleCityChange} value={cities.find(c => c.city === data.city_name)?.id.toString() || ''}>
+                                <Select onValueChange={handleCityChange} value={selectedCity?.toString() || ''}>
                                     <SelectTrigger ref={cityRef}>
                                         <SelectValue placeholder="Select city" />
                                     </SelectTrigger>
@@ -400,17 +382,17 @@ export default function MoveOutEditDrawer({
                                         Property Name *
                                     </Label>
                                 </div>
-                                <Select 
-                                    onValueChange={handlePropertyChange} 
-                                    value={data.property_name}
-                                    disabled={!data.city_name}
+                                <Select
+                                    onValueChange={handlePropertyChange}
+                                    value={selectedProperty?.toString() || ''}
+                                    disabled={!selectedCity}
                                 >
                                     <SelectTrigger ref={propertyRef}>
                                         <SelectValue placeholder="Select property" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableProperties?.map((property) => (
-                                            <SelectItem key={property.id} value={property.property_name}>
+                                            <SelectItem key={property.id} value={property.id.toString()}>
                                                 {property.property_name}
                                             </SelectItem>
                                         )) || []}
@@ -423,21 +405,21 @@ export default function MoveOutEditDrawer({
                             <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="units_name" className="text-base font-semibold">
-                                        Unit Number *
+                                        Unit Name *
                                     </Label>
                                 </div>
                                 <Select
                                     onValueChange={handleUnitChange}
-                                    value={data.units_name}
-                                    disabled={!data.property_name}
+                                    value={selectedUnit?.toString() || ''}
+                                    disabled={!selectedProperty}
                                 >
                                     <SelectTrigger ref={unitRef}>
                                         <SelectValue placeholder="Select unit" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableUnits?.map((unit) => (
-                                            <SelectItem key={unit} value={unit}>
-                                                {unit}
+                                            <SelectItem key={unit.id} value={unit.id.toString()}>
+                                                {unit.unit_name}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
@@ -454,15 +436,15 @@ export default function MoveOutEditDrawer({
                                 </div>
                                 <Select 
                                     onValueChange={handleTenantChange} 
-                                    value={data.tenants_name}
-                                    disabled={!data.units_name}
+                                    value={selectedTenant?.toString() || ''}
+                                    disabled={!selectedUnit}
                                 >
                                     <SelectTrigger ref={tenantRef}>
                                         <SelectValue placeholder="Select tenant" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableTenants?.map((tenant) => (
-                                            <SelectItem key={tenant.id} value={tenant.full_name}>
+                                            <SelectItem key={tenant.id} value={tenant.id.toString()}>
                                                 {tenant.full_name}
                                             </SelectItem>
                                         )) || []}
@@ -671,11 +653,12 @@ export default function MoveOutEditDrawer({
                                         Repairs
                                     </Label>
                                 </div>
-                                <Input
+                                <Textarea
                                     id="repairs"
                                     value={data.repairs}
                                     onChange={(e) => setData('repairs', e.target.value)}
                                     placeholder="Enter repair details"
+                                    className="min-h-[80px]"
                                 />
                                 {errors.repairs && <p className="mt-1 text-sm text-red-600">{errors.repairs}</p>}
                             </div>

@@ -8,7 +8,7 @@ import AppLayout from '@/layouts/app-layout';
 import { MoveOut } from '@/types/move-out';
 import { Head, Link, router } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { ChevronDown, Download, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import { ChevronDown, Download, Edit, Eye, Plus, Search, Trash2, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import MoveOutCreateDrawer from './MoveOutCreateDrawer';
 import MoveOutEditDrawer from './MoveOutEditDrawer';
@@ -55,6 +55,8 @@ const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
 
         const headers = [
             'ID',
+            'City Name',
+            'Property Name', 
             'Unit Name',
             'Tenant Name',
             'Move Out Date',
@@ -79,6 +81,8 @@ const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
                     try {
                         return [
                             moveOut.id || '',
+                            `"${formatString(moveOut.city_name)}"`,
+                            `"${formatString(moveOut.property_name)}"`,
                             `"${formatString(moveOut.units_name)}"`,
                             `"${formatString(moveOut.tenants_name)}"`,
                             `"${formatDateOnly(moveOut.move_out_date, '')}"`,
@@ -129,44 +133,53 @@ interface Props {
         links: any[];
         meta: any;
     };
-    search: string | null;
+    unit_id: string | null;
+    tenant_id: string | null;
     cities: any[];
     properties: any[];
-    unitsByProperty: Record<string, string[]>;
-    tenantsByUnit: Record<string, Array<{ id: string; full_name: string }>>;
-    allUnits: Array<{ unit_number: string; city_name: string; property_name: string }>;
-    tenantsData: any[];
+    propertiesByCityId: Record<number, any[]>;
+    unitsByPropertyId: Record<number, Array<{ id: number; unit_name: string }>>;
+    tenantsByUnitId: Record<number, Array<{ id: number; full_name: string; tenant_id: number }>>;
+    allUnits: Array<{ id: number; unit_name: string; city_name: string; property_name: string }>;
+    tenantsData: Array<{ id: number; full_name: string; unit_name: string; property_name: string; city_name: string }>;
 }
 
-export default function Index({ moveOuts, search, cities, properties, unitsByProperty, tenantsByUnit, allUnits, tenantsData }: Props) {
-    const [searchTerm, setSearchTerm] = useState(search || '');
+export default function Index({ moveOuts, unit_id, tenant_id, cities, properties, propertiesByCityId, unitsByPropertyId, tenantsByUnitId, allUnits, tenantsData }: Props) {
     const [isExporting, setIsExporting] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [selectedMoveOut, setSelectedMoveOut] = useState<MoveOut | null>(null);
 
-    // Filter states
+    // Filter states - these work with names (what users see)
     const [tempFilters, setTempFilters] = useState({
         city: '',
         property: '',
-        search: search || '',
+        unit: '',
+        tenant: '',
     });
 
     const [filters, setFilters] = useState({
         city: '',
         property: '',
-        search: search || '',
+        unit: '',
+        tenant: '',
     });
 
     // Dropdown states
     const [showCityDropdown, setShowCityDropdown] = useState(false);
     const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
+    const [showUnitDropdown, setShowUnitDropdown] = useState(false);
+    const [showTenantDropdown, setShowTenantDropdown] = useState(false);
 
     // Refs for dropdowns
     const cityDropdownRef = useRef<HTMLDivElement>(null);
     const propertyDropdownRef = useRef<HTMLDivElement>(null);
+    const unitDropdownRef = useRef<HTMLDivElement>(null);
+    const tenantDropdownRef = useRef<HTMLDivElement>(null);
     const cityInputRef = useRef<HTMLInputElement>(null);
     const propertyInputRef = useRef<HTMLInputElement>(null);
+    const unitInputRef = useRef<HTMLInputElement>(null);
+    const tenantInputRef = useRef<HTMLInputElement>(null);
 
     // Handle clicks outside dropdowns
     useEffect(() => {
@@ -187,19 +200,35 @@ export default function Index({ moveOuts, search, cities, properties, unitsByPro
             ) {
                 setShowPropertyDropdown(false);
             }
+            if (
+                unitDropdownRef.current &&
+                !unitDropdownRef.current.contains(event.target as Node) &&
+                unitInputRef.current &&
+                !unitInputRef.current.contains(event.target as Node)
+            ) {
+                setShowUnitDropdown(false);
+            }
+            if (
+                tenantDropdownRef.current &&
+                !tenantDropdownRef.current.contains(event.target as Node) &&
+                tenantInputRef.current &&
+                !tenantInputRef.current.contains(event.target as Node)
+            ) {
+                setShowTenantDropdown(false);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Filter change handlers
+    // Filter change handlers - these work with names
     const handleTempFilterChange = (key: string, value: string) => {
         setTempFilters((prev) => ({ ...prev, [key]: value }));
     };
 
     const handleCitySelect = (city: any) => {
-        handleTempFilterChange('city', city.city);
+        handleTempFilterChange('city', city.city); // Keep using city name for display
         setShowCityDropdown(false);
     };
 
@@ -215,14 +244,50 @@ export default function Index({ moveOuts, search, cities, properties, unitsByPro
         setShowPropertyDropdown(value.length > 0);
     };
 
+    const handlePropertySelect = (property: any) => {
+        handleTempFilterChange('property', property.property_name); // Keep using property name for display
+        setShowPropertyDropdown(false);
+    };
+
+    const handleUnitInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        handleTempFilterChange('unit', value);
+        setShowUnitDropdown(value.length > 0);
+    };
+
+    const handleUnitSelect = (unit: any) => {
+        handleTempFilterChange('unit', unit.unit_name);
+        setShowUnitDropdown(false);
+    };
+
+    const handleTenantInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        handleTempFilterChange('tenant', value);
+        setShowTenantDropdown(value.length > 0);
+    };
+
+    const handleTenantSelect = (tenant: any) => {
+        handleTempFilterChange('tenant', tenant.full_name);
+        setShowTenantDropdown(false);
+    };
+
+    // Search functionality - now sends IDs to backend for ID-based filtering
     const handleSearchClick = () => {
         setFilters(tempFilters);
+        
+        // Find city, property, unit, and tenant IDs based on selected names
+        const selectedCity = cities.find(city => city.city === tempFilters.city);
+        const selectedProperty = properties.find(property => property.property_name === tempFilters.property);
+        const selectedUnit = allUnits.find(unit => unit.unit_name === tempFilters.unit);
+        const selectedTenant = tenantsData.find(tenant => tenant.full_name === tempFilters.tenant);
+        
         router.get(
             route('move-out.index'),
             {
-                search: tempFilters.search,
-                city: tempFilters.city,
-                property: tempFilters.property,
+                city_id: selectedCity?.id || null,
+                property_id: selectedProperty?.id || null,
+                unit_id: selectedUnit?.id || null,
+                tenant_id: selectedTenant?.id || null,
             },
             { preserveState: true },
         );
@@ -233,8 +298,28 @@ export default function Index({ moveOuts, search, cities, properties, unitsByPro
         handleSearchClick();
     };
 
+    const handleClearFilters = () => {
+        // Reset all filter states
+        setTempFilters({
+            city: '',
+            property: '',
+            unit: '',
+            tenant: '',
+        });
+        setFilters({
+            city: '',
+            property: '',
+            unit: '',
+            tenant: '',
+        });
+        
+        // Navigate to the page without any filter parameters
+        router.get(route('move-out.index'), {}, { preserveState: false });
+    };
+
     const handleDelete = (moveOut: MoveOut) => {
         if (confirm('Are you sure you want to delete this move-out record?')) {
+            // This sends the ID to backend for deletion
             router.delete(route('move-out.destroy', moveOut.id));
         }
     };
@@ -277,6 +362,7 @@ export default function Index({ moveOuts, search, cities, properties, unitsByPro
         setIsEditDrawerOpen(true);
     };
 
+    // Badge helper functions
     const getYesNoBadge = (value: 'Yes' | 'No' | null) => {
         if (value === null) return <Badge variant="outline">N/A</Badge>;
         return (
@@ -327,11 +413,23 @@ export default function Index({ moveOuts, search, cities, properties, unitsByPro
 
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
-    // Filter cities based on input
-    const filteredCities = cities.filter((city) => city.city.toLowerCase().includes(tempFilters.city.toLowerCase()));
+    // Filter cities based on input - works with city names
+    const filteredCities = cities.filter((city) => 
+        city.city.toLowerCase().includes(tempFilters.city.toLowerCase())
+    );
 
-    // Filter properties based on input
-    const filteredProperties = properties.filter((property) => property.property_name.toLowerCase().includes(tempFilters.property.toLowerCase()));
+    // Filter properties based on input - works with property names
+    const filteredProperties = properties.filter((property) => 
+        property.property_name.toLowerCase().includes(tempFilters.property.toLowerCase())
+    );
+
+    const filteredUnits = allUnits.filter(unit =>
+        unit.unit_name.toLowerCase().includes(tempFilters.unit.toLowerCase())
+    );
+
+    const filteredTenants = tenantsData.filter(tenant =>
+        tenant.full_name.toLowerCase().includes(tempFilters.tenant.toLowerCase())
+    );
 
     return (
         <AppLayout>
@@ -367,9 +465,9 @@ export default function Index({ moveOuts, search, cities, properties, unitsByPro
                     {/* Card with Filters and Table */}
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
-                            {/* Filters */}
+                            {/* Filters - All work with names for user-friendly experience */}
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
-                                {/* City Filter with Autocomplete */}
+                                {/* City Filter with Autocomplete - Shows city names */}
                                 <div className="relative">
                                     <Input
                                         ref={cityInputRef}
@@ -400,7 +498,7 @@ export default function Index({ moveOuts, search, cities, properties, unitsByPro
                                     )}
                                 </div>
 
-                                {/* Property Filter with Autocomplete */}
+                                {/* Property Filter with Autocomplete - Shows property names */}
                                 <div className="relative">
                                     <Input
                                         ref={propertyInputRef}
@@ -422,10 +520,7 @@ export default function Index({ moveOuts, search, cities, properties, unitsByPro
                                                 <div
                                                     key={property.id}
                                                     className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                    onClick={() => {
-                                                        handleTempFilterChange('property', property.property_name);
-                                                        setShowPropertyDropdown(false);
-                                                    }}
+                                                    onClick={() => handlePropertySelect(property)}
                                                 >
                                                     {property.property_name}
                                                 </div>
@@ -434,24 +529,82 @@ export default function Index({ moveOuts, search, cities, properties, unitsByPro
                                     )}
                                 </div>
 
-                                {/* Unit Search Filter */}
-                                <Input
-                                    type="text"
-                                    placeholder="Unit"
-                                    value={tempFilters.search}
-                                    onChange={(e) => handleTempFilterChange('search', e.target.value)}
-                                    className="text-input-foreground bg-input"
-                                />
+                                {/* Unit Filter with Autocomplete - Shows unit names */}
+                                <div className="relative">
+                                    <Input
+                                        ref={unitInputRef}
+                                        type="text"
+                                        placeholder="Unit"
+                                        value={tempFilters.unit}
+                                        onChange={handleUnitInputChange}
+                                        onFocus={() => setShowUnitDropdown(true)}
+                                        className="text-input-foreground bg-input pr-8"
+                                    />
+                                    <ChevronDown className="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                                    {showUnitDropdown && filteredUnits.length > 0 && (
+                                        <div
+                                            ref={unitDropdownRef}
+                                            className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
+                                        >
+                                            {filteredUnits.map((unit) => (
+                                                <div
+                                                    key={unit.id}
+                                                    className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                                    onClick={() => handleUnitSelect(unit)}
+                                                >
+                                                    {unit.unit_name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Tenant Filter with Autocomplete - Shows tenant names */}
+                                <div className="relative">
+                                    <Input
+                                        ref={tenantInputRef}
+                                        type="text"
+                                        placeholder="Tenant"
+                                        value={tempFilters.tenant}
+                                        onChange={handleTenantInputChange}
+                                        onFocus={() => setShowTenantDropdown(true)}
+                                        className="text-input-foreground bg-input pr-8"
+                                    />
+                                    <ChevronDown className="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                                    {showTenantDropdown && filteredTenants.length > 0 && (
+                                        <div
+                                            ref={tenantDropdownRef}
+                                            className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
+                                        >
+                                            {filteredTenants.map((tenant) => (
+                                                <div
+                                                    key={tenant.id}
+                                                    className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                                    onClick={() => handleTenantSelect(tenant)}
+                                                >
+                                                    {tenant.full_name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
 
                                 {/* Placeholder columns for responsive grid */}
                                 <div className="hidden md:block"></div>
-                                <div className="hidden md:block"></div>
 
-                                {/* Search Button */}
-                                <Button onClick={handleSearchClick} variant="default" className="flex items-center">
-                                    <Search className="mr-2 h-4 w-4" />
-                                    Search
-                                </Button>
+                                {/* Search and Clear Buttons */}
+                                <div className="flex gap-2">
+                                    <Button onClick={handleSearchClick} variant="default" className="flex items-center">
+                                        <Search className="mr-2 h-4 w-4" />
+                                        Search
+                                    </Button>
+                                    <Button onClick={handleClearFilters} variant="outline" className="flex items-center">
+                                        <X className="mr-2 h-4 w-4" />
+                                        Clear
+                                    </Button>
+                                </div>
                             </div>
                         </CardHeader>
 
@@ -497,6 +650,7 @@ export default function Index({ moveOuts, search, cities, properties, unitsByPro
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
+                                        {/* Display data using names - backend provides names via relationships */}
                                         {moveOuts.data.map((moveOut) => (
                                             <TableRow key={moveOut.id} className="border-border hover:bg-muted/50">
                                                 <TableCell className="sticky left-0 z-10 border border-border bg-muted text-center font-medium text-foreground">
@@ -506,10 +660,10 @@ export default function Index({ moveOuts, search, cities, properties, unitsByPro
                                                     {moveOut.property_name || 'N/A'}
                                                 </TableCell>
                                                 <TableCell className="sticky left-[270px] z-10 border border-border bg-muted text-center font-medium text-foreground">
-                                                    {moveOut.units_name}
+                                                    {moveOut.units_name || 'N/A'}
                                                 </TableCell>
                                                 <TableCell className="border border-border text-center text-foreground">
-                                                    {moveOut.tenants_name}
+                                                    {moveOut.tenants_name || 'N/A'}
                                                 </TableCell>
                                                 <TableCell className="border border-border text-center text-foreground">
                                                     {formatDateOnly(moveOut.move_out_date)}
@@ -626,25 +780,27 @@ export default function Index({ moveOuts, search, cities, properties, unitsByPro
                 </div>
             </div>
 
-            {/* Move-Out Create Drawer */}
+            {/* Move-Out Create Drawer - Now uses ID-based lookup maps */}
             <MoveOutCreateDrawer
                 cities={cities}
                 properties={properties}
-                unitsByProperty={unitsByProperty}
-                tenantsByUnit={tenantsByUnit}
+                propertiesByCityId={propertiesByCityId}
+                unitsByPropertyId={unitsByPropertyId}
+                tenantsByUnitId={tenantsByUnitId}
                 tenantsData={tenantsData}
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
                 onSuccess={handleDrawerSuccess}
             />
 
-            {/* Move-Out Edit Drawer */}
+            {/* Move-Out Edit Drawer - Now uses ID-based lookup maps */}
             {selectedMoveOut && (
                 <MoveOutEditDrawer
                     cities={cities}
                     properties={properties}
-                    unitsByProperty={unitsByProperty}
-                    tenantsByUnit={tenantsByUnit}
+                    propertiesByCityId={propertiesByCityId}
+                    unitsByPropertyId={unitsByPropertyId}
+                    tenantsByUnitId={tenantsByUnitId}
                     allUnits={allUnits}
                     tenantsData={tenantsData}
                     moveOut={{

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MoveOut extends Model
 {
@@ -13,10 +14,7 @@ class MoveOut extends Model
     protected $table = 'move_outs';
 
     protected $fillable = [
-        'tenants_name',
-        'units_name',
-        'city_name',
-        'property_name',
+        'tenant_id',
         'move_out_date',
         'lease_status',
         'date_lease_ending_on_buildium',
@@ -34,6 +32,7 @@ class MoveOut extends Model
     ];
 
     protected $casts = [
+        'tenant_id' => 'integer',
         'move_out_date' => 'date',
         'date_lease_ending_on_buildium' => 'date',
         'date_utility_put_under_our_name' => 'date',
@@ -51,25 +50,7 @@ class MoveOut extends Model
     }
 
     /**
-     * Soft delete by setting is_archived to true
-     */
-    public function archive(): bool
-    {
-        $this->is_archived = true;
-        return $this->save();
-    }
-
-    /**
-     * Restore archived record
-     */
-    public function restore(): bool
-    {
-        $this->is_archived = false;
-        return $this->save();
-    }
-
-    /**
-     * Query scope to include archived records
+     * Scope to include archived records
      */
     public function scopeWithArchived(Builder $query): Builder
     {
@@ -77,16 +58,93 @@ class MoveOut extends Model
     }
 
     /**
-     * Query scope to get only archived records
+     * Scope to get only archived records
      */
     public function scopeOnlyArchived(Builder $query): Builder
     {
         return $query->withoutGlobalScope('not_archived')->where('is_archived', true);
     }
 
-    // Relationship with Tenant
-    public function tenant()
+    /**
+     * Soft delete by setting is_archived to true
+     */
+    public function archive(): bool
     {
-        return $this->belongsTo(Tenant::class, 'tenants_name', 'full_name');
+        return $this->update(['is_archived' => true]);
+    }
+
+    /**
+     * Restore archived record
+     */
+    public function restore(): bool
+    {
+        return $this->update(['is_archived' => false]);
+    }
+
+    /**
+     * Get the tenant that this move-out belongs to.
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class, 'tenant_id');
+    }
+
+    /**
+     * Accessor to get tenant's full name through relationship
+     */
+    public function getTenantNameAttribute(): ?string
+    {
+        return $this->tenant ? $this->tenant->full_name : null;
+    }
+
+    /**
+     * Accessor to get unit name through tenant relationship
+     */
+    public function getUnitNameAttribute(): ?string
+    {
+        return $this->tenant && $this->tenant->unit ? $this->tenant->unit->unit_name : null;
+    }
+
+    /**
+     * Accessor to get property name through relationships
+     */
+    public function getPropertyNameAttribute(): ?string
+    {
+        return $this->tenant && $this->tenant->unit && $this->tenant->unit->property 
+            ? $this->tenant->unit->property->property_name 
+            : null;
+    }
+
+    /**
+     * Accessor to get city name through relationships
+     */
+    public function getCityNameAttribute(): ?string
+    {
+        return $this->tenant && $this->tenant->unit && $this->tenant->unit->property && $this->tenant->unit->property->city 
+            ? $this->tenant->unit->property->city->city 
+            : null;
+    }
+
+    /**
+     * Validation rules for the model
+     */
+    public static function validationRules(): array
+    {
+        return [
+            'tenant_id' => 'nullable|integer|exists:tenants,id',
+            'move_out_date' => 'nullable|date',
+            'lease_status' => 'nullable|string|max:255',
+            'date_lease_ending_on_buildium' => 'nullable|date',
+            'keys_location' => 'nullable|string|max:255',
+            'utilities_under_our_name' => 'nullable|in:Yes,No',
+            'date_utility_put_under_our_name' => 'nullable|date',
+            'walkthrough' => 'nullable|string',
+            'repairs' => 'nullable|string',
+            'send_back_security_deposit' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
+            'cleaning' => 'nullable|in:cleaned,uncleaned',
+            'list_the_unit' => 'nullable|string|max:255',
+            'move_out_form' => 'nullable|in:filled,not filled',
+        ];
     }
 }
