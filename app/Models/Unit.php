@@ -99,10 +99,20 @@ class Unit extends Model
         return $this->hasMany(Tenant::class, 'unit_id');
     }
 
-    // Relationship with applications
-    public function applications()
+    /**
+     * Get all applications for this unit.
+     */
+    public function applications(): HasMany
     {
         return $this->hasMany(Application::class, 'unit_id');
+    }
+
+    /**
+     * Get all move-ins for this unit.
+     */
+    public function moveIns(): HasMany
+    {
+        return $this->hasMany(MoveIn::class, 'unit_id');
     }
 
     public function calculateFields()

@@ -13,9 +13,7 @@ class MoveIn extends Model
     protected $table = 'move_ins';
 
     protected $fillable = [
-        'unit_name',
-        'city_name',
-        'property_name',
+        'unit_id',
         'signed_lease',
         'lease_signing_date',
         'move_in_date',
@@ -31,6 +29,7 @@ class MoveIn extends Model
     ];
 
     protected $casts = [
+        'unit_id' => 'integer',
         'lease_signing_date' => 'date',
         'move_in_date' => 'date',
         'scheduled_paid_time' => 'date',
@@ -84,9 +83,11 @@ class MoveIn extends Model
         return $query->withoutGlobalScope('not_archived')->where('is_archived', true);
     }
 
-    // Relationship with Unit
+    /**
+     * Get the unit that owns this move-in record.
+     */
     public function unit()
     {
-        return $this->belongsTo(Unit::class, 'unit_name', 'unit_name');
+        return $this->belongsTo(Unit::class, 'unit_id');
     }
 }

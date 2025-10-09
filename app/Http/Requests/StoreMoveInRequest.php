@@ -15,14 +15,11 @@ class StoreMoveInRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'unit_name' => [
+            'unit_id' => [
                 'required',
-                'string',
-                'max:255',
-                Rule::exists('units', 'unit_name')
+                'integer',
+                Rule::exists('units', 'id')
             ],
-            'city_name' => ['nullable', 'string', 'max:255'],
-            'property_name' => ['nullable', 'string', 'max:255'],
             'signed_lease' => ['required', 'string', Rule::in(['Yes', 'No'])],
             'lease_signing_date' => ['nullable', 'date'],
             'move_in_date' => ['nullable', 'date'],
@@ -40,8 +37,9 @@ class StoreMoveInRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'unit_name.exists' => 'The selected unit name must exist in the units table.',
-            'unit_name.required' => 'The unit name is required.',
+            'unit_id.exists' => 'The selected unit must exist.',
+            'unit_id.required' => 'The unit ID is required.',
+            'unit_id.integer' => 'The unit ID must be a valid integer.',
             'signed_lease.required' => 'The signed lease field is required.',
             'signed_lease.in' => 'The signed lease field must be either Yes or No.',
             'paid_security_deposit_first_month_rent.in' => 'The paid security deposit & first month rent field must be either Yes or No.',
