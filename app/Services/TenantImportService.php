@@ -135,7 +135,11 @@ class TenantImportService
                 }
 
                 // Create the tenant
-                Tenant::create($tenantData);
+                $tenant = Tenant::create($tenantData);
+                
+                // Update unit calculations after creating tenant
+                Unit::updateApplicationCountForUnit($tenantData['unit_id']);
+                
                 $this->successCount++;
 
             } catch (\Exception $e) {
@@ -149,19 +153,32 @@ class TenantImportService
     protected function mapCsvRowToTenantData(array $row, int $rowNumber): array
     {
         $propertyName = trim($row['Property name'] ?? '');
-        $unitNumber = trim($row['Unit number'] ?? '');
+        $unitName = trim($row['Unit number'] ?? '');
         $firstName = trim($row['First name'] ?? '');
         $lastName = trim($row['Last name'] ?? '');
 
         // Skip if essential data is missing
-        if (empty($propertyName) || empty($unitNumber) || empty($firstName) || empty($lastName)) {
+        if (empty($propertyName) || empty($unitName) || empty($firstName) || empty($lastName)) {
             $this->warnings[] = "Row {$rowNumber}: Skipped due to missing essential data (property, unit, first name, or last name)";
             return [];
         }
 
+        // Find the unit_id by looking up property and unit
+        $property = PropertyInfoWithoutInsurance::where('property_name', $propertyName)->first();
+        if (!$property) {
+            throw new \Exception("Property '{$propertyName}' not found");
+        }
+
+        $unit = Unit::where('property_id', $property->id)
+                    ->where('unit_name', $unitName)
+                    ->first();
+        
+        if (!$unit) {
+            throw new \Exception("Unit '{$unitName}' not found in property '{$propertyName}'");
+        }
+
         return [
-            'property_name' => $propertyName,
-            'unit_number' => $unitNumber,
+            'unit_id' => $unit->id,
             'first_name' => $firstName,
             'last_name' => $lastName,
             'street_address_line' => trim($row['Street address line 1'] ?? '') ?: null,
@@ -169,7 +186,6 @@ class TenantImportService
             'alternate_email' => !empty(trim($row['Alternate email'] ?? '')) ? trim($row['Alternate email']) : null,
             'mobile' => !empty(trim($row['Mobile'] ?? '')) ? trim($row['Mobile']) : null,
             'emergency_phone' => !empty(trim($row['Emergency phone'] ?? '')) ? trim($row['Emergency phone']) : null,
-            // Set other fields as null as requested
             'cash_or_check' => null,
             'has_insurance' => null,
             'sensitive_communication' => null,
@@ -183,16 +199,12 @@ class TenantImportService
     {
         $errors = [];
         
-        // Validate property exists in PropertyInfoWithoutInsurance
-        if (!PropertyInfoWithoutInsurance::where('property_name', $data['property_name'])->exists()) {
-            $errors[] = "Row {$rowNumber}: Property '{$data['property_name']}' does not exist in the system";
-        }
-
-        // Validate unit exists for the property
-        if (!Unit::where('property', $data['property_name'])
-                 ->where('unit_name', $data['unit_number'])
-                 ->exists()) {
-            $errors[] = "Row {$rowNumber}: Unit '{$data['unit_number']}' does not exist for property '{$data['property_name']}'";
+        // Validate unit exists and is not archived
+        $unit = Unit::withArchived()->find($data['unit_id']);
+        if (!$unit) {
+            $errors[] = "Row {$rowNumber}: Unit with ID '{$data['unit_id']}' does not exist";
+        } elseif ($unit->is_archived) {
+            $errors[] = "Row {$rowNumber}: Unit is archived and cannot be assigned";
         }
 
         // Validate email formats
@@ -204,11 +216,14 @@ class TenantImportService
             $errors[] = "Row {$rowNumber}: Invalid alternate email format: {$data['alternate_email']}";
         }
 
-        // Check for unique login email
-        // if (!empty($data['login_email']) && 
-        //     Tenant::where('login_email', $data['login_email'])->exists()) {
-        //     $errors[] = "Row {$rowNumber}: Login email '{$data['login_email']}' is already in use";
-        // }
+        // Validate required fields according to StoreTenantRequest
+        if (empty($data['first_name'])) {
+            $errors[] = "Row {$rowNumber}: First name is required";
+        }
+
+        if (empty($data['last_name'])) {
+            $errors[] = "Row {$rowNumber}: Last name is required";
+        }
 
         return [
             'valid' => empty($errors),
@@ -218,8 +233,7 @@ class TenantImportService
 
     protected function isDuplicate(array $tenantData): bool
     {
-        return Tenant::where('property_name', $tenantData['property_name'])
-            ->where('unit_number', $tenantData['unit_number'])
+        return Tenant::where('unit_id', $tenantData['unit_id'])
             ->where('first_name', $tenantData['first_name'])
             ->where('last_name', $tenantData['last_name'])
             ->exists();

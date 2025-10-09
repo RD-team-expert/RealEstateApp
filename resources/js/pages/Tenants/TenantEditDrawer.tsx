@@ -14,7 +14,7 @@ interface Props {
     tenant: Tenant;
     cities: City[];
     properties: PropertyInfoWithoutInsurance[];
-    unitsByProperty: Record<string, string[]>;
+    unitsByProperty: Record<string, Array<{id: number; unit_name: string}>>;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
@@ -33,12 +33,12 @@ export default function TenantEditDrawer({
     const unitNumberRef = useRef<HTMLButtonElement>(null);
     const [validationError, setValidationError] = useState<string>('');
     const [unitValidationError, setUnitValidationError] = useState<string>('');
-    const [availableUnits, setAvailableUnits] = useState<string[]>([]);
+    const [availableUnits, setAvailableUnits] = useState<Array<{id: number; unit_name: string}>>([]);
     const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
+    const [selectedPropertyName, setSelectedPropertyName] = useState<string>('');
 
     const { data, setData, put, processing, errors, reset } = useForm({
-        property_name: tenant.property_name ?? '',
-        unit_number: tenant.unit_number ?? '',
+        unit_id: tenant.unit_id?.toString() ?? '',
         first_name: tenant.first_name ?? '',
         last_name: tenant.last_name ?? '',
         street_address_line: tenant.street_address_line ?? '',
@@ -72,16 +72,19 @@ export default function TenantEditDrawer({
             setAvailableProperties(filteredProperties);
         }
 
-        if (tenant.property_name && unitsByProperty[tenant.property_name]) {
-            setAvailableUnits(unitsByProperty[tenant.property_name]);
+        if (tenant.property_name) {
+            setSelectedPropertyName(tenant.property_name);
+            if (unitsByProperty[tenant.property_name]) {
+                setAvailableUnits(unitsByProperty[tenant.property_name]);
+            }
         }
     }, [selectedCityId, tenant.property_name, properties, unitsByProperty]);
 
     // Filter properties based on selected city
     const handleCityChange = (cityId: string) => {
         setSelectedCityId(cityId);
-        setData('property_name', '');
-        setData('unit_number', '');
+        setSelectedPropertyName('');
+        setData('unit_id', '');
         setValidationError('');
         setUnitValidationError('');
 
@@ -97,8 +100,8 @@ export default function TenantEditDrawer({
     };
 
     const handlePropertyChange = (propertyName: string) => {
-        setData('property_name', propertyName);
-        setData('unit_number', '');
+        setSelectedPropertyName(propertyName);
+        setData('unit_id', '');
         setValidationError('');
         setUnitValidationError('');
 
@@ -109,8 +112,8 @@ export default function TenantEditDrawer({
         }
     };
 
-    const handleUnitChange = (unitNumber: string) => {
-        setData('unit_number', unitNumber);
+    const handleUnitChange = (unitId: string) => {
+        setData('unit_id', unitId);
         setUnitValidationError('');
     };
 
@@ -123,8 +126,8 @@ export default function TenantEditDrawer({
         
         let hasValidationErrors = false;
         
-        // Validate property_name is not empty
-        if (!data.property_name || data.property_name.trim() === '') {
+        // Validate property is selected
+        if (!selectedPropertyName || selectedPropertyName.trim() === '') {
             setValidationError('Please select a property before submitting the form.');
             if (propertyNameRef.current) {
                 propertyNameRef.current.focus();
@@ -133,8 +136,8 @@ export default function TenantEditDrawer({
             hasValidationErrors = true;
         }
         
-        // Validate unit_number is not empty
-        if (!data.unit_number || data.unit_number.trim() === '') {
+        // Validate unit_id is not empty
+        if (!data.unit_id || data.unit_id.trim() === '') {
             setUnitValidationError('Please select a unit before submitting the form.');
             if (unitNumberRef.current) {
                 unitNumberRef.current.focus();
@@ -160,8 +163,7 @@ export default function TenantEditDrawer({
     const handleCancel = () => {
         // Reset form to original tenant data
         setData({
-            property_name: tenant.property_name ?? '',
-            unit_number: tenant.unit_number ?? '',
+            unit_id: tenant.unit_id?.toString() ?? '',
             first_name: tenant.first_name ?? '',
             last_name: tenant.last_name ?? '',
             street_address_line: tenant.street_address_line ?? '',
@@ -179,6 +181,7 @@ export default function TenantEditDrawer({
         setValidationError('');
         setUnitValidationError('');
         setSelectedCityId(getCurrentCityId());
+        setSelectedPropertyName(tenant.property_name ?? '');
         onOpenChange(false);
     };
 
@@ -209,7 +212,7 @@ export default function TenantEditDrawer({
                                 </Select>
                             </div>
 
-                            {/* Property and Unit Information */}
+                            {/* Property Information */}
                             <div className="rounded-lg border-l-4 border-l-green-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="property_name" className="text-base font-semibold">
@@ -218,7 +221,7 @@ export default function TenantEditDrawer({
                                 </div>
                                 <Select 
                                     onValueChange={handlePropertyChange} 
-                                    value={data.property_name}
+                                    value={selectedPropertyName}
                                     disabled={!selectedCityId}
                                 >
                                     <SelectTrigger ref={propertyNameRef}>
@@ -232,33 +235,34 @@ export default function TenantEditDrawer({
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.property_name && <p className="mt-1 text-sm text-red-600">{errors.property_name}</p>}
+                                
                                 {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
                             </div>
 
+                            {/* Unit Selection */}
                             <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
                                 <div className="mb-2">
-                                    <Label htmlFor="unit_number" className="text-base font-semibold">
-                                        Unit Number *
+                                    <Label htmlFor="unit_id" className="text-base font-semibold">
+                                        Unit *
                                     </Label>
                                 </div>
                                 <Select
                                     onValueChange={handleUnitChange}
-                                    value={data.unit_number}
-                                    disabled={!data.property_name}
+                                    value={data.unit_id}
+                                    disabled={!selectedPropertyName}
                                 >
                                     <SelectTrigger ref={unitNumberRef}>
                                         <SelectValue placeholder="Select unit" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableUnits?.map((unit) => (
-                                            <SelectItem key={unit} value={unit}>
-                                                {unit}
+                                            <SelectItem key={unit.id} value={unit.id.toString()}>
+                                                {unit.unit_name}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.unit_number && <p className="mt-1 text-sm text-red-600">{errors.unit_number}</p>}
+                                {errors.unit_id && <p className="mt-1 text-sm text-red-600">{errors.unit_id}</p>}
                                 {unitValidationError && <p className="mt-1 text-sm text-red-600">{unitValidationError}</p>}
                             </div>
 
@@ -375,14 +379,14 @@ export default function TenantEditDrawer({
                             {/* Payment Method */}
                             <div className="rounded-lg border-l-4 border-l-red-500 p-4">
                                 <div className="mb-2">
-                                    <Label htmlFor="payment_method" className="text-base font-semibold">
+                                    <Label htmlFor="cash_or_check" className="text-base font-semibold">
                                         Payment Method
                                     </Label>
                                 </div>
                                 <RadioGroup
                                     value={data.cash_or_check}
                                     onValueChange={(value) => setData('cash_or_check', value)}
-                                    name="payment_method"
+                                    name="cash_or_check"
                                     options={[
                                         { value: 'Cash', label: 'Cash' },
                                         { value: 'Check', label: 'Check' }

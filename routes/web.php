@@ -102,6 +102,10 @@ Route::middleware(['auth'])->group(function () {
         ]);
     })->name('move-in-drawer-demo');
 
+    Route::patch('/tenants/{tenant}/archive', [TenantController::class, 'archive'])
+    ->name('tenants.archive')
+    ->middleware('permission:tenants.destroy'); // same perm as delete
+
     Route::resource('move-out', MoveOutController::class);
 
     Route::resource('offers_and_renewals', OffersAndRenewalController::class);

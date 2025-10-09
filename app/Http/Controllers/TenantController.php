@@ -8,6 +8,8 @@ use App\Http\Requests\UpdateTenantRequest;
 use App\Http\Requests\ImportTenantsRequest;
 use App\Models\Tenant;
 use App\Models\Unit;
+use App\Models\Cities;
+use App\Models\PropertyInfoWithoutInsurance;
 use App\Services\TenantService;
 use App\Services\TenantImportService;
 use Illuminate\Http\RedirectResponse;
@@ -42,7 +44,7 @@ class TenantController extends Controller
         ];
 
         // Check if any filters are applied
-        $hasFilters = array_filter($filters, function($value) {
+        $hasFilters = array_filter($filters, function ($value) {
             return !empty($value);
         });
 
@@ -50,23 +52,54 @@ class TenantController extends Controller
             ? $this->tenantService->filterTenants($filters)
             : $this->tenantService->getAllTenants();
 
-        // Get dropdown data for the create drawer
-        $cities = \App\Models\Cities::all();
-        $properties = \App\Models\PropertyInfoWithoutInsurance::with('city')->get();
-        
-        // Get units data for dropdowns
-        $units = \App\Models\Unit::select('property', 'unit_name')
-            ->orderBy('property')
-            ->orderBy('unit_name')
-            ->get();
+        // Transform tenants to include readable names while keeping IDs
+        $transformedTenants = $tenants->map(function ($tenant) {
+            return [
+                'id' => $tenant->id,
+                'unit_id' => $tenant->unit_id,
+                'first_name' => $tenant->first_name,
+                'last_name' => $tenant->last_name,
+                'street_address_line' => $tenant->street_address_line,
+                'login_email' => $tenant->login_email,
+                'alternate_email' => $tenant->alternate_email,
+                'mobile' => $tenant->mobile,
+                'emergency_phone' => $tenant->emergency_phone,
+                'cash_or_check' => $tenant->cash_or_check,
+                'has_insurance' => $tenant->has_insurance,
+                'sensitive_communication' => $tenant->sensitive_communication,
+                'has_assistance' => $tenant->has_assistance,
+                'assistance_amount' => $tenant->assistance_amount,
+                'assistance_company' => $tenant->assistance_company,
+                // Add readable names for display
+                'property_name' => $tenant->unit?->property?->property_name ?? 'N/A',
+                'unit_number' => $tenant->unit?->unit_name ?? 'N/A',
+                'city_name' => $tenant->unit?->property?->city?->city ?? 'N/A',
+                'created_at' => $tenant->created_at,
+                'updated_at' => $tenant->updated_at,
+            ];
+        });
 
-        // Create arrays for dropdowns
-        $unitsByProperty = $units->groupBy('property')->map(function ($propertyUnits) {
-            return $propertyUnits->pluck('unit_name')->unique()->values();
+        // Get dropdown data for the create drawer
+        $cities = Cities::all();
+        $properties = PropertyInfoWithoutInsurance::with('city')->get();
+
+        // Get units data for dropdowns - using the correct relationship
+        $units = Unit::with('property')->get();
+
+        // Create arrays for dropdowns by property name
+        $unitsByProperty = $units->groupBy(function ($unit) {
+            return $unit->property->property_name;
+        })->map(function ($propertyUnits) {
+            return $propertyUnits->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'unit_name' => $unit->unit_name
+                ];
+            })->values();
         });
 
         return Inertia::render('Tenants/Index', [
-            'tenants' => $tenants,
+            'tenants' => $transformedTenants,
             'search' => $filters['search'],
             'cities' => $cities,
             'properties' => $properties,
@@ -77,15 +110,19 @@ class TenantController extends Controller
     public function create(): InertiaResponse
     {
         // Get units data for dropdowns
-        $units = Unit::select('property', 'unit_name')
-            ->orderBy('property')
-            ->orderBy('unit_name')
-            ->get();
+        $units = Unit::with('property')->get();
 
         // Create arrays for dropdowns
-        $properties = $units->pluck('property')->unique()->values();
-        $unitsByProperty = $units->groupBy('property')->map(function ($propertyUnits) {
-            return $propertyUnits->pluck('unit_name')->unique()->values();
+        $properties = $units->pluck('property.property_name')->unique()->values();
+        $unitsByProperty = $units->groupBy(function ($unit) {
+            return $unit->property->property_name;
+        })->map(function ($propertyUnits) {
+            return $propertyUnits->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'unit_name' => $unit->unit_name
+                ];
+            })->values();
         });
 
         return Inertia::render('Tenants/Create', [
@@ -106,27 +143,75 @@ class TenantController extends Controller
 
     public function show(Tenant $tenant): InertiaResponse
     {
+        $tenant->load(['unit.property.city']);
+
         return Inertia::render('Tenants/Show', [
-            'tenant' => $tenant
+            'tenant' => [
+                'id' => $tenant->id,
+                'unit_id' => $tenant->unit_id,
+                'first_name' => $tenant->first_name,
+                'last_name' => $tenant->last_name,
+                'street_address_line' => $tenant->street_address_line,
+                'login_email' => $tenant->login_email,
+                'alternate_email' => $tenant->alternate_email,
+                'mobile' => $tenant->mobile,
+                'emergency_phone' => $tenant->emergency_phone,
+                'cash_or_check' => $tenant->cash_or_check,
+                'has_insurance' => $tenant->has_insurance,
+                'sensitive_communication' => $tenant->sensitive_communication,
+                'has_assistance' => $tenant->has_assistance,
+                'assistance_amount' => $tenant->assistance_amount,
+                'assistance_company' => $tenant->assistance_company,
+                'property_name' => $tenant->unit?->property?->property_name ?? 'N/A',
+                'unit_number' => $tenant->unit?->unit_name ?? 'N/A',
+                'city_name' => $tenant->unit?->property?->city?->city ?? 'N/A',
+                'created_at' => $tenant->created_at,
+                'updated_at' => $tenant->updated_at,
+            ]
         ]);
     }
 
     public function edit(Tenant $tenant): InertiaResponse
     {
+        $tenant->load(['unit.property.city']);
+
         // Get units data for dropdowns
-        $units = Unit::select('property', 'unit_name')
-            ->orderBy('property')
-            ->orderBy('unit_name')
-            ->get();
+        $units = Unit::with('property')->get();
 
         // Create arrays for dropdowns
-        $properties = $units->pluck('property')->unique()->values();
-        $unitsByProperty = $units->groupBy('property')->map(function ($propertyUnits) {
-            return $propertyUnits->pluck('unit_name')->unique()->values();
+        $properties = $units->pluck('property.property_name')->unique()->values();
+        $unitsByProperty = $units->groupBy(function ($unit) {
+            return $unit->property->property_name;
+        })->map(function ($propertyUnits) {
+            return $propertyUnits->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'unit_name' => $unit->unit_name
+                ];
+            })->values();
         });
 
         return Inertia::render('Tenants/Edit', [
-            'tenant' => $tenant,
+            'tenant' => [
+                'id' => $tenant->id,
+                'unit_id' => $tenant->unit_id,
+                'first_name' => $tenant->first_name,
+                'last_name' => $tenant->last_name,
+                'street_address_line' => $tenant->street_address_line,
+                'login_email' => $tenant->login_email,
+                'alternate_email' => $tenant->alternate_email,
+                'mobile' => $tenant->mobile,
+                'emergency_phone' => $tenant->emergency_phone,
+                'cash_or_check' => $tenant->cash_or_check,
+                'has_insurance' => $tenant->has_insurance,
+                'sensitive_communication' => $tenant->sensitive_communication,
+                'has_assistance' => $tenant->has_assistance,
+                'assistance_amount' => $tenant->assistance_amount,
+                'assistance_company' => $tenant->assistance_company,
+                'property_name' => $tenant->unit?->property?->property_name ?? 'N/A',
+                'unit_number' => $tenant->unit?->unit_name ?? 'N/A',
+                'city_name' => $tenant->unit?->property?->city?->city ?? 'N/A',
+            ],
             'units' => $units,
             'properties' => $properties,
             'unitsByProperty' => $unitsByProperty,
@@ -151,16 +236,27 @@ class TenantController extends Controller
             ->with('success', 'Tenant deleted successfully.');
     }
 
-    // API endpoint for getting units by property
+    // API endpoint for getting units by property name
     public function getUnitsByProperty(Request $request)
     {
-        $property = $request->get('property');
+        $propertyName = $request->get('property');
 
-        $units = Unit::where('property', $property)
-            ->select('unit_name')
-            ->distinct()
+        $property = PropertyInfoWithoutInsurance::where('property_name', $propertyName)->first();
+
+        if (!$property) {
+            return response()->json([]);
+        }
+
+        $units = Unit::where('property_id', $property->id)
+            ->select('id', 'unit_name')
             ->orderBy('unit_name')
-            ->pluck('unit_name');
+            ->get()
+            ->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'unit_name' => $unit->unit_name
+                ];
+            });
 
         return response()->json($units);
     }
@@ -169,8 +265,8 @@ class TenantController extends Controller
     public function getCitiesForAutocomplete(Request $request)
     {
         $search = $request->get('search', '');
-        
-        $cities = \App\Models\Cities::where('city', 'like', "%{$search}%")
+
+        $cities = Cities::where('city', 'like', "%{$search}%")
             ->orderBy('city')
             ->limit(10)
             ->get(['id', 'city']);
@@ -183,17 +279,17 @@ class TenantController extends Controller
     {
         $search = $request->get('search', '');
         $cityId = $request->get('city_id');
-        
-        $query = \App\Models\PropertyInfoWithoutInsurance::query();
-        
+
+        $query = PropertyInfoWithoutInsurance::query();
+
         if ($search) {
             $query->where('property_name', 'like', "%{$search}%");
         }
-        
+
         if ($cityId) {
             $query->where('city_id', $cityId);
         }
-        
+
         $properties = $query->orderBy('property_name')
             ->limit(10)
             ->get(['id', 'property_name', 'city_id']);
@@ -210,7 +306,7 @@ class TenantController extends Controller
     public function processImport(ImportTenantsRequest $request): RedirectResponse
     {
         $skipDuplicates = $request->boolean('skip_duplicates', false);
-        
+
         $result = $this->tenantImportService->importFromCsv(
             $request->file('file'),
             $skipDuplicates
@@ -239,15 +335,22 @@ class TenantController extends Controller
         }
     }
 
+    public function archive(Tenant $tenant): RedirectResponse
+    {
+        $this->tenantService->deleteTenant($tenant); // sets is_archived = true
+        return back()->with('success', 'Tenant archived successfully.');
+    }
+
+
     public function downloadTemplate(): Response
     {
         $headers = $this->tenantImportService->getImportTemplate();
-        
+
         $filename = 'tenant_import_template.csv';
-        
+
         $handle = fopen('php://temp', 'w+');
         fputcsv($handle, $headers);
-        
+
         rewind($handle);
         $csvContent = stream_get_contents($handle);
         fclose($handle);

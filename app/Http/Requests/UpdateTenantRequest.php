@@ -11,7 +11,7 @@ class UpdateTenantRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        return true;
     }
 
     public function rules(): array
@@ -19,26 +19,15 @@ class UpdateTenantRequest extends FormRequest
         $tenantId = $this->route('tenant')->id;
 
         return [
-            'property_name' => [
+            'unit_id' => [
                 'required',
-                'string',
-                'max:255',
+                'integer',
+                'exists:units,id',
                 function ($attribute, $value, $fail) {
-                    // Check if the property exists in the Units table
-                    if (!Unit::where('property', $value)->exists()) {
-                        $fail('The selected property does not exist.');
-                    }
-                }
-            ],
-            'unit_number' => [
-                'required',
-                'string',
-                'max:255',
-                function ($attribute, $value, $fail) {
-                    // Check if the unit exists for the selected property
-                    $property = $this->input('property_name');
-                    if ($property && !Unit::where('property', $property)->where('unit_name', $value)->exists()) {
-                        $fail('The selected unit does not exist for the selected property.');
+                    // Check if the unit is not archived
+                    $unit = Unit::withArchived()->find($value);
+                    if ($unit && $unit->is_archived) {
+                        $fail('The selected unit is archived and cannot be assigned.');
                     }
                 }
             ],
@@ -66,8 +55,8 @@ class UpdateTenantRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'property_name.required' => 'Property name is required.',
-            'unit_number.required' => 'Unit number is required.',
+            'unit_id.required' => 'Unit selection is required.',
+            'unit_id.exists' => 'The selected unit does not exist.',
             'first_name.required' => 'First name is required.',
             'last_name.required' => 'Last name is required.',
             'login_email.email' => 'Login email must be a valid email address.',

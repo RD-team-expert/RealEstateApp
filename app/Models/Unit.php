@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 
 class Unit extends Model
@@ -90,6 +91,14 @@ class Unit extends Model
         return $this->belongsTo(PropertyInfoWithoutInsurance::class, 'property_id');
     }
 
+    /**
+     * Get all tenants for this unit.
+     */
+    public function tenants(): HasMany
+    {
+        return $this->hasMany(Tenant::class, 'unit_id');
+    }
+
     // Relationship with applications
     public function applications()
     {
@@ -97,21 +106,20 @@ class Unit extends Model
     }
 
     public function calculateFields()
-{
-    // Calculate Vacant
-    $this->vacant = empty($this->tenants) ? 'Yes' : 'No';
+    {
+        // Calculate Vacant based on actual tenant relationships
+        $this->vacant = $this->tenants()->count() > 0 ? 'No' : 'Yes';
 
-    // Calculate Listed
-    $this->listed = $this->vacant === 'Yes' ? 'Yes' : 'No';
+        // Calculate Listed
+        $this->listed = $this->vacant === 'Yes' ? 'Yes' : 'No';
 
-    // Calculate Total Applications - use the proper relationship
-    if ($this->listed === 'Yes') {
-        $this->total_applications = $this->applications()->count();
-    } else {
-        $this->total_applications = 0;
+        // Calculate Total Applications - use the proper relationship
+        if ($this->listed === 'Yes') {
+            $this->total_applications = $this->applications()->count();
+        } else {
+            $this->total_applications = 0;
+        }
     }
-}
-
 
     // Static method to update all units' application counts
     public static function updateAllApplicationCounts()
@@ -124,15 +132,14 @@ class Unit extends Model
     }
 
     // Method to update application count for specific unit
-public static function updateApplicationCountForUnit($unitId)
-{
-    $unit = static::find($unitId); // Use ID instead of name
-    if ($unit) {
-        $unit->calculateFields();
-        $unit->saveQuietly();
+    public static function updateApplicationCountForUnit($unitId)
+    {
+        $unit = static::find($unitId); // Use ID instead of name
+        if ($unit) {
+            $unit->calculateFields();
+            $unit->saveQuietly();
+        }
     }
-}
-
 
     // Accessor for formatted monthly rent
     public function getFormattedMonthlyRentAttribute(): string

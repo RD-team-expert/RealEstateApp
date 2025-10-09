@@ -10,7 +10,7 @@ import { City } from '@/types/City';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { Tenant } from '@/types/tenant';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { AlertCircle, CheckCircle, Download, Edit, FileSpreadsheet, Loader2, Plus, Search, Trash2, Upload, X, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Download, Edit, FileSpreadsheet, Loader2, Plus, Search, Trash2, Upload, X, XCircle, RotateCcw } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import TenantCreateDrawer from './TenantCreateDrawer';
 import TenantEditDrawer from './TenantEditDrawer';
@@ -19,6 +19,7 @@ import TenantEditDrawer from './TenantEditDrawer';
 const exportToCSV = (data: Tenant[], filename: string = 'tenants.csv') => {
     const headers = [
         'ID',
+        'City',
         'Property Name',
         'Unit Number',
         'First Name',
@@ -41,6 +42,7 @@ const exportToCSV = (data: Tenant[], filename: string = 'tenants.csv') => {
         ...data.map((tenant) =>
             [
                 tenant.id,
+                `"${tenant.city_name || ''}"`,
                 `"${tenant.property_name || ''}"`,
                 `"${tenant.unit_number || ''}"`,
                 `"${tenant.first_name || ''}"`,
@@ -404,7 +406,7 @@ interface Props {
     search?: string;
     cities: City[];
     properties: PropertyInfoWithoutInsurance[];
-    unitsByProperty: Record<string, string[]>;
+    unitsByProperty: Record<string, Array<{id: number; unit_name: string}>>;
     importStats?: {
         total_processed: number;
         successful_imports: number;
@@ -513,9 +515,38 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
         handleSearchClick();
     };
 
+    const handleClearFilters = () => {
+        // Reset all filters to empty state
+        setTempFilters({
+            city: '',
+            property: '',
+            unitName: '',
+            search: ''
+        });
+        setFilters({
+            city: '',
+            property: '',
+            unitName: '',
+            search: ''
+        });
+        
+        // Navigate to the base route without any query parameters
+        router.get(route('tenants.index'), {}, {
+            preserveState: false,
+            replace: true
+        });
+    };
+
     const handleDelete = (tenant: Tenant) => {
-        if (confirm(`Are you sure you want to delete ${tenant.first_name} ${tenant.last_name}?`)) {
-            router.delete(route('tenants.destroy', tenant.id));
+        if (confirm(`Are you sure you want to archive ${tenant.first_name} ${tenant.last_name}? This will hide them from the main list but they can be restored later.`)) {
+            router.patch(route('tenants.archive', tenant.id), {}, {
+                onSuccess: () => {
+                    showNotification('success', 'Tenant archived successfully!');
+                },
+                onError: () => {
+                    showNotification('error', 'Failed to archive tenant. Please try again.');
+                }
+            });
         }
     };
 
@@ -838,19 +869,22 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
                                     <Button type="button" onClick={handleSearchClick} size="sm">
                                         <Search className="h-4 w-4" />
                                     </Button>
+                                    <Button type="button" onClick={handleClearFilters} size="sm" variant="outline" title="Clear all filters">
+                                        <RotateCcw className="h-4 w-4" />
+                                    </Button>
                                 </div>
                             </div>
                         </CardHeader>
                         <CardContent className="p-6">
-
                             {/* Table */}
                             <div className="overflow-x-auto">
                                 <Table className="border-collapse rounded-md border border-border">
                                     <TableHeader>
                                         <TableRow className="border-border">
-                                            <TableHead className="sticky left-0 z-10 bg-muted text-muted-foreground border border-border min-w-[150px]">Property Name</TableHead>
-                                            <TableHead className="sticky left-[150px] z-10 bg-muted text-muted-foreground border border-border min-w-[120px]">Unit Number</TableHead>
-                                            <TableHead className="sticky left-[270px] z-10 bg-muted text-muted-foreground border border-border min-w-[120px]">First Name</TableHead>
+                                            <TableHead className="sticky left-0 z-10 bg-muted text-muted-foreground border border-border min-w-[120px]">City</TableHead>
+                                            <TableHead className="sticky left-[120px] z-10 bg-muted text-muted-foreground border border-border min-w-[150px]">Property Name</TableHead>
+                                            <TableHead className="sticky left-[270px] z-10 bg-muted text-muted-foreground border border-border min-w-[120px]">Unit Number</TableHead>
+                                            <TableHead className="sticky left-[390px] z-10 bg-muted text-muted-foreground border border-border min-w-[120px]">First Name</TableHead>
                                             <TableHead className="border border-border bg-muted text-muted-foreground">Last Name</TableHead>
                                             <TableHead className="border border-border bg-muted text-muted-foreground">Street Address</TableHead>
                                             <TableHead className="border border-border bg-muted text-muted-foreground">Login Email</TableHead>
@@ -863,7 +897,6 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
                                             <TableHead className="border border-border bg-muted text-muted-foreground">Has Assistance</TableHead>
                                             <TableHead className="border border-border bg-muted text-muted-foreground">Assistance Amount</TableHead>
                                             <TableHead className="border border-border bg-muted text-muted-foreground">Assistance Company</TableHead>
-
                                             {hasAnyPermission(['tenants.show', 'tenants.edit', 'tenants.update', 'tenants.destroy']) && (
                                                 <TableHead className="border border-border bg-muted text-muted-foreground">Actions</TableHead>
                                             )}
@@ -872,9 +905,10 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
                                     <TableBody>
                                         {tenants.map((tenant) => (
                                             <TableRow key={tenant.id} className="border-border hover:bg-muted/50">
-                                                <TableCell className="sticky left-0 z-10 bg-muted text-center font-medium text-foreground border border-border">{displayValue(tenant.property_name)}</TableCell>
-                                                <TableCell className="sticky left-[150px] z-10 bg-muted text-center font-medium text-foreground border border-border">{displayValue(tenant.unit_number)}</TableCell>
-                                                <TableCell className="sticky left-[270px] z-10 bg-muted text-center font-medium text-foreground border border-border">{displayValue(tenant.first_name)}</TableCell>
+                                                <TableCell className="sticky left-0 z-10 bg-muted text-center font-medium text-foreground border border-border">{displayValue(tenant.city_name)}</TableCell>
+                                                <TableCell className="sticky left-[120px] z-10 bg-muted text-center font-medium text-foreground border border-border">{displayValue(tenant.property_name)}</TableCell>
+                                                <TableCell className="sticky left-[270px] z-10 bg-muted text-center font-medium text-foreground border border-border">{displayValue(tenant.unit_number)}</TableCell>
+                                                <TableCell className="sticky left-[390px] z-10 bg-muted text-center font-medium text-foreground border border-border">{displayValue(tenant.first_name)}</TableCell>
                                                 <TableCell className="border border-border text-center text-foreground">{displayValue(tenant.last_name)}</TableCell>
                                                 <TableCell className="border border-border text-center text-foreground max-w-[200px]">
                                                     <div className="truncate" title={tenant.street_address_line || 'N/A'}>

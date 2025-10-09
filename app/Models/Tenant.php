@@ -6,28 +6,29 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Tenant extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-    'property_name',
-    'unit_number',
-    'first_name',
-    'last_name',
-    'street_address_line',
-    'login_email',
-    'alternate_email',
-    'mobile',
-    'emergency_phone',
-    'cash_or_check',
-    'has_insurance',
-    'sensitive_communication',
-    'has_assistance',
-    'assistance_amount',
-    'assistance_company',
-];
+        'unit_id',  // Changed from property_name and unit_number
+        'first_name',
+        'last_name',  
+        'street_address_line',
+        'login_email',
+        'alternate_email',
+        'mobile',
+        'emergency_phone',
+        'cash_or_check',
+        'has_insurance',
+        'sensitive_communication',
+        'has_assistance',
+        'assistance_amount',
+        'assistance_company',
+        'is_archived',
+    ];
 
     protected $casts = [
         'cash_or_check' => 'string',
@@ -36,6 +37,7 @@ class Tenant extends Model
         'has_assistance' => 'string',
         'assistance_amount' => 'decimal:2',
         'is_archived' => 'boolean',
+        'unit_id' => 'integer',  // Added cast for foreign key
     ];
 
     /**
@@ -72,21 +74,27 @@ class Tenant extends Model
         return $this->update(['is_archived' => true]);
     }
 
+    /**
+     * Get the unit that this tenant belongs to.
+     */
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'unit_id');
+    }
+
     // Accessor for full name
     public function getFullNameAttribute(): string
     {
         return $this->first_name . ' ' . $this->last_name;
     }
 
-    // Accessor for formatted monthly rent
-    public function getFormattedMonthlyRentAttribute(): string
-    {
-        return $this->monthly_rent ? '$' . number_format($this->monthly_rent, 2) : 'N/A';
-    }
+    // Remove these accessors as they don't exist in the tenant schema
+    // getFormattedMonthlyRentAttribute and getFormattedSecurityDepositAttribute
+    // should be removed since monthly_rent is in the units table, not tenants
 
-    // Accessor for formatted security deposit
-    public function getFormattedSecurityDepositAttribute(): string
+    // Accessor for formatted assistance amount
+    public function getFormattedAssistanceAmountAttribute(): string
     {
-        return $this->security_deposit ? '$' . number_format($this->security_deposit, 2) : 'N/A';
+        return $this->assistance_amount ? '$' . number_format($this->assistance_amount, 2) : 'N/A';
     }
 }
