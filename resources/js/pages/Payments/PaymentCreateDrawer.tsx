@@ -6,33 +6,47 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup } from '@/components/ui/radioGroup';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UnitData } from '@/types/payments';
 import { useForm } from '@inertiajs/react';
 import { format, parse } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
-interface PropertyInfo {
+interface UnitData {
     id: number;
+    unit_name: string;
     property_name: string;
-    city_id: number;
+    city: string;
 }
 
 interface Props {
     units: UnitData[];
     cities: string[];
+    properties: string[];
     unitsByCity: Record<string, string[]>;
+    unitsByProperty: Record<string, string[]>;
+    propertiesByCity: Record<string, string[]>;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
 }
 
-export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, onOpenChange, onSuccess }: Props) {
+export default function PaymentCreateDrawer({ 
+    units, 
+    cities, 
+    properties,
+    unitsByCity, 
+    unitsByProperty,
+    propertiesByCity,
+    open, 
+    onOpenChange, 
+    onSuccess 
+}: Props) {
     const cityRef = useRef<HTMLButtonElement>(null);
     const propertyRef = useRef<HTMLButtonElement>(null);
     const unitNameRef = useRef<HTMLButtonElement>(null);
     const dateRef = useRef<HTMLButtonElement>(null);
     const owesRef = useRef<HTMLInputElement>(null);
+    
     const [validationError, setValidationError] = useState<string>('');
     const [propertyValidationError, setPropertyValidationError] = useState<string>('');
     const [unitValidationError, setUnitValidationError] = useState<string>('');
@@ -40,16 +54,13 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
     const [owesValidationError, setOwesValidationError] = useState<string>('');
 
     const [calendarOpen, setCalendarOpen] = useState(false);
-    const [availableProperties, setAvailableProperties] = useState<PropertyInfo[]>([]);
-    const [availableUnits, setAvailableUnits] = useState<string[]>([]);
-    const [loadingProperties, setLoadingProperties] = useState<boolean>(false);
-    const [selectedCityId, setSelectedCityId] = useState<string>('');
+    const [selectedCity, setSelectedCity] = useState<string>('');
+    const [selectedProperty, setSelectedProperty] = useState<string>('');
+    const [selectedUnit, setSelectedUnit] = useState<string>('');
 
     const { data, setData, post, processing, errors, reset } = useForm({
         date: '',
-        city: '',
-        property_name: '',
-        unit_name: '',
+        unit_id: '',
         owes: '',
         paid: '',
         status: '',
@@ -58,61 +69,86 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
         permanent: 'No',
     });
 
-    const fetchPropertiesForCity = async (cityName: string) => {
-        setLoadingProperties(true);
-        try {
-            // Get properties from the units data
-            const cityProperties = units
-                .filter((unit) => unit.city === cityName)
-                .map((unit) => unit.property)
-                .filter((property, index, self) => self.indexOf(property) === index) // unique properties
-                .map((property, index) => ({ id: index, property_name: property, city_id: 0 }));
-
-            setAvailableProperties(cityProperties);
-        } catch (error) {
-            console.error('Error fetching properties:', error);
-            setAvailableProperties([]);
-        } finally {
-            setLoadingProperties(false);
-        }
+    // Get available properties based on selected city
+    const getAvailableProperties = (): string[] => {
+        if (!selectedCity) return [];
+        return propertiesByCity[selectedCity] || [];
     };
 
+    // Get available units based on selected city and property
+    const getAvailableUnits = (): string[] => {
+        if (!selectedCity) return [];
+        if (!selectedProperty) {
+            return unitsByCity[selectedCity] || [];
+        }
+        
+        // Filter units by both city and property
+        return units
+            .filter(unit => unit.city === selectedCity && unit.property_name === selectedProperty)
+            .map(unit => unit.unit_name);
+    };
+
+    // Find unit ID by city, property, and unit name
+    const findUnitId = (cityName: string, propertyName: string, unitName: string): number | null => {
+        const unit = units.find(u => 
+            u.city === cityName && 
+            u.property_name === propertyName && 
+            u.unit_name === unitName
+        );
+        return unit ? unit.id : null;
+    };
+
+    // Reset dependent dropdowns when parent changes
+    useEffect(() => {
+        if (selectedCity && selectedProperty) {
+            const availableProperties = getAvailableProperties();
+            if (!availableProperties.includes(selectedProperty)) {
+                setSelectedProperty('');
+                setSelectedUnit('');
+                setData('unit_id', '');
+            }
+        }
+    }, [selectedCity]);
+
+    useEffect(() => {
+        if (selectedProperty && selectedUnit) {
+            const availableUnits = getAvailableUnits();
+            if (!availableUnits.includes(selectedUnit)) {
+                setSelectedUnit('');
+                setData('unit_id', '');
+            }
+        }
+    }, [selectedCity, selectedProperty]);
+
     const handleCityChange = (city: string) => {
-        setData('city', city);
-        setData('property_name', '');
-        setData('unit_name', '');
+        setSelectedCity(city);
+        setSelectedProperty('');
+        setSelectedUnit('');
+        setData('unit_id', '');
         setValidationError('');
         setPropertyValidationError('');
         setUnitValidationError('');
-
-        setSelectedCityId(city);
-        setAvailableUnits([]);
-
-        if (city) {
-            fetchPropertiesForCity(city);
-        } else {
-            setAvailableProperties([]);
-        }
     };
 
     const handlePropertyChange = (propertyName: string) => {
-        setData('property_name', propertyName);
-        setData('unit_name', '');
+        setSelectedProperty(propertyName);
+        setSelectedUnit('');
+        setData('unit_id', '');
         setPropertyValidationError('');
         setUnitValidationError('');
-
-        if (propertyName && data.city) {
-            // Get units for this city and property
-            const propertyUnits = units.filter((unit) => unit.city === data.city && unit.property === propertyName).map((unit) => unit.unit_name);
-            setAvailableUnits(propertyUnits);
-        } else {
-            setAvailableUnits([]);
-        }
     };
 
     const handleUnitChange = (unitName: string) => {
-        setData('unit_name', unitName);
+        setSelectedUnit(unitName);
         setUnitValidationError('');
+        
+        // Find and set the unit_id
+        if (selectedCity && selectedProperty && unitName) {
+            const unitId = findUnitId(selectedCity, selectedProperty, unitName);
+            if (unitId) {
+                setData('unit_id', unitId.toString());
+            }
+        }
     };
 
     const handleDateChange = (date: Date | undefined) => {
@@ -143,7 +179,6 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
         // Validate date is not empty
         if (!data.date || data.date.trim() === '') {
             setDateValidationError('Please select a date before submitting the form.');
-            // Focus on the date field
             if (dateRef.current) {
                 dateRef.current.focus();
                 dateRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -152,9 +187,8 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
         }
 
         // Validate city is not empty
-        if (!data.city || data.city.trim() === '') {
+        if (!selectedCity || selectedCity.trim() === '') {
             setValidationError('Please select a city before submitting the form.');
-            // Focus on the city field
             if (cityRef.current) {
                 cityRef.current.focus();
                 cityRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -162,10 +196,9 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
             hasValidationErrors = true;
         }
 
-        // Validate property_name is not empty
-        if (!data.property_name || data.property_name.trim() === '') {
+        // Validate property is not empty
+        if (!selectedProperty || selectedProperty.trim() === '') {
             setPropertyValidationError('Please select a property before submitting the form.');
-            // Focus on the property field
             if (propertyRef.current) {
                 propertyRef.current.focus();
                 propertyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -173,10 +206,9 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
             hasValidationErrors = true;
         }
 
-        // Validate unit_name is not empty
-        if (!data.unit_name || data.unit_name.trim() === '') {
+        // Validate unit is not empty
+        if (!selectedUnit || selectedUnit.trim() === '') {
             setUnitValidationError('Please select a unit before submitting the form.');
-            // Focus on the unit name field
             if (unitNameRef.current) {
                 unitNameRef.current.focus();
                 unitNameRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -187,11 +219,16 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
         // Validate owes is not empty
         if (!data.owes || data.owes.trim() === '') {
             setOwesValidationError('Please enter the amount owed before submitting the form.');
-            // Focus on the owes field
             if (owesRef.current) {
                 owesRef.current.focus();
                 owesRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
+            hasValidationErrors = true;
+        }
+
+        // Validate unit_id is set (should be set by handleUnitChange)
+        if (!data.unit_id || data.unit_id.trim() === '') {
+            setUnitValidationError('Unable to identify the selected unit. Please try selecting again.');
             hasValidationErrors = true;
         }
 
@@ -202,28 +239,33 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
         post(route('payments.store'), {
             onSuccess: () => {
                 reset();
+                setSelectedCity('');
+                setSelectedProperty('');
+                setSelectedUnit('');
                 setValidationError('');
                 setPropertyValidationError('');
                 setUnitValidationError('');
                 setDateValidationError('');
                 setOwesValidationError('');
-                setAvailableUnits([]);
-                setAvailableProperties([]);
                 onOpenChange(false);
                 onSuccess?.();
             },
+            onError: (errors) => {
+                console.error('Form submission errors:', errors);
+            }
         });
     };
 
     const handleCancel = () => {
         reset();
+        setSelectedCity('');
+        setSelectedProperty('');
+        setSelectedUnit('');
         setValidationError('');
         setPropertyValidationError('');
         setUnitValidationError('');
         setDateValidationError('');
         setOwesValidationError('');
-        setAvailableUnits([]);
-        setAvailableProperties([]);
         onOpenChange(false);
     };
 
@@ -233,14 +275,14 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={submit} className="space-y-4">
-                            {/* City and Unit Information */}
+                            {/* City Selection */}
                             <div className="rounded-lg border-l-4 border-l-green-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="city" className="text-base font-semibold">
                                         City *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleCityChange} value={data.city}>
+                                <Select onValueChange={handleCityChange} value={selectedCity}>
                                     <SelectTrigger ref={cityRef}>
                                         <SelectValue placeholder="Select city" />
                                     </SelectTrigger>
@@ -252,7 +294,7 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
+                                {errors.unit_id && <p className="mt-1 text-sm text-red-600">{errors.unit_id}</p>}
                                 {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
                             </div>
 
@@ -263,19 +305,22 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
                                         Property *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handlePropertyChange} value={data.property_name} disabled={!data.city || loadingProperties}>
+                                <Select 
+                                    onValueChange={handlePropertyChange} 
+                                    value={selectedProperty} 
+                                    disabled={!selectedCity}
+                                >
                                     <SelectTrigger ref={propertyRef}>
-                                        <SelectValue placeholder={loadingProperties ? 'Loading properties...' : 'Select property'} />
+                                        <SelectValue placeholder={!selectedCity ? 'Select city first' : 'Select property'} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {availableProperties?.map((property) => (
-                                            <SelectItem key={property.property_name} value={property.property_name}>
-                                                {property.property_name}
+                                        {getAvailableProperties().map((property) => (
+                                            <SelectItem key={property} value={property}>
+                                                {property}
                                             </SelectItem>
-                                        )) || []}
+                                        ))}
                                     </SelectContent>
                                 </Select>
-                                {errors.property_name && <p className="mt-1 text-sm text-red-600">{errors.property_name}</p>}
                                 {propertyValidationError && <p className="mt-1 text-sm text-red-600">{propertyValidationError}</p>}
                             </div>
 
@@ -286,19 +331,22 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
                                         Unit Name *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleUnitChange} value={data.unit_name} disabled={!data.property_name}>
+                                <Select 
+                                    onValueChange={handleUnitChange} 
+                                    value={selectedUnit} 
+                                    disabled={!selectedCity}
+                                >
                                     <SelectTrigger ref={unitNameRef}>
-                                        <SelectValue placeholder="Select unit" />
+                                        <SelectValue placeholder={!selectedCity ? 'Select city first' : 'Select unit'} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {availableUnits?.map((unit) => (
+                                        {getAvailableUnits().map((unit) => (
                                             <SelectItem key={unit} value={unit}>
                                                 {unit}
                                             </SelectItem>
-                                        )) || []}
+                                        ))}
                                     </SelectContent>
                                 </Select>
-                                {errors.unit_name && <p className="mt-1 text-sm text-red-600">{errors.unit_name}</p>}
                                 {unitValidationError && <p className="mt-1 text-sm text-red-600">{unitValidationError}</p>}
                             </div>
 
@@ -424,6 +472,16 @@ export default function PaymentCreateDrawer({ units, cities, unitsByCity, open, 
                                 />
                                 {errors.notes && <p className="mt-1 text-sm text-red-600">{errors.notes}</p>}
                             </div>
+
+                            {/* Debug info - remove in production */}
+                            {process.env.NODE_ENV === 'development' && (
+                                <div className="mt-4 p-2 bg-gray-100 rounded text-sm">
+                                    <p>Selected Unit ID: {data.unit_id}</p>
+                                    <p>City: {selectedCity}</p>
+                                    <p>Property: {selectedProperty}</p>
+                                    <p>Unit: {selectedUnit}</p>
+                                </div>
+                            )}
                         </form>
                     </div>
 

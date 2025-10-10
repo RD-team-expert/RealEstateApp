@@ -92,6 +92,14 @@ class Unit extends Model
     }
 
     /**
+     * Get all payments for this unit.
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'unit_id');
+    }
+
+    /**
      * Get all tenants for this unit.
      */
     public function tenants(): HasMany

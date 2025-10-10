@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePermissions } from '@/hooks/usePermissions';
 import AppLayout from '@/layouts/app-layout';
-import { Payment, UnitData } from '@/types/payments';
+import { Payment } from '@/types/payments';
 import { Head, Link, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { ChevronDown, Download, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
@@ -114,6 +114,13 @@ const exportToCSV = (data: Payment[], filename: string = 'payments.csv') => {
     }
 };
 
+interface UnitData {
+    id: number;
+    unit_name: string;
+    property_name: string;
+    city: string;
+}
+
 interface Props {
     payments: {
         data: Payment[];
@@ -121,36 +128,81 @@ interface Props {
         meta: any;
     };
     search: string | null;
+    filters: {
+        city?: string;
+        property?: string;
+        unit?: string;
+    };
     units: UnitData[];
     cities: string[];
+    properties: string[];
     unitsByCity: Record<string, string[]>;
+    unitsByProperty: Record<string, string[]>;
+    propertiesByCity: Record<string, string[]>;
     allCities: string[];
     allProperties: string[];
 }
 
-export default function Index({ payments, search, units, cities, unitsByCity, allCities, allProperties }: Props) {
+export default function Index({ 
+    payments, 
+    search, 
+    filters, 
+    units, 
+    cities, 
+    properties,
+    unitsByCity, 
+    unitsByProperty,
+    propertiesByCity,
+    allCities, 
+    allProperties 
+}: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [isExporting, setIsExporting] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [editDrawerOpen, setEditDrawerOpen] = useState(false);
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
-    // Filter states
-    const [cityFilter, setCityFilter] = useState('');
-    const [propertyFilter, setPropertyFilter] = useState('');
-    const [unitFilter, setUnitFilter] = useState('');
+    // Filter states - initialize from props to maintain filter state on page load
+    const [cityFilter, setCityFilter] = useState(filters?.city || '');
+    const [propertyFilter, setPropertyFilter] = useState(filters?.property || '');
+    const [unitFilter, setUnitFilter] = useState(filters?.unit || '');
 
     // Dropdown states
     const [showCityDropdown, setShowCityDropdown] = useState(false);
     const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
+    const [showUnitDropdown, setShowUnitDropdown] = useState(false);
 
     // Refs for dropdowns
     const cityDropdownRef = useRef<HTMLDivElement>(null);
     const propertyDropdownRef = useRef<HTMLDivElement>(null);
+    const unitDropdownRef = useRef<HTMLDivElement>(null);
 
-    // Get unique values for filters - now using all cities and properties from database
+    // Get unique values for filters
     const uniqueCities = allCities || [];
     const uniqueProperties = allProperties || [];
+    
+    // Get filtered units based on current city and property selection
+    const getFilteredUnits = (): string[] => {
+        let filteredUnits = units;
+
+        if (cityFilter) {
+            filteredUnits = filteredUnits.filter(unit => unit.city === cityFilter);
+        }
+
+        if (propertyFilter) {
+            filteredUnits = filteredUnits.filter(unit => unit.property_name === propertyFilter);
+        }
+
+        return [...new Set(filteredUnits.map(unit => unit.unit_name))].sort();
+    };
+
+    // Get filtered properties based on current city selection
+    const getFilteredProperties = (): string[] => {
+        if (!cityFilter) {
+            return uniqueProperties;
+        }
+        return propertiesByCity[cityFilter] || [];
+    };
 
     // Close dropdowns when clicking outside
     useEffect(() => {
@@ -161,11 +213,34 @@ export default function Index({ payments, search, units, cities, unitsByCity, al
             if (propertyDropdownRef.current && !propertyDropdownRef.current.contains(event.target as Node)) {
                 setShowPropertyDropdown(false);
             }
+            if (unitDropdownRef.current && !unitDropdownRef.current.contains(event.target as Node)) {
+                setShowUnitDropdown(false);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Reset dependent filters when parent filter changes
+    useEffect(() => {
+        if (cityFilter && propertyFilter) {
+            const availableProperties = getFilteredProperties();
+            if (!availableProperties.includes(propertyFilter)) {
+                setPropertyFilter('');
+                setUnitFilter('');
+            }
+        }
+    }, [cityFilter]);
+
+    useEffect(() => {
+        if (propertyFilter && unitFilter) {
+            const availableUnits = getFilteredUnits();
+            if (!availableUnits.includes(unitFilter)) {
+                setUnitFilter('');
+            }
+        }
+    }, [cityFilter, propertyFilter]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -175,7 +250,21 @@ export default function Index({ payments, search, units, cities, unitsByCity, al
         if (propertyFilter) params.property = propertyFilter;
         if (unitFilter) params.unit = unitFilter;
 
-        router.get(route('payments.index'), params, { preserveState: true });
+        router.get(route('payments.index'), params, { 
+            preserveState: true,
+            preserveScroll: true 
+        });
+    };
+
+    const clearFilters = () => {
+        setCityFilter('');
+        setPropertyFilter('');
+        setUnitFilter('');
+        
+        router.get(route('payments.index'), {}, { 
+            preserveState: true,
+            preserveScroll: true 
+        });
     };
 
     const handleDelete = (payment: Payment) => {
@@ -262,6 +351,8 @@ export default function Index({ payments, search, units, cities, unitsByCity, al
         );
     };
 
+    // removed hasActiveFilters; Clear button will always show and Active Filters UI removed
+
     return (
         <AppLayout>
             <Head title="Payments" />
@@ -296,7 +387,7 @@ export default function Index({ payments, search, units, cities, unitsByCity, al
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
                             {/* Filters */}
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
                                 {/* City Filter */}
                                 <div className="relative" ref={cityDropdownRef}>
                                     <div className="relative">
@@ -311,7 +402,7 @@ export default function Index({ payments, search, units, cities, unitsByCity, al
                                         <ChevronDown className="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                                     </div>
                                     {showCityDropdown && uniqueCities.length > 0 && (
-                                        <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-popover shadow-lg">
+                                        <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-input bg-popover shadow-lg">
                                             {uniqueCities.map((city) => (
                                                 <div
                                                     key={city}
@@ -341,9 +432,9 @@ export default function Index({ payments, search, units, cities, unitsByCity, al
                                         />
                                         <ChevronDown className="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                                     </div>
-                                    {showPropertyDropdown && uniqueProperties.length > 0 && (
-                                        <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-popover shadow-lg">
-                                            {uniqueProperties.map((property) => (
+                                    {showPropertyDropdown && getFilteredProperties().length > 0 && (
+                                        <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-input bg-popover shadow-lg">
+                                            {getFilteredProperties().map((property) => (
                                                 <div
                                                     key={property}
                                                     className="cursor-pointer px-3 py-2 text-sm hover:bg-accent"
@@ -360,22 +451,54 @@ export default function Index({ payments, search, units, cities, unitsByCity, al
                                 </div>
 
                                 {/* Unit Filter */}
-                                <div className="relative">
-                                    <Input
-                                        type="text"
-                                        placeholder="Filter by unit..."
-                                        value={unitFilter}
-                                        onChange={(e) => setUnitFilter(e.target.value)}
-                                        className="text-input-foreground bg-input"
-                                    />
+                                <div className="relative" ref={unitDropdownRef}>
+                                    <div className="relative">
+                                        <Input
+                                            type="text"
+                                            placeholder="Filter by unit..."
+                                            value={unitFilter}
+                                            onChange={(e) => setUnitFilter(e.target.value)}
+                                            onFocus={() => setShowUnitDropdown(true)}
+                                            className="text-input-foreground bg-input pr-8"
+                                        />
+                                        <ChevronDown className="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
+                                    </div>
+                                    {showUnitDropdown && getFilteredUnits().length > 0 && (
+                                        <div className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-input bg-popover shadow-lg">
+                                            {getFilteredUnits().map((unit) => (
+                                                <div
+                                                    key={unit}
+                                                    className="cursor-pointer px-3 py-2 text-sm hover:bg-accent"
+                                                    onClick={() => {
+                                                        setUnitFilter(unit);
+                                                        setShowUnitDropdown(false);
+                                                    }}
+                                                >
+                                                    {unit}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Search Button */}
-                                <Button onClick={handleSearch} variant="default" className="flex items-center">
-                                    <Search className="mr-2 h-4 w-4" />
-                                    Search
-                                </Button>
+                                {/* Action Buttons */}
+                                <div className="flex gap-2">
+                                    <Button onClick={handleSearch} variant="default" className="flex-1">
+                                        <Search className="mr-2 h-4 w-4" />
+                                        Search
+                                    </Button>
+                                    
+                                    <Button 
+                                        onClick={clearFilters} 
+                                        variant="outline" 
+                                        size="sm"
+                                        className="whitespace-nowrap"
+                                    >
+                                        Clear
+                                    </Button>
+                                </div>
                             </div>
+
                         </CardHeader>
                         <CardContent>
                             <div className="relative overflow-x-auto">
@@ -401,9 +524,9 @@ export default function Index({ payments, search, units, cities, unitsByCity, al
                                     <TableBody>
                                         {payments.data.map((payment) => (
                                             <TableRow key={payment.id} className="border-border hover:bg-muted/50">
-                                                <TableCell className="sticky left-0 z-10 min-w-[120px] border border-border bg-muted text-center font-medium text-foreground">{payment.city}</TableCell>
-                                                <TableCell className="sticky left-[120px] z-10 min-w-[120px] border border-border bg-muted text-center font-medium text-foreground">{payment.property_name || 'N/A'}</TableCell>
-                                                <TableCell className="sticky left-[240px] z-10 min-w-[120px] border border-border bg-muted text-center font-medium text-foreground">{payment.unit_name}</TableCell>
+                                                <TableCell className="sticky left-0 z-10 min-w-[120px] border border-border bg-card text-center font-medium text-foreground">{payment.city}</TableCell>
+                                                <TableCell className="sticky left-[120px] z-10 min-w-[120px] border border-border bg-card text-center font-medium text-foreground">{payment.property_name || 'N/A'}</TableCell>
+                                                <TableCell className="sticky left-[240px] z-10 min-w-[120px] border border-border bg-card text-center font-medium text-foreground">{payment.unit_name}</TableCell>
                                                 <TableCell className="border border-border text-center text-foreground">{formatDateOnly(payment.date)}</TableCell>
                                                 <TableCell className="border border-border text-center font-medium text-red-600 dark:text-red-400">
                                                     {formatCurrency(payment.owes)}
@@ -472,14 +595,26 @@ export default function Index({ payments, search, units, cities, unitsByCity, al
                 </div>
             </div>
 
-            <PaymentCreateDrawer open={drawerOpen} onOpenChange={setDrawerOpen} units={units} cities={cities} unitsByCity={unitsByCity} />
+            <PaymentCreateDrawer 
+                open={drawerOpen} 
+                onOpenChange={setDrawerOpen} 
+                units={units} 
+                cities={cities}
+                properties={properties}
+                unitsByCity={unitsByCity} 
+                unitsByProperty={unitsByProperty}
+                propertiesByCity={propertiesByCity}
+            />
 
             {selectedPayment && (
                 <PaymentEditDrawer
                     payment={selectedPayment}
                     units={units}
                     cities={cities}
+                    properties={properties}
                     unitsByCity={unitsByCity}
+                    unitsByProperty={unitsByProperty}
+                    propertiesByCity={propertiesByCity}
                     open={editDrawerOpen}
                     onOpenChange={setEditDrawerOpen}
                     onSuccess={handleEditSuccess}
