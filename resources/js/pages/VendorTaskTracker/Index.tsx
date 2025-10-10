@@ -8,7 +8,7 @@ import AppLayout from '@/layouts/app-layout';
 import { VendorTaskTracker } from '@/types/vendor-task-tracker';
 import { Head, Link, router } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { ChevronDown, Download, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import { ChevronDown, Download, Edit, Eye, Plus, Search, Trash2, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import VendorTaskTrackerCreateDrawer from './VendorTaskTrackerCreateDrawer';
 import VendorTaskTrackerEditDrawer from './VendorTaskTrackerEditDrawer';
@@ -55,10 +55,10 @@ const exportToCSV = (
         ...data.map((task) => {
             return [
                 task.id,
-                `"${task.city}"`,
+                `"${task.city || ''}"`,
                 `"${task.property_name || ''}"`,
-                `"${task.unit_name}"`,
-                `"${task.vendor_name}"`,
+                `"${task.unit_name || ''}"`,
+                `"${task.vendor_name || ''}"`,
                 `"${formatDateOnly(task.task_submission_date, '')}"`,
                 `"${(task.assigned_tasks || '').replace(/"/g, '""')}"`,
                 `"${formatDateOnly(task.any_scheduled_visits, '')}"`,
@@ -84,6 +84,37 @@ const exportToCSV = (
     URL.revokeObjectURL(url);
 };
 
+interface DropdownOption {
+    id: number;
+    name: string;
+    city?: string;
+    property_name?: string;
+}
+
+interface CityOption {
+    id: number;
+    city: string;
+}
+
+interface PropertyOption {
+    id: number;
+    property_name: string;
+    city?: string;
+}
+
+interface UnitOption {
+    id: number;
+    unit_name: string;
+    property_name?: string;
+    city?: string;
+}
+
+interface VendorOption {
+    id: number;
+    vendor_name: string;
+    city?: string;
+}
+
 interface Props {
     tasks: {
         data: VendorTaskTracker[];
@@ -95,15 +126,16 @@ interface Props {
         city?: string;
         property?: string;
         unit_name?: string;
+        vendor_name?: string;
     };
-    units: string[];
-    cities: Array<{ id: number; city: string }>;
-    properties: Array<{ id: number; property_name: string; city: { city: string } }>;
-    unitsByCity: Record<string, string[]>;
-    propertiesByCity: Record<string, string[]>;
-    unitsByProperty: Record<string, Record<string, string[]>>;
-    vendorsByCity: Record<string, string[]>;
-    vendors: string[];
+    cities: CityOption[];
+    properties: PropertyOption[];
+    units: UnitOption[];
+    vendors: VendorOption[];
+    unitsByCity: Record<string, UnitOption[]>;
+    propertiesByCity: Record<string, PropertyOption[]>;
+    unitsByProperty: Record<string, Record<string, UnitOption[]>>;
+    vendorsByCity: Record<string, VendorOption[]>;
 }
 
 export default function Index({
@@ -130,7 +162,7 @@ export default function Index({
     // City autocomplete states
     const [cityInput, setCityInput] = useState(filters.city || '');
     const [showCityDropdown, setShowCityDropdown] = useState(false);
-    const [filteredCities, setFilteredCities] = useState<Array<{ id: number; city: string }>>([]);
+    const [filteredCities, setFilteredCities] = useState<CityOption[]>([]);
     const cityInputRef = useRef<HTMLInputElement>(null);
     const cityDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -140,6 +172,12 @@ export default function Index({
     const propertyInputRef = useRef<HTMLInputElement>(null);
     const propertyDropdownRef = useRef<HTMLDivElement>(null);
 
+    // Vendor autocomplete states
+    const [vendorInput, setVendorInput] = useState(filters.vendor_name || '');
+    const [showVendorDropdown, setShowVendorDropdown] = useState(false);
+    const vendorInputRef = useRef<HTMLInputElement>(null);
+    const vendorDropdownRef = useRef<HTMLDivElement>(null);
+
     // Filter cities based on input
     useEffect(() => {
         if (!cities) return;
@@ -147,13 +185,22 @@ export default function Index({
         if (cityInput.trim() === '') {
             setFilteredCities(cities);
         } else {
-            const filtered = cities.filter((city) => city.city.toLowerCase().includes(cityInput.toLowerCase()));
+            const filtered = cities.filter((city) => 
+                city.city.toLowerCase().includes(cityInput.toLowerCase())
+            );
             setFilteredCities(filtered);
         }
     }, [cityInput, cities]);
 
     // Filter properties based on input
-    const filteredProperties = properties?.filter((property) => property.property_name.toLowerCase().includes(propertyInput.toLowerCase())) || [];
+    const filteredProperties = properties?.filter((property) => 
+        property.property_name.toLowerCase().includes(propertyInput.toLowerCase())
+    ) || [];
+
+    // Filter vendors based on input
+    const filteredVendors = vendors?.filter((vendor) => 
+        vendor.vendor_name.toLowerCase().includes(vendorInput.toLowerCase())
+    ) || [];
 
     // Handle clicks outside dropdowns
     useEffect(() => {
@@ -174,6 +221,14 @@ export default function Index({
             ) {
                 setShowPropertyDropdown(false);
             }
+            if (
+                vendorDropdownRef.current &&
+                !vendorDropdownRef.current.contains(event.target as Node) &&
+                vendorInputRef.current &&
+                !vendorInputRef.current.contains(event.target as Node)
+            ) {
+                setShowVendorDropdown(false);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
@@ -183,6 +238,7 @@ export default function Index({
     const handleDrawerSuccess = () => {
         // Refresh the page data after successful creation
         router.reload();
+        setIsDrawerOpen(false);
     };
 
     const handleEditDrawerSuccess = () => {
@@ -220,10 +276,23 @@ export default function Index({
         setShowPropertyDropdown(value.length > 0);
     };
 
-    const handlePropertySelect = (property: { property_name: string }) => {
+    const handlePropertySelect = (property: PropertyOption) => {
         setPropertyInput(property.property_name);
         handleTempFilterChange('property', property.property_name);
         setShowPropertyDropdown(false);
+    };
+
+    const handleVendorInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setVendorInput(value);
+        handleTempFilterChange('vendor_name', value);
+        setShowVendorDropdown(value.length > 0);
+    };
+
+    const handleVendorSelect = (vendor: VendorOption) => {
+        setVendorInput(vendor.vendor_name);
+        handleTempFilterChange('vendor_name', vendor.vendor_name);
+        setShowVendorDropdown(false);
     };
 
     const handleSearchClick = () => {
@@ -241,13 +310,32 @@ export default function Index({
         });
     };
 
+    const handleClearFilters = () => {
+        // Clear all filter states
+        setTempFilters({});
+        setCityInput('');
+        setPropertyInput('');
+        setVendorInput('');
+        
+        // Close all dropdowns
+        setShowCityDropdown(false);
+        setShowPropertyDropdown(false);
+        setShowVendorDropdown(false);
+
+        // Navigate to the page with no filters
+        router.get(route('vendor-task-tracker.index'), {}, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         handleSearchClick();
     };
 
     const handleDelete = (task: VendorTaskTracker) => {
-        if (confirm('Are you sure you want to delete this task?')) {
+        if (confirm('Are you sure you want to archive this task?')) {
             router.delete(route('vendor-task-tracker.destroy', task.id));
         }
     };
@@ -274,12 +362,19 @@ export default function Index({
         return <Badge variant={urgent === 'Yes' ? 'destructive' : 'secondary'}>{urgent}</Badge>;
     };
 
-    const getStatusBadge = (status: string | null) => {
-        if (!status) return null;
+    // Fixed: Handle undefined values by converting to null
+    const getStatusBadge = (status: string | null | undefined) => {
+        const normalizedStatus = status ?? null; // Convert undefined to null
+        
+        if (!normalizedStatus) return <Badge variant="outline">No Status</Badge>;
 
-        const variant = status.toLowerCase().includes('completed') ? 'default' : status.toLowerCase().includes('pending') ? 'secondary' : 'outline';
+        const variant = normalizedStatus.toLowerCase().includes('completed') 
+            ? 'default' 
+            : normalizedStatus.toLowerCase().includes('pending') 
+            ? 'secondary' 
+            : 'outline';
 
-        return <Badge variant={variant}>{status}</Badge>;
+        return <Badge variant={variant}>{normalizedStatus}</Badge>;
     };
 
     return (
@@ -316,13 +411,13 @@ export default function Index({
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
                             {/* Filters */}
-                            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-5">
+                            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-6">
                                 {/* City Filter with Autocomplete */}
                                 <div className="relative">
                                     <Input
                                         ref={cityInputRef}
                                         type="text"
-                                        placeholder="City"
+                                        placeholder="Filter by City"
                                         value={cityInput}
                                         onChange={(e) => handleCityInputChange(e.target.value)}
                                         onFocus={() => setShowCityDropdown(true)}
@@ -353,7 +448,7 @@ export default function Index({
                                     <Input
                                         ref={propertyInputRef}
                                         type="text"
-                                        placeholder="Property"
+                                        placeholder="Filter by Property"
                                         value={propertyInput}
                                         onChange={handlePropertyInputChange}
                                         onFocus={() => setShowPropertyDropdown(true)}
@@ -373,6 +468,11 @@ export default function Index({
                                                     onClick={() => handlePropertySelect(property)}
                                                 >
                                                     {property.property_name}
+                                                    {property.city && (
+                                                        <span className="ml-2 text-xs text-muted-foreground">
+                                                            ({property.city})
+                                                        </span>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
@@ -382,25 +482,67 @@ export default function Index({
                                 {/* Unit Name Filter */}
                                 <Input
                                     type="text"
-                                    placeholder="Unit Name"
+                                    placeholder="Filter by Unit"
                                     value={tempFilters.unit_name || ''}
                                     onChange={(e) => handleTempFilterChange('unit_name', e.target.value)}
                                     className="text-input-foreground bg-input"
                                 />
 
-                                {/* Search Filter */}
-                                <Input
+                                {/* Vendor Filter with Autocomplete */}
+                                <div className="relative">
+                                    <Input
+                                        ref={vendorInputRef}
+                                        type="text"
+                                        placeholder="Filter by Vendor"
+                                        value={vendorInput}
+                                        onChange={handleVendorInputChange}
+                                        onFocus={() => setShowVendorDropdown(true)}
+                                        className="text-input-foreground bg-input pr-8"
+                                    />
+                                    <ChevronDown className="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                                    {showVendorDropdown && filteredVendors.length > 0 && (
+                                        <div
+                                            ref={vendorDropdownRef}
+                                            className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
+                                        >
+                                            {filteredVendors.map((vendor) => (
+                                                <div
+                                                    key={vendor.id}
+                                                    className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                                    onClick={() => handleVendorSelect(vendor)}
+                                                >
+                                                    {vendor.vendor_name}
+                                                    {vendor.city && (
+                                                        <span className="ml-2 text-xs text-muted-foreground">
+                                                            ({vendor.city})
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* General Search Filter */}
+                                {/* <Input
                                     type="text"
-                                    placeholder="vendor"
+                                    placeholder="Search all fields"
                                     value={tempFilters.search || ''}
                                     onChange={(e) => handleTempFilterChange('search', e.target.value)}
                                     className="text-input-foreground bg-input"
-                                />
+                                /> */}
 
                                 {/* Search Button */}
                                 <Button onClick={handleSearchClick} variant="default" className="flex items-center">
                                     <Search className="mr-2 h-4 w-4" />
                                     Search
+                                </Button>
+
+                                {/* Clear Filters Button */}
+                                <Button onClick={handleClearFilters} variant="outline" className="flex items-center">
+                                    <X className="mr-2 h-4 w-4" />
+                                    Clear
                                 </Button>
                             </div>
                         </CardHeader>
@@ -426,7 +568,7 @@ export default function Index({
                                             <TableHead className="border border-border bg-muted text-muted-foreground">Assigned Tasks</TableHead>
                                             <TableHead className="border border-border bg-muted text-muted-foreground">Scheduled Visits</TableHead>
                                             <TableHead className="border border-border bg-muted text-muted-foreground">Task End Date</TableHead>
-                                            <TableHead className="border border-border bg-muted text-muted-foreground">Note</TableHead>
+                                            <TableHead className="border border-border bg-muted text-muted-foreground">Notes</TableHead>
                                             <TableHead className="border border-border bg-muted text-muted-foreground">Status</TableHead>
                                             <TableHead className="border border-border bg-muted text-muted-foreground">Urgent</TableHead>
                                             {hasAnyPermission([
@@ -441,23 +583,23 @@ export default function Index({
                                         {tasks.data.map((task) => (
                                             <TableRow key={task.id} className="border-border hover:bg-muted/50">
                                                 <TableCell className="sticky left-0 z-10 border border-border bg-muted text-center font-medium text-foreground">
-                                                    {task.city}
+                                                    {task.city || '-'}
                                                 </TableCell>
                                                 <TableCell className="sticky left-[120px] z-10 border border-border bg-muted text-center font-medium text-foreground">
                                                     {task.property_name || '-'}
                                                 </TableCell>
                                                 <TableCell className="sticky left-[270px] z-10 border border-border bg-muted text-center font-medium text-foreground">
-                                                    {task.unit_name}
+                                                    {task.unit_name || '-'}
                                                 </TableCell>
                                                 <TableCell className="sticky left-[390px] z-10 border border-border bg-muted text-center font-medium text-foreground">
-                                                    {task.vendor_name}
+                                                    {task.vendor_name || '-'}
                                                 </TableCell>
                                                 <TableCell className="border border-border text-center text-foreground">
                                                     {formatDateOnly(task.task_submission_date)}
                                                 </TableCell>
                                                 <TableCell className="border border-border text-center text-foreground">
                                                     <div className="max-w-32 truncate" title={task.assigned_tasks || ''}>
-                                                        {task.assigned_tasks}
+                                                        {task.assigned_tasks || '-'}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="border border-border text-center text-foreground">
@@ -468,7 +610,7 @@ export default function Index({
                                                 </TableCell>
                                                 <TableCell className="border border-border text-center text-foreground">
                                                     <div className="max-w-24 truncate" title={task.notes || ''}>
-                                                        {task.notes}
+                                                        {task.notes || '-'}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="border border-border text-center">{getStatusBadge(task.status)}</TableCell>
@@ -515,7 +657,7 @@ export default function Index({
                             {tasks.data.length === 0 && (
                                 <div className="py-8 text-center text-muted-foreground">
                                     <p className="text-lg">No tasks found matching your criteria.</p>
-                                    <p className="text-sm">Try adjusting your search filters.</p>
+                                    <p className="text-sm">Try adjusting your search filters or clearing them to see all tasks.</p>
                                 </div>
                             )}
 
@@ -532,13 +674,14 @@ export default function Index({
 
             {/* Vendor Task Tracker Create Drawer */}
             <VendorTaskTrackerCreateDrawer
-                units={units}
                 cities={cities}
+                properties={properties}
+                units={units}
+                vendors={vendors}
                 unitsByCity={unitsByCity}
                 propertiesByCity={propertiesByCity}
                 unitsByProperty={unitsByProperty}
                 vendorsByCity={vendorsByCity}
-                vendors={vendors}
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
                 onSuccess={handleDrawerSuccess}
@@ -548,13 +691,14 @@ export default function Index({
             {selectedTask && (
                 <VendorTaskTrackerEditDrawer
                     task={selectedTask}
-                    units={units}
                     cities={cities}
+                    properties={properties}
+                    units={units}
+                    vendors={vendors}
                     unitsByCity={unitsByCity}
                     propertiesByCity={propertiesByCity}
                     unitsByProperty={unitsByProperty}
                     vendorsByCity={vendorsByCity}
-                    vendors={vendors}
                     open={isEditDrawerOpen}
                     onOpenChange={setIsEditDrawerOpen}
                     onSuccess={handleEditDrawerSuccess}

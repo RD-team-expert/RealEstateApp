@@ -108,6 +108,14 @@ class Unit extends Model
     }
 
     /**
+     * Get all vendor tasks for this unit.
+     */
+    public function vendorTasks(): HasMany
+    {
+        return $this->hasMany(VendorTaskTracker::class, 'unit_id');
+    }
+
+    /**
      * Get all move-ins for this unit.
      */
     public function moveIns(): HasMany

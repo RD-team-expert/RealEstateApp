@@ -1,11 +1,14 @@
 import React from 'react';
-import { type BreadcrumbItem } from '@/types';import { Head, Link } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
 import { VendorTaskTracker } from '@/types/vendor-task-tracker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { usePermissions } from '@/hooks/usePermissions';
+import { Calendar, MapPin, User, Home, Clock, Wrench, FileText, AlertTriangle, Building, CheckCircle } from 'lucide-react';
 
 interface Props {
     task: VendorTaskTracker;
@@ -16,134 +19,281 @@ export default function Show({ task }: Props) {
 
     const getUrgentBadge = (urgent: 'Yes' | 'No') => {
         return (
-            <Badge variant={urgent === 'Yes' ? 'destructive' : 'secondary'}>
+            <Badge 
+                variant={urgent === 'Yes' ? 'destructive' : 'secondary'}
+                className={`text-xs ${urgent === 'Yes' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}
+            >
                 {urgent}
             </Badge>
         );
     };
 
     const getStatusBadge = (status: string | null) => {
-        if (!status) return <Badge variant="outline">No Status</Badge>;
+        if (!status) return <Badge variant="outline" className="text-xs">No Status</Badge>;
+        
+        let variant: 'default' | 'secondary' | 'outline' | 'destructive' = 'outline';
+        let className = 'text-xs';
+        
+        const statusLower = status.toLowerCase();
+        if (statusLower.includes('completed')) {
+            variant = 'default';
+            className += ' bg-green-100 text-green-800 border-green-200';
+        } else if (statusLower.includes('progress')) {
+            variant = 'secondary';
+            className += ' bg-blue-100 text-blue-800 border-blue-200';
+        } else if (statusLower.includes('pending')) {
+            variant = 'secondary';
+            className += ' bg-yellow-100 text-yellow-800 border-yellow-200';
+        } else if (statusLower.includes('hold')) {
+            variant = 'destructive';
+            className += ' bg-orange-100 text-orange-800 border-orange-200';
+        }
 
-        const variant = status.toLowerCase().includes('completed') ? 'default' :
-                      status.toLowerCase().includes('pending') ? 'secondary' : 'outline';
-
-        return <Badge variant={variant}>{status}</Badge>;
+        return <Badge variant={variant} className={className}>{status}</Badge>;
     };
 
-    return (
-        <AppLayout >
-            <Head title={`Task Details #${task.id}`} />
+    const formatDate = (date: string | null) => {
+        if (!date) return 'Not Set';
+        return new Date(date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
 
-            <div className="py-12">
-                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    <Card>
-                        <CardHeader>
-                            <div className="flex justify-between items-center">
-                                <CardTitle className="text-2xl">Vendor Task Details</CardTitle>
-                                <div className="flex gap-2">
-                                    {hasAllPermissions(['vendor-task-tracker.edit','vendor-task-tracker.update']) && (
-                                    <Link href={route('vendor-task-tracker.edit', task.id)}>
-                                        <Button>Edit Task</Button>
-                                    </Link>)}
-                                    <Link href={route('vendor-task-tracker.index')}>
-                                        <Button variant="outline">Back to List</Button>
-                                    </Link>
+    const InfoItem = ({ icon: Icon, label, value, className = "" }: {
+        icon: any;
+        label: string;
+        value: React.ReactNode;
+        className?: string;
+    }) => (
+        <div className={`flex items-start gap-3 p-3 rounded-lg bg-gray-50/50 ${className}`}>
+            <Icon className="h-4 w-4 mt-0.5 text-gray-500 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
+                <div className="text-sm font-semibold text-gray-900 mt-1">{value}</div>
+            </div>
+        </div>
+    );
+
+    return (
+        <AppLayout>
+            <Head title={`Vendor Task Details #${task.id}`} />
+
+            <div className="py-8">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    {/* Header Section */}
+                    <div className="mb-8">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900">Vendor Task #{task.id}</h1>
+                                <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
+                                    <MapPin className="h-4 w-4" />
+                                    <span>{task.city || 'N/A'} • {task.property_name || 'N/A'}</span>
                                 </div>
                             </div>
+                            <div className="flex gap-3">
+                                {/* {hasAllPermissions(['vendor-task-tracker.edit','vendor-task-tracker.update']) && (
+                                    <Link href={route('vendor-task-tracker.edit', task.id)}>
+                                        <Button className="bg-blue-600 hover:bg-blue-700">
+                                            Edit Task
+                                        </Button>
+                                    </Link>
+                                )} */}
+                                <Link href={route('vendor-task-tracker.index')}>
+                                    <Button variant="outline">Back to List</Button>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Property Hierarchy Card */}
+                    <Card className="mb-6 border-l-4 border-l-blue-500">
+                        <CardContent className="pt-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <InfoItem
+                                    icon={MapPin}
+                                    label="City"
+                                    value={task.city || 'N/A'}
+                                    className="bg-blue-50/50"
+                                />
+                                <InfoItem
+                                    icon={Building}
+                                    label="Property"
+                                    value={task.property_name || 'N/A'}
+                                    className="bg-green-50/50"
+                                />
+                                <InfoItem
+                                    icon={Home}
+                                    label="Unit"
+                                    value={task.unit_name || 'N/A'}
+                                    className="bg-purple-50/50"
+                                />
+                                <InfoItem
+                                    icon={User}
+                                    label="Vendor"
+                                    value={task.vendor_name || 'N/A'}
+                                    className="bg-orange-50/50"
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Important Dates Section */}
+                    <Card className="mb-6">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <Calendar className="h-5 w-5" />
+                                Task Timeline
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid md:grid-cols-2 gap-6">
-                                {/* Basic Information */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold">Basic Information</h3>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">City</p>
-                                        <p className="font-medium">{task.city}</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <FileText className="h-4 w-4 text-blue-600" />
+                                        <p className="text-sm font-medium text-blue-800">Task Submission</p>
                                     </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Unit Name</p>
-                                        <p className="font-medium">{task.unit_name}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Vendor Name</p>
-                                        <p className="font-medium">{task.vendor_name}</p>
-                                    </div>
+                                    <p className="text-lg font-bold text-blue-900">
+                                        {formatDate(task.task_submission_date)}
+                                    </p>
                                 </div>
-
-                                {/* Status Information */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold">Status Information</h3>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Urgent</p>
-                                        <div className="mt-1">{getUrgentBadge(task.urgent)}</div>
+                                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg border border-yellow-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Clock className="h-4 w-4 text-yellow-600" />
+                                        <p className="text-sm font-medium text-yellow-800">Scheduled Visit</p>
                                     </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Status</p>
-                                        <div className="mt-1">{getStatusBadge(task.status)}</div>
+                                    <p className="text-lg font-bold text-yellow-900">
+                                        {formatDate(task.any_scheduled_visits || '')}
+                                    </p>
+                                </div>
+                                <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                        <p className="text-sm font-medium text-green-800">Task End Date</p>
                                     </div>
+                                    <p className="text-lg font-bold text-green-900">
+                                        {formatDate(task.task_ending_date || '')}
+                                    </p>
                                 </div>
                             </div>
+                        </CardContent>
+                    </Card>
 
-                            {/* Timeline Section */}
-                            <div className="mt-6 space-y-4">
-                                <h3 className="text-lg font-semibold">Timeline</h3>
-                                <div className="grid md:grid-cols-3 gap-4">
-                                    <div className="bg-primary/20 p-4 rounded-lg">
-                                        <p className="text-sm text-primary">Task Submission Date</p>
-                                        <p className="text-lg font-semibold text-primary">
-                                            {new Date(task.task_submission_date).toLocaleDateString()}
-                                        </p>
-                                    </div>
-                                    <div className="bg-secondary/20 p-4 rounded-lg">
-                                        <p className="text-sm text-secondary-foreground">Scheduled Visits</p>
-                                        <p className="text-lg font-semibold text-secondary-foreground">
-                                            {task.any_scheduled_visits
-                                                ? new Date(task.any_scheduled_visits).toLocaleDateString()
-                                                : 'Not Scheduled'
-                                            }
-                                        </p>
-                                    </div>
-                                    <div className="bg-chart-1/20 p-4 rounded-lg">
-                                        <p className="text-sm text-chart-1">Task End Date</p>
-                                        <p className="text-lg font-semibold text-chart-1">
-                                            {task.task_ending_date
-                                                ? new Date(task.task_ending_date).toLocaleDateString()
-                                                : 'Not Set'
-                                            }
-                                        </p>
-                                    </div>
+                    {/* Main Information Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        {/* Task Status Information */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <AlertTriangle className="h-5 w-5" />
+                                    Task Status & Priority
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-3">
+                                    <InfoItem
+                                        icon={AlertTriangle}
+                                        label="Urgent"
+                                        value={getUrgentBadge(task.urgent)}
+                                    />
+                                    <InfoItem
+                                        icon={CheckCircle}
+                                        label="Status"
+                                        value={getStatusBadge(task.status || '')}
+                                    />
                                 </div>
-                            </div>
+                            </CardContent>
+                        </Card>
 
-                            {/* Task Details Section */}
-                            <div className="mt-6 space-y-4">
-                                <h3 className="text-lg font-semibold">Task Details</h3>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Assigned Tasks</p>
-                                    <div className="bg-muted rounded-lg p-4 mt-2">
-                                        <p className="text-foreground whitespace-pre-wrap">{task.assigned_tasks}</p>
-                                    </div>
+                        {/* Task Assignment Information */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <Wrench className="h-5 w-5" />
+                                    Assignment Details
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-3">
+                                    <InfoItem
+                                        icon={User}
+                                        label="Assigned Vendor"
+                                        value={task.vendor_name || 'N/A'}
+                                    />
+                                    <InfoItem
+                                        icon={Home}
+                                        label="Target Unit"
+                                        value={task.unit_name || 'N/A'}
+                                    />
                                 </div>
+                            </CardContent>
+                        </Card>
+                    </div>
 
-                                {task.notes && (
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Notes</p>
-                                        <div className="bg-muted rounded-lg p-4 mt-2">
-                                            <p className="text-foreground whitespace-pre-wrap">{task.notes}</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                    {/* Detailed Information Section */}
+                    <div className="space-y-6">
+                        {/* Assigned Tasks Section */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <FileText className="h-5 w-5" />
+                                    Assigned Tasks
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="bg-gray-50 rounded-lg p-4 border">
+                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                                        {task.assigned_tasks}
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                            <div className="mt-8 pt-6 border-t border-border">
-                                <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-                                    <div>
-                                        <p>Created: {new Date(task.created_at).toLocaleDateString()}</p>
+                        {/* Notes Section */}
+                        {task.notes && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-lg">
+                                        <FileText className="h-5 w-5" />
+                                        Additional Notes
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                                            {task.notes}
+                                        </p>
                                     </div>
-                                    <div>
-                                        <p>Updated: {new Date(task.updated_at).toLocaleDateString()}</p>
-                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+
+                    {/* Footer Section */}
+                    <Card className="mt-8 bg-gray-50">
+                        <CardContent className="pt-6">
+                            <Separator className="mb-4" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    <span>Created: {new Date(task.created_at).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    <span>Last Updated: {new Date(task.updated_at).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}</span>
                                 </div>
                             </div>
                         </CardContent>

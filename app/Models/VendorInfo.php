@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 
 class VendorInfo extends Model
@@ -66,6 +67,15 @@ class VendorInfo extends Model
     {
         return $this->belongsTo(Cities::class, 'city_id');
     }
+
+    /**
+     * Get all tasks assigned to this vendor.
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(VendorTaskTracker::class, 'vendor_id');
+    }
+
 
     // Scope for filtering by city ID
     public function scopeByCityId(Builder $query, $cityId): Builder
