@@ -87,6 +87,14 @@ class Tenant extends Model
     }
 
     /**
+     * Get all payment plans for this tenant.
+     */
+    public function paymentPlans(): HasMany
+    {
+        return $this->hasMany(PaymentPlan::class, 'tenant_id');
+    }
+
+    /**
      * Get all move-outs for this tenant.
      */
     public function moveOuts(): HasMany
