@@ -1,17 +1,20 @@
 <?php
-// app/Http/Controllers/ApplicationController.php
 
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreApplicationRequest;
 use App\Http\Requests\UpdateApplicationRequest;
 use App\Models\Application;
-use App\Models\Unit; // Add this import
+use App\Models\Unit;
+use App\Models\PropertyInfoWithoutInsurance;
+use App\Models\Cities;
 use App\Services\ApplicationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 
 class ApplicationController extends Controller
 {
@@ -25,71 +28,106 @@ class ApplicationController extends Controller
         $this->middleware('permission:properties.edit')->only('edit');
         $this->middleware('permission:properties.update')->only('update');
         $this->middleware('permission:properties.destroy')->only('destroy');
-
     }
 
     public function index(Request $request): Response
     {
         $perPage = $request->get('per_page', 15);
-        $filters = $request->only(['city','property', 'name', 'co_signer', 'unit', 'status', 'stage_in_progress', 'date_from', 'date_to']);
+        $filters = $request->only(['city', 'property', 'name', 'co_signer', 'unit', 'status', 'stage_in_progress', 'date_from', 'date_to']);
 
         $applications = $this->applicationService->getAllPaginated($perPage, $filters);
         $statistics = $this->applicationService->getStatistics();
 
-        // Get units data for drawer component
-        $units = Unit::select('city', 'property', 'unit_name')
-            ->orderBy('city')
-            ->orderBy('property')
-            ->orderBy('unit_name')
-            ->get();
-
-        // Create separate arrays for each dropdown
-        $cities = $units->pluck('city')->unique()->values();
-        $properties = $units->groupBy('city')->map(function ($cityUnits) {
-            return $cityUnits->pluck('property')->unique()->values();
+        // Transform applications to include display names
+        $applications->getCollection()->transform(function ($application) {
+            $application->city = $application->unit->property->city->city ?? 'N/A';
+            $application->property = $application->unit->property->property_name ?? 'N/A';
+            $application->unit_name = $application->unit->unit_name ?? 'N/A';
+            return $application;
         });
-        $unitsByProperty = $units->groupBy(['city', 'property'])->map(function ($cityGroup) {
-            return $cityGroup->map(function ($propertyGroup) {
-                return $propertyGroup->pluck('unit_name')->unique()->values();
-            });
+
+        // Get hierarchical data for dropdowns
+        $cities = Cities::orderBy('city')->get();
+        $properties = PropertyInfoWithoutInsurance::with('city')->orderBy('property_name')->get();
+        $units = Unit::with(['property.city'])->orderBy('unit_name')->get();
+
+        // Create structured data for frontend
+        $citiesData = $cities->map(function ($city) {
+            return [
+                'id' => $city->id,
+                'name' => $city->city,
+            ];
+        });
+
+        $propertiesData = $properties->groupBy('city_id')->map(function ($cityProperties, $cityId) {
+            return $cityProperties->map(function ($property) {
+                return [
+                    'id' => $property->id,
+                    'name' => $property->property_name,
+                    'city_id' => $property->city_id,
+                ];
+            })->values();
+        });
+
+        $unitsData = $units->groupBy('property_id')->map(function ($propertyUnits, $propertyId) {
+            return $propertyUnits->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'name' => $unit->unit_name,
+                    'property_id' => $unit->property_id,
+                ];
+            })->values();
         });
 
         return Inertia::render('Applications/Index', [
             'applications' => $applications,
             'statistics' => $statistics,
             'filters' => $filters,
-            'units' => $units,
-            'cities' => $cities,
-            'properties' => $properties,
-            'unitsByProperty' => $unitsByProperty,
+            'cities' => $citiesData,
+            'properties' => $propertiesData,
+            'units' => $unitsData,
         ]);
     }
 
     public function create(): Response
     {
-        // Get units data for dropdowns
-        $units = Unit::select('city', 'property', 'unit_name')
-            ->orderBy('city')
-            ->orderBy('property')
-            ->orderBy('unit_name')
-            ->get();
+        // Get hierarchical data for dropdowns
+        $cities = Cities::orderBy('city')->get();
+        $properties = PropertyInfoWithoutInsurance::with('city')->orderBy('property_name')->get();
+        $units = Unit::with(['property.city'])->orderBy('unit_name')->get();
 
-        // Create separate arrays for each dropdown
-        $cities = $units->pluck('city')->unique()->values();
-        $properties = $units->groupBy('city')->map(function ($cityUnits) {
-            return $cityUnits->pluck('property')->unique()->values();
+        // Create structured data for frontend
+        $citiesData = $cities->map(function ($city) {
+            return [
+                'id' => $city->id,
+                'name' => $city->city,
+            ];
         });
-        $unitsByProperty = $units->groupBy(['city', 'property'])->map(function ($cityGroup) {
-            return $cityGroup->map(function ($propertyGroup) {
-                return $propertyGroup->pluck('unit_name')->unique()->values();
-            });
+
+        $propertiesData = $properties->groupBy('city_id')->map(function ($cityProperties, $cityId) {
+            return $cityProperties->map(function ($property) {
+                return [
+                    'id' => $property->id,
+                    'name' => $property->property_name,
+                    'city_id' => $property->city_id,
+                ];
+            })->values();
+        });
+
+        $unitsData = $units->groupBy('property_id')->map(function ($propertyUnits, $propertyId) {
+            return $propertyUnits->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'name' => $unit->unit_name,
+                    'property_id' => $unit->property_id,
+                ];
+            })->values();
         });
 
         return Inertia::render('Applications/Create', [
-            'units' => $units,
-            'cities' => $cities,
-            'properties' => $properties,
-            'unitsByProperty' => $unitsByProperty,
+            'cities' => $citiesData,
+            'properties' => $propertiesData,
+            'units' => $unitsData,
         ]);
     }
 
@@ -118,9 +156,15 @@ class ApplicationController extends Controller
                 ->withInput();
         }
     }
+
     public function show(string $id): Response
     {
         $application = $this->applicationService->findById((int) $id);
+
+        // Add display names
+        $application->city = $application->unit->property->city->city ?? 'N/A';
+        $application->property = $application->unit->property->property_name ?? 'N/A';
+        $application->unit_name = $application->unit->unit_name ?? 'N/A';
 
         return Inertia::render('Applications/Show', [
             'application' => $application,
@@ -131,30 +175,51 @@ class ApplicationController extends Controller
     {
         $application = $this->applicationService->findById((int) $id);
 
-        // Get units data for dropdowns
-        $units = Unit::select('city', 'property', 'unit_name')
-            ->orderBy('city')
-            ->orderBy('property')
-            ->orderBy('unit_name')
-            ->get();
+        // Get hierarchical data for dropdowns
+        $cities = Cities::orderBy('city')->get();
+        $properties = PropertyInfoWithoutInsurance::with('city')->orderBy('property_name')->get();
+        $units = Unit::with(['property.city'])->orderBy('unit_name')->get();
 
-        // Create separate arrays for each dropdown
-        $cities = $units->pluck('city')->unique()->values();
-        $properties = $units->groupBy('city')->map(function ($cityUnits) {
-            return $cityUnits->pluck('property')->unique()->values();
+        // Create structured data for frontend
+        $citiesData = $cities->map(function ($city) {
+            return [
+                'id' => $city->id,
+                'name' => $city->city,
+            ];
         });
-        $unitsByProperty = $units->groupBy(['city', 'property'])->map(function ($cityGroup) {
-            return $cityGroup->map(function ($propertyGroup) {
-                return $propertyGroup->pluck('unit_name')->unique()->values();
-            });
+
+        $propertiesData = $properties->groupBy('city_id')->map(function ($cityProperties, $cityId) {
+            return $cityProperties->map(function ($property) {
+                return [
+                    'id' => $property->id,
+                    'name' => $property->property_name,
+                    'city_id' => $property->city_id,
+                ];
+            })->values();
         });
+
+        $unitsData = $units->groupBy('property_id')->map(function ($propertyUnits, $propertyId) {
+            return $propertyUnits->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'name' => $unit->unit_name,
+                    'property_id' => $unit->property_id,
+                ];
+            })->values();
+        });
+
+        // Add current selection data
+        $application->city = $application->unit->property->city->city ?? 'N/A';
+        $application->property = $application->unit->property->property_name ?? 'N/A';
+        $application->unit_name = $application->unit->unit_name ?? 'N/A';
+        $application->selected_city_id = $application->unit->property->city_id ?? null;
+        $application->selected_property_id = $application->unit->property_id ?? null;
 
         return Inertia::render('Applications/Edit', [
             'application' => $application,
-            'units' => $units,
-            'cities' => $cities,
-            'properties' => $properties,
-            'unitsByProperty' => $unitsByProperty,
+            'cities' => $citiesData,
+            'properties' => $propertiesData,
+            'units' => $unitsData,
         ]);
     }
 
@@ -196,7 +261,6 @@ class ApplicationController extends Controller
             $application = $this->applicationService->findById((int) $id);
 
             // Use soft delete (archive) instead of hard delete
-            // Note: We don't delete the attachment file since it's a soft delete
             $this->applicationService->delete($application);
 
             return redirect()->route('applications.index')
@@ -207,7 +271,6 @@ class ApplicationController extends Controller
         }
     }
 
-    // Add download method
     public function downloadAttachment(string $id)
     {
         $application = $this->applicationService->findById((int) $id);
@@ -225,30 +288,37 @@ class ApplicationController extends Controller
         return response()->download($filePath, $application->attachment_name);
     }
 
-    // Add API endpoint for dynamic property/unit loading
-    public function getPropertiesByCity(Request $request): Response
+    // API endpoints for dynamic loading
+    public function getPropertiesByCity(Request $request): JsonResponse
     {
-        $city = $request->get('city');
-        $properties = Unit::where('city', $city)
-            ->select('property')
-            ->distinct()
-            ->orderBy('property')
-            ->pluck('property');
+        $cityId = $request->get('city_id');
+        
+        $properties = PropertyInfoWithoutInsurance::where('city_id', $cityId)
+            ->orderBy('property_name')
+            ->get()
+            ->map(function ($property) {
+                return [
+                    'id' => $property->id,
+                    'name' => $property->property_name,
+                ];
+            });
 
         return response()->json($properties);
     }
 
-    public function getUnitsByProperty(Request $request): Response
+    public function getUnitsByProperty(Request $request): JsonResponse
     {
-        $city = $request->get('city');
-        $property = $request->get('property');
+        $propertyId = $request->get('property_id');
 
-        $units = Unit::where('city', $city)
-            ->where('property', $property)
-            ->select('unit_name')
-            ->distinct()
+        $units = Unit::where('property_id', $propertyId)
             ->orderBy('unit_name')
-            ->pluck('unit_name');
+            ->get()
+            ->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'name' => $unit->unit_name,
+                ];
+            });
 
         return response()->json($units);
     }

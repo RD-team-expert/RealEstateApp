@@ -92,22 +92,6 @@ class Unit extends Model
     }
 
     /**
-     * Get all payments for this unit.
-     */
-    public function payments(): HasMany
-    {
-        return $this->hasMany(Payment::class, 'unit_id');
-    }
-
-    /**
-     * Get all tenants for this unit.
-     */
-    public function tenants(): HasMany
-    {
-        return $this->hasMany(Tenant::class, 'unit_id');
-    }
-
-    /**
      * Get all applications for this unit.
      */
     public function applications(): HasMany
@@ -116,60 +100,99 @@ class Unit extends Model
     }
 
     /**
-     * Get all vendor tasks for this unit.
+     * Calculate computed fields for the unit
      */
-    public function vendorTasks(): HasMany
-    {
-        return $this->hasMany(VendorTaskTracker::class, 'unit_id');
-    }
-
-    /**
-     * Get all move-ins for this unit.
-     */
-    public function moveIns(): HasMany
-    {
-        return $this->hasMany(MoveIn::class, 'unit_id');
-    }
-
     public function calculateFields()
     {
-        // Calculate Vacant based on actual tenant relationships
-        $this->vacant = $this->tenants()->count() > 0 ? 'No' : 'Yes';
+        // Calculate Vacant - if tenants field is empty or null, unit is vacant
+        $this->vacant = empty($this->tenants) ? 'Yes' : 'No';
 
-        // Calculate Listed
+        // Calculate Listed - vacant units are typically listed
         $this->listed = $this->vacant === 'Yes' ? 'Yes' : 'No';
 
-        // Calculate Total Applications - use the proper relationship
-        if ($this->listed === 'Yes') {
-            $this->total_applications = $this->applications()->count();
+        // Calculate Total Applications - count applications for this unit
+        if ($this->exists && $this->listed === 'Yes') {
+            $this->total_applications = $this->applications()->where('is_archived', false)->count();
         } else {
             $this->total_applications = 0;
         }
     }
 
-    // Static method to update all units' application counts
+    /**
+     * Static method to update all units' application counts
+     */
     public static function updateAllApplicationCounts()
     {
-        $units = static::all();
+        $units = static::withArchived()->get();
         foreach ($units as $unit) {
             $unit->calculateFields();
             $unit->saveQuietly(); // Use saveQuietly to avoid triggering boot again
         }
     }
 
-    // Method to update application count for specific unit
+    /**
+     * Method to update application count for specific unit by ID
+     */
     public static function updateApplicationCountForUnit($unitId)
     {
-        $unit = static::find($unitId); // Use ID instead of name
+        $unit = static::withArchived()->find($unitId);
         if ($unit) {
             $unit->calculateFields();
             $unit->saveQuietly();
         }
     }
 
-    // Accessor for formatted monthly rent
+    /**
+     * Accessor for formatted monthly rent
+     */
     public function getFormattedMonthlyRentAttribute(): string
     {
         return $this->monthly_rent ? '$' . number_format($this->monthly_rent, 2) : 'N/A';
+    }
+
+    /**
+     * Validation rules for the model
+     */
+    public static function validationRules(): array
+    {
+        return [
+            'property_id' => 'nullable|integer|exists:property_info_without_insurance,id',
+            'unit_name' => 'required|string|max:255',
+            'tenants' => 'nullable|string|max:255',
+            'lease_start' => 'nullable|date',
+            'lease_end' => 'nullable|date|after_or_equal:lease_start',
+            'count_beds' => 'nullable|numeric|min:0|max:99.9',
+            'count_baths' => 'nullable|numeric|min:0|max:99.9',
+            'lease_status' => 'nullable|string|max:255',
+            'monthly_rent' => 'nullable|numeric|min:0|max:999999999999.99',
+            'recurring_transaction' => 'nullable|string|max:255',
+            'utility_status' => 'nullable|string|max:255',
+            'account_number' => 'nullable|string|max:255',
+            'insurance' => 'nullable|in:Yes,No',
+            'insurance_expiration_date' => 'nullable|date',
+        ];
+    }
+
+    /**
+     * Validation rules for updating the model
+     */
+    public static function updateValidationRules($id = null): array
+    {
+        return [
+            'property_id' => 'sometimes|nullable|integer|exists:property_info_without_insurance,id',
+            'unit_name' => 'sometimes|required|string|max:255',
+            'tenants' => 'sometimes|nullable|string|max:255',
+            'lease_start' => 'sometimes|nullable|date',
+            'lease_end' => 'sometimes|nullable|date|after_or_equal:lease_start',
+            'count_beds' => 'sometimes|nullable|numeric|min:0|max:99.9',
+            'count_baths' => 'sometimes|nullable|numeric|min:0|max:99.9',
+            'lease_status' => 'sometimes|nullable|string|max:255',
+            'monthly_rent' => 'sometimes|nullable|numeric|min:0|max:999999999999.99',
+            'recurring_transaction' => 'sometimes|nullable|string|max:255',
+            'utility_status' => 'sometimes|nullable|string|max:255',
+            'account_number' => 'sometimes|nullable|string|max:255',
+            'insurance' => 'sometimes|nullable|in:Yes,No',
+            'insurance_expiration_date' => 'sometimes|nullable|date',
+        ];
     }
 }

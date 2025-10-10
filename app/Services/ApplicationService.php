@@ -1,9 +1,11 @@
 <?php
-// app/Services/ApplicationService.php
 
 namespace App\Services;
 
 use App\Models\Application;
+use App\Models\Unit;
+use App\Models\PropertyInfoWithoutInsurance;
+use App\Models\Cities;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -11,15 +13,28 @@ class ApplicationService
 {
     public function getAllPaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
-        $query = Application::query()->notArchived(); // Only get non-archived records
+        $query = Application::with(['unit.property.city'])
+            ->whereHas('unit', function ($unitQuery) {
+                $unitQuery->where('is_archived', false);
+            });
 
-        // Apply filters
-
+        // Apply filters using relationships
         if (!empty($filters['city'])) {
-        $query->where('city', 'like', '%' . $filters['city'] . '%');
+            $query->whereHas('unit.property.city', function ($cityQuery) use ($filters) {
+                $cityQuery->where('city', 'like', '%' . $filters['city'] . '%');
+            });
         }
+
         if (!empty($filters['property'])) {
-            $query->where('property', 'like', '%' . $filters['property'] . '%');
+            $query->whereHas('unit.property', function ($propertyQuery) use ($filters) {
+                $propertyQuery->where('property_name', 'like', '%' . $filters['property'] . '%');
+            });
+        }
+
+        if (!empty($filters['unit'])) {
+            $query->whereHas('unit', function ($unitQuery) use ($filters) {
+                $unitQuery->where('unit_name', 'like', '%' . $filters['unit'] . '%');
+            });
         }
 
         if (!empty($filters['name'])) {
@@ -28,10 +43,6 @@ class ApplicationService
 
         if (!empty($filters['co_signer'])) {
             $query->where('co_signer', 'like', '%' . $filters['co_signer'] . '%');
-        }
-
-        if (!empty($filters['unit'])) {
-            $query->where('unit', 'like', '%' . $filters['unit'] . '%');
         }
 
         if (!empty($filters['status'])) {
@@ -62,7 +73,7 @@ class ApplicationService
 
     public function findById(int $id): Application
     {
-        return Application::notArchived()->findOrFail($id);
+        return Application::with(['unit.property.city'])->findOrFail($id);
     }
 
     public function update(Application $application, array $data): Application
@@ -70,7 +81,7 @@ class ApplicationService
         // Clean empty strings to null for nullable fields only
         $data = $this->cleanEmptyStringsForNullableFields($data);
         $application->update($data);
-        return $application->fresh();
+        return $application->fresh(['unit.property.city']);
     }
 
     public function delete(Application $application): bool
@@ -91,7 +102,7 @@ class ApplicationService
 
     public function getByStatus(string $status): Collection
     {
-        return Application::notArchived()
+        return Application::with(['unit.property.city'])
             ->where('status', $status)
             ->orderBy('date', 'desc')
             ->get();
@@ -99,7 +110,7 @@ class ApplicationService
 
     public function getByStage(string $stage): Collection
     {
-        return Application::notArchived()
+        return Application::with(['unit.property.city'])
             ->where('stage_in_progress', $stage)
             ->orderBy('date', 'desc')
             ->get();
@@ -107,15 +118,13 @@ class ApplicationService
 
     public function getStatistics(): array
     {
-        $total = Application::notArchived()->count();
-        $statusCounts = Application::notArchived()
-            ->selectRaw('status, COUNT(*) as count')
+        $total = Application::count();
+        $statusCounts = Application::selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->pluck('count', 'status')
             ->toArray();
 
-        $stageCounts = Application::notArchived()
-            ->selectRaw('stage_in_progress, COUNT(*) as count')
+        $stageCounts = Application::selectRaw('stage_in_progress, COUNT(*) as count')
             ->groupBy('stage_in_progress')
             ->pluck('count', 'stage_in_progress')
             ->toArray();
@@ -129,7 +138,7 @@ class ApplicationService
 
     public function getRecentApplications(int $limit = 10): Collection
     {
-        return Application::notArchived()
+        return Application::with(['unit.property.city'])
             ->orderBy('date', 'desc')
             ->limit($limit)
             ->get();
@@ -137,7 +146,7 @@ class ApplicationService
 
     public function getApplicationsThisMonth(): Collection
     {
-        return Application::notArchived()
+        return Application::with(['unit.property.city'])
             ->whereMonth('date', now()->month)
             ->whereYear('date', now()->year)
             ->orderBy('date', 'desc')
@@ -146,7 +155,7 @@ class ApplicationService
 
     private function cleanEmptyStringsForNullableFields(array $data): array
     {
-        // Only clean nullable fields - property, name, co_signer, unit should not be cleaned
+        // Only clean nullable fields - unit_id, name, co_signer should not be cleaned
         $nullableFields = ['status', 'stage_in_progress', 'notes'];
 
         foreach ($nullableFields as $field) {

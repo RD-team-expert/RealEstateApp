@@ -6,34 +6,55 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup } from '@/components/ui/radioGroup';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ApplicationFormData, UnitData } from '@/types/application';
 import { useForm } from '@inertiajs/react';
 import { format, parse } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
+// Types for hierarchical data structure
+interface CityData {
+    id: number;
+    name: string;
+}
+
+interface PropertyData {
+    id: number;
+    name: string;
+    city_id: number;
+}
+
+interface UnitData {
+    id: number;
+    name: string;
+    property_id: number;
+}
+
+type ApplicationFormData = {
+    unit_id: number | null;
+    name: string;
+    co_signer: string;
+    status: string;
+    date: string;
+    stage_in_progress: string;
+    notes: string;
+    attachment: File | null;
+};
 
 interface Props {
-    units: UnitData[];
-    cities: string[];
-    properties: Record<string, string[]>;
-    unitsByProperty: Record<string, Record<string, string[]>>;
+    cities: CityData[];
+    properties: Record<string, PropertyData[]>;
+    units: Record<string, UnitData[]>;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
 }
 
-export default function ApplicationCreateDrawer({ 
-    units, 
-    cities, 
-    properties, 
-    unitsByProperty, 
-    open, 
-    onOpenChange, 
-    onSuccess 
-}: Props) {
+export default function ApplicationCreateDrawer({ cities, properties, units, open, onOpenChange, onSuccess }: Props) {
     const cityRef = useRef<HTMLButtonElement>(null);
     const propertyRef = useRef<HTMLButtonElement>(null);
     const unitRef = useRef<HTMLButtonElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     const [validationErrors, setValidationErrors] = useState<{
         city?: string;
         property?: string;
@@ -42,19 +63,17 @@ export default function ApplicationCreateDrawer({
         co_signer?: string;
         status?: string;
     }>({});
-    
-    const [selectedCity, setSelectedCity] = useState('');
-    const [availableProperties, setAvailableProperties] = useState<string[]>([]);
-    const [availableUnits, setAvailableUnits] = useState<string[]>([]);
-    
+
+    const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
+    const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
+    const [availableProperties, setAvailableProperties] = useState<PropertyData[]>([]);
+    const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
     const [calendarOpen, setCalendarOpen] = useState(false);
 
-    const { data, setData, post, processing, errors, reset } = useForm<ApplicationFormData>({
-        city: '',
-        property: '',
+    const { data, setData, post, processing, errors, reset, clearErrors } = useForm<ApplicationFormData>({
+        unit_id: null,
         name: '',
         co_signer: '',
-        unit: '',
         status: 'New',
         date: '',
         stage_in_progress: '',
@@ -62,16 +81,34 @@ export default function ApplicationCreateDrawer({
         attachment: null,
     });
 
-    // Handle city selection
-    const handleCityChange = (city: string) => {
-        setSelectedCity(city);
-        setData('city', city);
-        setData('property', '');
-        setData('unit', '');
-        setValidationErrors(prev => ({ ...prev, city: undefined, property: undefined, unit: undefined }));
+    // Reset form when drawer closes
+    useEffect(() => {
+        if (!open) {
+            reset();
+            clearErrors();
+            setValidationErrors({});
+            setSelectedCityId(null);
+            setSelectedPropertyId(null);
+            setAvailableProperties([]);
+            setAvailableUnits([]);
+            setCalendarOpen(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    }, [open]);
 
-        if (city && properties[city]) {
-            setAvailableProperties(properties[city]);
+    // Handle city selection
+    const handleCityChange = (cityId: string) => {
+        const selectedId = parseInt(cityId);
+        setSelectedCityId(selectedId);
+        setSelectedPropertyId(null);
+        setData('unit_id', null);
+        setValidationErrors((prev) => ({ ...prev, city: undefined, property: undefined, unit: undefined }));
+
+        // Get properties for selected city
+        if (properties[selectedId]) {
+            setAvailableProperties(properties[selectedId]);
         } else {
             setAvailableProperties([]);
         }
@@ -79,49 +116,52 @@ export default function ApplicationCreateDrawer({
     };
 
     // Handle property selection
-    const handlePropertyChange = (property: string) => {
-        setData('property', property);
-        setData('unit', ''); // Reset unit
-        setValidationErrors(prev => ({ ...prev, property: undefined, unit: undefined }));
+    const handlePropertyChange = (propertyId: string) => {
+        const selectedId = parseInt(propertyId);
+        setSelectedPropertyId(selectedId);
+        setData('unit_id', null);
+        setValidationErrors((prev) => ({ ...prev, property: undefined, unit: undefined }));
 
-        if (selectedCity && property && unitsByProperty[selectedCity]?.[property]) {
-            setAvailableUnits(unitsByProperty[selectedCity][property]);
+        // Get units for selected property
+        if (units[selectedId]) {
+            setAvailableUnits(units[selectedId]);
         } else {
             setAvailableUnits([]);
         }
     };
 
-    const handleUnitChange = (unit: string) => {
-        setData('unit', unit);
-        setValidationErrors(prev => ({ ...prev, unit: undefined }));
+    const handleUnitChange = (unitId: string) => {
+        const selectedId = parseInt(unitId);
+        setData('unit_id', selectedId);
+        setValidationErrors((prev) => ({ ...prev, unit: undefined }));
     };
 
     const handleNameChange = (name: string) => {
         setData('name', name);
-        setValidationErrors(prev => ({ ...prev, name: undefined }));
+        setValidationErrors((prev) => ({ ...prev, name: undefined }));
     };
 
     const handleCoSignerChange = (coSigner: string) => {
         setData('co_signer', coSigner);
-        setValidationErrors(prev => ({ ...prev, co_signer: undefined }));
+        setValidationErrors((prev) => ({ ...prev, co_signer: undefined }));
     };
 
     const handleStatusChange = (status: string) => {
         setData('status', status);
-        setValidationErrors(prev => ({ ...prev, status: undefined }));
+        setValidationErrors((prev) => ({ ...prev, status: undefined }));
     };
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         // Clear any previous validation errors
         setValidationErrors({});
-        
+
         let hasValidationErrors = false;
         const newValidationErrors: typeof validationErrors = {};
-        
+
         // Validate required fields
-        if (!data.city || data.city.trim() === '') {
+        if (!selectedCityId) {
             newValidationErrors.city = 'Please select a city before submitting the form.';
             if (cityRef.current) {
                 cityRef.current.focus();
@@ -129,8 +169,8 @@ export default function ApplicationCreateDrawer({
             }
             hasValidationErrors = true;
         }
-        
-        if (!data.property || data.property.trim() === '') {
+
+        if (!selectedPropertyId) {
             newValidationErrors.property = 'Please select a property before submitting the form.';
             if (!hasValidationErrors && propertyRef.current) {
                 propertyRef.current.focus();
@@ -138,8 +178,8 @@ export default function ApplicationCreateDrawer({
             }
             hasValidationErrors = true;
         }
-        
-        if (!data.unit || data.unit.trim() === '') {
+
+        if (!data.unit_id) {
             newValidationErrors.unit = 'Please select a unit before submitting the form.';
             if (!hasValidationErrors && unitRef.current) {
                 unitRef.current.focus();
@@ -162,20 +202,16 @@ export default function ApplicationCreateDrawer({
             newValidationErrors.status = 'Please select a status before submitting the form.';
             hasValidationErrors = true;
         }
-        
+
         if (hasValidationErrors) {
             setValidationErrors(newValidationErrors);
             return;
         }
-        
+
         post(route('applications.store'), {
             onSuccess: () => {
-                reset();
-                setValidationErrors({});
-                setSelectedCity('');
-                setAvailableProperties([]);
-                setAvailableUnits([]);
-                onOpenChange(false);
+                // Mirror Move-Out: use a single cancel/clear routine
+                handleCancel();
                 onSuccess?.();
             },
         });
@@ -183,10 +219,16 @@ export default function ApplicationCreateDrawer({
 
     const handleCancel = () => {
         reset();
+        clearErrors();
         setValidationErrors({});
-        setSelectedCity('');
+        setSelectedCityId(null);
+        setSelectedPropertyId(null);
         setAvailableProperties([]);
         setAvailableUnits([]);
+        setCalendarOpen(false);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
         onOpenChange(false);
     };
 
@@ -203,19 +245,19 @@ export default function ApplicationCreateDrawer({
                                         City *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleCityChange} value={selectedCity}>
+                                <Select onValueChange={handleCityChange} value={selectedCityId?.toString() || ''}>
                                     <SelectTrigger ref={cityRef}>
                                         <SelectValue placeholder="Select city" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {cities?.map((city) => (
-                                            <SelectItem key={city} value={city}>
-                                                {city}
+                                            <SelectItem key={city.id} value={city.id.toString()}>
+                                                {city.name}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.city && <p className="mt-1 text-sm text-red-600">{errors.city}</p>}
+                                {errors.unit_id && <p className="mt-1 text-sm text-red-600">{errors.unit_id}</p>}
                                 {validationErrors.city && <p className="mt-1 text-sm text-red-600">{validationErrors.city}</p>}
                             </div>
 
@@ -225,23 +267,19 @@ export default function ApplicationCreateDrawer({
                                         Property *
                                     </Label>
                                 </div>
-                                <Select
-                                    onValueChange={handlePropertyChange}
-                                    value={data.property}
-                                    disabled={!selectedCity}
-                                >
+                                <Select onValueChange={handlePropertyChange} value={selectedPropertyId?.toString() || ''} disabled={!selectedCityId}>
                                     <SelectTrigger ref={propertyRef}>
                                         <SelectValue placeholder="Select property" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableProperties?.map((property) => (
-                                            <SelectItem key={property} value={property}>
-                                                {property}
+                                            <SelectItem key={property.id} value={property.id.toString()}>
+                                                {property.name}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.property && <p className="mt-1 text-sm text-red-600">{errors.property}</p>}
+                                {errors.unit_id && <p className="mt-1 text-sm text-red-600">{errors.unit_id}</p>}
                                 {validationErrors.property && <p className="mt-1 text-sm text-red-600">{validationErrors.property}</p>}
                             </div>
 
@@ -251,23 +289,19 @@ export default function ApplicationCreateDrawer({
                                         Unit *
                                     </Label>
                                 </div>
-                                <Select
-                                    onValueChange={handleUnitChange}
-                                    value={data.unit}
-                                    disabled={!data.property}
-                                >
+                                <Select onValueChange={handleUnitChange} value={data.unit_id?.toString() || ''} disabled={!selectedPropertyId}>
                                     <SelectTrigger ref={unitRef}>
                                         <SelectValue placeholder="Select unit" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableUnits?.map((unit) => (
-                                            <SelectItem key={unit} value={unit}>
-                                                {unit}
+                                            <SelectItem key={unit.id} value={unit.id.toString()}>
+                                                {unit.name}
                                             </SelectItem>
                                         )) || []}
                                     </SelectContent>
                                 </Select>
-                                {errors.unit && <p className="mt-1 text-sm text-red-600">{errors.unit}</p>}
+                                {errors.unit_id && <p className="mt-1 text-sm text-red-600">{errors.unit_id}</p>}
                                 {validationErrors.unit && <p className="mt-1 text-sm text-red-600">{validationErrors.unit}</p>}
                             </div>
 
@@ -318,7 +352,9 @@ export default function ApplicationCreateDrawer({
                                     options={[
                                         { value: 'New', label: 'New' },
                                         { value: 'Approved', label: 'Approved' },
-                                        { value: 'Undecided', label: 'Undecided' }
+                                        { value: 'Undecided', label: 'Undecided' },
+                                        { value: 'Rejected', label: 'Rejected' },
+                                        { value: 'Pending', label: 'Pending' },
                                     ]}
                                 />
                                 {errors.status && <p className="mt-1 text-sm text-red-600">{errors.status}</p>}
@@ -331,20 +367,14 @@ export default function ApplicationCreateDrawer({
                                         Date
                                     </Label>
                                 </div>
-                                <Popover
-                                    open={calendarOpen}
-                                    onOpenChange={setCalendarOpen}
-                                    modal={false}
-                                >
+                                <Popover open={calendarOpen} onOpenChange={setCalendarOpen} modal={false}>
                                     <PopoverTrigger asChild>
                                         <Button
                                             variant="outline"
                                             className={`w-full justify-start text-left font-normal ${!data.date && 'text-muted-foreground'}`}
                                         >
                                             <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.date
-                                                ? format(parse(data.date, 'yyyy-MM-dd', new Date()), 'PPP')
-                                                : 'Pick a date'}
+                                            {data.date ? format(parse(data.date, 'yyyy-MM-dd', new Date()), 'PPP') : 'Pick a date'}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
@@ -389,7 +419,7 @@ export default function ApplicationCreateDrawer({
                                 </div>
                                 <textarea
                                     id="notes"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px] resize-vertical"
+                                    className="resize-vertical min-h-[100px] w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                     value={data.notes}
                                     onChange={(e) => setData('notes', e.target.value)}
                                     placeholder="Add any additional notes..."
@@ -408,30 +438,23 @@ export default function ApplicationCreateDrawer({
                                 <Input
                                     id="attachment"
                                     type="file"
-                                    accept="*"
+                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                                     onChange={(e) => setData('attachment', e.target.files?.[0] || null)}
+                                    ref={fileInputRef}
                                     className="cursor-pointer file:cursor-pointer file:border-0 file:bg-transparent file:text-sm file:font-medium"
                                 />
+                                <p className="mt-1 text-xs text-muted-foreground">Accepted formats: PDF, Word documents, and images (max 10MB)</p>
                                 {errors.attachment && <p className="mt-1 text-sm text-red-600">{errors.attachment}</p>}
                             </div>
                         </form>
                     </div>
 
                     <DrawerFooter>
-                        <div className="flex gap-2 justify-end">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleCancel}
-                                disabled={processing}
-                            >
+                        <div className="flex justify-end gap-2">
+                            <Button type="button" variant="outline" onClick={handleCancel} disabled={processing}>
                                 Cancel
                             </Button>
-                            <Button
-                                type="submit"
-                                onClick={submit}
-                                disabled={processing}
-                            >
+                            <Button type="submit" onClick={submit} disabled={processing}>
                                 {processing ? 'Creating...' : 'Create Application'}
                             </Button>
                         </div>
