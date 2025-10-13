@@ -1,337 +1,294 @@
-/* resources/js/pages/dashboard.tsx */
-import React from 'react';
+// resources/js/Pages/Dashboard/Index.tsx
+
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { City, Property, Unit } from '@/types/dashboard';
 import { Head, router } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import {
-  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Download, FileText } from 'lucide-react';
+import { useCallback } from 'react';
 
-import { Application }      from '@/types/application';
-import { MoveIn }           from '@/types/move-in';
-import { MoveOut }          from '@/types/move-out';
-import { NoticeAndEviction }from '@/types/NoticeAndEviction';
-import { OfferRenewal }     from '@/types/OfferRenewal';
-import { Payment }          from '@/types/payments';
-import { PaymentPlan }      from '@/types/PaymentPlan';
-import { Tenant }           from '@/types/tenant';
-import { VendorTaskTracker }from '@/types/vendor-task-tracker';
-import { Unit }             from '@/types/unit';
-
-type Props = {
-  units: string[];
-  selectedUnit: string | null;
-  unitRecord:   Unit|null;
-  application:  Application|null;
-  moveIn:       MoveIn|null;
-  moveOut:      MoveOut|null;
-  notice:       NoticeAndEviction|null;
-  offer:        OfferRenewal|null;
-  payment:      Payment|null;
-  paymentPlan:  PaymentPlan|null;
-  tenant:       Tenant|null;
-  vendorTask:   VendorTaskTracker|null;
-};
-
-export default function Dashboard({
-  units, selectedUnit,
-  unitRecord, application, moveIn, moveOut,
-  notice, offer, payment, paymentPlan, tenant, vendorTask,
-}: Props) {
-  const changeUnit = (value: string) =>
-    router.get(route('dashboard', { unit: value }), {}, { preserveScroll: true });
-
-  const fmtDate = (d: string|null) =>
-    d ? new Date(d).toLocaleDateString() : '—';
-
-  const money = (n: any) =>
-    n == null ? '—' : `$${Number(n).toLocaleString(undefined,{minimumFractionDigits:2})}`;
-
-  return (
-    <AppLayout breadcrumbs={[{ title: 'Dashboard', href: '/dashboard' }]}>
-      <Head title="Dashboard" />
-
-      {/* selector */}
-      <div className="max-w-xs px-4 pt-4">
-        <Select
-          defaultValue={selectedUnit ?? units[0]}
-          onValueChange={changeUnit}
-        >
-          <SelectTrigger><SelectValue placeholder="Select unit…" /></SelectTrigger>
-          <SelectContent>
-            {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-
-        {/* ---------- UNIT ---------- */}
-        {unitRecord && (
-  <Card>
-    <CardHeader>
-      <CardTitle>Unit — {unitRecord.unit_name}</CardTitle>
-    </CardHeader>
-
-        <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
-        <F l="City"                 v={unitRecord.city} />
-        <F l="Property"             v={unitRecord.property} />
-        <F l="Tenants"              v={unitRecord.tenants ?? '—'} />
-        <F l="Beds"                 v={unitRecord.count_beds ?? '—'} />
-        <F l="Baths"                v={unitRecord.count_baths ?? '—'} />
-        <F l="Lease Start"          v={unitRecord.lease_start ? new Date(unitRecord.lease_start).toLocaleDateString() : '—'} />
-        <F l="Lease End"            v={unitRecord.lease_end ? new Date(unitRecord.lease_end).toLocaleDateString() : '—'} />
-        <F l="Lease Status"         v={unitRecord.lease_status ?? '—'} />
-        <F l="Monthly Rent"         v={unitRecord.formatted_monthly_rent} />
-        <F l="Recurring Txn"        v={unitRecord.recurring_transaction ?? '—'} />
-        <F l="Utility Status"       v={unitRecord.utility_status ?? '—'} />
-        <F l="Account #"            v={unitRecord.account_number ?? '—'} />
-        <F l="Insurance"            v={unitRecord.insurance ?? '—'} />
-        <F l="Insurance Exp."       v={unitRecord.insurance_expiration_date ? new Date(unitRecord.insurance_expiration_date).toLocaleDateString() : '—'} />
-        <F l="Vacant"               v={unitRecord.vacant} />
-        <F l="Listed"               v={unitRecord.listed} />
-        <F l="Total Applications"   v={unitRecord.total_applications} />
-        <F l="Created At"           v={new Date(unitRecord.created_at).toLocaleDateString()} />
-        <F l="Updated At"           v={new Date(unitRecord.updated_at).toLocaleDateString()} />
-        </CardContent>
-    </Card>
-    )}
-
-        {/* ---------- APPLICATION ---------- */}
-        {application && (
-          <Card><CardHeader><CardTitle>Application</CardTitle></CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
-              <F l="Applicant" v={application.name}/>
-              <F l="City" v={application.city}/>
-              <F l="Property" v={application.property}/>
-              <F l="Unit" v={application.unit}/>
-              <F l="Co-signer" v={application.co_signer}/>
-              <F l="Status" v={<Status b={application.status}/>}/>
-              <F l="Stage" v={application.stage_in_progress}/>
-              <F l="Date" v={fmtDate(application.date)}/>
-              {application.notes && <F l="Notes" full v={application.notes}/>}
-              {application.attachment_name && (
-                <F l="Attachment" full v={
-                  <a
-                    href={`/applications/${application.id}/download`}
-                    className="inline-flex items-center gap-1 text-primary underline"
-                  >
-                    <FileText size={16}/>{application.attachment_name}
-                  </a>
-                }/>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ---------- MOVE-IN ---------- */}
-        {moveIn && (
-          <Card><CardHeader><CardTitle>Move-In</CardTitle></CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
-              <F l="Signed Lease" v={<YN v={moveIn.signed_lease}/>}/>
-              <F l="Lease Sign Date" v={fmtDate(moveIn.lease_signing_date)}/>
-              <F l="Move-In Date"  v={fmtDate(moveIn.move_in_date)}/>
-              <F l="Paid Sec+1st Rent" v={<YN v={moveIn.paid_security_deposit_first_month_rent}/>}/>
-              <F l="Paid on" v={fmtDate(moveIn.scheduled_paid_time)}/>
-              <F l="Handled Keys" v={<YN v={moveIn.handled_keys}/>}/>
-              <F l="Form Sent" v={fmtDate(moveIn.move_in_form_sent_date)}/>
-              <F l="Form Filled" v={<YN v={moveIn.filled_move_in_form}/>}/>
-              <F l="Form Filled Date" v={fmtDate(moveIn.date_of_move_in_form_filled)}/>
-              <F l="Insurance" v={<YN v={moveIn.submitted_insurance}/>}/>
-              <F l="Insurance Exp." v={fmtDate(moveIn.date_of_insurance_expiration)}/>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ---------- MOVE-OUT ---------- */}
-        {moveOut && (
-          <Card><CardHeader><CardTitle>Move-Out</CardTitle></CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
-              <F l="Tenant" v={moveOut.tenants_name}/>
-              <F l="Move-Out Date" v={fmtDate(moveOut.move_out_date)}/>
-              <F l="Lease Status" v={moveOut.lease_status}/>
-              <F l="Lease End (Buildium)" v={fmtDate(moveOut.date_lease_ending_on_buildium)}/>
-              <F l="Keys Location" v={moveOut.keys_location}/>
-              <F l="Utilities Under Our Name" v={<YN v={moveOut.utilities_under_our_name}/>}/>
-              <F l="Utility Date" v={fmtDate(moveOut.date_utility_put_under_our_name)}/>
-              <F l="Walkthrough" v={moveOut.walkthrough}/>
-              <F l="Repairs" v={moveOut.repairs}/>
-              <F l="Cleaning" v={moveOut.cleaning}/>
-              <F l="Move-Out Form" v={moveOut.move_out_form}/>
-              <F l="List Unit" v={moveOut.list_the_unit}/>
-              <F l="Send Back Deposit" v={moveOut.send_back_security_deposit}/>
-              {moveOut.notes && <F l="Notes" full v={moveOut.notes}/>}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ---------- NOTICE / EVICTION ---------- */}
-        {notice && (
-        <Card>
-            <CardHeader>
-            <CardTitle>Notice / Eviction</CardTitle>
-            </CardHeader>
-
-            <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
-            <F l="Type"            v={notice.type_of_notice ?? '—'} />
-            <F l="Status"          v={<Status b={notice.status ?? null} />} />
-            <F l="Date"            v={fmtDate(notice.date ?? null)} />
-            <F l="Exception"       v={<YN v={notice.have_an_exception ?? null} />} />
-            <F l="Evictions"       v={notice.evictions ?? '—'} />
-            <F l="Sent to Attorney"v={<YN v={notice.sent_to_atorney ?? null} />} />
-            <F l="Hearing"         v={fmtDate(notice.hearing_dates ?? null)} />
-            <F l="Evicted/Plan"    v={notice.evected_or_payment_plan ?? '—'} />
-            <F l="Left"            v={<YN v={notice.if_left ?? null} />} />
-            <F l="Writ Date"       v={fmtDate(notice.writ_date ?? null)} />
-
-            {notice.note && <F l="Note" full v={notice.note} />}
-
-            {/* timestamps */}
-            <F l="Created At" v={notice.created_at ? new Date(notice.created_at).toLocaleDateString() : '—'} />
-            <F l="Updated At" v={notice.updated_at ? new Date(notice.updated_at).toLocaleDateString() : '—'} />
-            </CardContent>
-        </Card>
-        )}
-
-        {/* ---------- OFFER / RENEWAL ---------- */}
-{offer && (
-  <Card>
-    <CardHeader>
-      <CardTitle>Offer & Renewal</CardTitle>
-    </CardHeader>
-
-    <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
-      <F l="Status"          v={<Status b={offer.status ?? null} />} />
-      <F l="Sent"            v={fmtDate(offer.date_sent_offer ?? null)} />
-      <F l="Accepted"        v={fmtDate(offer.date_of_acceptance ?? null)} />
-      <F l="Days Left"       v={offer.how_many_days_left ?? '—'} />
-      <F l="Expired"         v={offer.expired ?? '—'} />
-
-      <F l="Lease Sent"      v={<YN v={offer.lease_sent ?? null} />} />
-      <F l="Date Sent Lease" v={fmtDate(offer.date_sent_lease ?? null)} />
-      <F l="Lease Signed"    v={<YN v={offer.lease_signed ?? null} />} />
-      <F l="Date Signed"     v={fmtDate(offer.date_signed ?? null)} />
-
-      <F l="Last Notice"     v={fmtDate(offer.last_notice_sent ?? null)} />
-      <F l="Notice Kind"     v={offer.notice_kind ?? '—'} />
-      <F l="Last Notice 2"   v={fmtDate(offer.last_notice_sent_2 ?? null)} />
-      <F l="Notice Kind 2"   v={offer.notice_kind_2 ?? '—'} />
-
-      {offer.notes && <F l="Notes" full v={offer.notes} />}
-
-      {/* timestamps */}
-      <F l="Created At" v={offer.created_at ? new Date(offer.created_at).toLocaleDateString() : '—'} />
-      <F l="Updated At" v={offer.updated_at ? new Date(offer.updated_at).toLocaleDateString() : '—'} />
-    </CardContent>
-  </Card>
-)}
-
-        {/* ---------- PAYMENT ---------- */}
-        {payment && (
-          <Card><CardHeader><CardTitle>Payment</CardTitle></CardHeader>
-            <CardContent className="grid md:grid-cols-3 gap-4 text-sm">
-              <F l="Date" v={fmtDate(payment.date)}/>
-              <F l="Status" v={<Status b={payment.status}/>}/>
-              <F l="Owes" v={money(payment.owes)}/>
-              <F l="Paid" v={money(payment.paid)}/>
-              <F l="Left to Pay" v={money(payment.left_to_pay)}/>
-              <F l="Reversed" full v={payment.reversed_payments}/>
-              <F l="Permanent" v={<YN v={payment.permanent}/>}/>
-              {payment.notes && <F l="Notes" full v={payment.notes}/>}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ---------- PAYMENT PLAN ---------- */}
-        {paymentPlan && (
-          <Card><CardHeader><CardTitle>Payment Plan</CardTitle></CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
-              <F l="Property" v={paymentPlan.property}/>
-              <F l="Tenant" v={paymentPlan.tenant}/>
-              <F l="Date" v={fmtDate(paymentPlan.dates)}/>
-              <F l="Amount" v={money(paymentPlan.amount)}/>
-              <F l="Paid" v={money(paymentPlan.paid)}/>
-              <F l="Left to Pay" v={money(paymentPlan.left_to_pay)}/>
-              <F l="Status" v={<Status b={paymentPlan.status}/>}/>
-              {paymentPlan.notes && <F l="Notes" full v={paymentPlan.notes}/>}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ---------- TENANT ---------- */}
-        {tenant && (
-          <Card><CardHeader><CardTitle>Tenant</CardTitle></CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
-              <F l="Name" v={`${tenant.first_name} ${tenant.last_name}`}/>
-              <F l="Property" v={tenant.property_name}/>
-              <F l="Unit" v={tenant.unit_number}/>
-              <F l="Login Email" v={tenant.login_email}/>
-              <F l="Alt Email" v={tenant.alternate_email}/>
-              <F l="Mobile" v={tenant.mobile}/>
-              <F l="Emergency Phone" v={tenant.emergency_phone}/>
-              <F l="Cash / Check" v={tenant.cash_or_check}/>
-              <F l="Has Insurance" v={tenant.has_insurance}/>
-              <F l="Sensitive Comm." v={tenant.sensitive_communication}/>
-              <F l="Has Assistance" v={tenant.has_assistance}/>
-              {tenant.has_assistance==='Yes' && (
-                <>
-                  <F l="Assist Amt." v={money(tenant.assistance_amount)}/>
-                  <F l="Assist Company" v={tenant.assistance_company}/>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ---------- VENDOR TASK ---------- */}
-        {vendorTask && (
-          <Card><CardHeader><CardTitle>Vendor Task</CardTitle></CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4 text-sm">
-              <F l="Vendor" v={vendorTask.vendor_name}/>
-              <F l="City" v={vendorTask.city}/>
-              <F l="Unit" v={vendorTask.unit_name}/>
-              <F l="Status" v={<Status b={vendorTask.status}/>}/>
-              <F l="Urgent" v={<YN v={vendorTask.urgent}/>}/>
-              <F l="Submission Date" v={fmtDate(vendorTask.task_submission_date)}/>
-              <F l="Scheduled Visit" v={fmtDate(vendorTask.any_scheduled_visits)}/>
-              <F l="Task End" v={fmtDate(vendorTask.task_ending_date)}/>
-              <F l="Tasks" full v={vendorTask.assigned_tasks}/>
-              {vendorTask.notes && <F l="Notes" full v={vendorTask.notes}/>}
-            </CardContent>
-          </Card>
-        )}
-
-      </div>
-    </AppLayout>
-  );
+interface Props {
+    cities: City[];
+    properties: Property[];
+    units: Unit[];
+    unitInfo: Unit | null;
+    selectedCityId: number | null;
+    selectedPropertyId: number | null;
+    selectedUnitId: number | null;
 }
 
-/* ---------- helpers ---------- */
-function F({ l, v, full=false }:{ l:string; v:React.ReactNode; full?:boolean }) {
-  return (
-    <div className={full ? 'col-span-full' : ''}>
-      <p className="text-muted-foreground">{l}</p>
-      <p className="font-medium break-words">{v ?? '—'}</p>
-    </div>
-  );
-}
+export default function DashboardIndex({ cities, properties, units, unitInfo, selectedCityId, selectedPropertyId, selectedUnitId }: Props) {
+    // Define breadcrumbs based on current selection
+    const getBreadcrumbs = useCallback((): BreadcrumbItem[] => {
+        const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
 
-function YN({ v }: { v: 'Yes' | 'No' | string | null }) {
-  return v
-    ? <Badge variant={v === 'Yes' ? 'default' : 'secondary'}>{v}</Badge>
-    : '—';
-}
+        if (selectedCityId) {
+            const selectedCity = cities.find((city) => city.id === selectedCityId);
+            if (selectedCity) {
+                breadcrumbs.push({
+                    title: selectedCity.city,
+                    href: `/dashboard?city_id=${selectedCityId}`,
+                });
+            }
+        }
 
-function Status({ b }:{ b:string|null }) {
-  if (!b) return '—';
-  const t = b.toLowerCase();
-  const variant =
-    t.includes('accept')||t==='paid' ? 'default'
-    : t.includes('pending')||t==='paid partly' ? 'secondary'
-    : t.includes('rejected')||t==='expired' ? 'destructive'
-    : 'outline';
-  return <Badge variant={variant}>{b}</Badge>;
+        if (selectedPropertyId) {
+            const selectedProperty = properties.find((property) => property.id === selectedPropertyId);
+            if (selectedProperty) {
+                breadcrumbs.push({
+                    title: selectedProperty.property_name,
+                    href: `/dashboard?city_id=${selectedCityId}&property_id=${selectedPropertyId}`,
+                });
+            }
+        }
+
+        if (selectedUnitId) {
+            const selectedUnit = units.find((unit) => unit.id === selectedUnitId);
+            if (selectedUnit) {
+                breadcrumbs.push({
+                    title: selectedUnit.unit_name,
+                    href: `/dashboard?city_id=${selectedCityId}&property_id=${selectedPropertyId}&unit_id=${selectedUnitId}`,
+                });
+            }
+        }
+
+        return breadcrumbs;
+    }, [selectedCityId, selectedPropertyId, selectedUnitId, cities, properties, units]);
+
+    const handleCityChange = useCallback((cityId: number | null) => {
+        if (!cityId) {
+            router.get('/dashboard');
+            return;
+        }
+
+        router.get(
+            '/dashboard',
+            { city_id: cityId },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    }, []);
+
+    const handlePropertyChange = useCallback(
+        (propertyId: number | null) => {
+            if (!propertyId || !selectedCityId) {
+                router.get('/dashboard', { city_id: selectedCityId });
+                return;
+            }
+
+            router.get(
+                '/dashboard',
+                {
+                    city_id: selectedCityId,
+                    property_id: propertyId,
+                },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                },
+            );
+        },
+        [selectedCityId],
+    );
+
+    const handleUnitChange = useCallback(
+        (unitId: number | null) => {
+            if (!unitId || !selectedCityId || !selectedPropertyId) {
+                router.get('/dashboard', {
+                    city_id: selectedCityId,
+                    property_id: selectedPropertyId,
+                });
+                return;
+            }
+
+            router.get(
+                '/dashboard',
+                {
+                    city_id: selectedCityId,
+                    property_id: selectedPropertyId,
+                    unit_id: unitId,
+                },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                },
+            );
+        },
+        [selectedCityId, selectedPropertyId],
+    );
+
+    return (
+        <AppLayout breadcrumbs={getBreadcrumbs()}>
+            <Head title="Dashboard" />
+
+            <div className="space-y-6">
+                {/* Page Header */}
+                <div className="rounded-lg bg-white shadow">
+                    <div className="px-4 py-5 sm:p-6">
+                        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                        <p className="mt-1 text-sm text-gray-600">Select a city, property, and unit to view detailed information.</p>
+                    </div>
+                </div>
+
+                {/* Selection Controls */}
+                <div className="rounded-lg bg-white shadow">
+                    <div className="px-4 py-5 sm:p-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                            {/* City Selection */}
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-gray-700">Select City</label>
+                                <select
+                                    value={selectedCityId || ''}
+                                    onChange={(e) => handleCityChange(e.target.value ? parseInt(e.target.value) : null)}
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                >
+                                    <option value="">Choose a city...</option>
+                                    {cities.map((city) => (
+                                        <option key={city.id} value={city.id}>
+                                            {city.city}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Property Selection */}
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-gray-700">Select Property</label>
+                                <select
+                                    value={selectedPropertyId || ''}
+                                    onChange={(e) => handlePropertyChange(e.target.value ? parseInt(e.target.value) : null)}
+                                    disabled={!selectedCityId}
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100"
+                                >
+                                    <option value="">Choose a property...</option>
+                                    {properties.map((property) => (
+                                        <option key={property.id} value={property.id}>
+                                            {property.property_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Unit Selection */}
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-gray-700">Select Unit</label>
+                                <select
+                                    value={selectedUnitId || ''}
+                                    onChange={(e) => handleUnitChange(e.target.value ? parseInt(e.target.value) : null)}
+                                    disabled={!selectedPropertyId}
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100"
+                                >
+                                    <option value="">Choose a unit...</option>
+                                    {units.map((unit) => (
+                                        <option key={unit.id} value={unit.id}>
+                                            {unit.unit_name} - {unit.vacant === 'Yes' ? 'Vacant' : 'Occupied'}
+                                            {unit.monthly_rent && ` - $${unit.monthly_rent}`}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Unit Information Display */}
+                {unitInfo && (
+                    <div className="rounded-lg bg-white shadow">
+                        <div className="px-4 py-5 sm:p-6">
+                            <h2 className="mb-6 text-xl font-semibold text-gray-900">Unit Information</h2>
+
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {/* Basic Information */}
+                                <div className="space-y-3">
+                                    <h3 className="border-b border-gray-200 pb-2 font-medium text-gray-900">Basic Information</h3>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Status:</span>
+                                            <span
+                                                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                                                    unitInfo.vacant === 'Yes' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                }`}
+                                            >
+                                                {unitInfo.vacant === 'Yes' ? 'Vacant' : 'Occupied'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Unit Details */}
+                                <div className="space-y-3">
+                                    <h3 className="border-b border-gray-200 pb-2 font-medium text-gray-900">Unit Details</h3>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Bedrooms:</span>
+                                            <span className="font-medium">{unitInfo.count_beds || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Bathrooms:</span>
+                                            <span className="font-medium">{unitInfo.count_baths || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Monthly Rent:</span>
+                                            <span className="font-medium text-green-600">{unitInfo.formatted_monthly_rent || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Applications:</span>
+                                            <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
+                                                {unitInfo.total_applications || 0}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Lease Information */}
+                                <div className="space-y-3">
+                                    <h3 className="border-b border-gray-200 pb-2 font-medium text-gray-900">Lease Information</h3>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Lease Status:</span>
+                                            <span className="font-medium">{unitInfo.lease_status || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Lease Start:</span>
+                                            <span className="font-medium">{unitInfo.lease_start || 'N/A'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Lease End:</span>
+                                            <span className="font-medium">{unitInfo.lease_end || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Insurance Information */}
+                            {unitInfo.insurance && (
+                                <div className="mt-6 border-t border-gray-200 pt-6">
+                                    <h3 className="mb-3 font-medium text-gray-900">Insurance Information</h3>
+                                    <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Insurance:</span>
+                                            <span
+                                                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                                                    unitInfo.insurance === 'Yes' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                }`}
+                                            >
+                                                {unitInfo.insurance}
+                                            </span>
+                                        </div>
+                                        {unitInfo.insurance_expiration_date && (
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-600">Expiration Date:</span>
+                                                <span className="font-medium">{unitInfo.insurance_expiration_date}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </AppLayout>
+    );
 }

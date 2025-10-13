@@ -14,7 +14,7 @@ interface Props {
 }
 
 export default function Show({ payment }: Props) {
-    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+    const {  hasAnyPermission } = usePermissions();
 
     const formatCurrency = (amount: number | null) => {
         if (amount === null) return 'N/A';

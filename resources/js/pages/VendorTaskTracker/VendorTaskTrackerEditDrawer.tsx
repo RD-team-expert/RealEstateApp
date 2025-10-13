@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
+// import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -54,7 +54,7 @@ interface Props {
 export default function VendorTaskTrackerEditDrawer({ 
     task,
     cities,
-    properties,
+    // properties,
     units,
     vendors,
     unitsByCity, 
@@ -83,8 +83,8 @@ export default function VendorTaskTrackerEditDrawer({
     // Helper state to track selected names for UI display
     const [selectedCity, setSelectedCity] = useState<string>(task.city || '');
     const [selectedProperty, setSelectedProperty] = useState<string>(task.property_name || '');
-    const [selectedUnit, setSelectedUnit] = useState<string>(task.unit_name || '');
-    const [selectedVendor, setSelectedVendor] = useState<string>(task.vendor_name || '');
+    const [, setSelectedUnit] = useState<string>(task.unit_name || '');
+    const [, setSelectedVendor] = useState<string>(task.vendor_name || '');
 
     // Helper function to safely parse dates
     const safeParseDateString = (dateString: string | null | undefined): Date | undefined => {
@@ -154,7 +154,7 @@ export default function VendorTaskTrackerEditDrawer({
         return unit ? unit.id.toString() : '';
     };
 
-    const { data, setData, put, processing, errors, reset } = useForm<VendorTaskTrackerFormData>({
+    const { data, setData, put, processing, errors } = useForm<VendorTaskTrackerFormData>({
         vendor_id: findVendorIdByName(task.vendor_name || ''),
         unit_id: findUnitIdByName(task.unit_name || ''),
         task_submission_date: task.task_submission_date ?? '',

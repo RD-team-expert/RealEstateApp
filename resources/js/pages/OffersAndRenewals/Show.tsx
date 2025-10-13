@@ -2,7 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { usePermissions } from '@/hooks/usePermissions';
+// import { usePermissions } from '@/hooks/usePermissions';
 import AppLayout from '@/layouts/app-layout';
 import { OfferRenewal, OfferRenewalShowProps } from '@/types/OfferRenewal';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -12,7 +12,7 @@ import React from 'react';
 const Show: React.FC<OfferRenewalShowProps> = () => {
     const { offer } = usePage().props as unknown as { offer: OfferRenewal };
 
-    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+    // const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
     const formatDate = (date: string | null | undefined): string => {
         if (!date) return 'Not Set';

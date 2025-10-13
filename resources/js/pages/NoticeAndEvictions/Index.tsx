@@ -155,7 +155,7 @@ interface Props {
     notices: Notice[];
 }
 
-const Index = ({ records, search, cities = [], properties = [], units = [], tenants = [], notices = [] }: Props) => {
+const Index = ({ records,  cities = [], properties = [], units = [], tenants = [], notices = [] }: Props) => {
     const [isExporting, setIsExporting] = useState(false);
     const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
@@ -169,7 +169,7 @@ const Index = ({ records, search, cities = [], properties = [], units = [], tena
         tenant: '',
     });
 
-    const [filters, setFilters] = useState({
+    const [, setFilters] = useState({
         city: '',
         property: '',
         unit: '',
@@ -328,10 +328,10 @@ const Index = ({ records, search, cities = [], properties = [], units = [], tena
         );
     };
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        handleSearchClick();
-    };
+    // const handleSearch = (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     handleSearchClick();
+    // };
 
     const handleClearFilters = () => {
         // Reset all filter states

@@ -97,20 +97,20 @@ export default function MoveOutEditDrawer({
     };
 
     // Safe date formatting function
-    const formatDateForInput = (dateString: string | null | undefined): string => {
-        if (!dateString || dateString.trim() === '') {
-            return '';
-        }
+    // const formatDateForInput = (dateString: string | null | undefined): string => {
+    //     if (!dateString || dateString.trim() === '') {
+    //         return '';
+    //     }
         
-        const parsedDate = parseDate(dateString);
-        if (parsedDate && isValid(parsedDate)) {
-            return format(parsedDate, 'yyyy-MM-dd');
-        }
+    //     const parsedDate = parseDate(dateString);
+    //     if (parsedDate && isValid(parsedDate)) {
+    //         return format(parsedDate, 'yyyy-MM-dd');
+    //     }
         
-        return '';
-    };
+    //     return '';
+    // };
 
-    const { data, setData, put, processing, errors, reset } = useForm<MoveOutFormData>({
+    const { data, setData, put, processing, errors } = useForm<MoveOutFormData>({
         tenant_id: moveOut.tenant_id || null,
         move_out_date: moveOut.move_out_date || '',
         lease_status: moveOut.lease_status || '',
@@ -243,15 +243,15 @@ export default function MoveOutEditDrawer({
         }));
     };
 
-    const handleDateSelect = (date: Date | undefined, field: string) => {
-        if (date) {
-            setData(field as keyof MoveOutFormData, format(date, 'yyyy-MM-dd'));
-            setCalendarStates(prev => ({
-                ...prev,
-                [field]: false
-            }));
-        }
-    };
+    // const handleDateSelect = (date: Date | undefined, field: string) => {
+    //     if (date) {
+    //         setData(field as keyof MoveOutFormData, format(date, 'yyyy-MM-dd'));
+    //         setCalendarStates(prev => ({
+    //             ...prev,
+    //             [field]: false
+    //         }));
+    //     }
+    // };
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();

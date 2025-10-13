@@ -417,7 +417,7 @@ interface Props {
 
 export default function Index({ tenants, search, cities, properties, unitsByProperty, importStats }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
-    const [searchTerm, setSearchTerm] = useState(search || '');
+    // const [searchTerm, setSearchTerm] = useState(search || '');
     const [isExporting, setIsExporting] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
     const [showImportStats, setShowImportStats] = useState(!!importStats);
@@ -434,7 +434,7 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
         search: search || ''
     });
 
-    const [filters, setFilters] = useState({
+    const [, setFilters] = useState({
         city: '',
         property: '',
         unitName: '',
@@ -510,10 +510,10 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
         }, { preserveState: true });
     };
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        handleSearchClick();
-    };
+    // const handleSearch = (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     handleSearchClick();
+    // };
 
     const handleClearFilters = () => {
         // Reset all filters to empty state
@@ -620,21 +620,21 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
         return String(value);
     };
 
-    const getYesNoBadge = (value: 'Yes' | 'No' | string | null) => {
-        if (value === null || value === undefined || value === '') return <Badge variant="outline">N/A</Badge>;
-        return (
-            <Badge
-                variant={value === 'Yes' ? 'default' : 'secondary'}
-                className={
-                    value === 'Yes'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-                }
-            >
-                {value}
-            </Badge>
-        );
-    };
+    // const getYesNoBadge = (value: 'Yes' | 'No' | string | null) => {
+    //     if (value === null || value === undefined || value === '') return <Badge variant="outline">N/A</Badge>;
+    //     return (
+    //         <Badge
+    //             variant={value === 'Yes' ? 'default' : 'secondary'}
+    //             className={
+    //                 value === 'Yes'
+    //                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+    //                     : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+    //             }
+    //         >
+    //             {value}
+    //         </Badge>
+    //     );
+    // };
 
     const getInsuranceBadge = (value: 'Yes' | 'No' | string | null) => {
         if (value === null || value === undefined || value === '') return <Badge variant="outline">N/A</Badge>;

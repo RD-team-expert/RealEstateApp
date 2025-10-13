@@ -1,5 +1,5 @@
 import React from 'react';
-import { type BreadcrumbItem } from '@/types';
+// import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { MoveOut } from '@/types/move-out';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { usePermissions } from '@/hooks/usePermissions';
+// import { usePermissions } from '@/hooks/usePermissions';
 import { Calendar, MapPin, User, Home, Clock, Key, Wrench, FileText, AlertTriangle } from 'lucide-react';
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function Show({ moveOut }: Props) {
-    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+    // const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
     const getYesNoBadge = (value: 'Yes' | 'No' | null) => {
         if (value === null) return <Badge variant="outline" className="text-xs">N/A</Badge>;

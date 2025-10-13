@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup } from '@/components/ui/radioGroup';
-import { Unit, UnitFormData } from '@/types/unit';
+import { Unit } from '@/types/unit';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { useForm } from '@inertiajs/react';
 import { format, parse, isValid } from 'date-fns';
@@ -81,7 +81,7 @@ export default function UnitEditDrawer({ unit, cities, properties, open, onOpenC
         return '';
     };
 
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const { data, setData, put, processing, errors } = useForm({
         property_id: unit.property_id?.toString() || '',
         unit_name: unit.unit_name || '',
         tenants: unit.tenants || '',
@@ -244,15 +244,15 @@ export default function UnitEditDrawer({ unit, cities, properties, open, onOpenC
     };
 
     // Get current city name for display
-    const getCurrentCityName = () => {
-        if (unit.property_id && properties) {
-            const unitProperty = properties.find(p => p.id === unit.property_id);
-            if (unitProperty && unitProperty.city) {
-                return unitProperty.city.city;
-            }
-        }
-        return unit.city || 'Unknown';
-    };
+    // const getCurrentCityName = () => {
+    //     if (unit.property_id && properties) {
+    //         const unitProperty = properties.find(p => p.id === unit.property_id);
+    //         if (unitProperty && unitProperty.city) {
+    //             return unitProperty.city.city;
+    //         }
+    //     }
+    //     return unit.city || 'Unknown';
+    // };
 
     return (
         <Drawer open={open} onOpenChange={onOpenChange} modal={false}>

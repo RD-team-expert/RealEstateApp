@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup } from '@/components/ui/radioGroup';
-import { Tenant, TenantFormData } from '@/types/tenant';
+import { Tenant } from '@/types/tenant';
 import { City } from '@/types/City';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { useForm } from '@inertiajs/react';
@@ -37,7 +37,7 @@ export default function TenantEditDrawer({
     const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
     const [selectedPropertyName, setSelectedPropertyName] = useState<string>('');
 
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const { data, setData, put, processing, errors } = useForm({
         unit_id: tenant.unit_id?.toString() ?? '',
         first_name: tenant.first_name ?? '',
         last_name: tenant.last_name ?? '',

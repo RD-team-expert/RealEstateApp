@@ -145,7 +145,7 @@ interface Props {
 
 export default function Index({ 
     payments, 
-    search, 
+    // search, 
     filters, 
     units, 
     cities, 

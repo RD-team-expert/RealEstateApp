@@ -1,5 +1,5 @@
 import React from 'react';
-import { type BreadcrumbItem } from '@/types';
+// import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { VendorTaskTracker } from '@/types/vendor-task-tracker';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { usePermissions } from '@/hooks/usePermissions';
+// import { usePermissions } from '@/hooks/usePermissions';
 import { Calendar, MapPin, User, Home, Clock, Wrench, FileText, AlertTriangle, Building, CheckCircle } from 'lucide-react';
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function Show({ task }: Props) {
-    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+    // const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
     const getUrgentBadge = (urgent: 'Yes' | 'No') => {
         return (

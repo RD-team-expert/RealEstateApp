@@ -333,7 +333,7 @@ const Index: React.FC<Props> = ({ cities }) => {
     const [showForm, setShowForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const { notification, showNotification, hideNotification } = useNotification();
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const {  processing, errors, reset } = useForm({
         city: '',
     });
 

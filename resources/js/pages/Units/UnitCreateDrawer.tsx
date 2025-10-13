@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup } from '@/components/ui/radioGroup';
-import { UnitFormData } from '@/types/unit';
+// import { UnitFormData } from '@/types/unit';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { useForm } from '@inertiajs/react';
 import { format, parse } from 'date-fns';

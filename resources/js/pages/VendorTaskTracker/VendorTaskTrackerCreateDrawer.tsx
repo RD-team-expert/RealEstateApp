@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
+// import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -52,10 +52,10 @@ interface Props {
 
 export default function VendorTaskTrackerCreateDrawer({ 
     cities,
-    properties,
-    units,
-    vendors,
-    unitsByCity, 
+    // properties,
+    // units,
+    // vendors,
+    // unitsByCity, 
     propertiesByCity,
     unitsByProperty,
     vendorsByCity,
@@ -103,8 +103,8 @@ export default function VendorTaskTrackerCreateDrawer({
     // Helper state to track selected names for UI display
     const [selectedCity, setSelectedCity] = useState<string>('');
     const [selectedProperty, setSelectedProperty] = useState<string>('');
-    const [selectedUnit, setSelectedUnit] = useState<string>('');
-    const [selectedVendor, setSelectedVendor] = useState<string>('');
+    const [, setSelectedUnit] = useState<string>('');
+    const [, setSelectedVendor] = useState<string>('');
 
     const handleCityChange = (cityName: string) => {
         setSelectedCity(cityName);

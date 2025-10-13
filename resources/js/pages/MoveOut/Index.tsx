@@ -144,7 +144,7 @@ interface Props {
     tenantsData: Array<{ id: number; full_name: string; unit_name: string; property_name: string; city_name: string }>;
 }
 
-export default function Index({ moveOuts, unit_id, tenant_id, cities, properties, propertiesByCityId, unitsByPropertyId, tenantsByUnitId, allUnits, tenantsData }: Props) {
+export default function Index({ moveOuts,  cities, properties, propertiesByCityId, unitsByPropertyId, tenantsByUnitId, allUnits, tenantsData }: Props) {
     const [isExporting, setIsExporting] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
@@ -158,7 +158,7 @@ export default function Index({ moveOuts, unit_id, tenant_id, cities, properties
         tenant: '',
     });
 
-    const [filters, setFilters] = useState({
+    const [, setFilters] = useState({
         city: '',
         property: '',
         unit: '',
@@ -293,10 +293,10 @@ export default function Index({ moveOuts, unit_id, tenant_id, cities, properties
         );
     };
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        handleSearchClick();
-    };
+    // const handleSearch = (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     handleSearchClick();
+    // };
 
     const handleClearFilters = () => {
         // Reset all filter states

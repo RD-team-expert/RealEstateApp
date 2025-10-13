@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup } from '@/components/ui/radioGroup';
-import { VendorFormData } from '@/types/vendor';
+// import { VendorFormData } from '@/types/vendor';
 import { useForm } from '@inertiajs/react';
 import React, { useState, useRef } from 'react';
 
@@ -20,7 +20,7 @@ export default function VendorCreateDrawer({ cities, open, onOpenChange, onSucce
     const vendorNameRef = useRef<HTMLInputElement>(null);
     const [validationError, setValidationError] = useState<string>('');
     const [vendorNameValidationError, setVendorNameValidationError] = useState<string>('');
-    const [selectedCityName, setSelectedCityName] = useState<string>('');
+    const [, setSelectedCityName] = useState<string>('');
 
     const { data, setData, post, processing, errors, reset } = useForm({
         city_id: '',

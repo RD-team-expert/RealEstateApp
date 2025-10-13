@@ -33,9 +33,9 @@ interface Props {
 export default function PaymentCreateDrawer({ 
     units, 
     cities, 
-    properties,
+    // properties,
     unitsByCity, 
-    unitsByProperty,
+    // unitsByProperty,
     propertiesByCity,
     open, 
     onOpenChange, 

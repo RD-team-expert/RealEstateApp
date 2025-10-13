@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { PaymentPlanIndexProps, PaymentPlan, DropdownData } from '@/types/PaymentPlan';
+import { PaymentPlanIndexProps, PaymentPlan } from '@/types/PaymentPlan';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
@@ -132,7 +132,7 @@ interface Props extends PaymentPlanIndexProps {
 
 export default function Index({ 
   paymentPlans, 
-  search, 
+//   search, 
   cities,
   properties,
   propertiesByCityId,
@@ -155,7 +155,7 @@ export default function Index({
         tenant: '',
     });
 
-    const [filters, setFilters] = useState({
+    const [, setFilters] = useState({
         city: '',
         property: '',
         unit: '',
@@ -290,10 +290,10 @@ export default function Index({
         );
     };
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        handleSearchClick();
-    };
+    // const handleSearch = (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     handleSearchClick();
+    // };
 
     const handleClearFilters = () => {
         // Reset all filter states

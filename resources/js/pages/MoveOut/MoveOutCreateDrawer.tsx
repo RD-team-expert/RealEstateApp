@@ -29,11 +29,11 @@ interface Props {
 
 export default function MoveOutCreateDrawer({ 
     cities,
-    properties,
+    // properties,
     propertiesByCityId,
     unitsByPropertyId,
     tenantsByUnitId,
-    tenantsData,
+    // tenantsData,
     open, 
     onOpenChange, 
     onSuccess 

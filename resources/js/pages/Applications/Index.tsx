@@ -114,7 +114,7 @@ interface Props extends PageProps {
     units: Record<string, UnitData[]>;
 }
 
-export default function Index({ applications, filters, cities, properties, units }: Props) {
+export default function Index({ applications,  cities, properties, units }: Props) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
@@ -228,10 +228,10 @@ export default function Index({ applications, filters, cities, properties, units
         });
     };
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        handleSearchClick();
-    };
+    // const handleSearch = (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     handleSearchClick();
+    // };
 
     const handleDelete = (application: Application) => {
         if (confirm('Are you sure you want to delete this application?')) {

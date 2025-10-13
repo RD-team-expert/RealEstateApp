@@ -138,27 +138,27 @@ const exportToCSV = (data: any[], activeTab: string, filename: string = 'offers-
     }
 };
 
-interface HierarchicalData {
-  id: number;
-  name: string;
-  properties: {
-    id: number;
-    name: string;
-    city_id: number;
-    units: {
-      id: number;
-      name: string;
-      property_id: number;
-      tenants: {
-        id: number;
-        name: string;
-        first_name: string;
-        last_name: string;
-        unit_id: number;
-      }[];
-    }[];
-  }[];
-}
+// interface HierarchicalData {
+//   id: number;
+//   name: string;
+//   properties: {
+//     id: number;
+//     name: string;
+//     city_id: number;
+//     units: {
+//       id: number;
+//       name: string;
+//       property_id: number;
+//       tenants: {
+//         id: number;
+//         name: string;
+//         first_name: string;
+//         last_name: string;
+//         unit_id: number;
+//       }[];
+//     }[];
+//   }[];
+// }
 
 interface OfferRenewal {
   id: number;
@@ -217,7 +217,7 @@ const TABS = [
   { label: 'Both', value: 'both' },
 ];
 
-const Index = ({ offers, unit_id, tenant_id, cities, properties, propertiesByCityId, unitsByPropertyId, tenantsByUnitId, allUnits, tenantsData }: Props) => {
+const Index = ({ offers, cities, properties, propertiesByCityId, unitsByPropertyId, tenantsByUnitId, allUnits, tenantsData }: Props) => {
   const [activeTab, setActiveTab] = useState<'offers' | 'renewals' | 'both'>('offers');
   const [isExporting, setIsExporting] = useState(false);
   const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
@@ -236,7 +236,7 @@ const Index = ({ offers, unit_id, tenant_id, cities, properties, propertiesByCit
     selectedTenantId: null as number | null,
   });
 
-  const [filters, setFilters] = useState({
+  const [, setFilters] = useState({
     city: '',
     property: '',
     unit: '',
@@ -355,9 +355,9 @@ const Index = ({ offers, unit_id, tenant_id, cities, properties, propertiesByCit
   const filtered = offersData;
 
   // Filter change handlers
-  const handleTempFilterChange = (key: string, value: string) => {
-    setTempFilters((prev) => ({ ...prev, [key]: value }));
-  };
+  // const handleTempFilterChange = (key: string, value: string) => {
+  //   setTempFilters((prev) => ({ ...prev, [key]: value }));
+  // };
 
   const handleCitySelect = (city: any) => {
     setTempFilters((prev) => ({ 
@@ -475,10 +475,10 @@ const Index = ({ offers, unit_id, tenant_id, cities, properties, propertiesByCit
     );
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleSearchClick();
-  };
+  // const handleSearch = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   handleSearchClick();
+  // };
 
   const handleClearFilters = () => {
     // Reset all filter states

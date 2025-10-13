@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup } from '@/components/ui/radioGroup';
-import { VendorFormData, VendorInfo } from '@/types/vendor';
+import {  VendorInfo } from '@/types/vendor';
 import { useForm } from '@inertiajs/react';
 import React, { useState, useRef, useEffect } from 'react';
 
@@ -21,9 +21,9 @@ export default function VendorEditDrawer({ vendor, cities, open, onOpenChange, o
     const vendorNameRef = useRef<HTMLInputElement>(null);
     const [validationError, setValidationError] = useState<string>('');
     const [vendorNameValidationError, setVendorNameValidationError] = useState<string>('');
-    const [selectedCityName, setSelectedCityName] = useState<string>('');
+    const [, setSelectedCityName] = useState<string>('');
 
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const { data, setData, put, processing, errors } = useForm({
         city_id: vendor?.city_id?.toString() || '',
         vendor_name: vendor?.vendor_name || '',
         number: vendor?.number || '',

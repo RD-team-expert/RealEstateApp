@@ -157,7 +157,7 @@ export default function ApplicationEditDrawer({ application, cities, properties,
         return '';
     };
 
-    const { data, setData, put, processing, errors, reset } = useForm<ApplicationFormData>({
+    const { data, setData, put, processing, errors } = useForm<ApplicationFormData>({
         unit_id: application.unit_id,
         name: application.name || '',
         co_signer: application.co_signer || '',

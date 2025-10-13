@@ -84,12 +84,12 @@ const exportToCSV = (
     URL.revokeObjectURL(url);
 };
 
-interface DropdownOption {
-    id: number;
-    name: string;
-    city?: string;
-    property_name?: string;
-}
+// interface DropdownOption {
+//     id: number;
+//     name: string;
+//     city?: string;
+//     property_name?: string;
+// }
 
 interface CityOption {
     id: number;
@@ -329,10 +329,10 @@ export default function Index({
         });
     };
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        handleSearchClick();
-    };
+    // const handleSearch = (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     handleSearchClick();
+    // };
 
     const handleDelete = (task: VendorTaskTracker) => {
         if (confirm('Are you sure you want to archive this task?')) {

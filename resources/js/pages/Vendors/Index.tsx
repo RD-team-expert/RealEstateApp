@@ -50,14 +50,14 @@ interface Props extends PageProps {
     cities: Array<{ id: number; city: string }>;
 }
 
-export default function Index({ auth, vendors, statistics, filters, cities }: Props) {
-    const [searchFilters, setSearchFilters] = useState<VendorFilters>(filters);
+export default function Index({  vendors, filters, cities }: Props) {
+    const [, setSearchFilters] = useState<VendorFilters>(filters);
     const [isExporting, setIsExporting] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [selectedVendor, setSelectedVendor] = useState<VendorInfo | null>(null);
     const { flash } = usePage().props;
-    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+    const { hasPermission,  hasAllPermissions } = usePermissions();
 
     // New filter states matching Tenants page
     const [tempFilters, setTempFilters] = useState({
@@ -121,14 +121,14 @@ export default function Index({ auth, vendors, statistics, filters, cities }: Pr
         });
     };
 
-    const handleFilterChange = (key: keyof VendorFilters, value: string) => {
-        const newFilters = { ...searchFilters, [key]: value };
-        setSearchFilters(newFilters);
-        router.get(route('vendors.index'), newFilters, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
+    // const handleFilterChange = (key: keyof VendorFilters, value: string) => {
+    //     const newFilters = { ...searchFilters, [key]: value };
+    //     setSearchFilters(newFilters);
+    //     router.get(route('vendors.index'), newFilters, {
+    //         preserveState: true,
+    //         preserveScroll: true,
+    //     });
+    // };
 
     const handleExport = () => {
         if (vendors.data.length === 0) {

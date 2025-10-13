@@ -1,7 +1,8 @@
 import React from 'react';
-import { type BreadcrumbItem } from '@/types';import { Head, Link, usePage } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
-import SittingsLayout from '@/Layouts/settings/layout';
+// import { type BreadcrumbItem } from '@/types';
+import { Head, Link } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+import SittingsLayout from '@/layouts/settings/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +25,7 @@ interface Props {
 }
 
 export default function ShowRole({ role }: Props) {
-    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+    const { hasAllPermissions } = usePermissions();
 
     // Group permissions by resource (e.g., users, roles, tenants, etc.)
     const groupedPermissions = React.useMemo(() => {
@@ -73,9 +74,9 @@ export default function ShowRole({ role }: Props) {
 
     const isSuperAdmin = role.name === 'Super-Admin';
 
-    const { url } = usePage();
-    const searching = url.split('?')[1] ?? '';
-    const bcParam = new URLSearchParams(searching).get('bc');
+    // const { url } = usePage();
+    // const searching = url.split('?')[1] ?? '';
+    // const bcParam = new URLSearchParams(searching).get('bc');
 
 
     return (

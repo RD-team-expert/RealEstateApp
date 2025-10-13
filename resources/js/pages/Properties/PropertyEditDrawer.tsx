@@ -13,7 +13,7 @@ import {
     Calendar,
     Shield
 } from 'lucide-react';
-import { Property, PropertyFormData, PropertyWithoutInsurance } from '@/types/property';
+import { Property,  PropertyWithoutInsurance } from '@/types/property';
 
 interface PropertyEditDrawerProps {
     open: boolean;
@@ -46,7 +46,7 @@ export default function PropertyEditDrawer({
     const effectiveDateRef = useRef<HTMLInputElement>(null);
     const expirationDateRef = useRef<HTMLInputElement>(null);
 
-    const { data, setData, put, processing, errors, reset, clearErrors } = useForm({
+    const { data, setData, put, processing, errors,  clearErrors } = useForm({
         property_id: property.property_id, // Changed from property_name
         insurance_company_name: property.insurance_company_name,
         amount: property.amount.toString(),

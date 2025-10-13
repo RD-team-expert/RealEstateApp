@@ -36,9 +36,9 @@ export default function PaymentEditDrawer({
     payment, 
     units, 
     cities, 
-    properties,
+    // properties,
     unitsByCity, 
-    unitsByProperty,
+    // unitsByProperty,
     propertiesByCity,
     open, 
     onOpenChange, 
@@ -61,7 +61,7 @@ export default function PaymentEditDrawer({
     const [selectedProperty, setSelectedProperty] = useState<string>('');
     const [selectedUnit, setSelectedUnit] = useState<string>('');
 
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const { data, setData, put, processing, errors } = useForm({
         date: '',
         unit_id: '',
         owes: '',

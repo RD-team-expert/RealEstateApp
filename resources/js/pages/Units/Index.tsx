@@ -410,9 +410,9 @@ interface Props extends PageProps {
     };
 }
 
-export default function Index({ auth, units, statistics, filters, cities, properties, importStats }: Props) {
+export default function Index({  units,  filters, cities, properties, importStats }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
-    const [searchFilters, setSearchFilters] = useState<UnitFilters>(filters);
+    const [, setSearchFilters] = useState<UnitFilters>(filters);
     const [tempFilters, setTempFilters] = useState<UnitFilters>(filters);
     const [isExporting, setIsExporting] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);

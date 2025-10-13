@@ -23,7 +23,7 @@ import {
     Calendar,
     Shield
 } from 'lucide-react';
-import { PropertyFormData, PropertyWithoutInsurance } from '@/types/property';
+import {  PropertyWithoutInsurance } from '@/types/property';
 import { City } from '@/types/City';
 
 interface PropertyCreateDrawerProps {

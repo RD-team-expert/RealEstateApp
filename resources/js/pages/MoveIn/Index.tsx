@@ -136,7 +136,7 @@ interface Props {
 }
 
 export default function Index({ moveIns, search, filters, units, cities, properties, unitsByProperty }: Props) {
-    const [searchTerm, setSearchTerm] = useState(search || '');
+    // const [searchTerm, setSearchTerm] = useState(search || '');
     const [isExporting, setIsExporting] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);

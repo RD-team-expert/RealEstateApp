@@ -1,13 +1,13 @@
 import React from 'react';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
+// import { type BreadcrumbItem } from '@/types';
+import { Head, Link } from '@inertiajs/react';
 import { NoticeAndEviction } from '@/types/NoticeAndEviction';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { usePermissions } from '@/hooks/usePermissions';
+// import { usePermissions } from '@/hooks/usePermissions';
 import { Calendar, MapPin, User, Home, Clock, FileText, AlertTriangle, Scale, Gavel, Bell } from 'lucide-react';
 
 interface Props {
@@ -56,7 +56,7 @@ export default function Show({ record }: Props) {
         </div>
     );
 
-    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+    // const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
     return (
         <AppLayout>

@@ -53,7 +53,7 @@ const InfoItem = ({ icon: Icon, label, value, className = "" }: {
 );
 
 const Show: React.FC<PaymentPlanShowProps> = ({ paymentPlan }) => {
-  const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+  const {  hasAllPermissions } = usePermissions();
 
   return (
     <AppLayout>

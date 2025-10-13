@@ -1,6 +1,7 @@
-import React from 'react';
-import { type BreadcrumbItem } from '@/types';import { Head, Link } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
+// import React from 'react';
+// import { type BreadcrumbItem } from '@/types';
+import { Head, Link } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
 import { Tenant } from '@/types/tenant';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +11,7 @@ interface Props {
 }
 
 export default function Show({ tenant }: Props) {
-    const { hasPermission, hasAnyPermission, hasAllPermissions} = usePermissions();
+    const {  hasAllPermissions} = usePermissions();
 
     return (
         <AppLayout >

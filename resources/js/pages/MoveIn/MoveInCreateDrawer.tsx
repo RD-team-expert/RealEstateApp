@@ -46,7 +46,7 @@ interface Props {
     onSuccess?: () => void;
 }
 
-export default function MoveInCreateDrawer({ units, cities, properties, unitsByProperty, open, onOpenChange, onSuccess }: Props) {
+export default function MoveInCreateDrawer({  cities, properties, unitsByProperty, open, onOpenChange, onSuccess }: Props) {
     const unitRef = useRef<HTMLButtonElement>(null);
     const cityRef = useRef<HTMLButtonElement>(null);
     const propertyRef = useRef<HTMLButtonElement>(null);

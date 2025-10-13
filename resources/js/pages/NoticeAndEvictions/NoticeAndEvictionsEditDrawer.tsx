@@ -110,7 +110,7 @@ export default function NoticeAndEvictionsEditDrawer({ record, cities, propertie
         return '';
     };
 
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const { data, setData, put, processing, errors } = useForm({
         tenant_id: record.tenant_id || null,
         status: record.status || '',
         date: formatDateForInput(record.date) || '',

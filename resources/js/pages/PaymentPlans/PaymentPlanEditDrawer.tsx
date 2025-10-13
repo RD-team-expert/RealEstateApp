@@ -100,7 +100,7 @@ export default function PaymentPlanEditDrawer({
     const unitRef = useRef<HTMLButtonElement>(null);
     const tenantRef = useRef<HTMLButtonElement>(null);
 
-    const { data, setData, put, processing, errors, reset } = useForm<PaymentPlanFormData>({
+    const { data, setData, put, processing, errors } = useForm<PaymentPlanFormData>({
         tenant_id: paymentPlan.tenant_id,
         amount: paymentPlan.amount,
         dates: paymentPlan.dates,

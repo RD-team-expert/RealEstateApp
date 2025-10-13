@@ -16,7 +16,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+// import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
     Trash2, 
     Plus, 
@@ -411,12 +411,12 @@ const Index: React.FC<Props> = ({ notices, search }) => {
     const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
     const [searchTerm, setSearchTerm] = useState(search || '');
     const { notification, showNotification, hideNotification } = useNotification();
-    const { data, setData, post, put, processing, errors, reset } = useForm({
+    const {  processing, errors } = useForm({
         notice_name: '',
         days: '',
     });
 
-    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+    const { hasPermission, hasAllPermissions } = usePermissions();
 
     const canCreate = hasAllPermissions(['notices.create', 'notices.store']);
     const canEdit = hasAllPermissions(['notices.edit', 'notices.update']);

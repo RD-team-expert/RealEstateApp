@@ -41,11 +41,11 @@ interface Props {
 
 export default function PaymentPlanCreateDrawer({ 
     cities,
-    properties,
+    // properties,
     propertiesByCityId,
     unitsByPropertyId,
     tenantsByUnitId,
-    tenantsData,
+    // tenantsData,
     open, 
     onOpenChange, 
     onSuccess 

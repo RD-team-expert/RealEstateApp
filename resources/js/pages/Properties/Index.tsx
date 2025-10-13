@@ -1,10 +1,10 @@
 // resources/js/Pages/Properties/Index.tsx
 import { useState } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
     Table,
     TableBody,
@@ -14,7 +14,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Eye, Plus, Download, Search, X } from 'lucide-react';
+import { Trash2, Edit, Plus, Download, Search, X } from 'lucide-react';
 import { Property, PaginatedProperties, PropertyFilters, PropertyStatistics, PropertyWithoutInsurance } from '@/types/property';
 import type { PageProps } from '@/types/auth';
 import { usePermissions } from '@/hooks/usePermissions';

@@ -155,7 +155,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, o
 
     const initialSelections = findInitialSelections();
 
-    const { data, setData, put, processing, errors, reset } = useForm({
+    const { data, setData, put, processing, errors } = useForm({
         tenant_id: offer.tenant_id?.toString() || '',
         city_id: initialSelections.cityId,
         property_id: initialSelections.propertyId,

@@ -1,7 +1,8 @@
-import React from 'react';
-import { type BreadcrumbItem } from '@/types';import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
-import SittingsLayout from '@/Layouts/settings/layout';
+// import React from 'react';
+// import { type BreadcrumbItem } from '@/types';
+import { Head, Link, useForm } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+import SittingsLayout from '@/layouts/settings/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -64,9 +65,9 @@ export default function RolesIndex({ roles }: Props) {
         );
     };
 
-    const { url } = usePage();
-    const searching = url.split('?')[1] ?? '';
-    const bcParam = new URLSearchParams(searching).get('bc');
+    // const { url } = usePage();
+    // const searching = url.split('?')[1] ?? '';
+    // const bcParam = new URLSearchParams(searching).get('bc');
 
 
 

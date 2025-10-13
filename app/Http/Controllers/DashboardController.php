@@ -2,42 +2,92 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cities;
+use App\Models\PropertyInfoWithoutInsurance;
+use App\Models\Unit;
+use App\Services\DashboardService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Models\Unit;
-use App\Traits\DashboardData;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    use DashboardData;
+    public function __construct(
+        private DashboardService $dashboardService
+    ) {}
 
-    public function index(Request $request)
+    /**
+     * Display the dashboard page
+     */
+    public function index(Request $request): Response
     {
-        $unit = $request->query('unit');
+        $cities = $this->dashboardService->getAllCities();
+        $properties = [];
+        $units = [];
+        $unitInfo = null;
 
-        // Handle null unit parameter
-        if (!$unit) {
-            // Option 1: Use first available unit as default
-            $unit = Unit::pluck('unit_name')->first();
+        // Load properties if city is selected
+        if ($request->has('city_id') && $request->city_id) {
+            $properties = $this->dashboardService->getPropertiesByCity($request->city_id);
+        }
 
-            // Option 2: Or redirect to first unit
-            // return redirect()->route('dashboard', ['unit' => Unit::pluck('unit_name')->first()]);
+        // Load units if property is selected
+        if ($request->has('property_id') && $request->property_id) {
+            $units = $this->dashboardService->getUnitsByProperty($request->property_id);
+        }
+
+        // Load unit info if unit is selected
+        if ($request->has('unit_id') && $request->unit_id) {
+            $unitInfo = $this->dashboardService->getUnitInfo($request->unit_id);
         }
 
         return Inertia::render('Dashboard', [
-            'units'        => Unit::pluck('unit_name'),
-            'selectedUnit' => $unit,
-
-            'unitRecord'   => $unit ? $this->getUnitData($unit) : null,
-            'application'  => $unit ? $this->getApplicationData($unit) : null,
-            'moveIn'       => $unit ? $this->getMoveInData($unit) : null,
-            'moveOut'      => $unit ? $this->getMoveOutData($unit) : null,
-            'notice'       => $unit ? $this->getNoticeData($unit) : null,
-            'offer'        => $unit ? $this->getOfferData($unit) : null,
-            'payment'      => $unit ? $this->getPaymentData($unit) : null,
-            'paymentPlan'  => $unit ? $this->getPaymentPlanData($unit) : null,
-            'tenant'       => $unit ? $this->getTenantData($unit) : null,
-            'vendorTask'   => $unit ? $this->getVendorTaskData($unit) : null,
+            'cities' => $cities,
+            'properties' => $properties,
+            'units' => $units,
+            'unitInfo' => $unitInfo,
+            'selectedCityId' => $request->city_id ? (int)$request->city_id : null,
+            'selectedPropertyId' => $request->property_id ? (int)$request->property_id : null,
+            'selectedUnitId' => $request->unit_id ? (int)$request->unit_id : null,
         ]);
+    }
+
+    /**
+     * Get properties for a specific city (fallback route)
+     */
+    public function getProperties(Request $request): Response
+    {
+        $request->validate([
+            'city_id' => 'required|integer|exists:cities,id'
+        ]);
+
+        return $this->index($request);
+    }
+
+    /**
+     * Get units for a specific property (fallback route)
+     */
+    public function getUnits(Request $request): Response
+    {
+        $request->validate([
+            'property_id' => 'required|integer|exists:property_info_without_insurance,id',
+            'city_id' => 'required|integer|exists:cities,id'
+        ]);
+
+        return $this->index($request);
+    }
+
+    /**
+     * Get unit information (fallback route)
+     */
+    public function getUnitInfo(Request $request): Response
+    {
+        $request->validate([
+            'unit_id' => 'required|integer|exists:units,id',
+            'property_id' => 'required|integer|exists:property_info_without_insurance,id',
+            'city_id' => 'required|integer|exists:cities,id'
+        ]);
+
+        return $this->index($request);
     }
 }

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Head, Link, useForm, usePage} from '@inertiajs/react';
-import AppLayout from '@/Layouts/app-layout';
-import SittingsLayout from '@/Layouts/settings/layout';
+import React from 'react';
+import { Head, Link, useForm} from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
+import SittingsLayout from '@/layouts/settings/layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { usePermissions } from '@/hooks/usePermissions';
-import { type BreadcrumbItem } from '@/types';
+// import { type BreadcrumbItem } from '@/types';
 interface Permission {
     id: number;
     name: string;
@@ -20,7 +20,7 @@ interface Props {
 }
 
 export default function CreateRole({ permissions }: Props) {
-    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+    const {  hasAnyPermission } = usePermissions();
 
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
@@ -101,9 +101,9 @@ export default function CreateRole({ permissions }: Props) {
         });
     };
 
-    const { url } = usePage();
-    const searching = url.split('?')[1] ?? '';
-    const bcParam = new URLSearchParams(searching).get('bc');
+    // const { url } = usePage();
+    // const searching = url.split('?')[1] ?? '';
+    // const bcParam = new URLSearchParams(searching).get('bc');
 
 
     return (
@@ -142,7 +142,8 @@ export default function CreateRole({ permissions }: Props) {
                                                 onChange={(e) => setData('name', e.target.value)}
                                                 placeholder="Enter role name"
                                                 className="bg-input text-input-foreground"
-                                                error={errors.name}
+                                                aria-invalid={!!errors.name}
+                                                aria-describedby={errors.name ? 'name-error' : undefined}
                                                 required
                                             />
                                             {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}

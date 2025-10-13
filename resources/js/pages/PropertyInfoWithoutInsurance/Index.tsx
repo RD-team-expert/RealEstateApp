@@ -774,7 +774,7 @@ const Index: React.FC<Props> = ({ properties, cities, filters, importStats }) =>
             { csv_file: file }, 
             {
                 forceFormData: true,
-                onSuccess: (page) => {
+                onSuccess: () => {
                     setShowImportModal(false);
                     importForm.reset();
                     showNotification('success', 'CSV file imported successfully!');

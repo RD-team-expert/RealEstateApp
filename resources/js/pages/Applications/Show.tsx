@@ -7,7 +7,7 @@ import { Application } from '@/types/application';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { usePermissions } from '@/hooks/usePermissions';
+// import { usePermissions } from '@/hooks/usePermissions';
 import { Calendar, MapPin, User, Home, FileText, Download, ClipboardList, Clock } from 'lucide-react';
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function Show({ application }: Props) {
-    const { hasAllPermissions } = usePermissions();
+    // const { hasAllPermissions } = usePermissions();
 
     const formatDate = (date: string | null) => {
         if (!date) return 'Not Set';
