@@ -87,6 +87,14 @@ class Tenant extends Model
     }
 
     /**
+     * Get all notices and evictions for this tenant.
+     */
+    public function noticesAndEvictions(): HasMany
+    {
+        return $this->hasMany(NoticeAndEviction::class, 'tenant_id');
+    }
+
+    /**
      * Get all offers and renewals for this tenant.
      */
     public function offersAndRenewals(): HasMany

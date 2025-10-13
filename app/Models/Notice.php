@@ -14,9 +14,23 @@ class Notice extends Model
     protected $fillable = [
         'notice_name',
         'days',
+        'is_archived',
     ];
 
     protected $casts = [
         'days' => 'integer',
+        'is_archived' => 'boolean',
     ];
+
+    // Scope to get only non-archived notices
+    public function scopeActive($query)
+    {
+        return $query->where('is_archived', false);
+    }
+
+    // Scope to get only archived notices
+    public function scopeArchived($query)
+    {
+        return $query->where('is_archived', true);
+    }
 }

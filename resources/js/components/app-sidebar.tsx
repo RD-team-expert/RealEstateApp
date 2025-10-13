@@ -21,7 +21,8 @@ import {
     AlertTriangle,
     Settings,
     CreditCard,
-    ClipboardList
+    ClipboardList,
+    Bell
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
@@ -153,8 +154,14 @@ const mainNavCategories: NavCategory[] = [
                 icon: AlertTriangle,
                 permission: 'notice-and-evictions.index'
             },
+            {
+                title: 'Notices',
+                href: '/notices',
+                icon: Bell,
+                permission: 'notices.index'
+            },
         ],
-        permissions: ['applications.index','offers-and-renewals.index','notice-and-evictions.index']
+        permissions: ['applications.index','offers-and-renewals.index','notice-and-evictions.index','notices.index']
     },
 ];
 

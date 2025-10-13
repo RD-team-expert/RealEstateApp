@@ -20,16 +20,31 @@ class NoticeService
 
     public function delete(Notice $notice): void
     {
-        $notice->delete();
+        // Soft delete by setting is_archived to true
+        $notice->update(['is_archived' => true]);
     }
 
     public function listAll()
     {
-        return Notice::all();
+        // Only return active (non-archived) notices
+        return Notice::active()->get();
     }
 
     public function findById(int $id)
     {
-        return Notice::findOrFail($id);
+        // Only find active notices
+        return Notice::active()->findOrFail($id);
+    }
+
+    public function restore(Notice $notice): void
+    {
+        // Restore archived notice
+        $notice->update(['is_archived' => false]);
+    }
+
+    public function listArchived()
+    {
+        // Return only archived notices
+        return Notice::archived()->get();
     }
 }

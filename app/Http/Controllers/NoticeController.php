@@ -45,11 +45,19 @@ class NoticeController extends Controller
 
     public function edit(Notice $notice)
     {
+        // Ensure we can only edit active notices
+        if ($notice->is_archived) {
+            return redirect()->route('notices.index')->with('error', 'Cannot edit archived notice.');
+        }
         return Inertia::render('Notices/Edit', ['notice' => $notice]);
     }
 
     public function update(NoticeRequest $request, Notice $notice)
     {
+        // Ensure we can only update active notices
+        if ($notice->is_archived) {
+            return redirect()->route('notices.index')->with('error', 'Cannot update archived notice.');
+        }
         $this->service->update($notice, $request->validated());
         return redirect()->route('notices.index', $notice->id)->with('success', 'Notice updated successfully.');
     }
@@ -57,6 +65,6 @@ class NoticeController extends Controller
     public function destroy(Notice $notice)
     {
         $this->service->delete($notice);
-        return redirect()->route('notices.index')->with('success', 'Notice deleted successfully.');
+        return redirect()->route('notices.index')->with('success', 'Notice archived successfully.');
     }
 }

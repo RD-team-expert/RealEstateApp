@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('notice_name');
             $table->integer('days');
+            $table->boolean('is_archived')->default(false);
             $table->timestamps();
         });
     }
