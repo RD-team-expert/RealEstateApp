@@ -55,8 +55,28 @@ class DashboardService
      */
     public function getUnitInfo(int $unitId): ?Unit
     {
-        return Unit::with(['property.city', 'applications'])
+        $unit = Unit::with(['property.city', 'applications'])
             ->find($unitId);
+            
+        if ($unit) {
+            // Add formatted monthly rent
+            $unit->formatted_monthly_rent = $unit->monthly_rent 
+                ? '$' . number_format((float) $unit->monthly_rent, 2) 
+                : null;
+                
+            // Format dates for display
+            $unit->lease_start_formatted = $unit->lease_start 
+                ? $unit->lease_start->format('M d, Y') 
+                : null;
+            $unit->lease_end_formatted = $unit->lease_end 
+                ? $unit->lease_end->format('M d, Y') 
+                : null;
+            $unit->insurance_expiration_date_formatted = $unit->insurance_expiration_date 
+                ? $unit->insurance_expiration_date->format('M d, Y') 
+                : null;
+        }
+        
+        return $unit;
     }
 
     /**

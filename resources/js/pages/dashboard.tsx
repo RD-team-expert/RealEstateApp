@@ -2,7 +2,20 @@
 
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { City, Property, Tenant, Unit, MoveIn, MoveOut, VendorTask, Payment, PaymentPlan, Application, OffersAndRenewal, NoticeAndEviction } from '@/types/dashboard';
+import {
+    Application,
+    City,
+    MoveIn,
+    MoveOut,
+    NoticeAndEviction,
+    OffersAndRenewal,
+    Payment,
+    PaymentPlan,
+    Property,
+    Tenant,
+    Unit,
+    VendorTask,
+} from '@/types/dashboard';
 import { Head, router } from '@inertiajs/react';
 import { useCallback } from 'react';
 
@@ -25,7 +38,24 @@ interface Props {
     selectedUnitId: number | null;
 }
 
-export default function DashboardIndex({ cities, properties, units, unitInfo, tenants, moveIns, moveOuts, vendorTasks, payments, paymentPlans, applications, offersAndRenewals, noticesAndEvictions, selectedCityId, selectedPropertyId, selectedUnitId }: Props) {
+export default function DashboardIndex({
+    cities,
+    properties,
+    units,
+    unitInfo,
+    tenants,
+    moveIns,
+    moveOuts,
+    vendorTasks,
+    payments,
+    paymentPlans,
+    applications,
+    offersAndRenewals,
+    noticesAndEvictions,
+    selectedCityId,
+    selectedPropertyId,
+    selectedUnitId,
+}: Props) {
     // Define breadcrumbs based on current selection
     const getBreadcrumbs = useCallback((): BreadcrumbItem[] => {
         const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
@@ -217,19 +247,29 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                         <div className="px-4 py-5 sm:p-6">
                             <h2 className="mb-6 text-xl font-semibold text-gray-900">Unit Information</h2>
 
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                                 {/* Basic Information */}
                                 <div className="space-y-3">
                                     <h3 className="border-b border-gray-200 pb-2 font-medium text-gray-900">Basic Information</h3>
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Status:</span>
+                                    <div className="space-y-3 text-sm">
+                                        <div className="rounded-lg border bg-gray-50 p-3">
+                                            <span className="block text-xs font-medium tracking-wide text-gray-500 uppercase">Status</span>
                                             <span
-                                                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                                                className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                                                     unitInfo.vacant === 'Yes' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                                 }`}
                                             >
                                                 {unitInfo.vacant === 'Yes' ? 'Vacant' : 'Occupied'}
+                                            </span>
+                                        </div>
+                                        <div className="rounded-lg border bg-gray-50 p-3">
+                                            <span className="block text-xs font-medium tracking-wide text-gray-500 uppercase">Listed</span>
+                                            <span
+                                                className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    unitInfo.listed === 'Yes' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+                                                }`}
+                                            >
+                                                {unitInfo.listed || 'No'}
                                             </span>
                                         </div>
                                     </div>
@@ -238,22 +278,24 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                 {/* Unit Details */}
                                 <div className="space-y-3">
                                     <h3 className="border-b border-gray-200 pb-2 font-medium text-gray-900">Unit Details</h3>
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Bedrooms:</span>
-                                            <span className="font-medium">{unitInfo.count_beds || 'N/A'}</span>
+                                    <div className="space-y-3 text-sm">
+                                        <div className="rounded-lg border bg-gray-50 p-3">
+                                            <span className="block text-xs font-medium tracking-wide text-gray-500 uppercase">Bedrooms</span>
+                                            <span className="mt-1 block text-lg font-semibold text-gray-900">{unitInfo.count_beds || 'N/A'}</span>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Bathrooms:</span>
-                                            <span className="font-medium">{unitInfo.count_baths || 'N/A'}</span>
+                                        <div className="rounded-lg border bg-gray-50 p-3">
+                                            <span className="block text-xs font-medium tracking-wide text-gray-500 uppercase">Bathrooms</span>
+                                            <span className="mt-1 block text-lg font-semibold text-gray-900">{unitInfo.count_baths || 'N/A'}</span>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Monthly Rent:</span>
-                                            <span className="font-medium text-green-600">{unitInfo.formatted_monthly_rent || 'N/A'}</span>
+                                        <div className="rounded-lg border bg-green-50 p-3">
+                                            <span className="block text-xs font-medium tracking-wide text-green-600 uppercase">Monthly Rent</span>
+                                            <span className="mt-1 block text-lg font-bold text-green-700">
+                                                {unitInfo.formatted_monthly_rent || 'N/A'}
+                                            </span>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Applications:</span>
-                                            <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
+                                        <div className="rounded-lg border bg-blue-50 p-3">
+                                            <span className="block text-xs font-medium tracking-wide text-blue-600 uppercase">Applications</span>
+                                            <span className="mt-1 inline-flex rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
                                                 {unitInfo.total_applications || 0}
                                             </span>
                                         </div>
@@ -263,47 +305,118 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                 {/* Lease Information */}
                                 <div className="space-y-3">
                                     <h3 className="border-b border-gray-200 pb-2 font-medium text-gray-900">Lease Information</h3>
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Lease Status:</span>
-                                            <span className="font-medium">{unitInfo.lease_status || 'N/A'}</span>
+                                    <div className="space-y-3 text-sm">
+                                        <div className="rounded-lg border bg-gray-50 p-3">
+                                            <span className="block text-xs font-medium tracking-wide text-gray-500 uppercase">Lease Status</span>
+                                            <span className="mt-1 block font-semibold text-gray-900">{unitInfo.lease_status || 'N/A'}</span>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Lease Start:</span>
-                                            <span className="font-medium">{unitInfo.lease_start || 'N/A'}</span>
+                                        <div className="rounded-lg border bg-indigo-50 p-3">
+                                            <span className="block text-xs font-medium tracking-wide text-indigo-600 uppercase">Lease Start</span>
+                                            <div className="mt-1 flex items-center">
+                                                <svg className="mr-2 h-4 w-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                    />
+                                                </svg>
+                                                <span className="font-semibold text-indigo-900">{unitInfo.lease_start || 'N/A'}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Lease End:</span>
-                                            <span className="font-medium">{unitInfo.lease_end || 'N/A'}</span>
+                                        <div className="rounded-lg border bg-orange-50 p-3">
+                                            <span className="block text-xs font-medium tracking-wide text-orange-600 uppercase">Lease End</span>
+                                            <div className="mt-1 flex items-center">
+                                                <svg className="mr-2 h-4 w-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                    />
+                                                </svg>
+                                                <span className="font-semibold text-orange-900">{unitInfo.lease_end || 'N/A'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Financial & Utility Information */}
+                                <div className="space-y-3">
+                                    <h3 className="border-b border-gray-200 pb-2 font-medium text-gray-900">Financial & Utilities</h3>
+                                    <div className="space-y-3 text-sm">
+                                        <div className="rounded-lg border bg-purple-50 p-3">
+                                            <span className="block text-xs font-medium tracking-wide text-purple-600 uppercase">
+                                                Recurring Transaction
+                                            </span>
+                                            <span
+                                                className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                                                    unitInfo.recurring_transaction === 'Yes'
+                                                        ? 'bg-purple-100 text-purple-800'
+                                                        : 'bg-gray-100 text-gray-800'
+                                                }`}
+                                            >
+                                                {unitInfo.recurring_transaction || 'No'}
+                                            </span>
+                                        </div>
+                                        <div className="rounded-lg border bg-yellow-50 p-3">
+                                            <span className="block text-xs font-medium tracking-wide text-yellow-600 uppercase">Utility Status</span>
+                                            <span className="mt-1 block font-semibold text-yellow-900">{unitInfo.utility_status || 'N/A'}</span>
+                                        </div>
+                                        <div className="rounded-lg border bg-gray-50 p-3">
+                                            <span className="block text-xs font-medium tracking-wide text-gray-500 uppercase">Account Number</span>
+                                            <span className="mt-1 block font-mono text-sm font-semibold text-gray-900">
+                                                {unitInfo.account_number || 'N/A'}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Insurance Information */}
-                            {unitInfo.insurance && (
-                                <div className="mt-6 border-t border-gray-200 pt-6">
-                                    <h3 className="mb-3 font-medium text-gray-900">Insurance Information</h3>
-                                    <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-600">Insurance:</span>
+                            <div className="mt-6 border-t border-gray-200 pt-6">
+                                <h3 className="mb-4 text-lg font-medium text-gray-900">Insurance Information</h3>
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div className="rounded-lg border bg-emerald-50 p-4">
+                                        <span className="block text-xs font-medium tracking-wide text-emerald-600 uppercase">Insurance Coverage</span>
+                                        <div className="mt-2 flex items-center">
+                                            <svg className="mr-2 h-5 w-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                                                />
+                                            </svg>
                                             <span
-                                                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                                                    unitInfo.insurance === 'Yes' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
+                                                    unitInfo.insurance === 'Yes' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
                                                 }`}
                                             >
-                                                {unitInfo.insurance}
+                                                {unitInfo.insurance || 'No'}
                                             </span>
                                         </div>
-                                        {unitInfo.insurance_expiration_date && (
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-600">Expiration Date:</span>
-                                                <span className="font-medium">{unitInfo.insurance_expiration_date}</span>
-                                            </div>
-                                        )}
                                     </div>
+                                    {unitInfo.insurance_expiration_date && (
+                                        <div className="rounded-lg border bg-amber-50 p-4">
+                                            <span className="block text-xs font-medium tracking-wide text-amber-600 uppercase">
+                                                Insurance Expiration
+                                            </span>
+                                            <div className="mt-2 flex items-center">
+                                                <svg className="mr-2 h-5 w-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                    />
+                                                </svg>
+                                                <span className="font-semibold text-amber-900">{unitInfo.insurance_expiration_date}</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -322,23 +435,21 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                             </div>
 
                             {tenants.length > 0 && (
-                                <div className="space-y-8">
-                                    {tenants.map((tenant, index) => (
+                                <div className="space-y-6">
+                                    {tenants.map((tenant) => (
                                         <div
                                             key={tenant.id}
-                                            className={`rounded-lg border-2 border-gray-200 bg-gray-50 p-6 ${index !== 0 ? 'mt-8' : ''}`}
+                                            className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow duration-200 hover:shadow-md"
                                         >
                                             {/* Tenant Header */}
-                                            <div className="mb-6 border-b-2 border-gray-300 pb-4">
+                                            <div className="mb-6 border-b border-gray-100 pb-4">
                                                 <div className="flex items-center justify-between">
                                                     <div>
                                                         <h3 className="text-2xl font-bold text-gray-900">{tenant.full_name}</h3>
-                                                        <p className="mt-1 text-sm text-gray-500">Tenant ID #{tenant.id}</p>
-                                                        <p className="text-sm text-gray-500">Account Created: {tenant.created_at_formatted}</p>
                                                     </div>
                                                     <div className="text-right">
                                                         <span
-                                                            className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
+                                                            className={`inline-flex rounded-full px-4 py-2 text-sm font-semibold ${
                                                                 tenant.is_archived ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                                                             }`}
                                                         >
@@ -348,25 +459,44 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                                            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
                                                 {/* Personal Information */}
                                                 <div className="space-y-4">
-                                                    <h4 className="border-b border-gray-300 pb-2 text-lg font-semibold text-gray-800">
+                                                    <h4 className="flex items-center text-lg font-semibold text-gray-800">
+                                                        <svg
+                                                            className="mr-2 h-5 w-5 text-blue-500"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                                            />
+                                                        </svg>
                                                         Personal Information
                                                     </h4>
-                                                    <div className="space-y-3 text-sm">
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">First Name:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{tenant.first_name}</p>
+                                                    <div className="space-y-3">
+                                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                                            <label className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+                                                                First Name
+                                                            </label>
+                                                            <p className="mt-1 text-lg font-semibold text-gray-900">{tenant.first_name}</p>
                                                         </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Last Name:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{tenant.last_name}</p>
+                                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                                            <label className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+                                                                Last Name
+                                                            </label>
+                                                            <p className="mt-1 text-lg font-semibold text-gray-900">{tenant.last_name}</p>
                                                         </div>
                                                         {tenant.street_address_line && (
-                                                            <div className="rounded border bg-white p-3">
-                                                                <label className="font-medium text-gray-600">Address:</label>
-                                                                <p className="mt-1 font-medium text-gray-900">{tenant.street_address_line}</p>
+                                                            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                                                <label className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+                                                                    Street Address
+                                                                </label>
+                                                                <p className="mt-1 text-sm font-medium text-gray-900">{tenant.street_address_line}</p>
                                                             </div>
                                                         )}
                                                     </div>
@@ -374,32 +504,59 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
 
                                                 {/* Contact Information */}
                                                 <div className="space-y-4">
-                                                    <h4 className="border-b border-gray-300 pb-2 text-lg font-semibold text-gray-800">
+                                                    <h4 className="flex items-center text-lg font-semibold text-gray-800">
+                                                        <svg
+                                                            className="mr-2 h-5 w-5 text-green-500"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                                            />
+                                                        </svg>
                                                         Contact Information
                                                     </h4>
-                                                    <div className="space-y-3 text-sm">
+                                                    <div className="space-y-3">
                                                         {tenant.login_email && (
-                                                            <div className="rounded border bg-white p-3">
-                                                                <label className="font-medium text-gray-600">Primary Email:</label>
-                                                                <p className="mt-1 font-medium break-all text-blue-600">{tenant.login_email}</p>
+                                                            <div className="rounded-lg border border-gray-200 bg-blue-50 p-4">
+                                                                <label className="text-xs font-medium tracking-wide text-blue-600 uppercase">
+                                                                    Login Email
+                                                                </label>
+                                                                <p className="mt-1 text-sm font-medium break-all text-blue-800">
+                                                                    {tenant.login_email}
+                                                                </p>
                                                             </div>
                                                         )}
                                                         {tenant.alternate_email && (
-                                                            <div className="rounded border bg-white p-3">
-                                                                <label className="font-medium text-gray-600">Alternate Email:</label>
-                                                                <p className="mt-1 font-medium break-all text-blue-600">{tenant.alternate_email}</p>
+                                                            <div className="rounded-lg border border-gray-200 bg-blue-50 p-4">
+                                                                <label className="text-xs font-medium tracking-wide text-blue-600 uppercase">
+                                                                    Alternate Email
+                                                                </label>
+                                                                <p className="mt-1 text-sm font-medium break-all text-blue-800">
+                                                                    {tenant.alternate_email}
+                                                                </p>
                                                             </div>
                                                         )}
                                                         {tenant.mobile && (
-                                                            <div className="rounded border bg-white p-3">
-                                                                <label className="font-medium text-gray-600">Mobile Phone:</label>
-                                                                <p className="mt-1 font-medium text-gray-900">{formatPhoneNumber(tenant.mobile)}</p>
+                                                            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                                                <label className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+                                                                    Mobile Phone
+                                                                </label>
+                                                                <p className="mt-1 text-lg font-semibold text-gray-900">
+                                                                    {formatPhoneNumber(tenant.mobile)}
+                                                                </p>
                                                             </div>
                                                         )}
                                                         {tenant.emergency_phone && (
-                                                            <div className="rounded border bg-white p-3">
-                                                                <label className="font-medium text-gray-600">Emergency Contact:</label>
-                                                                <p className="mt-1 font-medium text-red-600">
+                                                            <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                                                                <label className="text-xs font-medium tracking-wide text-red-600 uppercase">
+                                                                    Emergency Phone
+                                                                </label>
+                                                                <p className="mt-1 text-lg font-semibold text-red-800">
                                                                     {formatPhoneNumber(tenant.emergency_phone)}
                                                                 </p>
                                                             </div>
@@ -407,159 +564,132 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     </div>
                                                 </div>
 
-                                                {/* Property Information */}
-                                                <div className="space-y-4">
-                                                    <h4 className="border-b border-gray-300 pb-2 text-lg font-semibold text-gray-800">
-                                                        Property Details
-                                                    </h4>
-                                                    <div className="space-y-3 text-sm">
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">City:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{tenant.city_name || 'N/A'}</p>
-                                                        </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Property:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{tenant.property_name || 'N/A'}</p>
-                                                        </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Unit:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{tenant.unit_name || 'N/A'}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
                                                 {/* Payment & Insurance Information */}
                                                 <div className="space-y-4">
-                                                    <h4 className="border-b border-gray-300 pb-2 text-lg font-semibold text-gray-800">
+                                                    <h4 className="flex items-center text-lg font-semibold text-gray-800">
+                                                        <svg
+                                                            className="mr-2 h-5 w-5 text-purple-500"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                                                            />
+                                                        </svg>
                                                         Payment & Insurance
                                                     </h4>
-                                                    <div className="space-y-3 text-sm">
+                                                    <div className="space-y-3">
                                                         {tenant.cash_or_check && (
-                                                            <div className="rounded border bg-white p-3">
-                                                                <label className="font-medium text-gray-600">Payment Method:</label>
-                                                                <span className="mt-1 inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
+                                                            <div className="rounded-lg border border-gray-200 bg-purple-50 p-4">
+                                                                <label className="text-xs font-medium tracking-wide text-purple-600 uppercase">
+                                                                    Payment Method
+                                                                </label>
+                                                                <span className="mt-2 inline-flex rounded-full bg-purple-100 px-4 py-2 text-sm font-semibold text-purple-800">
                                                                     {tenant.cash_or_check}
                                                                 </span>
                                                             </div>
                                                         )}
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Has Insurance:</label>
-                                                            <span
-                                                                className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                                                                    tenant.has_insurance === 'Yes'
-                                                                        ? 'bg-green-100 text-green-800'
-                                                                        : 'bg-red-100 text-red-800'
-                                                                }`}
-                                                            >
-                                                                {tenant.has_insurance || 'Not Specified'}
-                                                            </span>
+                                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                                            <label className="text-xs font-medium tracking-wide text-gray-500 uppercase">
+                                                                Has Insurance
+                                                            </label>
+                                                            <div className="mt-2">
+                                                                <span
+                                                                    className={`inline-flex rounded-full px-4 py-2 text-sm font-semibold ${
+                                                                        tenant.has_insurance === 'Yes'
+                                                                            ? 'bg-green-100 text-green-800'
+                                                                            : 'bg-red-100 text-red-800'
+                                                                    }`}
+                                                                >
+                                                                    {tenant.has_insurance || 'Not Specified'}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Sensitive Communication:</label>
-                                                            <span
-                                                                className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                                                                    tenant.sensitive_communication === 'Yes'
-                                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                                        : 'bg-gray-100 text-gray-800'
-                                                                }`}
-                                                            >
-                                                                {tenant.sensitive_communication || 'No'}
-                                                            </span>
+                                                        <div className="rounded-lg border border-gray-200 bg-yellow-50 p-4">
+                                                            <label className="text-xs font-medium tracking-wide text-yellow-600 uppercase">
+                                                                Sensitive Communication
+                                                            </label>
+                                                            <div className="mt-2">
+                                                                <span
+                                                                    className={`inline-flex rounded-full px-4 py-2 text-sm font-semibold ${
+                                                                        tenant.sensitive_communication === 'Yes'
+                                                                            ? 'bg-yellow-100 text-yellow-800'
+                                                                            : 'bg-gray-100 text-gray-800'
+                                                                    }`}
+                                                                >
+                                                                    {tenant.sensitive_communication || 'No'}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 {/* Assistance Information */}
                                                 <div className="space-y-4">
-                                                    <h4 className="border-b border-gray-300 pb-2 text-lg font-semibold text-gray-800">
+                                                    <h4 className="flex items-center text-lg font-semibold text-gray-800">
+                                                        <svg
+                                                            className="mr-2 h-5 w-5 text-emerald-500"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                                                            />
+                                                        </svg>
                                                         Assistance Program
                                                     </h4>
-                                                    <div className="space-y-3 text-sm">
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Has Assistance:</label>
-                                                            <span
-                                                                className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                                                                    tenant.has_assistance === 'Yes'
-                                                                        ? 'bg-green-100 text-green-800'
-                                                                        : 'bg-gray-100 text-gray-800'
-                                                                }`}
-                                                            >
-                                                                {tenant.has_assistance || 'No'}
-                                                            </span>
+                                                    <div className="space-y-3">
+                                                        <div className="rounded-lg border border-gray-200 bg-emerald-50 p-4">
+                                                            <label className="text-xs font-medium tracking-wide text-emerald-600 uppercase">
+                                                                Has Assistance
+                                                            </label>
+                                                            <div className="mt-2">
+                                                                <span
+                                                                    className={`inline-flex rounded-full px-4 py-2 text-sm font-semibold ${
+                                                                        tenant.has_assistance === 'Yes'
+                                                                            ? 'bg-emerald-100 text-emerald-800'
+                                                                            : 'bg-gray-100 text-gray-800'
+                                                                    }`}
+                                                                >
+                                                                    {tenant.has_assistance || 'No'}
+                                                                </span>
+                                                            </div>
                                                         </div>
                                                         {tenant.has_assistance === 'Yes' && (
                                                             <>
                                                                 {tenant.formatted_assistance_amount && (
-                                                                    <div className="rounded border bg-white p-3">
-                                                                        <label className="font-medium text-gray-600">Assistance Amount:</label>
-                                                                        <p className="mt-1 text-lg font-bold text-green-600">
+                                                                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                                                                        <label className="text-xs font-medium tracking-wide text-emerald-600 uppercase">
+                                                                            Assistance Amount
+                                                                        </label>
+                                                                        <p className="mt-1 text-2xl font-bold text-emerald-700">
                                                                             {tenant.formatted_assistance_amount}
                                                                         </p>
                                                                     </div>
                                                                 )}
                                                                 {tenant.assistance_company && (
-                                                                    <div className="rounded border bg-white p-3">
-                                                                        <label className="font-medium text-gray-600">Assistance Company:</label>
-                                                                        <p className="mt-1 font-medium text-gray-900">{tenant.assistance_company}</p>
+                                                                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                                                                        <label className="text-xs font-medium tracking-wide text-emerald-600 uppercase">
+                                                                            Assistance Company
+                                                                        </label>
+                                                                        <p className="mt-1 text-lg font-semibold text-emerald-800">
+                                                                            {tenant.assistance_company}
+                                                                        </p>
                                                                     </div>
                                                                 )}
                                                             </>
                                                         )}
                                                     </div>
                                                 </div>
-
-                                                {/* System Information */}
-                                                <div className="space-y-4">
-                                                    <h4 className="border-b border-gray-300 pb-2 text-lg font-semibold text-gray-800">
-                                                        System Information
-                                                    </h4>
-                                                    <div className="space-y-3 text-sm">
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Created:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{tenant.created_at_formatted}</p>
-                                                        </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Last Updated:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{tenant.updated_at_formatted}</p>
-                                                        </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Status:</label>
-                                                            <span
-                                                                className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                                                                    tenant.is_archived ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                                                }`}
-                                                            >
-                                                                {tenant.is_archived ? 'Archived' : 'Active'}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                             </div>
-
-                                            {/* Related Records */}
-                                            {((tenant.notices_and_evictions?.length ?? 0) || (tenant.offers_and_renewals?.length ?? 0)) && (
-                                                <div className="mt-8 border-t-2 border-gray-300 pt-6">
-                                                    <h4 className="mb-4 text-lg font-semibold text-gray-800">Related Records</h4>
-                                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                                        {tenant.notices_and_evictions && tenant.notices_and_evictions.length > 0 && (
-                                                            <div className="rounded border bg-white p-4">
-                                                                <h5 className="mb-2 font-medium text-gray-900">
-                                                                    Notices & Evictions ({tenant.notices_and_evictions.length})
-                                                                </h5>
-                                                                <p className="text-sm text-gray-600">Recent activity records available</p>
-                                                            </div>
-                                                        )}
-                                                        {tenant.offers_and_renewals && tenant.offers_and_renewals.length > 0 && (
-                                                            <div className="rounded border bg-white p-4">
-                                                                <h5 className="mb-2 font-medium text-gray-900">
-                                                                    Offers & Renewals ({tenant.offers_and_renewals.length})
-                                                                </h5>
-                                                                <p className="text-sm text-gray-600">Recent offer/renewal records available</p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -617,9 +747,7 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     <div className="space-y-3 text-sm">
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Signed Lease:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">
-                                                                {moveIn.signed_lease || 'N/A'}
-                                                            </p>
+                                                            <p className="mt-1 font-medium text-gray-900">{moveIn.signed_lease || 'N/A'}</p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Lease Signing Date:</label>
@@ -629,9 +757,7 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Move-In Date:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">
-                                                                {moveIn.move_in_date_formatted || 'N/A'}
-                                                            </p>
+                                                            <p className="mt-1 font-medium text-gray-900">{moveIn.move_in_date_formatted || 'N/A'}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -656,9 +782,7 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Keys Handled:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">
-                                                                {moveIn.handled_keys || 'N/A'}
-                                                            </p>
+                                                            <p className="mt-1 font-medium text-gray-900">{moveIn.handled_keys || 'N/A'}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -677,9 +801,7 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Form Filled:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">
-                                                                {moveIn.filled_move_in_form || 'N/A'}
-                                                            </p>
+                                                            <p className="mt-1 font-medium text-gray-900">{moveIn.filled_move_in_form || 'N/A'}</p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Date Form Filled:</label>
@@ -697,9 +819,7 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                 <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
                                                     <div className="rounded border bg-white p-3">
                                                         <label className="font-medium text-gray-600">Insurance Submitted:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">
-                                                            {moveIn.submitted_insurance || 'N/A'}
-                                                        </p>
+                                                        <p className="mt-1 font-medium text-gray-900">{moveIn.submitted_insurance || 'N/A'}</p>
                                                     </div>
                                                     <div className="rounded border bg-white p-3">
                                                         <label className="font-medium text-gray-600">Insurance Expiration:</label>
@@ -745,10 +865,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                             Move-Out #{moveOut.id}
                                                             {moveOut.tenant_name && ` - ${moveOut.tenant_name}`}
                                                         </h3>
-                                                        <p className="mt-1 text-sm text-gray-500">Created: {moveOut.created_at_formatted}</p>
-                                                        {moveOut.updated_at_formatted && (
-                                                            <p className="text-sm text-gray-500">Updated: {moveOut.updated_at_formatted}</p>
-                                                        )}
                                                     </div>
                                                     <div className="text-right">
                                                         <span
@@ -777,9 +893,7 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Lease Status:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">
-                                                                {moveOut.lease_status || 'N/A'}
-                                                            </p>
+                                                            <p className="mt-1 font-medium text-gray-900">{moveOut.lease_status || 'N/A'}</p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Lease Ending Date (Buildium):</label>
@@ -789,9 +903,7 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Keys Location:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">
-                                                                {moveOut.keys_location || 'N/A'}
-                                                            </p>
+                                                            <p className="mt-1 font-medium text-gray-900">{moveOut.keys_location || 'N/A'}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -807,8 +919,8 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                             <p className="mt-1 font-medium text-gray-900">
                                                                 <span
                                                                     className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                                                                        moveOut.utilities_under_our_name === 'Yes' 
-                                                                            ? 'bg-green-100 text-green-800' 
+                                                                        moveOut.utilities_under_our_name === 'Yes'
+                                                                            ? 'bg-green-100 text-green-800'
                                                                             : 'bg-red-100 text-red-800'
                                                                     }`}
                                                                 >
@@ -824,23 +936,23 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Walkthrough:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">
-                                                                {moveOut.walkthrough || 'N/A'}
-                                                            </p>
+                                                            <p className="mt-1 font-medium text-gray-900">{moveOut.walkthrough || 'N/A'}</p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Cleaning Status:</label>
                                                             <p className="mt-1 font-medium text-gray-900">
                                                                 <span
                                                                     className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                                                                        moveOut.cleaning === 'cleaned' 
-                                                                            ? 'bg-green-100 text-green-800' 
+                                                                        moveOut.cleaning === 'cleaned'
+                                                                            ? 'bg-green-100 text-green-800'
                                                                             : moveOut.cleaning === 'uncleaned'
-                                                                            ? 'bg-red-100 text-red-800'
-                                                                            : 'bg-gray-100 text-gray-800'
+                                                                              ? 'bg-red-100 text-red-800'
+                                                                              : 'bg-gray-100 text-gray-800'
                                                                     }`}
                                                                 >
-                                                                    {moveOut.cleaning ? moveOut.cleaning.charAt(0).toUpperCase() + moveOut.cleaning.slice(1) : 'N/A'}
+                                                                    {moveOut.cleaning
+                                                                        ? moveOut.cleaning.charAt(0).toUpperCase() + moveOut.cleaning.slice(1)
+                                                                        : 'N/A'}
                                                                 </span>
                                                             </p>
                                                         </div>
@@ -855,9 +967,7 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     <div className="space-y-3 text-sm">
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Repairs:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">
-                                                                {moveOut.repairs || 'N/A'}
-                                                            </p>
+                                                            <p className="mt-1 font-medium text-gray-900">{moveOut.repairs || 'N/A'}</p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Security Deposit Return:</label>
@@ -867,23 +977,24 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">List the Unit:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">
-                                                                {moveOut.list_the_unit || 'N/A'}
-                                                            </p>
+                                                            <p className="mt-1 font-medium text-gray-900">{moveOut.list_the_unit || 'N/A'}</p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Move-Out Form:</label>
                                                             <p className="mt-1 font-medium text-gray-900">
                                                                 <span
                                                                     className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                                                                        moveOut.move_out_form === 'filled' 
-                                                                            ? 'bg-green-100 text-green-800' 
+                                                                        moveOut.move_out_form === 'filled'
+                                                                            ? 'bg-green-100 text-green-800'
                                                                             : moveOut.move_out_form === 'not filled'
-                                                                            ? 'bg-red-100 text-red-800'
-                                                                            : 'bg-gray-100 text-gray-800'
+                                                                              ? 'bg-red-100 text-red-800'
+                                                                              : 'bg-gray-100 text-gray-800'
                                                                     }`}
                                                                 >
-                                                                    {moveOut.move_out_form ? moveOut.move_out_form.charAt(0).toUpperCase() + moveOut.move_out_form.slice(1) : 'N/A'}
+                                                                    {moveOut.move_out_form
+                                                                        ? moveOut.move_out_form.charAt(0).toUpperCase() +
+                                                                          moveOut.move_out_form.slice(1)
+                                                                        : 'N/A'}
                                                                 </span>
                                                             </p>
                                                         </div>
@@ -900,25 +1011,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     </div>
                                                 </div>
                                             )}
-
-                                            {/* Property Information */}
-                                            <div className="mt-6 border-t border-gray-200 pt-6">
-                                                <h4 className="mb-3 font-medium text-gray-900">Property Information</h4>
-                                                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">City:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{moveOut.city_name || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Property:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{moveOut.property_name || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Unit:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{moveOut.unit_name || 'N/A'}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -952,13 +1044,13 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                 <div className="flex items-center justify-between">
                                                     <div>
                                                         <h3 className="text-2xl font-bold text-gray-900">Task #{vendorTask.id}</h3>
-                                                        <p className="mt-1 text-sm text-gray-500">Submitted: {vendorTask.task_submission_date_formatted}</p>
-                                                        <p className="text-sm text-gray-500">Created: {vendorTask.created_at_formatted}</p>
                                                     </div>
                                                     <div className="text-right">
                                                         <span
                                                             className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
-                                                                vendorTask.urgent === 'Yes' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                                                vendorTask.urgent === 'Yes'
+                                                                    ? 'bg-red-100 text-red-800'
+                                                                    : 'bg-green-100 text-green-800'
                                                             }`}
                                                         >
                                                             {vendorTask.urgent === 'Yes' ? 'Urgent' : 'Normal'}
@@ -985,15 +1077,21 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Submission Date:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{vendorTask.task_submission_date_formatted || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {vendorTask.task_submission_date_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Scheduled Visits:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{vendorTask.any_scheduled_visits_formatted || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {vendorTask.any_scheduled_visits_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Task End Date:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{vendorTask.task_ending_date_formatted || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {vendorTask.task_ending_date_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1010,7 +1108,9 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Service Type:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{vendorTask.vendor_service_type || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {vendorTask.vendor_service_type || 'N/A'}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Phone Number:</label>
@@ -1028,27 +1128,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                     </div>
                                                 </div>
-
-                                                {/* Property Information */}
-                                                <div className="space-y-4">
-                                                    <h4 className="border-b border-gray-300 pb-2 text-lg font-semibold text-gray-800">
-                                                        Property Information
-                                                    </h4>
-                                                    <div className="space-y-3 text-sm">
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">City:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{vendorTask.unit_city_name || 'N/A'}</p>
-                                                        </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Property:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{vendorTask.property_name || 'N/A'}</p>
-                                                        </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Unit:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{vendorTask.unit_name || 'N/A'}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                             </div>
 
                                             {/* Notes Section */}
@@ -1060,21 +1139,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     </div>
                                                 </div>
                                             )}
-
-                                            {/* Timestamps */}
-                                            <div className="mt-6 border-t border-gray-200 pt-6">
-                                                <h4 className="mb-3 font-medium text-gray-900">Record Information</h4>
-                                                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Created:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{vendorTask.created_at_formatted || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Last Updated:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{vendorTask.updated_at_formatted || 'N/A'}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -1109,18 +1173,15 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     <div>
                                                         <h3 className="text-2xl font-bold text-gray-900">Payment #{payment.id}</h3>
                                                         <p className="mt-1 text-sm text-gray-500">Date: {payment.date_formatted}</p>
-                                                        <p className="text-sm text-gray-500">
-                                                            {payment.unit_name} - {payment.property_name}, {payment.city_name}
-                                                        </p>
                                                     </div>
                                                     <div className="text-right">
                                                         <span
                                                             className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
-                                                                payment.status === 'Paid' 
-                                                                    ? 'bg-green-100 text-green-800' 
+                                                                payment.status === 'Paid'
+                                                                    ? 'bg-green-100 text-green-800'
                                                                     : payment.status === 'Partial'
-                                                                    ? 'bg-yellow-100 text-yellow-800'
-                                                                    : 'bg-red-100 text-red-800'
+                                                                      ? 'bg-yellow-100 text-yellow-800'
+                                                                      : 'bg-red-100 text-red-800'
                                                             }`}
                                                         >
                                                             {payment.status}
@@ -1148,15 +1209,21 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     <div className="space-y-3 text-sm">
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Amount Owed:</label>
-                                                            <p className="mt-1 text-lg font-bold text-red-600">{payment.formatted_owes || `$${payment.owes.toFixed(2)}`}</p>
+                                                            <p className="mt-1 text-lg font-bold text-red-600">
+                                                                {payment.formatted_owes || `$${payment.owes.toFixed(2)}`}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Amount Paid:</label>
-                                                            <p className="mt-1 text-lg font-bold text-green-600">{payment.formatted_paid || (payment.paid ? `$${payment.paid.toFixed(2)}` : '$0.00')}</p>
+                                                            <p className="mt-1 text-lg font-bold text-green-600">
+                                                                {payment.formatted_paid || (payment.paid ? `$${payment.paid.toFixed(2)}` : '$0.00')}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Left to Pay:</label>
-                                                            <p className="mt-1 text-lg font-bold text-orange-600">{payment.formatted_left_to_pay || `$${payment.left_to_pay.toFixed(2)}`}</p>
+                                                            <p className="mt-1 text-lg font-bold text-orange-600">
+                                                                {payment.formatted_left_to_pay || `$${payment.left_to_pay.toFixed(2)}`}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1183,27 +1250,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         )}
                                                     </div>
                                                 </div>
-
-                                                {/* Property Information */}
-                                                <div className="space-y-4">
-                                                    <h4 className="border-b border-gray-300 pb-2 text-lg font-semibold text-gray-800">
-                                                        Property Information
-                                                    </h4>
-                                                    <div className="space-y-3 text-sm">
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Unit:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{payment.unit_name || 'N/A'}</p>
-                                                        </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Property:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{payment.property_name || 'N/A'}</p>
-                                                        </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">City:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{payment.city_name || 'N/A'}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                             </div>
 
                                             {/* Notes */}
@@ -1215,21 +1261,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     </div>
                                                 </div>
                                             )}
-
-                                            {/* Timestamps */}
-                                            <div className="mt-6 border-t border-gray-200 pt-6">
-                                                <h4 className="mb-3 font-medium text-gray-900">Record Information</h4>
-                                                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Created:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{payment.created_at_formatted || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Last Updated:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{payment.updated_at_formatted || 'N/A'}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -1263,12 +1294,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                 <div className="flex items-center justify-between">
                                                     <div>
                                                         <h3 className="text-2xl font-bold text-gray-900">Payment Plan #{paymentPlan.id}</h3>
-                                                        <p className="mt-1 text-sm text-gray-500">
-                                                            Tenant: {paymentPlan.tenant_name || 'N/A'}
-                                                        </p>
-                                                        <p className="text-sm text-gray-500">
-                                                            Due Date: {paymentPlan.dates_formatted || 'N/A'}
-                                                        </p>
                                                     </div>
                                                     <div className="text-right">
                                                         <span
@@ -1282,11 +1307,11 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                             <div className="mt-2">
                                                                 <span
                                                                     className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                                                                        paymentPlan.status === 'Paid' 
-                                                                            ? 'bg-green-100 text-green-800' 
+                                                                        paymentPlan.status === 'Paid'
+                                                                            ? 'bg-green-100 text-green-800'
                                                                             : paymentPlan.status === 'Partial'
-                                                                            ? 'bg-yellow-100 text-yellow-800'
-                                                                            : 'bg-red-100 text-red-800'
+                                                                              ? 'bg-yellow-100 text-yellow-800'
+                                                                              : 'bg-red-100 text-red-800'
                                                                     }`}
                                                                 >
                                                                     {paymentPlan.status}
@@ -1360,14 +1385,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                             <label className="font-medium text-gray-600">Due Date:</label>
                                                             <p className="mt-1 font-medium text-gray-900">{paymentPlan.dates_formatted || 'N/A'}</p>
                                                         </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Created:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{paymentPlan.created_at_formatted || 'N/A'}</p>
-                                                        </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Last Updated:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{paymentPlan.updated_at_formatted || 'N/A'}</p>
-                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1414,10 +1431,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                 <div className="flex items-center justify-between">
                                                     <div>
                                                         <h3 className="text-2xl font-bold text-gray-900">{application.name}</h3>
-                                                        <p className="mt-1 text-sm text-gray-500">Application ID #{application.id}</p>
-                                                        <p className="text-sm text-gray-500">
-                                                            Application Date: {application.date_formatted || 'N/A'}
-                                                        </p>
                                                     </div>
                                                     <div className="text-right">
                                                         <span
@@ -1431,13 +1444,13 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                             <div className="mt-2">
                                                                 <span
                                                                     className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                                                                        application.status === 'Approved' 
-                                                                            ? 'bg-green-100 text-green-800' 
+                                                                        application.status === 'Approved'
+                                                                            ? 'bg-green-100 text-green-800'
                                                                             : application.status === 'Pending'
-                                                                            ? 'bg-yellow-100 text-yellow-800'
-                                                                            : application.status === 'Under Review'
-                                                                            ? 'bg-blue-100 text-blue-800'
-                                                                            : 'bg-red-100 text-red-800'
+                                                                              ? 'bg-yellow-100 text-yellow-800'
+                                                                              : application.status === 'Under Review'
+                                                                                ? 'bg-blue-100 text-blue-800'
+                                                                                : 'bg-red-100 text-red-800'
                                                                     }`}
                                                                 >
                                                                     {application.status}
@@ -1474,27 +1487,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     </div>
                                                 </div>
 
-                                                {/* Property Information */}
-                                                <div className="space-y-4">
-                                                    <h4 className="border-b border-gray-300 pb-2 text-lg font-semibold text-gray-800">
-                                                        Property Information
-                                                    </h4>
-                                                    <div className="space-y-3 text-sm">
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Unit:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{application.unit_name || 'N/A'}</p>
-                                                        </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Property:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{application.property_name || 'N/A'}</p>
-                                                        </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">City:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{application.city_name || 'N/A'}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
                                                 {/* Application Details */}
                                                 <div className="space-y-4">
                                                     <h4 className="border-b border-gray-300 pb-2 text-lg font-semibold text-gray-800">
@@ -1505,14 +1497,7 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                             <label className="font-medium text-gray-600">Application Date:</label>
                                                             <p className="mt-1 font-medium text-gray-900">{application.date_formatted || 'N/A'}</p>
                                                         </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Created:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{application.created_at_formatted || 'N/A'}</p>
-                                                        </div>
-                                                        <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Last Updated:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{application.updated_at_formatted || 'N/A'}</p>
-                                                        </div>
+
                                                         {application.has_attachment && (
                                                             <div className="rounded border bg-white p-3">
                                                                 <label className="font-medium text-gray-600">Attachment:</label>
@@ -1524,8 +1509,18 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                                             rel="noopener noreferrer"
                                                                             className="inline-flex items-center text-blue-600 hover:text-blue-800"
                                                                         >
-                                                                            <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                                                            <svg
+                                                                                className="mr-1 h-4 w-4"
+                                                                                fill="none"
+                                                                                stroke="currentColor"
+                                                                                viewBox="0 0 24 24"
+                                                                            >
+                                                                                <path
+                                                                                    strokeLinecap="round"
+                                                                                    strokeLinejoin="round"
+                                                                                    strokeWidth={2}
+                                                                                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                                                                                />
                                                                             </svg>
                                                                             {application.attachment_name || 'View Attachment'}
                                                                         </a>
@@ -1583,8 +1578,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         <h3 className="text-2xl font-bold text-gray-900">
                                                             {offerRenewal.tenant_name || 'Unknown Tenant'}
                                                         </h3>
-                                                        <p className="mt-1 text-sm text-gray-500">Offer/Renewal ID #{offerRenewal.id}</p>
-                                                        <p className="text-sm text-gray-500">Created: {offerRenewal.created_at_formatted}</p>
                                                     </div>
                                                     <div className="text-right">
                                                         <span
@@ -1614,20 +1607,28 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     <div className="space-y-3 text-sm">
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Date Sent Offer:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{offerRenewal.date_sent_offer_formatted || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {offerRenewal.date_sent_offer_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Offer Expires:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{offerRenewal.date_offer_expires_formatted || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {offerRenewal.date_offer_expires_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Date of Acceptance:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{offerRenewal.date_of_acceptance_formatted || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {offerRenewal.date_of_acceptance_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
                                                         {offerRenewal.how_many_days_left !== undefined && (
                                                             <div className="rounded border bg-white p-3">
                                                                 <label className="font-medium text-gray-600">Days Left:</label>
-                                                                <p className={`mt-1 font-medium ${offerRenewal.how_many_days_left <= 7 ? 'text-red-600' : 'text-gray-900'}`}>
+                                                                <p
+                                                                    className={`mt-1 font-medium ${offerRenewal.how_many_days_left <= 7 ? 'text-red-600' : 'text-gray-900'}`}
+                                                                >
                                                                     {offerRenewal.how_many_days_left} days
                                                                 </p>
                                                             </div>
@@ -1635,9 +1636,13 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         {offerRenewal.expired && (
                                                             <div className="rounded border bg-white p-3">
                                                                 <label className="font-medium text-gray-600">Expired:</label>
-                                                                <span className={`mt-1 inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                                                                    offerRenewal.expired === 'Yes' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                                                }`}>
+                                                                <span
+                                                                    className={`mt-1 inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                                                                        offerRenewal.expired === 'Yes'
+                                                                            ? 'bg-red-100 text-red-800'
+                                                                            : 'bg-green-100 text-green-800'
+                                                                    }`}
+                                                                >
                                                                     {offerRenewal.expired}
                                                                 </span>
                                                             </div>
@@ -1653,18 +1658,22 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     <div className="space-y-3 text-sm">
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Last Notice Sent:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{offerRenewal.last_notice_sent_formatted || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {offerRenewal.last_notice_sent_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Notice Kind:</label>
                                                             <p className="mt-1 font-medium text-gray-900">{offerRenewal.notice_kind || 'N/A'}</p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Last Notice Sent 2:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{offerRenewal.last_notice_sent_2_formatted || 'N/A'}</p>
+                                                            <label className="font-medium text-gray-600">Renewal Last Notice Sent:</label>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {offerRenewal.last_notice_sent_2_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
-                                                            <label className="font-medium text-gray-600">Notice Kind 2:</label>
+                                                            <label className="font-medium text-gray-600">Renewal Notice Kind:</label>
                                                             <p className="mt-1 font-medium text-gray-900">{offerRenewal.notice_kind_2 || 'N/A'}</p>
                                                         </div>
                                                     </div>
@@ -1682,11 +1691,15 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Date Sent Lease:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{offerRenewal.date_sent_lease_formatted || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {offerRenewal.date_sent_lease_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Lease Expires:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{offerRenewal.lease_expires_formatted || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {offerRenewal.lease_expires_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Lease Signed:</label>
@@ -1694,27 +1707,10 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Date Signed:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{offerRenewal.date_signed_formatted || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {offerRenewal.date_signed_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Property Information */}
-                                            <div className="mt-6 border-t border-gray-200 pt-6">
-                                                <h4 className="mb-3 font-medium text-gray-900">Property Information</h4>
-                                                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Unit:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{offerRenewal.unit_name || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Property:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{offerRenewal.property_name || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">City:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{offerRenewal.city_name || 'N/A'}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1728,21 +1724,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     </div>
                                                 </div>
                                             )}
-
-                                            {/* Timestamps */}
-                                            <div className="mt-6 border-t border-gray-200 pt-6">
-                                                <h4 className="mb-3 font-medium text-gray-900">Record Information</h4>
-                                                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Created:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{offerRenewal.created_at_formatted || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Last Updated:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{offerRenewal.updated_at_formatted || 'N/A'}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -1756,7 +1737,9 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                     <div className="rounded-lg bg-white shadow">
                         <div className="px-4 py-5 sm:p-6">
                             <div className="mb-6 flex items-center justify-between">
-                                <h2 className="text-xl font-semibold text-gray-900">Notices and Evictions Information ({noticesAndEvictions.length})</h2>
+                                <h2 className="text-xl font-semibold text-gray-900">
+                                    Notices and Evictions Information ({noticesAndEvictions.length})
+                                </h2>
                                 {noticesAndEvictions.length === 0 && (
                                     <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600">
                                         No notices or evictions found
@@ -1778,19 +1761,16 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         <h3 className="text-2xl font-bold text-gray-900">
                                                             {noticeEviction.type_of_notice || 'Notice/Eviction'} #{noticeEviction.id}
                                                         </h3>
-                                                        <p className="mt-1 text-sm text-gray-500">
-                                                            Tenant: {noticeEviction.tenant_name || 'N/A'}
-                                                        </p>
-                                                        <p className="text-sm text-gray-500">Date: {noticeEviction.date_formatted || 'N/A'}</p>
+                                                        <p className="mt-1 text-sm text-gray-500">Tenant: {noticeEviction.tenant_name || 'N/A'}</p>
                                                     </div>
                                                     <div className="text-right">
                                                         <span
                                                             className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
-                                                                noticeEviction.status === 'Active' 
-                                                                    ? 'bg-red-100 text-red-800' 
+                                                                noticeEviction.status === 'Active'
+                                                                    ? 'bg-red-100 text-red-800'
                                                                     : noticeEviction.status === 'Resolved'
-                                                                    ? 'bg-green-100 text-green-800'
-                                                                    : 'bg-yellow-100 text-yellow-800'
+                                                                      ? 'bg-green-100 text-green-800'
+                                                                      : 'bg-yellow-100 text-yellow-800'
                                                             }`}
                                                         >
                                                             {noticeEviction.status || 'Pending'}
@@ -1825,7 +1805,9 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Have an Exception:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{noticeEviction.have_an_exception || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {noticeEviction.have_an_exception || 'N/A'}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1842,15 +1824,21 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Sent to Attorney:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{noticeEviction.sent_to_atorney || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {noticeEviction.sent_to_atorney || 'N/A'}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Hearing Dates:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{noticeEviction.hearing_dates_formatted || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {noticeEviction.hearing_dates_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Evicted or Payment Plan:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{noticeEviction.evected_or_payment_plan || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {noticeEviction.evected_or_payment_plan || 'N/A'}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1867,7 +1855,9 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                         </div>
                                                         <div className="rounded border bg-white p-3">
                                                             <label className="font-medium text-gray-600">Writ Date:</label>
-                                                            <p className="mt-1 font-medium text-gray-900">{noticeEviction.writ_date_formatted || 'N/A'}</p>
+                                                            <p className="mt-1 font-medium text-gray-900">
+                                                                {noticeEviction.writ_date_formatted || 'N/A'}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1882,40 +1872,6 @@ export default function DashboardIndex({ cities, properties, units, unitInfo, te
                                                     </div>
                                                 </div>
                                             )}
-
-                                            {/* Property Information */}
-                                            <div className="mt-6 border-t border-gray-200 pt-6">
-                                                <h4 className="mb-3 font-medium text-gray-900">Property Information</h4>
-                                                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Unit:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{noticeEviction.unit_name || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Property:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{noticeEviction.property_name || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">City:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{noticeEviction.city_name || 'N/A'}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Timestamps */}
-                                            <div className="mt-6 border-t border-gray-200 pt-6">
-                                                <h4 className="mb-3 font-medium text-gray-900">Record Information</h4>
-                                                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Created:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{noticeEviction.created_at_formatted || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="rounded border bg-white p-3">
-                                                        <label className="font-medium text-gray-600">Last Updated:</label>
-                                                        <p className="mt-1 font-medium text-gray-900">{noticeEviction.updated_at_formatted || 'N/A'}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
                                         </div>
                                     ))}
                                 </div>
