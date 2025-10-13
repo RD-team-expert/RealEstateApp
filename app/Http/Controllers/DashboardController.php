@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cities;
-use App\Models\PropertyInfoWithoutInsurance;
-use App\Models\Unit;
 use App\Services\DashboardService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,20 +22,38 @@ class DashboardController extends Controller
         $properties = [];
         $units = [];
         $unitInfo = null;
+        $tenants = [];
+        $moveIns = [];
+        $moveOuts = [];
+        $vendorTasks = [];
+        $payments = [];
+        $paymentPlans = [];
+        $applications = [];
+        $offersAndRenewals = [];
+        $noticesAndEvictions = [];
 
         // Load properties if city is selected
         if ($request->has('city_id') && $request->city_id) {
-            $properties = $this->dashboardService->getPropertiesByCity($request->city_id);
+            $properties = $this->dashboardService->getPropertiesByCity((int)$request->city_id);
         }
 
         // Load units if property is selected
         if ($request->has('property_id') && $request->property_id) {
-            $units = $this->dashboardService->getUnitsByProperty($request->property_id);
+            $units = $this->dashboardService->getUnitsByProperty((int)$request->property_id);
         }
 
-        // Load unit info if unit is selected
+        // Load all data if unit is selected
         if ($request->has('unit_id') && $request->unit_id) {
-            $unitInfo = $this->dashboardService->getUnitInfo($request->unit_id);
+            $unitInfo = $this->dashboardService->getUnitInfo((int)$request->unit_id);
+            $tenants = $this->dashboardService->getAllTenantInfoByUnit((int)$request->unit_id);
+            $moveIns = $this->dashboardService->getAllMoveInInfoByUnit((int)$request->unit_id);
+            $moveOuts = $this->dashboardService->getAllMoveOutInfoByUnit((int)$request->unit_id);
+            $vendorTasks = $this->dashboardService->getAllVendorTaskInfoByUnit((int)$request->unit_id);
+            $payments = $this->dashboardService->getAllPaymentInfoByUnit((int)$request->unit_id);
+            $paymentPlans = $this->dashboardService->getAllPaymentPlanInfoByUnit((int)$request->unit_id);
+            $applications = $this->dashboardService->getAllApplicationInfoByUnit((int)$request->unit_id);
+            $offersAndRenewals = $this->dashboardService->getAllOffersAndRenewalsInfoByUnit((int)$request->unit_id);
+            $noticesAndEvictions = $this->dashboardService->getAllNoticesAndEvictionsInfoByUnit((int)$request->unit_id);
         }
 
         return Inertia::render('Dashboard', [
@@ -46,6 +61,15 @@ class DashboardController extends Controller
             'properties' => $properties,
             'units' => $units,
             'unitInfo' => $unitInfo,
+            'tenants' => $tenants,
+            'moveIns' => $moveIns,
+            'moveOuts' => $moveOuts,
+            'vendorTasks' => $vendorTasks,
+            'payments' => $payments,
+            'paymentPlans' => $paymentPlans,
+            'applications' => $applications,
+            'offersAndRenewals' => $offersAndRenewals,
+            'noticesAndEvictions' => $noticesAndEvictions,
             'selectedCityId' => $request->city_id ? (int)$request->city_id : null,
             'selectedPropertyId' => $request->property_id ? (int)$request->property_id : null,
             'selectedUnitId' => $request->unit_id ? (int)$request->unit_id : null,
