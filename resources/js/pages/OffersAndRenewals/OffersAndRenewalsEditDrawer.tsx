@@ -6,27 +6,71 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup } from '@/components/ui/radioGroup';
-import { OfferRenewal, Tenant } from '@/types/OfferRenewal';
-import { City } from '@/types/City';
 import { useForm } from '@inertiajs/react';
 import { format, parse, isValid } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+
+interface HierarchicalData {
+  id: number;
+  name: string;
+  properties: {
+    id: number;
+    name: string;
+    city_id: number;
+    units: {
+      id: number;
+      name: string;
+      property_id: number;
+      tenants: {
+        id: number;
+        name: string;
+        first_name: string;
+        last_name: string;
+        unit_id: number;
+      }[];
+    }[];
+  }[];
+}
+
+interface OfferRenewal {
+  id: number;
+  tenant_id?: number;
+  city_name?: string;
+  property?: string;
+  unit?: string;
+  tenant?: string;
+  date_sent_offer?: string;
+  status?: string;
+  date_of_acceptance?: string;
+  last_notice_sent?: string;
+  notice_kind?: string;
+  lease_sent?: string;
+  date_sent_lease?: string;
+  lease_signed?: string;
+  date_signed?: string;
+  last_notice_sent_2?: string;
+  notice_kind_2?: string;
+  notes?: string;
+  how_many_days_left?: number;
+}
 
 interface Props {
     offer: OfferRenewal;
-    tenants: Tenant[];
-    cities: City[];
+    hierarchicalData: HierarchicalData[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
 }
 
-export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, open, onOpenChange, onSuccess }: Props) {
+export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, open, onOpenChange, onSuccess }: Props) {
+    const cityRef = useRef<HTMLButtonElement>(null);
     const propertyRef = useRef<HTMLButtonElement>(null);
     const unitRef = useRef<HTMLButtonElement>(null);
     const tenantRef = useRef<HTMLButtonElement>(null);
+    
     const [validationErrors, setValidationErrors] = useState<{
+        city?: string;
         property?: string;
         unit?: string;
         tenant?: string;
@@ -86,21 +130,46 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
         return '';
     };
 
+    // Find initial selections based on offer data
+    const findInitialSelections = () => {
+        if (!offer.tenant_id) return { cityId: '', propertyId: '', unitId: '', tenantId: '' };
+
+        for (const city of hierarchicalData) {
+            for (const property of city.properties) {
+                for (const unit of property.units) {
+                    const tenant = unit.tenants.find(t => t.id === offer.tenant_id);
+                    if (tenant) {
+                        return {
+                            cityId: city.id.toString(),
+                            propertyId: property.id.toString(),
+                            unitId: unit.id.toString(),
+                            tenantId: tenant.id.toString()
+                        };
+                    }
+                }
+            }
+        }
+
+        return { cityId: '', propertyId: '', unitId: '', tenantId: '' };
+    };
+
+    const initialSelections = findInitialSelections();
+
     const { data, setData, put, processing, errors, reset } = useForm({
-        property: offer.property || '',
-        unit: offer.unit || '',
-        tenant: offer.tenant || '',
-        city_name: offer.city_name || '',
-        date_sent_offer: offer.date_sent_offer || '',
+        tenant_id: offer.tenant_id?.toString() || '',
+        city_id: initialSelections.cityId,
+        property_id: initialSelections.propertyId,
+        unit_id: initialSelections.unitId,
+        date_sent_offer: formatDateForInput(offer.date_sent_offer),
         status: offer.status || '',
-        date_of_acceptance: offer.date_of_acceptance || '',
-        last_notice_sent: offer.last_notice_sent || '',
+        date_of_acceptance: formatDateForInput(offer.date_of_acceptance),
+        last_notice_sent: formatDateForInput(offer.last_notice_sent),
         notice_kind: offer.notice_kind || '',
         lease_sent: offer.lease_sent || '',
-        date_sent_lease: offer.date_sent_lease || '',
+        date_sent_lease: formatDateForInput(offer.date_sent_lease),
         lease_signed: offer.lease_signed || '',
-        date_signed: offer.date_signed || '',
-        last_notice_sent_2: offer.last_notice_sent_2 || '',
+        date_signed: formatDateForInput(offer.date_signed),
+        last_notice_sent_2: formatDateForInput(offer.last_notice_sent_2),
         notice_kind_2: offer.notice_kind_2 || '',
         notes: offer.notes || '',
         how_many_days_left: offer.how_many_days_left?.toString() || '',
@@ -109,21 +178,22 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
     // Reset form data when offer changes
     useEffect(() => {
         if (offer) {
+            const newInitialSelections = findInitialSelections();
             setData({
-                property: offer.property || '',
-                unit: offer.unit || '',
-                tenant: offer.tenant || '',
-                city_name: offer.city_name || '',
-                date_sent_offer: offer.date_sent_offer || '',
+                tenant_id: offer.tenant_id?.toString() || '',
+                city_id: newInitialSelections.cityId,
+                property_id: newInitialSelections.propertyId,
+                unit_id: newInitialSelections.unitId,
+                date_sent_offer: formatDateForInput(offer.date_sent_offer),
                 status: offer.status || '',
-                date_of_acceptance: offer.date_of_acceptance || '',
-                last_notice_sent: offer.last_notice_sent || '',
+                date_of_acceptance: formatDateForInput(offer.date_of_acceptance),
+                last_notice_sent: formatDateForInput(offer.last_notice_sent),
                 notice_kind: offer.notice_kind || '',
                 lease_sent: offer.lease_sent || '',
-                date_sent_lease: offer.date_sent_lease || '',
+                date_sent_lease: formatDateForInput(offer.date_sent_lease),
                 lease_signed: offer.lease_signed || '',
-                date_signed: offer.date_signed || '',
-                last_notice_sent_2: offer.last_notice_sent_2 || '',
+                date_signed: formatDateForInput(offer.date_signed),
+                last_notice_sent_2: formatDateForInput(offer.last_notice_sent_2),
                 notice_kind_2: offer.notice_kind_2 || '',
                 notes: offer.notes || '',
                 how_many_days_left: offer.how_many_days_left?.toString() || '',
@@ -131,36 +201,60 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
         }
     }, [offer]);
 
-    // Get unique properties for Property dropdown
-    const properties = Array.from(new Set((tenants || []).map(t => t.property_name)));
+    // Get available properties based on selected city
+    const availableProperties = useMemo(() => {
+        if (!data.city_id) return [];
+        const selectedCity = hierarchicalData.find(city => city.id.toString() === data.city_id);
+        return selectedCity ? selectedCity.properties : [];
+    }, [hierarchicalData, data.city_id]);
 
-    // Get unique units for Unit dropdown
-    const units = Array.from(new Set((tenants || []).map(t => t.unit_number)));
+    // Get available units based on selected property
+    const availableUnits = useMemo(() => {
+        if (!data.property_id) return [];
+        const selectedProperty = availableProperties.find(property => property.id.toString() === data.property_id);
+        return selectedProperty ? selectedProperty.units : [];
+    }, [availableProperties, data.property_id]);
 
-    // Build tenant name list for Tenant dropdown
-    const tenantNames = (tenants || []).map(t => ({
-        label: `${t.first_name} ${t.last_name}`,
-        value: `${t.first_name} ${t.last_name}`,
-    }));
+    // Get available tenants based on selected unit
+    const availableTenants = useMemo(() => {
+        if (!data.unit_id) return [];
+        const selectedUnit = availableUnits.find(unit => unit.id.toString() === data.unit_id);
+        return selectedUnit ? selectedUnit.tenants : [];
+    }, [availableUnits, data.unit_id]);
 
-    const handlePropertyChange = (property: string) => {
-        setData('property', property);
+    const handleCityChange = (cityId: string) => {
+        setData({
+            ...data,
+            city_id: cityId,
+            property_id: '', // Reset dependent fields
+            unit_id: '',
+            tenant_id: ''
+        });
+        setValidationErrors(prev => ({ ...prev, city: undefined }));
+    };
+
+    const handlePropertyChange = (propertyId: string) => {
+        setData({
+            ...data,
+            property_id: propertyId,
+            unit_id: '', // Reset dependent fields
+            tenant_id: ''
+        });
         setValidationErrors(prev => ({ ...prev, property: undefined }));
     };
 
-    const handleUnitChange = (unit: string) => {
-        setData('unit', unit);
+    const handleUnitChange = (unitId: string) => {
+        setData({
+            ...data,
+            unit_id: unitId,
+            tenant_id: '' // Reset dependent field
+        });
         setValidationErrors(prev => ({ ...prev, unit: undefined }));
     };
 
-    const handleTenantChange = (tenant: string) => {
-        setData('tenant', tenant);
+    const handleTenantChange = (tenantId: string) => {
+        setData('tenant_id', tenantId);
         setValidationErrors(prev => ({ ...prev, tenant: undefined }));
-    };
-
-    const handleCityChange = (cityId: string) => {
-        const selectedCity = cities.find(city => city.id.toString() === cityId);
-        setData('city_name', selectedCity ? selectedCity.city : '');
     };
 
     const handleDateSentOfferChange = (date: string) => {
@@ -177,17 +271,26 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
         let hasValidationErrors = false;
         const newValidationErrors: typeof validationErrors = {};
         
-        // Validate required fields
-        if (!data.property || data.property.trim() === '') {
+        // Validate required fields in cascading order
+        if (!data.city_id || data.city_id.trim() === '') {
+            newValidationErrors.city = 'Please select a city before submitting the form.';
+            if (cityRef.current) {
+                cityRef.current.focus();
+                cityRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            hasValidationErrors = true;
+        }
+        
+        if (!data.property_id || data.property_id.trim() === '') {
             newValidationErrors.property = 'Please select a property before submitting the form.';
-            if (propertyRef.current) {
+            if (propertyRef.current && !hasValidationErrors) {
                 propertyRef.current.focus();
                 propertyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
             hasValidationErrors = true;
         }
         
-        if (!data.unit || data.unit.trim() === '') {
+        if (!data.unit_id || data.unit_id.trim() === '') {
             newValidationErrors.unit = 'Please select a unit before submitting the form.';
             if (unitRef.current && !hasValidationErrors) {
                 unitRef.current.focus();
@@ -196,7 +299,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
             hasValidationErrors = true;
         }
         
-        if (!data.tenant || data.tenant.trim() === '') {
+        if (!data.tenant_id || data.tenant_id.trim() === '') {
             newValidationErrors.tenant = 'Please select a tenant before submitting the form.';
             if (tenantRef.current && !hasValidationErrors) {
                 tenantRef.current.focus();
@@ -226,20 +329,22 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
 
     const handleCancel = () => {
         // Reset to original offer data
+        const resetSelections = findInitialSelections();
         setData({
-            property: offer.property || '',
-            unit: offer.unit || '',
-            tenant: offer.tenant || '',
-            date_sent_offer: offer.date_sent_offer || '',
+            tenant_id: offer.tenant_id?.toString() || '',
+            city_id: resetSelections.cityId,
+            property_id: resetSelections.propertyId,
+            unit_id: resetSelections.unitId,
+            date_sent_offer: formatDateForInput(offer.date_sent_offer),
             status: offer.status || '',
-            date_of_acceptance: offer.date_of_acceptance || '',
-            last_notice_sent: offer.last_notice_sent || '',
+            date_of_acceptance: formatDateForInput(offer.date_of_acceptance),
+            last_notice_sent: formatDateForInput(offer.last_notice_sent),
             notice_kind: offer.notice_kind || '',
             lease_sent: offer.lease_sent || '',
-            date_sent_lease: offer.date_sent_lease || '',
+            date_sent_lease: formatDateForInput(offer.date_sent_lease),
             lease_signed: offer.lease_signed || '',
-            date_signed: offer.date_signed || '',
-            last_notice_sent_2: offer.last_notice_sent_2 || '',
+            date_signed: formatDateForInput(offer.date_signed),
+            last_notice_sent_2: formatDateForInput(offer.last_notice_sent_2),
             notice_kind_2: offer.notice_kind_2 || '',
             notes: offer.notes || '',
             how_many_days_left: offer.how_many_days_left?.toString() || '',
@@ -254,26 +359,58 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={submit} className="space-y-4">
-                            {/* Basic Information */}
+                            {/* Cascading Selection */}
+                            <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
+                                <div className="mb-2">
+                                    <Label htmlFor="city" className="text-base font-semibold">
+                                        City *
+                                    </Label>
+                                </div>
+                                <Select onValueChange={handleCityChange} value={data.city_id}>
+                                    <SelectTrigger ref={cityRef}>
+                                        <SelectValue placeholder="Select city" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {hierarchicalData.map((city) => (
+                                            <SelectItem key={city.id} value={city.id.toString()}>
+                                                {city.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.city_id && <p className="mt-1 text-sm text-red-600">{errors.city_id}</p>}
+                                {validationErrors.city && <p className="mt-1 text-sm text-red-600">{validationErrors.city}</p>}
+                            </div>
+
                             <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="property" className="text-base font-semibold">
                                         Property *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handlePropertyChange} value={data.property}>
+                                <Select 
+                                    onValueChange={handlePropertyChange} 
+                                    value={data.property_id}
+                                    disabled={!data.city_id || availableProperties.length === 0}
+                                >
                                     <SelectTrigger ref={propertyRef}>
-                                        <SelectValue placeholder="Select property" />
+                                        <SelectValue placeholder={
+                                            !data.city_id 
+                                                ? "Select city first" 
+                                                : availableProperties.length === 0 
+                                                    ? "No properties available"
+                                                    : "Select property"
+                                        } />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {properties.map((property) => (
-                                            <SelectItem key={property} value={property}>
-                                                {property}
+                                        {availableProperties.map((property) => (
+                                            <SelectItem key={property.id} value={property.id.toString()}>
+                                                {property.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {errors.property && <p className="mt-1 text-sm text-red-600">{errors.property}</p>}
+                                {errors.property_id && <p className="mt-1 text-sm text-red-600">{errors.property_id}</p>}
                                 {validationErrors.property && <p className="mt-1 text-sm text-red-600">{validationErrors.property}</p>}
                             </div>
 
@@ -283,19 +420,29 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
                                         Unit *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleUnitChange} value={data.unit}>
+                                <Select 
+                                    onValueChange={handleUnitChange} 
+                                    value={data.unit_id}
+                                    disabled={!data.property_id || availableUnits.length === 0}
+                                >
                                     <SelectTrigger ref={unitRef}>
-                                        <SelectValue placeholder="Select unit" />
+                                        <SelectValue placeholder={
+                                            !data.property_id 
+                                                ? "Select property first" 
+                                                : availableUnits.length === 0 
+                                                    ? "No units available"
+                                                    : "Select unit"
+                                        } />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {units.map((unit) => (
-                                            <SelectItem key={unit} value={unit}>
-                                                {unit}
+                                        {availableUnits.map((unit) => (
+                                            <SelectItem key={unit.id} value={unit.id.toString()}>
+                                                {unit.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {errors.unit && <p className="mt-1 text-sm text-red-600">{errors.unit}</p>}
+                                {errors.unit_id && <p className="mt-1 text-sm text-red-600">{errors.unit_id}</p>}
                                 {validationErrors.unit && <p className="mt-1 text-sm text-red-600">{validationErrors.unit}</p>}
                             </div>
 
@@ -305,41 +452,30 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
                                         Tenant *
                                     </Label>
                                 </div>
-                                <Select onValueChange={handleTenantChange} value={data.tenant}>
+                                <Select 
+                                    onValueChange={handleTenantChange} 
+                                    value={data.tenant_id}
+                                    disabled={!data.unit_id || availableTenants.length === 0}
+                                >
                                     <SelectTrigger ref={tenantRef}>
-                                        <SelectValue placeholder="Select tenant" />
+                                        <SelectValue placeholder={
+                                            !data.unit_id 
+                                                ? "Select unit first" 
+                                                : availableTenants.length === 0 
+                                                    ? "No tenants available"
+                                                    : "Select tenant"
+                                        } />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {tenantNames.map((tenant) => (
-                                            <SelectItem key={tenant.value} value={tenant.value}>
-                                                {tenant.label}
+                                        {availableTenants.map((tenant) => (
+                                            <SelectItem key={tenant.id} value={tenant.id.toString()}>
+                                                {tenant.name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {errors.tenant && <p className="mt-1 text-sm text-red-600">{errors.tenant}</p>}
+                                {errors.tenant_id && <p className="mt-1 text-sm text-red-600">{errors.tenant_id}</p>}
                                 {validationErrors.tenant && <p className="mt-1 text-sm text-red-600">{validationErrors.tenant}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-purple-600 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="city_name" className="text-base font-semibold">
-                                        City
-                                    </Label>
-                                </div>
-                                <Select onValueChange={handleCityChange} value={cities.find(city => city.city === data.city_name)?.id.toString() || ''}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select city" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {cities.map((city) => (
-                                            <SelectItem key={city.id} value={city.id.toString()}>
-                                                {city.city}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.city_name && <p className="mt-1 text-sm text-red-600">{errors.city_name}</p>}
                             </div>
 
                             {/* Offer Information */}
@@ -489,7 +625,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
                                 {errors.last_notice_sent && <p className="mt-1 text-sm text-red-600">{errors.last_notice_sent}</p>}
                             </div>
 
-                            <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
+                            <div className="rounded-lg border-l-4 border-l-pink-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="notice_kind" className="text-base font-semibold">
                                         Offer Notice Kind
@@ -586,7 +722,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
                                 {errors.lease_signed && <p className="mt-1 text-sm text-red-600">{errors.lease_signed}</p>}
                             </div>
 
-                            <div className="rounded-lg border-l-4 border-l-lime-500 p-4">
+                            <div className="rounded-lg border-l-4 border-l-violet-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="date_signed" className="text-base font-semibold">
                                         Date Signed
@@ -629,7 +765,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
                             </div>
 
                             {/* Renewal Information */}
-                            <div className="rounded-lg border-l-4 border-l-pink-500 p-4">
+                            <div className="rounded-lg border-l-4 border-l-rose-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="last_notice_sent_2" className="text-base font-semibold">
                                         Renewal Last Notice Sent
@@ -671,10 +807,10 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
                                 {errors.last_notice_sent_2 && <p className="mt-1 text-sm text-red-600">{errors.last_notice_sent_2}</p>}
                             </div>
 
-                            <div className="rounded-lg border-l-4 border-l-violet-500 p-4">
+                            <div className="rounded-lg border-l-4 border-l-amber-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="notice_kind_2" className="text-base font-semibold">
-                                        Lease Notice Kind
+                                        Renewal Notice Kind
                                     </Label>
                                 </div>
                                 <RadioGroup
@@ -690,7 +826,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, tenants, cities, op
                             </div>
 
                             {/* Additional Information */}
-                            <div className="rounded-lg border-l-4 border-l-amber-500 p-4">
+                            <div className="rounded-lg border-l-4 border-l-lime-500 p-4">
                                 <div className="mb-2">
                                     <Label htmlFor="how_many_days_left" className="text-base font-semibold">
                                         How Many Days Left

@@ -87,19 +87,11 @@ class Tenant extends Model
     }
 
     /**
-     * Get all payment plans for this tenant.
+     * Get all offers and renewals for this tenant.
      */
-    public function paymentPlans(): HasMany
+    public function offersAndRenewals(): HasMany
     {
-        return $this->hasMany(PaymentPlan::class, 'tenant_id');
-    }
-
-    /**
-     * Get all move-outs for this tenant.
-     */
-    public function moveOuts(): HasMany
-    {
-        return $this->hasMany(MoveOut::class, 'tenant_id');
+        return $this->hasMany(OffersAndRenewal::class, 'tenant_id');
     }
 
     /**
@@ -162,7 +154,7 @@ class Tenant extends Model
             'has_insurance' => 'nullable|in:Yes,No',
             'sensitive_communication' => 'nullable|in:Yes,No',
             'has_assistance' => 'nullable|in:Yes,No',
-            'assistance_amount' => 'nullable|numeric|min:0',
+            'assistance_amount' => 'nullable|numeric|min:0|max:999999.99',
             'assistance_company' => 'nullable|string|max:255',
         ];
     }
@@ -185,7 +177,7 @@ class Tenant extends Model
             'has_insurance' => 'sometimes|nullable|in:Yes,No',
             'sensitive_communication' => 'sometimes|nullable|in:Yes,No',
             'has_assistance' => 'sometimes|nullable|in:Yes,No',
-            'assistance_amount' => 'sometimes|nullable|numeric|min:0',
+            'assistance_amount' => 'sometimes|nullable|numeric|min:0|max:999999.99',
             'assistance_company' => 'sometimes|nullable|string|max:255',
         ];
     }

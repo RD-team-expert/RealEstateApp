@@ -1,205 +1,399 @@
-import React from 'react';
-import { type BreadcrumbItem } from '@/types';import { Head, Link, usePage } from '@inertiajs/react';
-import { OfferRenewal } from '@/types/OfferRenewal';
-import AppLayout from '@/Layouts/app-layout';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { usePermissions } from '@/hooks/usePermissions';
+import AppLayout from '@/layouts/app-layout';
+import { OfferRenewal, OfferRenewalShowProps } from '@/types/OfferRenewal';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { AlertTriangle, Calendar, CheckCircle, Clock, FileText, Home, Key, MapPin, User, XCircle } from 'lucide-react';
+import React from 'react';
 
-const Show = () => {
-    const { offer } = usePage().props as { offer: OfferRenewal };
+const Show: React.FC<OfferRenewalShowProps> = () => {
+    const { offer } = usePage().props as unknown as { offer: OfferRenewal };
 
-    const formatDate = (date: string | null) => {
+    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+
+    const formatDate = (date: string | null | undefined): string => {
         if (!date) return 'Not Set';
-        return new Date(date).toLocaleDateString();
-    };
-
-    const getStatusBadge = (status: string | null) => {
-        if (!status) return <Badge variant="outline">N/A</Badge>;
-
-        switch (status.toLowerCase()) {
-            case 'accepted':
-                return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">{status}</Badge>;
-            case 'pending':
-                return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">{status}</Badge>;
-            case 'rejected':
-                return <Badge variant="destructive">{status}</Badge>;
-            default:
-                return <Badge variant="default">{status}</Badge>;
+        try {
+            return new Date(date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            });
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Invalid Date';
         }
     };
 
-    const getYesNoBadge = (value: string | null) => {
-        if (!value || value === '-') return <Badge variant="outline">N/A</Badge>;
+    const formatDateTime = (date: string | null | undefined): string => {
+        if (!date) return 'Not Set';
+        try {
+            return new Date(date).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        } catch (error) {
+            console.error('Error formatting datetime:', error);
+            return 'Invalid Date';
+        }
+    };
+
+    const getStatusBadge = (status: string | null | undefined): React.ReactElement => {
+        if (!status)
+            return (
+                <Badge variant="outline" className="text-xs">
+                    N/A
+                </Badge>
+            );
+
+        switch (status.toLowerCase()) {
+            case 'accepted':
+                return (
+                    <Badge variant="default" className="border-green-200 bg-green-100 text-xs text-green-800">
+                        {status}
+                    </Badge>
+                );
+            case 'pending':
+                return (
+                    <Badge variant="secondary" className="border-yellow-200 bg-yellow-100 text-xs text-yellow-800">
+                        {status}
+                    </Badge>
+                );
+            case 'rejected':
+            case "didn't accept":
+                return (
+                    <Badge variant="destructive" className="text-xs">
+                        {status}
+                    </Badge>
+                );
+            case "didn't respond":
+                return (
+                    <Badge variant="secondary" className="border-gray-200 bg-gray-100 text-xs text-gray-800">
+                        {status}
+                    </Badge>
+                );
+            default:
+                return (
+                    <Badge variant="default" className="text-xs">
+                        {status}
+                    </Badge>
+                );
+        }
+    };
+
+    const getYesNoBadge = (value: string | null | undefined): React.ReactElement => {
+        if (!value || value === '-')
+            return (
+                <Badge variant="outline" className="text-xs">
+                    N/A
+                </Badge>
+            );
+
+        const isPositive = value.toLowerCase() === 'yes' || value.toLowerCase() === 'signed';
+
         return (
-            <Badge variant={value === 'Yes' ? 'default' : 'secondary'} className={
-                value === 'Yes'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-            }>
+            <Badge
+                variant={isPositive ? 'default' : 'secondary'}
+                className={`text-xs ${isPositive ? 'border-green-200 bg-green-100 text-green-800' : 'border-gray-200 bg-gray-100 text-gray-600'}`}
+            >
                 {value}
             </Badge>
         );
     };
 
-    const getDaysLeftBadge = (days: string | null) => {
-        if (!days) return <Badge variant="outline">N/A</Badge>;
-        const numDays = parseInt(days);
-        if (numDays <= 7) {
-            return <Badge variant="destructive">{days} days left</Badge>;
+    const getDaysLeftBadge = (days: string | number | null | undefined): React.ReactElement => {
+        if (days === null || days === undefined || days === '') {
+            return (
+                <Badge variant="outline" className="text-xs">
+                    N/A
+                </Badge>
+            );
+        }
+
+        const numDays = typeof days === 'string' ? parseInt(days, 10) : days;
+
+        if (isNaN(numDays)) {
+            return (
+                <Badge variant="outline" className="text-xs">
+                    N/A
+                </Badge>
+            );
+        }
+
+        if (numDays <= 0) {
+            return (
+                <Badge variant="destructive" className="text-xs">
+                    Expired
+                </Badge>
+            );
+        } else if (numDays <= 7) {
+            return (
+                <Badge variant="destructive" className="text-xs">
+                    {numDays} days left
+                </Badge>
+            );
         } else if (numDays <= 30) {
-            return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">{days} days left</Badge>;
+            return (
+                <Badge variant="secondary" className="border-yellow-200 bg-yellow-100 text-xs text-yellow-800">
+                    {numDays} days left
+                </Badge>
+            );
         } else {
-            return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">{days} days left</Badge>;
+            return (
+                <Badge variant="default" className="border-green-200 bg-green-100 text-xs text-green-800">
+                    {numDays} days left
+                </Badge>
+            );
         }
     };
 
-    const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+    const getExpiredBadge = (expired: string | null | undefined): React.ReactElement => {
+        if (!expired)
+            return (
+                <Badge variant="default" className="text-xs">
+                    Active
+                </Badge>
+            );
 
+        return (
+            <Badge variant={expired.toLowerCase() === 'expired' ? 'destructive' : 'default'} className="text-xs">
+                {expired.charAt(0).toUpperCase() + expired.slice(1)}
+            </Badge>
+        );
+    };
+
+    const InfoItem = ({
+        icon: Icon,
+        label,
+        value,
+        className = '',
+    }: {
+        icon: React.ComponentType<{ className?: string }>;
+        label: string;
+        value: React.ReactNode;
+        className?: string;
+    }) => (
+        <div className={`flex items-start gap-3 rounded-lg bg-gray-50/50 p-3 ${className}`}>
+            <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-500" />
+            <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">{label}</p>
+                <div className="mt-1 text-sm font-semibold text-gray-900">{value}</div>
+            </div>
+        </div>
+    );
+
+    // Safe access to offer properties with fallbacks
+    const safeOffer = {
+        id: offer?.id || 0,
+        tenant_id: offer?.tenant_id,
+        city_name: offer?.city_name,
+        property: offer?.property,
+        unit: offer?.unit,
+        tenant: offer?.tenant,
+        date_sent_offer: offer?.date_sent_offer,
+        date_offer_expires: offer?.date_offer_expires,
+        status: offer?.status,
+        date_of_acceptance: offer?.date_of_acceptance,
+        last_notice_sent: offer?.last_notice_sent,
+        notice_kind: offer?.notice_kind,
+        lease_sent: offer?.lease_sent,
+        date_sent_lease: offer?.date_sent_lease,
+        lease_expires: offer?.lease_expires,
+        lease_signed: offer?.lease_signed,
+        date_signed: offer?.date_signed,
+        last_notice_sent_2: offer?.last_notice_sent_2,
+        notice_kind_2: offer?.notice_kind_2,
+        notes: offer?.notes,
+        how_many_days_left: offer?.how_many_days_left,
+        expired: offer?.expired,
+        is_archived: offer?.is_archived,
+        created_at: offer?.created_at,
+        updated_at: offer?.updated_at,
+    };
 
     return (
-        <AppLayout >
-            <Head title={`Offer ${offer.id}`} />
+        <AppLayout>
+            <Head title={`Offer & Renewal Details #${safeOffer.id}`} />
 
-            <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
-                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    <Card className="bg-card text-card-foreground shadow-lg">
-                        <CardHeader>
-                            <div className="flex justify-between items-center">
-                                <CardTitle className="text-2xl">
-                                    Offer Details - #{offer.id}
-                                </CardTitle>
-                                <div className="flex gap-2">
-                                    {hasAllPermissions(['offers-and-renewals.edit','offers-and-renewals.update']) && (
-                                    <Link href={`/offers_and_renewals/${offer.id}/edit`}>
-                                        <Button>Edit</Button>
-                                    </Link>)}
-                                    <Link href="/offers_and_renewals">
-                                        <Button variant="outline">Back to List</Button>
-                                    </Link>
+            <div className="py-8">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    {/* Header Section */}
+                    <div className="mb-8">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900">Offer & Renewal Record #{safeOffer.id}</h1>
+                                <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                                    <MapPin className="h-4 w-4" />
+                                    <span>
+                                        {safeOffer.city_name && `${safeOffer.city_name} • `}
+                                        {safeOffer.property || 'N/A'} • {safeOffer.unit || 'N/A'}
+                                    </span>
                                 </div>
                             </div>
+                            <div className="flex gap-3">
+                                {/* {hasAllPermissions(['offers-and-renewals.edit','offers-and-renewals.update']) && (
+                                    <Link href={`/offers_and_renewals/${safeOffer.id}/edit`}>
+                                        <Button className="bg-blue-600 hover:bg-blue-700">
+                                            Edit Record
+                                        </Button>
+                                    </Link>
+                                )} */}
+                                <Link href="/offers_and_renewals">
+                                    <Button variant="outline">Back to List</Button>
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Property Hierarchy Card */}
+                    <Card className="mb-6 border-l-4 border-l-blue-500">
+                        <CardContent className="pt-6">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                <InfoItem icon={MapPin} label="City" value={safeOffer.city_name || 'N/A'} className="bg-indigo-50/50" />
+                                <InfoItem icon={Home} label="Property" value={safeOffer.property || 'N/A'} className="bg-blue-50/50" />
+                                <InfoItem icon={Home} label="Unit" value={safeOffer.unit || 'N/A'} className="bg-green-50/50" />
+                                <InfoItem icon={User} label="Tenant" value={safeOffer.tenant || 'N/A'} className="bg-purple-50/50" />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Status Overview Section */}
+                    <Card className="mb-6">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <AlertTriangle className="h-5 w-5" />
+                                Status Overview
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid md:grid-cols-2 gap-6">
-                                {/* Basic Information */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold text-foreground">Basic Information</h3>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Property</p>
-                                        <p className="font-medium text-foreground">{offer.property}</p>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 p-4">
+                                    <div className="mb-2 flex items-center gap-2">
+                                        <FileText className="h-4 w-4 text-blue-600" />
+                                        <p className="text-sm font-medium text-blue-800">Current Status</p>
                                     </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Unit</p>
-                                        <p className="font-medium text-foreground">{offer.unit}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Tenant</p>
-                                        <p className="font-medium text-foreground">{offer.tenant}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Date Sent Offer</p>
-                                        <p className="font-medium text-foreground">{formatDate(offer.date_sent_offer)}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Status</p>
-                                        <div className="mt-1">
-                                            {getStatusBadge(offer.status)}
-                                        </div>
-                                    </div>
+                                    <div className="text-lg font-bold text-blue-900">{getStatusBadge(safeOffer.status)}</div>
                                 </div>
-
-                                {/* Acceptance Information */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold text-foreground">Acceptance Information</h3>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Date of Acceptance</p>
-                                        <p className="font-medium text-foreground">{formatDate(offer.date_of_acceptance)}</p>
+                                <div className="rounded-lg border border-yellow-200 bg-gradient-to-br from-yellow-50 to-yellow-100 p-4">
+                                    <div className="mb-2 flex items-center gap-2">
+                                        <Clock className="h-4 w-4 text-yellow-600" />
+                                        <p className="text-sm font-medium text-yellow-800">Days Remaining</p>
                                     </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">How Many Days Left</p>
-                                        <div className="mt-1">
-                                            {getDaysLeftBadge(offer.how_many_days_left)}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Expired</p>
-                                        <div className="mt-1">
-                                            <Badge variant={offer.expired === 'expired' ? 'destructive' : 'default'}>
-                                                {offer.expired || 'N/A'}
-                                            </Badge>
-                                        </div>
-                                    </div>
+                                    <div className="text-lg font-bold text-yellow-900">{getDaysLeftBadge(safeOffer.how_many_days_left)}</div>
                                 </div>
-
-                                {/* Lease Information */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold text-foreground">Lease Information</h3>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Lease Sent?</p>
-                                        <div className="mt-1">
-                                            {getYesNoBadge(offer.lease_sent)}
-                                        </div>
+                                <div className="rounded-lg border border-red-200 bg-gradient-to-br from-red-50 to-red-100 p-4">
+                                    <div className="mb-2 flex items-center gap-2">
+                                        <XCircle className="h-4 w-4 text-red-600" />
+                                        <p className="text-sm font-medium text-red-800">Expiration Status</p>
                                     </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Date Sent Lease</p>
-                                        <p className="font-medium text-foreground">{formatDate(offer.date_sent_lease)}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Lease Signed?</p>
-                                        <div className="mt-1">
-                                            {getYesNoBadge(offer.lease_signed)}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Date Signed</p>
-                                        <p className="font-medium text-foreground">{formatDate(offer.date_signed)}</p>
-                                    </div>
-                                </div>
-
-                                {/* Notice Information */}
-                                <div className="space-y-4">
-                                    <h3 className="text-lg font-semibold text-foreground">Notice Information</h3>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Last Notice Sent</p>
-                                        <p className="font-medium text-foreground">{formatDate(offer.last_notice_sent)}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">Notice Kind</p>
-                                        <p className="font-medium text-foreground">{offer.notice_kind || <span className="text-muted-foreground">N/A</span>}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">2nd Last Notice Sent</p>
-                                        <p className="font-medium text-foreground">{formatDate(offer.last_notice_sent_2)}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">2nd Notice Kind</p>
-                                        <p className="font-medium text-foreground">{offer.notice_kind_2 || <span className="text-muted-foreground">N/A</span>}</p>
-                                    </div>
+                                    <div className="text-lg font-bold text-red-900">{getExpiredBadge(safeOffer.expired)}</div>
                                 </div>
                             </div>
+                        </CardContent>
+                    </Card>
 
-                            {/* Notes Section */}
-                            {offer.notes && (
-                                <div className="mt-6 space-y-4">
-                                    <h3 className="text-lg font-semibold text-foreground">Notes</h3>
-                                    <Card className="bg-muted/50">
-                                        <CardContent className="p-4">
-                                            <p className="text-foreground whitespace-pre-wrap">{offer.notes}</p>
-                                        </CardContent>
-                                    </Card>
+                    {/* Main Information Grid */}
+                    <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                        {/* Offer Information */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <FileText className="h-5 w-5" />
+                                    Offer Information
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-3">
+                                    <InfoItem icon={Calendar} label="Date Sent Offer" value={formatDate(safeOffer.date_sent_offer)} />
+                                    <InfoItem icon={Calendar} label="Offer Expires" value={formatDate(safeOffer.date_offer_expires)} />
+                                    <InfoItem icon={CheckCircle} label="Date of Acceptance" value={formatDate(safeOffer.date_of_acceptance)} />
+                                    <InfoItem icon={Clock} label="Days Left" value={getDaysLeftBadge(safeOffer.how_many_days_left)} />
                                 </div>
-                            )}
+                            </CardContent>
+                        </Card>
 
-                            <div className="mt-8 pt-6 border-t border-border">
-                                <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-                                    <div>
-                                        <p>Created: {new Date(offer.created_at).toLocaleDateString()}</p>
+                        {/* Lease Information */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <Key className="h-5 w-5" />
+                                    Lease Information
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-3">
+                                    <InfoItem icon={FileText} label="Lease Sent" value={getYesNoBadge(safeOffer.lease_sent)} />
+                                    <InfoItem icon={Calendar} label="Date Sent Lease" value={formatDate(safeOffer.date_sent_lease)} />
+                                    <InfoItem icon={Calendar} label="Lease Expires" value={formatDate(safeOffer.lease_expires)} />
+                                    <InfoItem icon={CheckCircle} label="Lease Signed" value={getYesNoBadge(safeOffer.lease_signed)} />
+                                    <InfoItem icon={Calendar} label="Date Signed" value={formatDate(safeOffer.date_signed)} />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Notice Information Section */}
+                    <Card className="mb-6">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <AlertTriangle className="h-5 w-5" />
+                                Notice Information
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                                <div className="space-y-3">
+                                    <h4 className="mb-3 font-semibold text-gray-900">Offer Notice</h4>
+                                    <InfoItem icon={Calendar} label="Last Notice Sent" value={formatDate(safeOffer.last_notice_sent)} />
+                                    <InfoItem icon={FileText} label="Notice Kind" value={safeOffer.notice_kind || 'N/A'} />
+                                </div>
+                                <div className="space-y-3">
+                                    <h4 className="mb-3 font-semibold text-gray-900">Renewal Notice</h4>
+                                    <InfoItem icon={Calendar} label="2nd Last Notice Sent" value={formatDate(safeOffer.last_notice_sent_2)} />
+                                    <InfoItem icon={FileText} label="2nd Notice Kind" value={safeOffer.notice_kind_2 || 'N/A'} />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Detailed Information Section */}
+                    <div className="space-y-6">
+                        {/* Notes Section */}
+                        {safeOffer.notes && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-lg">
+                                        <FileText className="h-5 w-5" />
+                                        Additional Notes
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{safeOffer.notes}</p>
                                     </div>
-                                    <div>
-                                        <p>Updated: {new Date(offer.updated_at).toLocaleDateString()}</p>
-                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+
+                    {/* Footer Section */}
+                    <Card className="mt-8 bg-gray-50">
+                        <CardContent className="pt-6">
+                            <Separator className="mb-4" />
+                            <div className="grid grid-cols-1 gap-4 text-sm text-gray-600 sm:grid-cols-2">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    <span>Created: {formatDateTime(safeOffer.created_at)}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    <span>Last Updated: {formatDateTime(safeOffer.updated_at)}</span>
                                 </div>
                             </div>
                         </CardContent>
