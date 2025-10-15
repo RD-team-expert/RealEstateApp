@@ -32,7 +32,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Main dashboard page - handles all states
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Optional: Specific routes for direct linking with parameters
     Route::get('/dashboard/city/{city_id}', [DashboardController::class, 'getProperties'])->name('dashboard.properties');
     Route::get('/dashboard/city/{city_id}/property/{property_id}', [DashboardController::class, 'getUnits'])->name('dashboard.units');
@@ -98,6 +98,24 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/tenants/{tenant}/archive', [TenantController::class, 'archive'])
         ->name('tenants.archive')
         ->middleware('permission:tenants.destroy'); // same perm as delete
+    /**
+     * Additional tenant helper & import routes
+     */
+    // Dynamic units-by-property (for forms or AJAX)
+    Route::get('tenants/units-by-property', [TenantController::class, 'getUnitsByProperty'])
+        ->name('tenants.units-by-property');
+
+    // Tenant import form (shows the upload page)
+    Route::get('tenants/import/form', [TenantController::class, 'import'])
+        ->name('tenants.import');
+
+    // Process tenant import (handles uploaded file)
+    Route::post('tenants/import/process', [TenantController::class, 'processImport'])
+        ->name('tenants.import.process');
+
+    // Download import template (Excel or CSV)
+    Route::get('tenants/import/template', [TenantController::class, 'downloadTemplate'])
+        ->name('tenants.import.template');
 
     // Units
     Route::resource('units', UnitController::class);
