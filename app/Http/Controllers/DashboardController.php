@@ -56,7 +56,7 @@ class DashboardController extends Controller
             $noticesAndEvictions = $this->dashboardService->getAllNoticesAndEvictionsInfoByUnit((int)$request->unit_id);
         }
 
-        return Inertia::render('Dashboard', [
+        return Inertia::render('dashboard', [
             'cities' => $cities,
             'properties' => $properties,
             'units' => $units,

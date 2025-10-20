@@ -10,14 +10,18 @@ class TenantService
 {
     public function getAllTenants(): \Illuminate\Database\Eloquent\Collection
     {
-        return Tenant::with(['unit.property.city'])
+        return Tenant::with(['unit' => function ($query) {
+                $query->withArchived();
+            }, 'unit.property.city'])
             ->orderBy('created_at', 'desc')
             ->get();
     }
 
     public function getPaginatedTenants(int $perPage = 10): LengthAwarePaginator
     {
-        return Tenant::with(['unit.property.city'])
+        return Tenant::with(['unit' => function ($query) {
+                $query->withArchived();
+            }, 'unit.property.city'])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
     }
@@ -79,17 +83,21 @@ class TenantService
 
     public function findTenant(int $id): ?Tenant
     {
-        return Tenant::with(['unit.property.city'])->find($id);
+        return Tenant::with(['unit' => function ($query) {
+                $query->withArchived();
+            }, 'unit.property.city'])->find($id);
     }
 
     public function searchTenants(string $search): \Illuminate\Database\Eloquent\Collection
     {
-        return Tenant::with(['unit.property.city'])
+        return Tenant::with(['unit' => function ($query) {
+                $query->withArchived();
+            }, 'unit.property.city'])
             ->where(function ($query) use ($search) {
                 $query->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhereHas('unit', function ($unitQuery) use ($search) {
-                        $unitQuery->where('unit_name', 'like', "%{$search}%")
+                        $unitQuery->withArchived()->where('unit_name', 'like', "%{$search}%")
                             ->orWhereHas('property', function ($propertyQuery) use ($search) {
                                 $propertyQuery->where('property_name', 'like', "%{$search}%");
                             });
@@ -101,7 +109,9 @@ class TenantService
 
     public function filterTenants(array $filters): \Illuminate\Database\Eloquent\Collection
     {
-        $query = Tenant::with(['unit.property.city']);
+        $query = Tenant::with(['unit' => function ($query) {
+            $query->withArchived();
+        }, 'unit.property.city']);
 
         // Apply city filter by joining with properties and cities
         if (!empty($filters['city'])) {
@@ -120,7 +130,7 @@ class TenantService
         // Apply unit name filter
         if (!empty($filters['unit_name'])) {
             $query->whereHas('unit', function ($unitQuery) use ($filters) {
-                $unitQuery->where('unit_name', 'like', "%{$filters['unit_name']}%");
+                $unitQuery->withArchived()->where('unit_name', 'like', "%{$filters['unit_name']}%");
             });
         }
 
@@ -132,7 +142,7 @@ class TenantService
                   ->orWhere('street_address_line', 'like', "%{$filters['search']}%")
                   ->orWhere('login_email', 'like', "%{$filters['search']}%")
                   ->orWhereHas('unit', function ($unitQuery) use ($filters) {
-                      $unitQuery->where('unit_name', 'like', "%{$filters['search']}%")
+                      $unitQuery->withArchived()->where('unit_name', 'like', "%{$filters['search']}%")
                           ->orWhereHas('property', function ($propertyQuery) use ($filters) {
                               $propertyQuery->where('property_name', 'like', "%{$filters['search']}%");
                           });

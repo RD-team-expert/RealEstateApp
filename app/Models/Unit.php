@@ -80,6 +80,11 @@ class Unit extends Model
      */
     public function archive(): bool
     {
+        // Archive all tenants belonging to this unit first
+        $this->tenants()->withArchived()->where('is_archived', false)->each(function ($tenant) {
+            $tenant->archive();
+        });
+        
         return $this->update(['is_archived' => true]);
     }
 
@@ -97,6 +102,14 @@ class Unit extends Model
     public function applications(): HasMany
     {
         return $this->hasMany(Application::class, 'unit_id');
+    }
+
+    /**
+     * Get all tenants for this unit.
+     */
+    public function tenants(): HasMany
+    {
+        return $this->hasMany(\App\Models\Tenant::class, 'unit_id');
     }
 
     /**

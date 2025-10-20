@@ -84,11 +84,11 @@ class TenantController extends Controller
         $properties = PropertyInfoWithoutInsurance::with('city')->get();
 
         // Get units data for dropdowns - using the correct relationship
-        $units = Unit::with('property')->get();
+        $units = Unit::withArchived()->with('property')->get();
 
         // Create arrays for dropdowns by property name
         $unitsByProperty = $units->groupBy(function ($unit) {
-            return $unit->property->property_name;
+            return $unit->property ? $unit->property->property_name : 'Unknown Property';
         })->map(function ($propertyUnits) {
             return $propertyUnits->map(function ($unit) {
                 return [
@@ -110,12 +110,12 @@ class TenantController extends Controller
     public function create(): InertiaResponse
     {
         // Get units data for dropdowns
-        $units = Unit::with('property')->get();
+        $units = Unit::withArchived()->with('property')->get();
 
         // Create arrays for dropdowns
-        $properties = $units->pluck('property.property_name')->unique()->values();
+        $properties = $units->pluck('property.property_name')->filter()->unique()->values();
         $unitsByProperty = $units->groupBy(function ($unit) {
-            return $unit->property->property_name;
+            return $unit->property ? $unit->property->property_name : 'Unknown Property';
         })->map(function ($propertyUnits) {
             return $propertyUnits->map(function ($unit) {
                 return [
@@ -143,7 +143,9 @@ class TenantController extends Controller
 
     public function show(Tenant $tenant): InertiaResponse
     {
-        $tenant->load(['unit.property.city']);
+        $tenant->load(['unit' => function ($query) {
+            $query->withArchived();
+        }, 'unit.property.city']);
 
         return Inertia::render('Tenants/Show', [
             'tenant' => [
@@ -173,15 +175,17 @@ class TenantController extends Controller
 
     public function edit(Tenant $tenant): InertiaResponse
     {
-        $tenant->load(['unit.property.city']);
+        $tenant->load(['unit' => function ($query) {
+            $query->withArchived();
+        }, 'unit.property.city']);
 
         // Get units data for dropdowns
-        $units = Unit::with('property')->get();
+        $units = Unit::withArchived()->with('property')->get();
 
         // Create arrays for dropdowns
-        $properties = $units->pluck('property.property_name')->unique()->values();
+        $properties = $units->pluck('property.property_name')->filter()->unique()->values();
         $unitsByProperty = $units->groupBy(function ($unit) {
-            return $unit->property->property_name;
+            return $unit->property ? $unit->property->property_name : 'Unknown Property';
         })->map(function ($propertyUnits) {
             return $propertyUnits->map(function ($unit) {
                 return [
