@@ -31,6 +31,8 @@ class MoveOutService
                                 ->orWhere('notes', 'like', "%{$search}%")
                                 ->orWhere('send_back_security_deposit', 'like', "%{$search}%")
                                 ->orWhere('list_the_unit', 'like', "%{$search}%")
+                                ->orWhere('tenants', 'like', "%{$search}%")
+                                ->orWhere('utility_type', 'like', "%{$search}%")
                                 ->orWhereHas('unit', function ($unitQuery) use ($search) {
                                     $unitQuery->where('unit_name', 'like', "%{$search}%");
                                 })

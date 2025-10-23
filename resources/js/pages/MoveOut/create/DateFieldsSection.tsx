@@ -1,6 +1,7 @@
 import FormField from './FormField';
 import DatePickerField from './DatePickerField';
 import { MoveOutFormData } from '@/types/move-out';
+import { format } from 'date-fns';
 
 interface Props {
     data: MoveOutFormData;
@@ -34,7 +35,7 @@ export default function DateFieldsSection({
                     onOpenChange={() => onCalendarToggle('move_out_date')}
                     onDateSelect={(date) => {
                         if (date) {
-                            onDataChange('move_out_date', date);
+                            onDataChange('move_out_date', format(date, 'yyyy-MM-dd'));
                             onCalendarToggle('move_out_date');
                         }
                     }}
@@ -52,7 +53,7 @@ export default function DateFieldsSection({
                     onOpenChange={() => onCalendarToggle('date_lease_ending_on_buildium')}
                     onDateSelect={(date) => {
                         if (date) {
-                            onDataChange('date_lease_ending_on_buildium', date);
+                            onDataChange('date_lease_ending_on_buildium', format(date, 'yyyy-MM-dd'));
                             onCalendarToggle('date_lease_ending_on_buildium');
                         }
                     }}
@@ -70,7 +71,7 @@ export default function DateFieldsSection({
                     onOpenChange={() => onCalendarToggle('date_utility_put_under_our_name')}
                     onDateSelect={(date) => {
                         if (date) {
-                            onDataChange('date_utility_put_under_our_name', date);
+                            onDataChange('date_utility_put_under_our_name', format(date, 'yyyy-MM-dd'));
                             onCalendarToggle('date_utility_put_under_our_name');
                         }
                     }}

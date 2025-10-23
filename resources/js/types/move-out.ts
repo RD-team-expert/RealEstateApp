@@ -6,6 +6,7 @@ export interface MoveOut {
     city_name: string | null;
     property_name: string | null;
     // Actual database fields
+    tenants: string | null;
     move_out_date: string | null;  // ISO string date
     lease_status: string | null;
     date_lease_ending_on_buildium: string | null;  // ISO string date
@@ -19,6 +20,7 @@ export interface MoveOut {
     cleaning: 'cleaned' | 'uncleaned' | null;
     list_the_unit: string | null;
     move_out_form: 'filled' | 'not filled' | null;
+    utility_type: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -26,6 +28,7 @@ export interface MoveOut {
 // Form data that matches what the backend expects
 export type MoveOutFormData = {
     unit_id: number | null;
+    tenants: string;
     move_out_date: string;
     lease_status: string;
     date_lease_ending_on_buildium: string;
@@ -39,6 +42,7 @@ export type MoveOutFormData = {
     cleaning: 'cleaned' | 'uncleaned' | '';
     list_the_unit: string;
     move_out_form: 'filled' | 'not filled' | '';
+    utility_type: string;
 } & Record<string, any>;
 
 // Updated to match the actual backend data structure

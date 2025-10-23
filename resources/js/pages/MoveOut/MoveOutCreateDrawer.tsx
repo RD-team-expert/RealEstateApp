@@ -54,6 +54,7 @@ export default function MoveOutCreateDrawer({
 
     const { data, setData, post, processing, errors, reset } = useForm<MoveOutFormData>({
         unit_id: null,
+        tenants: '',
         move_out_date: '',
         lease_status: '',
         date_lease_ending_on_buildium: '',
@@ -67,6 +68,7 @@ export default function MoveOutCreateDrawer({
         cleaning: '',
         list_the_unit: '',
         move_out_form: '',
+        utility_type: '',
     });
 
     const handleCityChange = (cityId: string) => {
@@ -201,6 +203,9 @@ export default function MoveOutCreateDrawer({
                                 onCityChange={handleCityChange}
                                 onPropertyChange={handlePropertyChange}
                                 onUnitChange={handleUnitChange}
+                                tenants={data.tenants}
+                                tenantsError={errors.tenants}
+                                onTenantsChange={(value) => setData('tenants', value)}
                             />
 
                             <DateFieldsSection

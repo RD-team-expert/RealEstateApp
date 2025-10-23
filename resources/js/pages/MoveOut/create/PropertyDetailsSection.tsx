@@ -60,16 +60,32 @@ export default function PropertyDetailsSection({
             </FormField>
 
             <FormField
+                label="Utility Type"
+                borderColor="purple"
+                error={errors.utility_type}
+            >
+                <TextAreaField
+                    id="utility_type"
+                    value={data.utility_type}
+                    onChange={(e) => onDataChange('utility_type', e.target.value)}
+                    placeholder="Enter utility type details"
+                    minHeight="80px"
+                />
+            </FormField>
+
+            <FormField
                 label="Walkthrough"
                 borderColor="emerald"
                 error={errors.walkthrough}
             >
-                <TextAreaField
-                    id="walkthrough"
+                <RadioGroupField
                     value={data.walkthrough}
-                    onChange={(e) => onDataChange('walkthrough', e.target.value)}
-                    placeholder="Enter walkthrough details"
-                    minHeight="100px"
+                    onValueChange={(value) => onDataChange('walkthrough', value as "" | "Yes" | "No")}
+                    name="walkthrough"
+                    options={[
+                        { value: 'Yes', label: 'Yes' },
+                        { value: 'No', label: 'No' }
+                    ]}
                 />
             </FormField>
 

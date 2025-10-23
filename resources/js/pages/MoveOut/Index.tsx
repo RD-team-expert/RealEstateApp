@@ -42,6 +42,7 @@ const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
             'City Name',
             'Property Name',
             'Unit Name',
+            'Tenants',
             'Move Out Date',
             'Lease Status',
             'Lease Ending on Buildium',
@@ -55,6 +56,7 @@ const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
             'Cleaning',
             'List the Unit',
             'Move Out Form',
+            'Utility Type',
         ];
 
         const csvData = [
@@ -67,6 +69,7 @@ const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
                             `"${formatString(moveOut.city_name)}"`,
                             `"${formatString(moveOut.property_name)}"`,
                             `"${formatString(moveOut.unit_name)}"`,
+                            `"${formatString(moveOut.tenants)}"`,
                             `"${formatDateOnly(moveOut.move_out_date, '')}"`,
                             `"${formatString(moveOut.lease_status)}"`,
                             `"${formatDateOnly(moveOut.date_lease_ending_on_buildium, '')}"`,
@@ -80,6 +83,7 @@ const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
                             `"${formatString(moveOut.cleaning)}"`,
                             `"${formatString(moveOut.list_the_unit)}"`,
                             `"${formatString(moveOut.move_out_form)}"`,
+                            `"${formatString(moveOut.utility_type)}"`,
                         ].join(',');
                     } catch (rowError) {
                         console.error('Error processing move-out row:', moveOut, rowError);
@@ -236,22 +240,25 @@ export default function Index({ moveOuts, cities, properties, propertiesByCityId
             />
 
             {selectedMoveOut && (
-                <MoveOutEditDrawer
-                    cities={cities}
-                    propertiesByCityId={propertiesByCityId}
-                    unitsByPropertyId={unitsByPropertyId}
-                    allUnits={allUnits}
-                    moveOut={{
-                        ...selectedMoveOut,
-                        move_out_date: formatDateForInput(selectedMoveOut.move_out_date),
-                        date_lease_ending_on_buildium: formatDateForInput(selectedMoveOut.date_lease_ending_on_buildium),
-                        date_utility_put_under_our_name: formatDateForInput(selectedMoveOut.date_utility_put_under_our_name),
-                    }}
-                    open={isEditDrawerOpen}
-                    onOpenChange={setIsEditDrawerOpen}
-                    onSuccess={handleEditDrawerSuccess}
-                />
-            )}
+  <MoveOutEditDrawer
+    key={selectedMoveOut.id}            // ← force remount when id changes
+    cities={cities}
+    properties={properties}
+    propertiesByCityId={propertiesByCityId}
+    unitsByPropertyId={unitsByPropertyId}
+    allUnits={allUnits}
+    moveOut={{
+      ...selectedMoveOut,
+      move_out_date: formatDateForInput(selectedMoveOut.move_out_date),
+      date_lease_ending_on_buildium: formatDateForInput(selectedMoveOut.date_lease_ending_on_buildium),
+      date_utility_put_under_our_name: formatDateForInput(selectedMoveOut.date_utility_put_under_our_name),
+    }}
+    open={isEditDrawerOpen}
+    onOpenChange={setIsEditDrawerOpen}
+    onSuccess={handleEditDrawerSuccess}
+  />
+)}
+
         </AppLayout>
     );
 }

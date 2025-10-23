@@ -33,6 +33,8 @@ class StoreMoveOutRequest extends FormRequest
             'cleaning' => ['nullable', Rule::in(['cleaned', 'uncleaned'])],
             'list_the_unit' => ['nullable', 'string', 'max:255'],
             'move_out_form' => ['nullable', Rule::in(['filled', 'not filled'])],
+            'tenants' => ['nullable', 'string', 'max:255'],
+            'utility_type' => ['nullable', 'string'],
         ];
     }
 

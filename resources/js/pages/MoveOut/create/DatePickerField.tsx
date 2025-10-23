@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format, parse } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 
 interface Props {
@@ -11,7 +11,33 @@ interface Props {
     onDateSelect: (date: Date | undefined) => void;
 }
 
+// Safe date parsing function
+const parseDate = (dateString: string | null | undefined): Date | undefined => {
+    if (!dateString || dateString.trim() === '') {
+        return undefined;
+    }
+    
+    try {
+        const parsedDate = parse(dateString, 'yyyy-MM-dd', new Date());
+        if (isValid(parsedDate)) {
+            return parsedDate;
+        }
+        
+        return undefined;
+    } catch (error) {
+        console.warn('Date parsing error:', error);
+        return undefined;
+    }
+};
+
 export default function DatePickerField({ value, isOpen, onOpenChange, onDateSelect }: Props) {
+    const displayValue = value && value.trim() !== ''
+        ? (() => {
+            const parsedDate = parseDate(value);
+            return parsedDate ? format(parsedDate, 'PPP') : 'Pick a date';
+        })()
+        : 'Pick a date';
+
     return (
         <Popover open={isOpen} onOpenChange={onOpenChange}>
             <PopoverTrigger asChild>
@@ -20,13 +46,13 @@ export default function DatePickerField({ value, isOpen, onOpenChange, onDateSel
                     className="w-full justify-start text-left font-normal"
                 >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {value ? format(parse(value, 'yyyy-MM-dd', new Date()), 'PPP') : <span>Pick a date</span>}
+                    {displayValue}
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
                 <Calendar
                     mode="single"
-                    selected={value ? parse(value, 'yyyy-MM-dd', new Date()) : undefined}
+                    selected={parseDate(value)}
                     onSelect={onDateSelect}
                     initialFocus
                 />

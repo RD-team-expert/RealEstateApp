@@ -34,6 +34,8 @@ class UpdateMoveOutRequest extends FormRequest
             'cleaning' => ['sometimes', 'nullable', Rule::in(['cleaned', 'uncleaned'])],
             'list_the_unit' => ['sometimes', 'nullable', 'string', 'max:255'],
             'move_out_form' => ['sometimes', 'nullable', Rule::in(['filled', 'not filled'])],
+            'tenants' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'utility_type' => ['sometimes', 'nullable', 'string'],
         ];
     }
 

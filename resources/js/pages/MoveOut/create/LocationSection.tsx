@@ -1,6 +1,7 @@
 import React from 'react';
 import FormField from './FormField';
 import SelectField from './SelectField';
+import TextInputField from './TextInputField';
 import { City } from '@/types/City';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 
@@ -22,6 +23,10 @@ interface Props {
     onCityChange: (value: string) => void;
     onPropertyChange: (value: string) => void;
     onUnitChange: (value: string) => void;
+    // New props for tenants field
+    tenants: string;
+    tenantsError?: string;
+    onTenantsChange: (value: string) => void;
 }
 
 export default function LocationSection({
@@ -38,6 +43,9 @@ export default function LocationSection({
     onCityChange,
     onPropertyChange,
     onUnitChange,
+    tenants,
+    tenantsError,
+    onTenantsChange,
 }: Props) {
     return (
         <>
@@ -94,6 +102,19 @@ export default function LocationSection({
                         value: unit.id.toString(),
                         label: unit.unit_name
                     }))}
+                />
+            </FormField>
+
+            <FormField
+                label="Tenants"
+                borderColor="orange"
+                error={tenantsError}
+            >
+                <TextInputField
+                    id="tenants"
+                    value={tenants}
+                    onChange={(e) => onTenantsChange(e.target.value)}
+                    placeholder="Enter tenant names"
                 />
             </FormField>
         </>

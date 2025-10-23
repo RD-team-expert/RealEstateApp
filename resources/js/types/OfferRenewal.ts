@@ -7,10 +7,12 @@ export interface OfferRenewal {
   property?: string;
   unit?: string;
   tenant?: string;
+  other_tenants?: string;
   date_sent_offer?: string;
   date_offer_expires?: string;
   status?: string;
   date_of_acceptance?: string;
+  date_of_decline?: string;
   last_notice_sent?: string;
   notice_kind?: string;
   lease_sent?: string;

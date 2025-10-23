@@ -196,10 +196,12 @@ const Show: React.FC<OfferRenewalShowProps> = () => {
         property: offer?.property,
         unit: offer?.unit,
         tenant: offer?.tenant,
+        other_tenants: offer?.other_tenants,
         date_sent_offer: offer?.date_sent_offer,
         date_offer_expires: offer?.date_offer_expires,
         status: offer?.status,
         date_of_acceptance: offer?.date_of_acceptance,
+        date_of_decline: offer?.date_of_decline,
         last_notice_sent: offer?.last_notice_sent,
         notice_kind: offer?.notice_kind,
         lease_sent: offer?.lease_sent,
@@ -216,6 +218,9 @@ const Show: React.FC<OfferRenewalShowProps> = () => {
         created_at: offer?.created_at,
         updated_at: offer?.updated_at,
     };
+
+    // Check if status is "didn't accept" to show additional fields
+    const shouldShowDeclineFields = safeOffer.status?.toLowerCase() === "didn't accept";
 
     return (
         <AppLayout>
@@ -254,11 +259,12 @@ const Show: React.FC<OfferRenewalShowProps> = () => {
                     {/* Property Hierarchy Card */}
                     <Card className="mb-6 border-l-4 border-l-blue-500">
                         <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
                                 <InfoItem icon={MapPin} label="City" value={safeOffer.city_name || 'N/A'} className="bg-indigo-50/50" />
                                 <InfoItem icon={Home} label="Property" value={safeOffer.property || 'N/A'} className="bg-blue-50/50" />
                                 <InfoItem icon={Home} label="Unit" value={safeOffer.unit || 'N/A'} className="bg-green-50/50" />
                                 <InfoItem icon={User} label="Tenant" value={safeOffer.tenant || 'N/A'} className="bg-purple-50/50" />
+                                <InfoItem icon={User} label="Other Tenants" value={safeOffer.other_tenants || 'N/A'} className="bg-orange-50/50" />
                             </div>
                         </CardContent>
                     </Card>
@@ -298,72 +304,99 @@ const Show: React.FC<OfferRenewalShowProps> = () => {
                         </CardContent>
                     </Card>
 
-                    {/* Main Information Grid */}
-                    <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-                        {/* Offer Information */}
-                        <Card>
+                    {/* Conditional Content Based on Status */}
+                    {shouldShowDeclineFields ? (
+                        /* Show only decline information when status is "didn't accept" */
+                        <Card className="mb-6 border-l-4 border-l-red-500">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-lg">
-                                    <FileText className="h-5 w-5" />
-                                    Offer Information
+                                    <XCircle className="h-5 w-5" />
+                                    Decline Information
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-3">
-                                    <InfoItem icon={Calendar} label="Date Sent Offer" value={formatDate(safeOffer.date_sent_offer)} />
-                                    <InfoItem icon={Calendar} label="Offer Expires" value={formatDate(safeOffer.date_offer_expires)} />
-                                    <InfoItem icon={CheckCircle} label="Date of Acceptance" value={formatDate(safeOffer.date_of_acceptance)} />
-                                    <InfoItem icon={Clock} label="Days Left" value={getDaysLeftBadge(safeOffer.how_many_days_left)} />
+                            <CardContent>
+                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-1">
+                                    <InfoItem 
+                                        icon={Calendar} 
+                                        label="Date of Decline" 
+                                        value={formatDate(safeOffer.date_of_decline)} 
+                                        className="bg-red-50/50" 
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
+                    ) : (
+                        /* Show offer, lease, and notice information for all other statuses */
+                        <>
+                            {/* Main Information Grid */}
+                            <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+                                {/* Offer Information */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2 text-lg">
+                                            <FileText className="h-5 w-5" />
+                                            Offer Information
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-3">
+                                            <InfoItem icon={Calendar} label="Date Sent Offer" value={formatDate(safeOffer.date_sent_offer)} />
+                                            <InfoItem icon={Calendar} label="Offer Expires" value={formatDate(safeOffer.date_offer_expires)} />
+                                            <InfoItem icon={CheckCircle} label="Date of Acceptance" value={formatDate(safeOffer.date_of_acceptance)} />
+                                            <InfoItem icon={Clock} label="Days Left" value={getDaysLeftBadge(safeOffer.how_many_days_left)} />
+                                        </div>
+                                    </CardContent>
+                                </Card>
 
-                        {/* Lease Information */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-lg">
-                                    <Key className="h-5 w-5" />
-                                    Lease Information
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-3">
-                                    <InfoItem icon={FileText} label="Lease Sent" value={getYesNoBadge(safeOffer.lease_sent)} />
-                                    <InfoItem icon={Calendar} label="Date Sent Lease" value={formatDate(safeOffer.date_sent_lease)} />
-                                    <InfoItem icon={Calendar} label="Lease Expires" value={formatDate(safeOffer.lease_expires)} />
-                                    <InfoItem icon={CheckCircle} label="Lease Signed" value={getYesNoBadge(safeOffer.lease_signed)} />
-                                    <InfoItem icon={Calendar} label="Date Signed" value={formatDate(safeOffer.date_signed)} />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Notice Information Section */}
-                    <Card className="mb-6">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <AlertTriangle className="h-5 w-5" />
-                                Notice Information
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                                <div className="space-y-3">
-                                    <h4 className="mb-3 font-semibold text-gray-900">Offer Notice</h4>
-                                    <InfoItem icon={Calendar} label="Last Notice Sent" value={formatDate(safeOffer.last_notice_sent)} />
-                                    <InfoItem icon={FileText} label="Notice Kind" value={safeOffer.notice_kind || 'N/A'} />
-                                </div>
-                                <div className="space-y-3">
-                                    <h4 className="mb-3 font-semibold text-gray-900">Renewal Notice</h4>
-                                    <InfoItem icon={Calendar} label="2nd Last Notice Sent" value={formatDate(safeOffer.last_notice_sent_2)} />
-                                    <InfoItem icon={FileText} label="2nd Notice Kind" value={safeOffer.notice_kind_2 || 'N/A'} />
-                                </div>
+                                {/* Lease Information */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2 text-lg">
+                                            <Key className="h-5 w-5" />
+                                            Lease Information
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-3">
+                                            <InfoItem icon={FileText} label="Lease Sent" value={getYesNoBadge(safeOffer.lease_sent)} />
+                                            <InfoItem icon={Calendar} label="Date Sent Lease" value={formatDate(safeOffer.date_sent_lease)} />
+                                            <InfoItem icon={Calendar} label="Lease Expires" value={formatDate(safeOffer.lease_expires)} />
+                                            <InfoItem icon={CheckCircle} label="Lease Signed" value={getYesNoBadge(safeOffer.lease_signed)} />
+                                            <InfoItem icon={Calendar} label="Date Signed" value={formatDate(safeOffer.date_signed)} />
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             </div>
-                        </CardContent>
-                    </Card>
+
+                            {/* Notice Information Section */}
+                            <Card className="mb-6">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-lg">
+                                        <AlertTriangle className="h-5 w-5" />
+                                        Notice Information
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                                        <div className="space-y-3">
+                                            <h4 className="mb-3 font-semibold text-gray-900">Offer Notice</h4>
+                                            <InfoItem icon={Calendar} label="Last Notice Sent" value={formatDate(safeOffer.last_notice_sent)} />
+                                            <InfoItem icon={FileText} label="Notice Kind" value={safeOffer.notice_kind || 'N/A'} />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <h4 className="mb-3 font-semibold text-gray-900">Renewal Notice</h4>
+                                            <InfoItem icon={Calendar} label="2nd Last Notice Sent" value={formatDate(safeOffer.last_notice_sent_2)} />
+                                            <InfoItem icon={FileText} label="2nd Notice Kind" value={safeOffer.notice_kind_2 || 'N/A'} />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </>
+                    )}
 
                     {/* Detailed Information Section */}
                     <div className="space-y-6">
+
                         {/* Notes Section */}
                         {safeOffer.notes && (
                             <Card>

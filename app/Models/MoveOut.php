@@ -29,6 +29,8 @@ class MoveOut extends Model
         'list_the_unit',
         'move_out_form',
         'is_archived',
+        'tenants',
+        'utility_type',
     ];
 
     protected $casts = [
@@ -137,6 +139,8 @@ class MoveOut extends Model
             'cleaning' => 'nullable|in:cleaned,uncleaned',
             'list_the_unit' => 'nullable|string|max:255',
             'move_out_form' => 'nullable|in:filled,not filled',
+            'tenants' => 'nullable|string|max:255',
+            'utility_type' => 'nullable|string',
         ];
     }
 }

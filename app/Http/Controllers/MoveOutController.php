@@ -62,6 +62,8 @@ class MoveOutController extends Controller
                 'cleaning' => $moveOut->cleaning,
                 'list_the_unit' => $moveOut->list_the_unit,
                 'move_out_form' => $moveOut->move_out_form,
+                'tenants' => $moveOut->tenants,
+                'utility_type' => $moveOut->utility_type,
                 'created_at' => $moveOut->created_at,
                 'updated_at' => $moveOut->updated_at,
             ];
@@ -102,7 +104,7 @@ class MoveOutController extends Controller
     {
         // Validate the request using unit_id instead of tenant_id
         $validatedData = $request->validate([
-            'unit_id' => 'required|integer|exists:units,id',
+            'unit_id' => 'sometimes|nullable|integer|exists:units,id',
             'move_out_date' => 'nullable|date',
             'lease_status' => 'nullable|string|max:255',
             'date_lease_ending_on_buildium' => 'nullable|date',
@@ -116,6 +118,8 @@ class MoveOutController extends Controller
             'cleaning' => 'nullable|in:cleaned,uncleaned',
             'list_the_unit' => 'nullable|string|max:255',
             'move_out_form' => 'nullable|in:filled,not filled',
+            'tenants' => 'nullable|string|max:255',
+            'utility_type' => 'nullable|string',
         ]);
 
         // Create the move-out record
@@ -153,6 +157,8 @@ class MoveOutController extends Controller
             'cleaning' => $moveOutWithRelations->cleaning,
             'list_the_unit' => $moveOutWithRelations->list_the_unit,
             'move_out_form' => $moveOutWithRelations->move_out_form,
+            'tenants' => $moveOutWithRelations->tenants,
+            'utility_type' => $moveOutWithRelations->utility_type,
             'created_at' => $moveOutWithRelations->created_at,
             'updated_at' => $moveOutWithRelations->updated_at,
         ];
@@ -193,6 +199,8 @@ class MoveOutController extends Controller
             'cleaning' => $moveOutWithRelations->cleaning,
             'list_the_unit' => $moveOutWithRelations->list_the_unit,
             'move_out_form' => $moveOutWithRelations->move_out_form,
+            'tenants' => $moveOutWithRelations->tenants,
+            'utility_type' => $moveOutWithRelations->utility_type,
         ];
 
         return Inertia::render('MoveOut/Edit', [
@@ -225,6 +233,8 @@ class MoveOutController extends Controller
             'cleaning' => 'nullable|in:cleaned,uncleaned',
             'list_the_unit' => 'nullable|string|max:255',
             'move_out_form' => 'nullable|in:filled,not filled',
+            'tenants' => 'nullable|string|max:255',
+            'utility_type' => 'nullable|string',
         ]);
 
         // Update the move-out record

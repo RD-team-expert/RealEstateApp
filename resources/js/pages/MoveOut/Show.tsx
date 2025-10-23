@@ -111,7 +111,7 @@ export default function Show({ moveOut }: Props) {
                     {/* Property Hierarchy Card */}
                     <Card className="mb-6 border-l-4 border-l-blue-500">
                         <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <InfoItem
                                     icon={MapPin}
                                     label="City"
@@ -129,6 +129,12 @@ export default function Show({ moveOut }: Props) {
                                     label="Unit"
                                     value={moveOut.unit_name || 'N/A'}
                                     className="bg-purple-50/50"
+                                />
+                                <InfoItem
+                                    icon={User}
+                                    label="Tenants"
+                                    value={moveOut.tenants || 'N/A'}
+                                    className="bg-orange-50/50"
                                 />
                             </div>
                         </CardContent>
@@ -222,6 +228,11 @@ export default function Show({ moveOut }: Props) {
                                         value={getYesNoBadge(moveOut.utilities_under_our_name)}
                                     />
                                     <InfoItem
+                                        icon={FileText}
+                                        label="Utility Type"
+                                        value={moveOut.utility_type || 'N/A'}
+                                    />
+                                    <InfoItem
                                         icon={Wrench}
                                         label="Cleaning Status"
                                         value={getCleaningBadge(moveOut.cleaning)}
@@ -236,6 +247,11 @@ export default function Show({ moveOut }: Props) {
                                         label="Security Deposit Return"
                                         value={moveOut.send_back_security_deposit || 'N/A'}
                                     />
+                                    <InfoItem
+                                        icon={User}
+                                        label="Walkthrough"
+                                        value={getYesNoBadge(moveOut.walkthrough as 'Yes' | 'No' | null)}
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
@@ -243,19 +259,19 @@ export default function Show({ moveOut }: Props) {
 
                     {/* Detailed Information Section */}
                     <div className="space-y-6">
-                        {/* Walkthrough Section */}
-                        {moveOut.walkthrough && (
+                        {/* Utility Type Section */}
+                        {moveOut.utility_type && (
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2 text-lg">
-                                        <User className="h-5 w-5" />
-                                        Walkthrough Details
+                                        <Wrench className="h-5 w-5" />
+                                        Utility Type Details
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="bg-gray-50 rounded-lg p-4 border">
+                                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
                                         <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                                            {moveOut.walkthrough}
+                                            {moveOut.utility_type}
                                         </p>
                                     </div>
                                 </CardContent>

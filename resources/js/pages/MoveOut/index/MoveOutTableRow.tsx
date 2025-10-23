@@ -84,6 +84,15 @@ export default function MoveOutTableRow({
                 {moveOut.unit_name || 'N/A'}
             </TableCell>
             <TableCell className="border border-border text-center text-foreground">
+                {moveOut.tenants ? (
+                    <div className="max-w-24 truncate" title={moveOut.tenants}>
+                        {moveOut.tenants}
+                    </div>
+                ) : (
+                    <span className="text-muted-foreground">N/A</span>
+                )}
+            </TableCell>
+            <TableCell className="border border-border text-center text-foreground">
                 {formatDateOnly(moveOut.move_out_date)}
             </TableCell>
             <TableCell className="border border-border text-center">
@@ -101,6 +110,15 @@ export default function MoveOutTableRow({
             </TableCell>
             <TableCell className="border border-border text-center">
                 {getYesNoBadge(moveOut.utilities_under_our_name)}
+            </TableCell>
+            <TableCell className="border border-border text-center">
+                {moveOut.utility_type ? (
+                    <div className="max-w-32 truncate" title={moveOut.utility_type}>
+                        {moveOut.utility_type}
+                    </div>
+                ) : (
+                    <span className="text-muted-foreground">N/A</span>
+                )}
             </TableCell>
             <TableCell className="border border-border text-center text-foreground">
                 {formatDateOnly(moveOut.date_utility_put_under_our_name)}
@@ -144,6 +162,7 @@ export default function MoveOutTableRow({
             <TableCell className="border border-border text-center">
                 {getFormBadge(moveOut.move_out_form)}
             </TableCell>
+            
             {hasAnyPermission(['move-out.show', 'move-out.edit', 'move-out.update', 'move-out.destroy']) && (
                 <TableCell className="border border-border text-center">
                     <div className="flex gap-1">
