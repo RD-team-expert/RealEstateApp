@@ -113,6 +113,14 @@ class Unit extends Model
     }
 
     /**
+     * Get all move-outs for this unit.
+     */
+    public function moveOuts(): HasMany
+    {
+        return $this->hasMany(MoveOut::class, 'unit_id');
+    }
+
+    /**
      * Calculate computed fields for the unit
      */
     public function calculateFields()

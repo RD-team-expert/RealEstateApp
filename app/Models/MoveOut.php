@@ -14,7 +14,7 @@ class MoveOut extends Model
     protected $table = 'move_outs';
 
     protected $fillable = [
-        'tenant_id',
+        'unit_id',
         'move_out_date',
         'lease_status',
         'date_lease_ending_on_buildium',
@@ -32,7 +32,7 @@ class MoveOut extends Model
     ];
 
     protected $casts = [
-        'tenant_id' => 'integer',
+        'unit_id' => 'integer',
         'move_out_date' => 'date',
         'date_lease_ending_on_buildium' => 'date',
         'date_utility_put_under_our_name' => 'date',
@@ -82,27 +82,19 @@ class MoveOut extends Model
     }
 
     /**
-     * Get the tenant that this move-out belongs to.
+     * Get the unit that this move-out belongs to.
      */
-    public function tenant(): BelongsTo
+    public function unit(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class, 'tenant_id');
+        return $this->belongsTo(Unit::class, 'unit_id');
     }
 
     /**
-     * Accessor to get tenant's full name through relationship
-     */
-    public function getTenantNameAttribute(): ?string
-    {
-        return $this->tenant ? $this->tenant->full_name : null;
-    }
-
-    /**
-     * Accessor to get unit name through tenant relationship
+     * Accessor to get unit name through relationship
      */
     public function getUnitNameAttribute(): ?string
     {
-        return $this->tenant && $this->tenant->unit ? $this->tenant->unit->unit_name : null;
+        return $this->unit ? $this->unit->unit_name : null;
     }
 
     /**
@@ -110,8 +102,8 @@ class MoveOut extends Model
      */
     public function getPropertyNameAttribute(): ?string
     {
-        return $this->tenant && $this->tenant->unit && $this->tenant->unit->property 
-            ? $this->tenant->unit->property->property_name 
+        return $this->unit && $this->unit->property 
+            ? $this->unit->property->property_name 
             : null;
     }
 
@@ -120,8 +112,8 @@ class MoveOut extends Model
      */
     public function getCityNameAttribute(): ?string
     {
-        return $this->tenant && $this->tenant->unit && $this->tenant->unit->property && $this->tenant->unit->property->city 
-            ? $this->tenant->unit->property->city->city 
+        return $this->unit && $this->unit->property && $this->unit->property->city 
+            ? $this->unit->property->city->city 
             : null;
     }
 
@@ -131,7 +123,7 @@ class MoveOut extends Model
     public static function validationRules(): array
     {
         return [
-            'tenant_id' => 'nullable|integer|exists:tenants,id',
+            'unit_id' => 'nullable|integer|exists:units,id',
             'move_out_date' => 'nullable|date',
             'lease_status' => 'nullable|string|max:255',
             'date_lease_ending_on_buildium' => 'nullable|date',

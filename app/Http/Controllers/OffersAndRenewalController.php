@@ -31,12 +31,6 @@ class OffersAndRenewalController extends Controller
 
     public function index(Request $request)
     {
-        // Calculate expiration for all non-archived records when index is refreshed
-        OffersAndRenewal::query()->get()->each(function ($offer) {
-            $offer->calculateExpiry();
-            $offer->saveQuietly(); // Use saveQuietly to avoid triggering boot again
-        });
-
         // Get filters from request - now supporting both ID-based and name-based filtering
         $filters = [
             'unit_id' => $request->get('unit_id'),
@@ -69,7 +63,7 @@ class OffersAndRenewalController extends Controller
         }
 
         // Transform offers data to include relationship data as direct properties
-        $offers->getCollection()->transform(function ($offer) {
+        $offers->transform(function ($offer) {
             return [
                 'id' => $offer->id,
                 'tenant_id' => $offer->tenant_id,
@@ -95,6 +89,8 @@ class OffersAndRenewalController extends Controller
                 'notes' => $offer->notes,
                 'how_many_days_left' => $offer->how_many_days_left,
                 'expired' => $offer->expired,
+                'other_tenants' => $offer->other_tenants,
+                'date_of_decline' => $offer->date_of_decline,
                 'is_archived' => $offer->is_archived,
                 'created_at' => $offer->created_at,
                 'updated_at' => $offer->updated_at,
@@ -171,6 +167,8 @@ class OffersAndRenewalController extends Controller
             'notes' => $offerWithRelations->notes,
             'how_many_days_left' => $offerWithRelations->how_many_days_left,
             'expired' => $offerWithRelations->expired,
+            'other_tenants' => $offerWithRelations->other_tenants,
+            'date_of_decline' => $offerWithRelations->date_of_decline,
             'is_archived' => $offerWithRelations->is_archived,
             'created_at' => $offerWithRelations->created_at,
             'updated_at' => $offerWithRelations->updated_at,

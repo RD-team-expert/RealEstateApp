@@ -1,9 +1,8 @@
 export interface MoveOut {
     id: number;
-    tenant_id: number | null;
+    unit_id: number | null;
     // These are virtual properties from relationships (provided by backend transformation)
-    tenants_name: string | null;
-    units_name: string | null;
+    unit_name: string | null;
     city_name: string | null;
     property_name: string | null;
     // Actual database fields
@@ -26,7 +25,7 @@ export interface MoveOut {
 
 // Form data that matches what the backend expects
 export type MoveOutFormData = {
-    tenant_id: number | null;
+    unit_id: number | null;
     move_out_date: string;
     lease_status: string;
     date_lease_ending_on_buildium: string;
@@ -43,6 +42,7 @@ export type MoveOutFormData = {
 } & Record<string, any>;
 
 // Updated to match the actual backend data structure
+// Note: This interface is kept for compatibility with other modules that may still use tenant data
 export interface TenantData {
     id: number;
     full_name: string;
@@ -67,6 +67,7 @@ export interface Unit {
     property?: PropertyInfoWithoutInsurance;
 }
 
+// Note: This interface is kept for compatibility with other modules that may still use tenant relationships
 export interface TenantsByUnit {
     id: number;
     full_name: string;
@@ -85,7 +86,5 @@ export interface DropdownData {
     cities: Array<{ id: number; city: string }>;
     properties: PropertyInfoWithoutInsurance[];
     unitsByProperty: Record<string, string[]>;
-    tenantsByUnit: Record<string, Array<{ id: number; full_name: string; tenant_id: number }>>;
     allUnits: Array<{ id: number; unit_name: string; city_name: string; property_name: string }>;
-    tenantsData: TenantData[];
 }

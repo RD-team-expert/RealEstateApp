@@ -12,47 +12,48 @@ use Illuminate\Support\Collection;
 
 class OffersAndRenewalService
 {
-    public function getAllOffers(int $perPage = 15): LengthAwarePaginator
+    /**
+     * Helper method to calculate expiry for a collection of offers
+     */
+    private function calculateExpiryForCollection($offers)
     {
-        return OffersAndRenewal::with(['tenant.unit.property.city'])
-                              ->orderBy('date_sent_offer', 'desc')
-                              ->orderBy('created_at', 'desc')
-                              ->paginate($perPage);
+        if ($offers instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            $offers->getCollection()->each(function ($offer) {
+                $offer->calculateExpiry();
+            });
+        } elseif ($offers instanceof \Illuminate\Support\Collection) {
+            $offers->each(function ($offer) {
+                $offer->calculateExpiry();
+            });
+        } elseif (is_array($offers)) {
+            foreach ($offers as $offer) {
+                if ($offer instanceof OffersAndRenewal) {
+                    $offer->calculateExpiry();
+                }
+            }
+        } elseif ($offers instanceof OffersAndRenewal) {
+            $offers->calculateExpiry();
+        }
+
+        return $offers;
     }
 
-    public function searchOffers(string $search, int $perPage = 15): LengthAwarePaginator
+    public function getAllOffers(): Collection
     {
-        return OffersAndRenewal::with(['tenant.unit.property.city'])
-                              ->where(function ($query) use ($search) {
-                                  $query->where('status', 'like', "%{$search}%")
-                                        ->orWhere('notice_kind', 'like', "%{$search}%")
-                                        ->orWhere('lease_sent', 'like', "%{$search}%")
-                                        ->orWhere('lease_signed', 'like', "%{$search}%")
-                                        ->orWhere('notice_kind_2', 'like', "%{$search}%")
-                                        ->orWhere('notes', 'like', "%{$search}%")
-                                        ->orWhere('expired', 'like', "%{$search}%")
-                                        ->orWhereHas('tenant', function ($tenantQuery) use ($search) {
-                                            $tenantQuery->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"]);
-                                        })
-                                        ->orWhereHas('tenant.unit', function ($unitQuery) use ($search) {
-                                            $unitQuery->where('unit_name', 'like', "%{$search}%");
-                                        })
-                                        ->orWhereHas('tenant.unit.property', function ($propertyQuery) use ($search) {
-                                            $propertyQuery->where('property_name', 'like', "%{$search}%");
-                                        })
-                                        ->orWhereHas('tenant.unit.property.city', function ($cityQuery) use ($search) {
-                                            $cityQuery->where('city', 'like', "%{$search}%");
-                                        });
-                              })
-                              ->orderBy('date_sent_offer', 'desc')
-                              ->paginate($perPage);
+        $offers = OffersAndRenewal::with(['tenant.unit.property.city'])
+            ->orderBy('date_sent_offer', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return $this->calculateExpiryForCollection($offers);
     }
+
 
     public function createOffer(array $data): OffersAndRenewal
     {
         // Remove display-only fields that shouldn't be stored
         unset($data['city_name'], $data['property'], $data['unit'], $data['tenant']);
-        
+
         $offer = OffersAndRenewal::create($data);
         $offer->calculateExpiry();
         $offer->saveQuietly();
@@ -63,7 +64,7 @@ class OffersAndRenewalService
     {
         // Remove display-only fields that shouldn't be stored
         unset($data['city_name'], $data['property'], $data['unit'], $data['tenant']);
-        
+
         $offer->fill($data);
         $offer->calculateExpiry();
         $offer->saveQuietly();
@@ -85,29 +86,31 @@ class OffersAndRenewalService
         return $offer->restore();
     }
 
-    public function getArchivedOffers(int $perPage = 15): LengthAwarePaginator
+    public function getArchivedOffers(): Collection
     {
-        return OffersAndRenewal::onlyArchived()
-                              ->with(['tenant.unit.property.city'])
-                              ->orderBy('date_sent_offer', 'desc')
-                              ->orderBy('created_at', 'desc')
-                              ->paginate($perPage);
+        $offers = OffersAndRenewal::onlyArchived()
+            ->with(['tenant.unit.property.city'])
+            ->orderBy('date_sent_offer', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return $this->calculateExpiryForCollection($offers);
     }
 
     public function getDropdownData(): array
     {
         // Get cities
         $cities = Cities::orderBy('city')->get();
-        
+
         // Get properties with city relationships
         $properties = PropertyInfoWithoutInsurance::with('city')
-                     ->orderBy('property_name')
-                     ->get();
-        
+            ->orderBy('property_name')
+            ->get();
+
         // Get units with their relationships for dropdowns
         $units = Unit::with(['property.city'])
-                    ->orderBy('unit_name')
-                    ->get();
+            ->orderBy('unit_name')
+            ->get();
 
         // Create ID-keyed lookup maps for cascading
         $propertiesByCityId = $properties->groupBy('city_id')->map(function ($cityProperties) {
@@ -130,9 +133,9 @@ class OffersAndRenewalService
 
         // Get tenants with their relationships
         $tenants = Tenant::with(['unit.property.city'])
-                         ->orderBy('first_name')
-                         ->orderBy('last_name')
-                         ->get();
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get();
 
         // Group tenants by unit ID
         $tenantsByUnitId = $tenants->groupBy('unit_id')->map(function ($unitTenants) {
@@ -188,20 +191,20 @@ class OffersAndRenewalService
     {
         return $cities->map(function ($city) use ($properties, $units, $tenants) {
             $cityProperties = $properties->where('city_id', $city->id);
-            
+
             return [
                 'id' => $city->id,
                 'name' => $city->city,
                 'properties' => $cityProperties->map(function ($property) use ($units, $tenants) {
                     $propertyUnits = $units->where('property_id', $property->id);
-                    
+
                     return [
                         'id' => $property->id,
                         'name' => $property->property_name,
                         'city_id' => $property->city_id,
                         'units' => $propertyUnits->map(function ($unit) use ($tenants) {
                             $unitTenants = $tenants->where('unit_id', $unit->id);
-                            
+
                             return [
                                 'id' => $unit->id,
                                 'name' => $unit->unit_name,
@@ -228,13 +231,19 @@ class OffersAndRenewalService
      */
     public function getOfferWithRelations(int $id): ?OffersAndRenewal
     {
-        return OffersAndRenewal::with(['tenant.unit.property.city'])->find($id);
+        $offer = OffersAndRenewal::with(['tenant.unit.property.city'])->find($id);
+
+        if ($offer) {
+            $offer->calculateExpiry();
+        }
+
+        return $offer;
     }
 
     /**
      * Search offers with filters using ID-based filtering
      */
-    public function searchOffersWithFilters(array $filters, int $perPage = 15): LengthAwarePaginator
+    public function searchOffersWithFilters(array $filters): Collection
     {
         $query = OffersAndRenewal::with(['tenant.unit.property.city']);
 
@@ -264,15 +273,17 @@ class OffersAndRenewalService
             });
         }
 
-        return $query->orderBy('date_sent_offer', 'desc')
-                    ->orderBy('created_at', 'desc')
-                    ->paginate($perPage);
+        $offers = $query->orderBy('date_sent_offer', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return $this->calculateExpiryForCollection($offers);
     }
 
     /**
      * Search offers with name-based filters (converts names to IDs internally)
      */
-    public function searchOffersWithNameFilters(array $nameFilters, int $perPage = 15): LengthAwarePaginator
+    public function searchOffersWithNameFilters(array $nameFilters): Collection
     {
         $query = OffersAndRenewal::with(['tenant.unit.property.city']);
 
@@ -304,9 +315,11 @@ class OffersAndRenewalService
             });
         }
 
-        return $query->orderBy('date_sent_offer', 'desc')
-                    ->orderBy('created_at', 'desc')
-                    ->paginate($perPage);
+        $offers = $query->orderBy('date_sent_offer', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return $this->calculateExpiryForCollection($offers);
     }
 
     /**
@@ -315,8 +328,8 @@ class OffersAndRenewalService
     public function findCityIdsByName(string $cityName): array
     {
         return Cities::where('city', 'like', '%' . $cityName . '%')
-                    ->pluck('id')
-                    ->toArray();
+            ->pluck('id')
+            ->toArray();
     }
 
     /**
@@ -325,8 +338,8 @@ class OffersAndRenewalService
     public function findPropertyIdsByName(string $propertyName): array
     {
         return PropertyInfoWithoutInsurance::where('property_name', 'like', '%' . $propertyName . '%')
-                                          ->pluck('id')
-                                          ->toArray();
+            ->pluck('id')
+            ->toArray();
     }
 
     /**
@@ -335,8 +348,8 @@ class OffersAndRenewalService
     public function findUnitIdsByName(string $unitName): array
     {
         return Unit::where('unit_name', 'like', '%' . $unitName . '%')
-                  ->pluck('id')
-                  ->toArray();
+            ->pluck('id')
+            ->toArray();
     }
 
     /**
@@ -345,63 +358,7 @@ class OffersAndRenewalService
     public function findTenantIdsByName(string $tenantName): array
     {
         return Tenant::whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $tenantName . '%'])
-                    ->pluck('id')
-                    ->toArray();
-    }
-
-    // Legacy methods for backward compatibility
-    public function create(array $data): OffersAndRenewal
-    {
-        return $this->createOffer($data);
-    }
-
-    public function update(OffersAndRenewal $offer, array $data): OffersAndRenewal
-    {
-        return $this->updateOffer($offer, $data);
-    }
-
-    public function delete(OffersAndRenewal $offer): void
-    {
-        $this->deleteOffer($offer);
-    }
-
-    public function listAll(): Collection
-    {
-        return OffersAndRenewal::with(['tenant.unit.property.city'])->get();
-    }
-
-    public function listAllWithRelationships(?string $search = null): Collection
-    {
-        if ($search) {
-            return $this->searchOffers($search, 1000)->getCollection();
-        }
-        
-        return $this->getAllOffers(1000)->getCollection();
-    }
-
-    public function findById(int $id): ?OffersAndRenewal
-    {
-        return $this->getOfferWithRelations($id);
-    }
-
-    public function listWithArchived(): Collection
-    {
-        return OffersAndRenewal::withArchived()->with(['tenant.unit.property.city'])->get();
-    }
-
-    public function listOnlyArchived(): Collection
-    {
-        return OffersAndRenewal::onlyArchived()->with(['tenant.unit.property.city'])->get();
-    }
-
-    public function restore(OffersAndRenewal $offer): OffersAndRenewal
-    {
-        $offer->restore();
-        return $offer;
-    }
-
-    public function forceDelete(OffersAndRenewal $offer): void
-    {
-        $offer->delete();
+            ->pluck('id')
+            ->toArray();
     }
 }

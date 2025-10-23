@@ -38,6 +38,8 @@ class OffersAndRenewal extends Model
         'notes',
         'how_many_days_left',
         'expired',
+        'other_tenants',
+        'date_of_decline',
         'is_archived',
     ];
 
@@ -51,6 +53,7 @@ class OffersAndRenewal extends Model
         'lease_expires' => 'date',
         'date_signed' => 'date',
         'last_notice_sent_2' => 'date',
+        'date_of_decline' => 'date',
         'how_many_days_left' => 'integer',
         'is_archived' => 'boolean',
     ];
@@ -65,6 +68,11 @@ class OffersAndRenewal extends Model
         });
 
         static::saving(function ($offersAndRenewal) {
+            $offersAndRenewal->calculateExpiry();
+        });
+
+        // Calculate expiry when retrieving records
+        static::retrieved(function ($offersAndRenewal) {
             $offersAndRenewal->calculateExpiry();
         });
     }
@@ -116,62 +124,42 @@ class OffersAndRenewal extends Model
     {
         $now = now();
 
-        if ($this->how_many_days_left !== null) {
-            if ($this->status !== 'Accepted') {
-                $this->date_offer_expires = $this->date_sent_offer
-                    ? $this->date_sent_offer->clone()->addDays($this->how_many_days_left)
-                    : null;
-                if ($this->date_offer_expires && $this->date_offer_expires->lte($now)) {
-                    $this->expired = 'expired';
-                } else {
-                    $this->expired = 'active';
-                }
-                $this->lease_expires = null;
-            } else {
-                $this->lease_expires = $this->date_sent_lease
-                    ? $this->date_sent_lease->clone()->addDays($this->how_many_days_left)
-                    : null;
-                if ($this->lease_expires && $this->lease_expires->lte($now)) {
-                    $this->expired = 'expired';
-                } else {
-                    $this->expired = 'active';
-                }
-                $this->date_offer_expires = null;
-            }
+        // Only set N/A values when lease_signed equals 'Signed'
+        if ($this->lease_signed === 'Signed') {
+            $this->how_many_days_left = null;
+            $this->expired = 'N/A';
+            $this->date_offer_expires = null;
+            $this->lease_expires = null;
             return;
         }
 
-        // If no manual days left, calculate how_many_days_left and expiration from date_sent_lease
-        if ($this->date_sent_lease) {
-            $diff = $this->date_sent_lease->diffInDays($now, false);
-            $this->how_many_days_left = max(0, 30 - $diff);
-
-            if ($this->status !== 'Accepted') {
-                $this->date_offer_expires = $this->date_sent_offer
-                    ? $this->date_sent_offer->clone()->addDays($this->how_many_days_left)
-                    : null;
-                if ($this->date_offer_expires && $this->date_offer_expires->lte($now)) {
-                    $this->expired = 'expired';
-                } else {
-                    $this->expired = 'active';
-                }
-                $this->lease_expires = null;
+        // Calculate for all other statuses based on date_sent_offer + 40 days
+        if ($this->date_sent_offer) {
+            // Calculate the expiry date (date_sent_offer + 40 days)
+            $expiryDate = $this->date_sent_offer->clone()->addDays(40);
+            $this->date_offer_expires = $expiryDate;
+            
+            // Calculate how many days left (difference between today and expiry date)
+            $daysLeft = $now->diffInDays($expiryDate, false);
+            
+            // Ensure no negative values (stops at 0)
+            $this->how_many_days_left = max(0, $daysLeft);
+            
+            // Set expired status based on days left
+            if ($this->how_many_days_left <= 0) {
+                $this->expired = 'expired';
             } else {
-                $this->lease_expires = $this->date_sent_lease
-                    ? $this->date_sent_lease->clone()->addDays($this->how_many_days_left)
-                    : null;
-                if ($this->lease_expires && $this->lease_expires->lte($now)) {
-                    $this->expired = 'expired';
-                } else {
-                    $this->expired = 'active';
-                }
-                $this->date_offer_expires = null;
+                $this->expired = 'active';
             }
+            
+            // Clear lease expires since we're dealing with offers
+            $this->lease_expires = null;
         } else {
+            // No date_sent_offer, set N/A values
             $this->how_many_days_left = null;
+            $this->expired = 'N/A';
             $this->date_offer_expires = null;
             $this->lease_expires = null;
-            $this->expired = null;
         }
     }
 
@@ -211,55 +199,5 @@ class OffersAndRenewal extends Model
             : null;
     }
 
-    /**
-     * Validation rules for the model
-     */
-    public static function validationRules(): array
-    {
-        return [
-            'tenant_id' => 'nullable|integer|exists:tenants,id',
-            'date_sent_offer' => 'required|date',
-            'date_offer_expires' => 'nullable|date|after_or_equal:date_sent_offer',
-            'status' => 'nullable|string|max:255',
-            'date_of_acceptance' => 'nullable|date',
-            'last_notice_sent' => 'nullable|date',
-            'notice_kind' => 'nullable|string|max:255',
-            'lease_sent' => 'nullable|string|max:255',
-            'date_sent_lease' => 'nullable|date',
-            'lease_expires' => 'nullable|date',
-            'lease_signed' => 'nullable|string|max:255',
-            'date_signed' => 'nullable|date',
-            'last_notice_sent_2' => 'nullable|date',
-            'notice_kind_2' => 'nullable|string|max:255',
-            'notes' => 'nullable|string',
-            'how_many_days_left' => 'nullable|integer|min:0',
-            'expired' => 'nullable|string|max:255',
-        ];
-    }
 
-    /**
-     * Validation rules for updating the model
-     */
-    public static function updateValidationRules($id = null): array
-    {
-        return [
-            'tenant_id' => 'sometimes|nullable|integer|exists:tenants,id',
-            'date_sent_offer' => 'sometimes|required|date',
-            'date_offer_expires' => 'sometimes|nullable|date|after_or_equal:date_sent_offer',
-            'status' => 'sometimes|nullable|string|max:255',
-            'date_of_acceptance' => 'sometimes|nullable|date',
-            'last_notice_sent' => 'sometimes|nullable|date',
-            'notice_kind' => 'sometimes|nullable|string|max:255',
-            'lease_sent' => 'sometimes|nullable|string|max:255',
-            'date_sent_lease' => 'sometimes|nullable|date',
-            'lease_expires' => 'sometimes|nullable|date',
-            'lease_signed' => 'sometimes|nullable|string|max:255',
-            'date_signed' => 'sometimes|nullable|date',
-            'last_notice_sent_2' => 'sometimes|nullable|date',
-            'notice_kind_2' => 'sometimes|nullable|string|max:255',
-            'notes' => 'sometimes|nullable|string',
-            'how_many_days_left' => 'sometimes|nullable|integer|min:0',
-            'expired' => 'sometimes|nullable|string|max:255',
-        ];
-    }
 }

@@ -15,10 +15,10 @@ class StoreMoveOutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tenant_id' => [
+            'unit_id' => [
                 'nullable',
                 'integer',
-                'exists:tenants,id'
+                'exists:units,id'
             ],
             'move_out_date' => ['nullable', 'date'],
             'lease_status' => ['nullable', 'string', 'max:255'],
@@ -39,8 +39,8 @@ class StoreMoveOutRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'tenant_id.exists' => 'The selected tenant does not exist.',
-            'tenant_id.integer' => 'The tenant ID must be a valid number.',
+            'unit_id.exists' => 'The selected unit does not exist.',
+            'unit_id.integer' => 'The unit ID must be a valid number.',
             'move_out_date.date' => 'The move out date must be a valid date.',
             'date_lease_ending_on_buildium.date' => 'The lease ending date must be a valid date.',
             'date_utility_put_under_our_name.date' => 'The utility date must be a valid date.',
@@ -57,7 +57,7 @@ class StoreMoveOutRequest extends FormRequest
     {
         // Convert empty strings to null for nullable fields
         $this->merge([
-            'tenant_id' => $this->tenant_id ?: null,
+            'unit_id' => $this->unit_id ?: null,
             'move_out_date' => $this->move_out_date ?: null,
             'date_lease_ending_on_buildium' => $this->date_lease_ending_on_buildium ?: null,
             'date_utility_put_under_our_name' => $this->date_utility_put_under_our_name ?: null,

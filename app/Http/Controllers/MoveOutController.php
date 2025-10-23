@@ -30,7 +30,6 @@ class MoveOutController extends Controller
         // Get filters from request using ID-based filtering
         $filters = [
             'unit_id' => $request->get('unit_id'),
-            'tenant_id' => $request->get('tenant_id'),
             'city_id' => $request->get('city_id'),
             'property_id' => $request->get('property_id'),
         ];
@@ -44,13 +43,12 @@ class MoveOutController extends Controller
         $moveOuts->getCollection()->transform(function ($moveOut) {
             return [
                 'id' => $moveOut->id,
-                'tenant_id' => $moveOut->tenant_id,
-                'tenants_name' => $moveOut->tenant ? $moveOut->tenant->full_name : null,
-                'units_name' => $moveOut->tenant && $moveOut->tenant->unit ? $moveOut->tenant->unit->unit_name : null,
-                'property_name' => $moveOut->tenant && $moveOut->tenant->unit && $moveOut->tenant->unit->property 
-                    ? $moveOut->tenant->unit->property->property_name : null,
-                'city_name' => $moveOut->tenant && $moveOut->tenant->unit && $moveOut->tenant->unit->property && $moveOut->tenant->unit->property->city 
-                    ? $moveOut->tenant->unit->property->city->city : null,
+                'unit_id' => $moveOut->unit_id,
+                'unit_name' => $moveOut->unit ? $moveOut->unit->unit_name : null,
+                'property_name' => $moveOut->unit && $moveOut->unit->property 
+                    ? $moveOut->unit->property->property_name : null,
+                'city_name' => $moveOut->unit && $moveOut->unit->property && $moveOut->unit->property->city 
+                    ? $moveOut->unit->property->city->city : null,
                 'move_out_date' => $moveOut->move_out_date?->format('Y-m-d'),
                 'lease_status' => $moveOut->lease_status,
                 'date_lease_ending_on_buildium' => $moveOut->date_lease_ending_on_buildium?->format('Y-m-d'),
@@ -75,7 +73,6 @@ class MoveOutController extends Controller
         return Inertia::render('MoveOut/Index', [
             'moveOuts' => $moveOuts,
             'unit_id' => $filters['unit_id'],
-            'tenant_id' => $filters['tenant_id'],
             'cities' => $dropdownData['cities'],
             'properties' => $dropdownData['properties'],
             'propertiesByCityId' => $dropdownData['propertiesByCityId'],
@@ -103,9 +100,9 @@ class MoveOutController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        // Validate the request using tenant_id instead of tenants_name
+        // Validate the request using unit_id instead of tenant_id
         $validatedData = $request->validate([
-            'tenant_id' => 'required|integer|exists:tenants,id',
+            'unit_id' => 'required|integer|exists:units,id',
             'move_out_date' => 'nullable|date',
             'lease_status' => 'nullable|string|max:255',
             'date_lease_ending_on_buildium' => 'nullable|date',
@@ -137,14 +134,12 @@ class MoveOutController extends Controller
         // Transform the data to include relationship properties
         $transformedMoveOut = [
             'id' => $moveOutWithRelations->id,
-            'tenant_id' => $moveOutWithRelations->tenant_id,
-            'tenants_name' => $moveOutWithRelations->tenant ? $moveOutWithRelations->tenant->full_name : null,
-            'units_name' => $moveOutWithRelations->tenant && $moveOutWithRelations->tenant->unit 
-                ? $moveOutWithRelations->tenant->unit->unit_name : null,
-            'property_name' => $moveOutWithRelations->tenant && $moveOutWithRelations->tenant->unit && $moveOutWithRelations->tenant->unit->property 
-                ? $moveOutWithRelations->tenant->unit->property->property_name : null,
-            'city_name' => $moveOutWithRelations->tenant && $moveOutWithRelations->tenant->unit && $moveOutWithRelations->tenant->unit->property && $moveOutWithRelations->tenant->unit->property->city 
-                ? $moveOutWithRelations->tenant->unit->property->city->city : null,
+            'unit_id' => $moveOutWithRelations->unit_id,
+            'unit_name' => $moveOutWithRelations->unit ? $moveOutWithRelations->unit->unit_name : null,
+            'property_name' => $moveOutWithRelations->unit && $moveOutWithRelations->unit->property 
+                ? $moveOutWithRelations->unit->property->property_name : null,
+            'city_name' => $moveOutWithRelations->unit && $moveOutWithRelations->unit->property && $moveOutWithRelations->unit->property->city 
+                ? $moveOutWithRelations->unit->property->city->city : null,
             'move_out_date' => $moveOutWithRelations->move_out_date?->format('Y-m-d'),
             'lease_status' => $moveOutWithRelations->lease_status,
             'date_lease_ending_on_buildium' => $moveOutWithRelations->date_lease_ending_on_buildium?->format('Y-m-d'),
@@ -214,9 +209,9 @@ class MoveOutController extends Controller
 
     public function update(Request $request, MoveOut $moveOut): RedirectResponse
     {
-        // Validate the request using tenant_id instead of tenants_name
+        // Validate the request using unit_id instead of tenant_id
         $validatedData = $request->validate([
-            'tenant_id' => 'sometimes|required|integer|exists:tenants,id',
+            'unit_id' => 'sometimes|nullable|integer|exists:units,id',
             'move_out_date' => 'nullable|date',
             'lease_status' => 'nullable|string|max:255',
             'date_lease_ending_on_buildium' => 'nullable|date',

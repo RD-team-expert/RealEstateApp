@@ -1,117 +1,58 @@
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup } from '@/components/ui/radioGroup';
-import { MoveOut, MoveOutFormData, TenantData } from '@/types/move-out';
+import { MoveOut, MoveOutFormData } from '@/types/move-out';
 import { City } from '@/types/City';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { useForm } from '@inertiajs/react';
-import { format, parse, isValid } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
+import CityPropertyUnitSelector from './edit/CityPropertyUnitSelector';
+import MoveOutDateFields from './edit/MoveOutDateFields';
+import MoveOutTextFields from './edit/MoveOutTextFields';
+import MoveOutRadioFields from './edit/MoveOutRadioFields';
 
 interface Props {
     cities: City[];
-    properties: PropertyInfoWithoutInsurance[];
     propertiesByCityId: Record<number, PropertyInfoWithoutInsurance[]>;
     unitsByPropertyId: Record<number, Array<{ id: number; unit_name: string }>>;
-    tenantsByUnitId: Record<number, Array<{ id: number; full_name: string; tenant_id: number }>>;
     allUnits: Array<{ id: number; unit_name: string; city_name: string; property_name: string }>;
-    tenantsData: TenantData[];
     moveOut: MoveOut;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
 }
 
-export default function MoveOutEditDrawer({ 
+export default function MoveOutEditDrawer({
     cities,
-    properties,
     propertiesByCityId,
     unitsByPropertyId,
-    tenantsByUnitId,
     allUnits,
-    tenantsData,
     moveOut,
-    open, 
-    onOpenChange, 
-    onSuccess 
+    open,
+    onOpenChange,
+    onSuccess
 }: Props) {
-    const cityRef = useRef<HTMLButtonElement>(null);
-    const propertyRef = useRef<HTMLButtonElement>(null);
-    const unitRef = useRef<HTMLButtonElement>(null);
-    const tenantRef = useRef<HTMLButtonElement>(null);
-    
+    const cityRef = useRef<HTMLButtonElement>(null!);
+    const propertyRef = useRef<HTMLButtonElement>(null!);
+    const unitRef = useRef<HTMLButtonElement>(null!);
+
     const [validationErrors, setValidationErrors] = useState({
         city: '',
         property: '',
-        unit: '',
-        tenant: ''
+        unit: ''
     });
-    
-    // UI state for dropdowns
+
     const [selectedCity, setSelectedCity] = useState<number | null>(null);
     const [selectedProperty, setSelectedProperty] = useState<number | null>(null);
     const [selectedUnit, setSelectedUnit] = useState<number | null>(null);
-    const [selectedTenant, setSelectedTenant] = useState<number | null>(null);
-    
-    const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
-    const [availableUnits, setAvailableUnits] = useState<Array<{ id: number; unit_name: string }>>([]);
-    const [availableTenants, setAvailableTenants] = useState<Array<{ id: number; full_name: string; tenant_id: number }>>([]);
-    
+
     const [calendarStates, setCalendarStates] = useState({
         move_out_date: false,
         date_lease_ending_on_buildium: false,
         date_utility_put_under_our_name: false,
     });
 
-    // Safe date parsing function to prevent RangeError
-    const parseDate = (dateString: string | null | undefined): Date | undefined => {
-        if (!dateString || dateString.trim() === '') {
-            return undefined;
-        }
-        
-        try {
-            // Try parsing as YYYY-MM-DD format first
-            const parsedDate = parse(dateString, 'yyyy-MM-dd', new Date());
-            if (isValid(parsedDate)) {
-                return parsedDate;
-            }
-            
-            // Try parsing as a regular Date
-            const directDate = new Date(dateString);
-            if (isValid(directDate)) {
-                return directDate;
-            }
-            
-            return undefined;
-        } catch (error) {
-            console.warn('Date parsing error:', error);
-            return undefined;
-        }
-    };
-
-    // Safe date formatting function
-    // const formatDateForInput = (dateString: string | null | undefined): string => {
-    //     if (!dateString || dateString.trim() === '') {
-    //         return '';
-    //     }
-        
-    //     const parsedDate = parseDate(dateString);
-    //     if (parsedDate && isValid(parsedDate)) {
-    //         return format(parsedDate, 'yyyy-MM-dd');
-    //     }
-        
-    //     return '';
-    // };
-
     const { data, setData, put, processing, errors } = useForm<MoveOutFormData>({
-        tenant_id: moveOut.tenant_id || null,
+        unit_id: moveOut.unit_id || null,
         move_out_date: moveOut.move_out_date || '',
         lease_status: moveOut.lease_status || '',
         date_lease_ending_on_buildium: moveOut.date_lease_ending_on_buildium || '',
@@ -130,110 +71,55 @@ export default function MoveOutEditDrawer({
     // Initialize form data based on existing moveOut data
     useEffect(() => {
         if (moveOut && allUnits) {
-            // Find the unit info from allUnits using units_name
-            const unitInfo = allUnits.find(unit => unit.unit_name === moveOut.units_name);
-            
+            const unitInfo = allUnits.find(unit => unit.unit_name === moveOut.unit_name);
+
             if (unitInfo) {
-                // Find the corresponding city and property by their IDs
                 const selectedCityObj = cities.find(c => c.city === moveOut.city_name);
-                const selectedPropertyObj = properties.find(p => p.property_name === moveOut.property_name);
                 
-                // Set UI state with IDs
+                // Find property by matching the city and property name
+                let selectedPropertyObj = null;
+                if (selectedCityObj && propertiesByCityId[selectedCityObj.id]) {
+                    selectedPropertyObj = propertiesByCityId[selectedCityObj.id].find(
+                        p => p.property_name === moveOut.property_name
+                    );
+                }
+
                 if (selectedCityObj) {
                     setSelectedCity(selectedCityObj.id);
-                    // Set available properties for the city
-                    if (propertiesByCityId[selectedCityObj.id]) {
-                        setAvailableProperties(propertiesByCityId[selectedCityObj.id]);
-                    }
                 }
-                
+
                 if (selectedPropertyObj) {
                     setSelectedProperty(selectedPropertyObj.id);
-                    // Set available units for the property
-                    if (unitsByPropertyId[selectedPropertyObj.id]) {
-                        setAvailableUnits(unitsByPropertyId[selectedPropertyObj.id]);
-                    }
                 }
-                
+
                 setSelectedUnit(unitInfo.id);
-                // Set available tenants for the unit
-                if (tenantsByUnitId[unitInfo.id]) {
-                    setAvailableTenants(tenantsByUnitId[unitInfo.id]);
-                }
-                
-                // Find tenant by name and set ID
-                const tenantObj = tenantsData.find(t => t.full_name === moveOut.tenants_name);
-                if (tenantObj) {
-                    setSelectedTenant(tenantObj.id);
-                    setData('tenant_id', tenantObj.id);
-                }
+                setData('unit_id', unitInfo.id);
             }
         }
-    }, [moveOut, allUnits, cities, properties, propertiesByCityId, unitsByPropertyId, tenantsByUnitId, tenantsData]);
+    }, [moveOut, allUnits, cities, propertiesByCityId]);
 
-    // Handle city selection
     const handleCityChange = (cityId: string) => {
         const cityIdNum = parseInt(cityId);
         setSelectedCity(cityIdNum);
         setSelectedProperty(null);
         setSelectedUnit(null);
-        setSelectedTenant(null);
-        setData('tenant_id', null);
-        
-        setValidationErrors(prev => ({ ...prev, city: '', property: '', unit: '', tenant: '' }));
-
-        if (cityIdNum && propertiesByCityId[cityIdNum]) {
-            setAvailableProperties(propertiesByCityId[cityIdNum]);
-        } else {
-            setAvailableProperties([]);
-        }
-        setAvailableUnits([]);
-        setAvailableTenants([]);
+        setData('unit_id', null);
+        setValidationErrors(prev => ({ ...prev, city: '', property: '', unit: '' }));
     };
 
-    // Handle property selection
     const handlePropertyChange = (propertyId: string) => {
         const propertyIdNum = parseInt(propertyId);
         setSelectedProperty(propertyIdNum);
         setSelectedUnit(null);
-        setSelectedTenant(null);
-        setData('tenant_id', null);
-        
-        setValidationErrors(prev => ({ ...prev, property: '', unit: '', tenant: '' }));
-
-        if (propertyIdNum && unitsByPropertyId[propertyIdNum]) {
-            setAvailableUnits(unitsByPropertyId[propertyIdNum]);
-        } else {
-            setAvailableUnits([]);
-        }
-        setAvailableTenants([]);
+        setData('unit_id', null);
+        setValidationErrors(prev => ({ ...prev, property: '', unit: '' }));
     };
 
-    // Handle unit selection
     const handleUnitChange = (unitId: string) => {
         const unitIdNum = parseInt(unitId);
         setSelectedUnit(unitIdNum);
-        setSelectedTenant(null);
-        setData('tenant_id', null);
-        
-        setValidationErrors(prev => ({ ...prev, unit: '', tenant: '' }));
-
-        if (unitIdNum && tenantsByUnitId[unitIdNum]) {
-            setAvailableTenants(tenantsByUnitId[unitIdNum]);
-        } else {
-            setAvailableTenants([]);
-        }
-    };
-
-    // Handle tenant selection
-    const handleTenantChange = (tenantId: string) => {
-        const tenantIdNum = parseInt(tenantId);
-        const tenant = availableTenants.find(t => t.id === tenantIdNum);
-        if (tenant) {
-            setSelectedTenant(tenantIdNum);
-            setData('tenant_id', tenant.id);
-            setValidationErrors(prev => ({ ...prev, tenant: '' }));
-        }
+        setData('unit_id', unitIdNum);
+        setValidationErrors(prev => ({ ...prev, unit: '' }));
     };
 
     const handleCalendarToggle = (field: keyof typeof calendarStates) => {
@@ -243,30 +129,25 @@ export default function MoveOutEditDrawer({
         }));
     };
 
-    // const handleDateSelect = (date: Date | undefined, field: string) => {
-    //     if (date) {
-    //         setData(field as keyof MoveOutFormData, format(date, 'yyyy-MM-dd'));
-    //         setCalendarStates(prev => ({
-    //             ...prev,
-    //             [field]: false
-    //         }));
-    //     }
-    // };
+    const handleDateChange = (field: keyof MoveOutFormData, value: string) => {
+        setData(field, value);
+    };
+
+    const handleFieldChange = (field: keyof MoveOutFormData, value: string) => {
+        setData(field, value);
+    };
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Clear previous validation errors
+
         setValidationErrors({
             city: '',
             property: '',
-            unit: '',
-            tenant: ''
+            unit: ''
         });
-        
+
         let hasValidationErrors = false;
-        
-        // Validate city selection
+
         if (!selectedCity) {
             setValidationErrors(prev => ({ ...prev, city: 'Please select a city before submitting the form.' }));
             if (cityRef.current) {
@@ -275,8 +156,7 @@ export default function MoveOutEditDrawer({
             }
             hasValidationErrors = true;
         }
-        
-        // Validate property selection
+
         if (!selectedProperty) {
             setValidationErrors(prev => ({ ...prev, property: 'Please select a property before submitting the form.' }));
             if (propertyRef.current) {
@@ -285,9 +165,8 @@ export default function MoveOutEditDrawer({
             }
             hasValidationErrors = true;
         }
-        
-        // Validate unit selection
-        if (!selectedUnit) {
+
+        if (!selectedUnit || !data.unit_id) {
             setValidationErrors(prev => ({ ...prev, unit: 'Please select a unit before submitting the form.' }));
             if (unitRef.current) {
                 unitRef.current.focus();
@@ -295,17 +174,7 @@ export default function MoveOutEditDrawer({
             }
             hasValidationErrors = true;
         }
-        
-        // Validate tenant selection
-        if (!selectedTenant || !data.tenant_id) {
-            setValidationErrors(prev => ({ ...prev, tenant: 'Please select a tenant before submitting the form.' }));
-            if (tenantRef.current) {
-                tenantRef.current.focus();
-                tenantRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            hasValidationErrors = true;
-        }
-        
+
         if (hasValidationErrors) {
             return;
         }
@@ -319,9 +188,8 @@ export default function MoveOutEditDrawer({
     };
 
     const handleCancel = () => {
-        // Reset to original moveOut data
         setData({
-            tenant_id: moveOut.tenant_id || null,
+            unit_id: moveOut.unit_id || null,
             move_out_date: moveOut.move_out_date || '',
             lease_status: moveOut.lease_status || '',
             date_lease_ending_on_buildium: moveOut.date_lease_ending_on_buildium || '',
@@ -336,14 +204,13 @@ export default function MoveOutEditDrawer({
             list_the_unit: moveOut.list_the_unit || '',
             move_out_form: moveOut.move_out_form || '',
         });
-        
+
         setValidationErrors({
             city: '',
             property: '',
-            unit: '',
-            tenant: ''
+            unit: ''
         });
-        
+
         onOpenChange(false);
     };
 
@@ -353,400 +220,41 @@ export default function MoveOutEditDrawer({
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={submit} className="space-y-4">
-                            {/* City Selection */}
-                            <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="city_name" className="text-base font-semibold">
-                                        City *
-                                    </Label>
-                                </div>
-                                <Select onValueChange={handleCityChange} value={selectedCity?.toString() || ''}>
-                                    <SelectTrigger ref={cityRef}>
-                                        <SelectValue placeholder="Select city" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {cities?.map((city) => (
-                                            <SelectItem key={city.id} value={city.id.toString()}>
-                                                {city.city}
-                                            </SelectItem>
-                                        )) || []}
-                                    </SelectContent>
-                                </Select>
-                                {validationErrors.city && <p className="mt-1 text-sm text-red-600">{validationErrors.city}</p>}
-                            </div>
+                            <CityPropertyUnitSelector
+                                cities={cities}
+                                propertiesByCityId={propertiesByCityId}
+                                unitsByPropertyId={unitsByPropertyId}
+                                selectedCity={selectedCity}
+                                selectedProperty={selectedProperty}
+                                selectedUnit={selectedUnit}
+                                onCityChange={handleCityChange}
+                                onPropertyChange={handlePropertyChange}
+                                onUnitChange={handleUnitChange}
+                                validationErrors={validationErrors}
+                                cityRef={cityRef}
+                                propertyRef={propertyRef}
+                                unitRef={unitRef}
+                            />
 
-                            {/* Property Selection */}
-                            <div className="rounded-lg border-l-4 border-l-green-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="property_name" className="text-base font-semibold">
-                                        Property Name *
-                                    </Label>
-                                </div>
-                                <Select
-                                    onValueChange={handlePropertyChange}
-                                    value={selectedProperty?.toString() || ''}
-                                    disabled={!selectedCity}
-                                >
-                                    <SelectTrigger ref={propertyRef}>
-                                        <SelectValue placeholder="Select property" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableProperties?.map((property) => (
-                                            <SelectItem key={property.id} value={property.id.toString()}>
-                                                {property.property_name}
-                                            </SelectItem>
-                                        )) || []}
-                                    </SelectContent>
-                                </Select>
-                                {validationErrors.property && <p className="mt-1 text-sm text-red-600">{validationErrors.property}</p>}
-                            </div>
+                            <MoveOutDateFields
+                                data={data}
+                                errors={errors}
+                                calendarStates={calendarStates}
+                                onCalendarToggle={handleCalendarToggle}
+                                onDateChange={handleDateChange}
+                            />
 
-                            {/* Unit Selection */}
-                            <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="units_name" className="text-base font-semibold">
-                                        Unit Name *
-                                    </Label>
-                                </div>
-                                <Select
-                                    onValueChange={handleUnitChange}
-                                    value={selectedUnit?.toString() || ''}
-                                    disabled={!selectedProperty}
-                                >
-                                    <SelectTrigger ref={unitRef}>
-                                        <SelectValue placeholder="Select unit" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableUnits?.map((unit) => (
-                                            <SelectItem key={unit.id} value={unit.id.toString()}>
-                                                {unit.unit_name}
-                                            </SelectItem>
-                                        )) || []}
-                                    </SelectContent>
-                                </Select>
-                                {validationErrors.unit && <p className="mt-1 text-sm text-red-600">{validationErrors.unit}</p>}
-                            </div>
+                            <MoveOutTextFields
+                                data={data}
+                                errors={errors}
+                                onFieldChange={handleFieldChange}
+                            />
 
-                            {/* Tenant Selection */}
-                            <div className="rounded-lg border-l-4 border-l-orange-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="tenants_name" className="text-base font-semibold">
-                                        Tenant Name *
-                                    </Label>
-                                </div>
-                                <Select 
-                                    onValueChange={handleTenantChange} 
-                                    value={selectedTenant?.toString() || ''}
-                                    disabled={!selectedUnit}
-                                >
-                                    <SelectTrigger ref={tenantRef}>
-                                        <SelectValue placeholder="Select tenant" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableTenants?.map((tenant) => (
-                                            <SelectItem key={tenant.id} value={tenant.id.toString()}>
-                                                {tenant.full_name}
-                                            </SelectItem>
-                                        )) || []}
-                                    </SelectContent>
-                                </Select>
-                                {validationErrors.tenant && <p className="mt-1 text-sm text-red-600">{validationErrors.tenant}</p>}
-                            </div>
-
-                            {/* Move Out Date */}
-                            <div className="rounded-lg border-l-4 border-l-red-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="move_out_date" className="text-base font-semibold">
-                                        Move Out Date
-                                    </Label>
-                                </div>
-                                <Popover open={calendarStates.move_out_date} onOpenChange={() => handleCalendarToggle('move_out_date')}>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-start text-left font-normal"
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.move_out_date && data.move_out_date.trim() !== ''
-                                                ? (() => {
-                                                    const parsedDate = parseDate(data.move_out_date);
-                                                    return parsedDate ? format(parsedDate, 'PPP') : 'Pick a date';
-                                                })()
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <Calendar
-                                            mode="single"
-                                            selected={parseDate(data.move_out_date)}
-                                            onSelect={(date) => {
-                                                if (date && isValid(date)) {
-                                                    setData('move_out_date', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarStates(prev => ({
-                                                        ...prev,
-                                                        move_out_date: false
-                                                    }));
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.move_out_date && <p className="mt-1 text-sm text-red-600">{errors.move_out_date}</p>}
-                            </div>
-
-                            {/* Lease Status */}
-                            <div className="rounded-lg border-l-4 border-l-yellow-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="lease_status" className="text-base font-semibold">
-                                        Lease Status
-                                    </Label>
-                                </div>
-                                <Input
-                                    id="lease_status"
-                                    value={data.lease_status}
-                                    onChange={(e) => setData('lease_status', e.target.value)}
-                                    placeholder="Enter lease status"
-                                />
-                                {errors.lease_status && <p className="mt-1 text-sm text-red-600">{errors.lease_status}</p>}
-                            </div>
-
-                            {/* Date Lease Ending on Buildium */}
-                            <div className="rounded-lg border-l-4 border-l-teal-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="date_lease_ending_on_buildium" className="text-base font-semibold">
-                                        Date Lease Ending on Buildium
-                                    </Label>
-                                </div>
-                                <Popover open={calendarStates.date_lease_ending_on_buildium} onOpenChange={() => handleCalendarToggle('date_lease_ending_on_buildium')}>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-start text-left font-normal"
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.date_lease_ending_on_buildium && data.date_lease_ending_on_buildium.trim() !== ''
-                                                ? (() => {
-                                                    const parsedDate = parseDate(data.date_lease_ending_on_buildium);
-                                                    return parsedDate ? format(parsedDate, 'PPP') : 'Pick a date';
-                                                })()
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <Calendar
-                                            mode="single"
-                                            selected={parseDate(data.date_lease_ending_on_buildium)}
-                                            onSelect={(date) => {
-                                                if (date && isValid(date)) {
-                                                    setData('date_lease_ending_on_buildium', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarStates(prev => ({
-                                                        ...prev,
-                                                        date_lease_ending_on_buildium: false
-                                                    }));
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.date_lease_ending_on_buildium && <p className="mt-1 text-sm text-red-600">{errors.date_lease_ending_on_buildium}</p>}
-                            </div>
-
-                            {/* Keys Location */}
-                            <div className="rounded-lg border-l-4 border-l-cyan-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="keys_location" className="text-base font-semibold">
-                                        Keys Location
-                                    </Label>
-                                </div>
-                                <Input
-                                    id="keys_location"
-                                    value={data.keys_location}
-                                    onChange={(e) => setData('keys_location', e.target.value)}
-                                    placeholder="Enter keys location"
-                                />
-                                {errors.keys_location && <p className="mt-1 text-sm text-red-600">{errors.keys_location}</p>}
-                            </div>
-
-                            {/* Utilities */}
-                            <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="utilities_under_our_name" className="text-base font-semibold">
-                                        Utilities Under Our Name
-                                    </Label>
-                                </div>
-                                <RadioGroup
-                                    value={data.utilities_under_our_name}
-                                    onValueChange={(value) => setData('utilities_under_our_name', value as "" | "Yes" | "No")}
-                                    name="utilities_under_our_name"
-                                    options={[
-                                        { value: 'Yes', label: 'Yes' },
-                                        { value: 'No', label: 'No' }
-                                    ]}
-                                />
-                                {errors.utilities_under_our_name && <p className="mt-1 text-sm text-red-600">{errors.utilities_under_our_name}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-pink-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="date_utility_put_under_our_name" className="text-base font-semibold">
-                                        Date Utility Put Under Our Name
-                                    </Label>
-                                </div>
-                                <Popover open={calendarStates.date_utility_put_under_our_name} onOpenChange={() => handleCalendarToggle('date_utility_put_under_our_name')}>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-start text-left font-normal"
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.date_utility_put_under_our_name && data.date_utility_put_under_our_name.trim() !== ''
-                                                ? (() => {
-                                                    const parsedDate = parseDate(data.date_utility_put_under_our_name);
-                                                    return parsedDate ? format(parsedDate, 'PPP') : 'Pick a date';
-                                                })()
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <Calendar
-                                            mode="single"
-                                            selected={parseDate(data.date_utility_put_under_our_name)}
-                                            onSelect={(date) => {
-                                                if (date && isValid(date)) {
-                                                    setData('date_utility_put_under_our_name', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarStates(prev => ({
-                                                        ...prev,
-                                                        date_utility_put_under_our_name: false
-                                                    }));
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.date_utility_put_under_our_name && <p className="mt-1 text-sm text-red-600">{errors.date_utility_put_under_our_name}</p>}
-                            </div>
-
-                            {/* Walkthrough */}
-                            <div className="rounded-lg border-l-4 border-l-emerald-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="walkthrough" className="text-base font-semibold">
-                                        Walkthrough
-                                    </Label>
-                                </div>
-                                <Textarea
-                                    id="walkthrough"
-                                    value={data.walkthrough}
-                                    onChange={(e) => setData('walkthrough', e.target.value)}
-                                    placeholder="Enter walkthrough details"
-                                    className="min-h-[100px]"
-                                />
-                                {errors.walkthrough && <p className="mt-1 text-sm text-red-600">{errors.walkthrough}</p>}
-                            </div>
-
-                            {/* Repairs */}
-                            <div className="rounded-lg border-l-4 border-l-lime-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="repairs" className="text-base font-semibold">
-                                        Repairs
-                                    </Label>
-                                </div>
-                                <Textarea
-                                    id="repairs"
-                                    value={data.repairs}
-                                    onChange={(e) => setData('repairs', e.target.value)}
-                                    placeholder="Enter repair details"
-                                    className="min-h-[80px]"
-                                />
-                                {errors.repairs && <p className="mt-1 text-sm text-red-600">{errors.repairs}</p>}
-                            </div>
-
-                            {/* Send Back Security Deposit */}
-                            <div className="rounded-lg border-l-4 border-l-amber-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="send_back_security_deposit" className="text-base font-semibold">
-                                        Send Back Security Deposit
-                                    </Label>
-                                </div>
-                                <Input
-                                    id="send_back_security_deposit"
-                                    value={data.send_back_security_deposit}
-                                    onChange={(e) => setData('send_back_security_deposit', e.target.value)}
-                                    placeholder="Enter security deposit details"
-                                />
-                                {errors.send_back_security_deposit && <p className="mt-1 text-sm text-red-600">{errors.send_back_security_deposit}</p>}
-                            </div>
-
-                            {/* Notes */}
-                            <div className="rounded-lg border-l-4 border-l-slate-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="notes" className="text-base font-semibold">
-                                        Notes
-                                    </Label>
-                                </div>
-                                <Textarea
-                                    id="notes"
-                                    value={data.notes}
-                                    onChange={(e) => setData('notes', e.target.value)}
-                                    placeholder="Enter additional notes"
-                                    className="min-h-[100px]"
-                                />
-                                {errors.notes && <p className="mt-1 text-sm text-red-600">{errors.notes}</p>}
-                            </div>
-
-                            {/* Cleaning */}
-                            <div className="rounded-lg border-l-4 border-l-violet-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="cleaning" className="text-base font-semibold">
-                                        Cleaning
-                                    </Label>
-                                </div>
-                                <RadioGroup
-                                    value={data.cleaning}
-                                    onValueChange={(value) => setData('cleaning', value as "" | "cleaned" | "uncleaned")}
-                                    name="cleaning"
-                                    options={[
-                                        { value: 'cleaned', label: 'Cleaned' },
-                                        { value: 'uncleaned', label: 'Uncleaned' }
-                                    ]}
-                                />
-                                {errors.cleaning && <p className="mt-1 text-sm text-red-600">{errors.cleaning}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-rose-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="list_the_unit" className="text-base font-semibold">
-                                        List the Unit
-                                    </Label>
-                                </div>
-                                <Input
-                                    id="list_the_unit"
-                                    value={data.list_the_unit}
-                                    onChange={(e) => setData('list_the_unit', e.target.value)}
-                                    placeholder="Enter unit listing details"
-                                />
-                                {errors.list_the_unit && <p className="mt-1 text-sm text-red-600">{errors.list_the_unit}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-fuchsia-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="move_out_form" className="text-base font-semibold">
-                                        Move Out Form
-                                    </Label>
-                                </div>
-                                <RadioGroup
-                                    value={data.move_out_form}
-                                    onValueChange={(value) => setData('move_out_form', value as "" | "filled" | "not filled")}
-                                    name="move_out_form"
-                                    options={[
-                                        { value: 'filled', label: 'Filled' },
-                                        { value: 'not filled', label: 'Not Filled' }
-                                    ]}
-                                />
-                                {errors.move_out_form && <p className="mt-1 text-sm text-red-600">{errors.move_out_form}</p>}
-                            </div>
+                            <MoveOutRadioFields
+                                data={data}
+                                errors={errors}
+                                onFieldChange={handleFieldChange}
+                            />
                         </form>
                     </div>
 

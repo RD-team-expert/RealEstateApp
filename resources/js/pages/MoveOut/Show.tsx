@@ -111,7 +111,7 @@ export default function Show({ moveOut }: Props) {
                     {/* Property Hierarchy Card */}
                     <Card className="mb-6 border-l-4 border-l-blue-500">
                         <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <InfoItem
                                     icon={MapPin}
                                     label="City"
@@ -127,14 +127,8 @@ export default function Show({ moveOut }: Props) {
                                 <InfoItem
                                     icon={Home}
                                     label="Unit"
-                                    value={moveOut.units_name}
+                                    value={moveOut.unit_name || 'N/A'}
                                     className="bg-purple-50/50"
-                                />
-                                <InfoItem
-                                    icon={User}
-                                    label="Tenant"
-                                    value={moveOut.tenants_name}
-                                    className="bg-orange-50/50"
                                 />
                             </div>
                         </CardContent>

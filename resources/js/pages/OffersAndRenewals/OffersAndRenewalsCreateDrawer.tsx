@@ -1,36 +1,35 @@
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup } from '@/components/ui/radioGroup';
 import { useForm } from '@inertiajs/react';
-import { format, parse } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef } from 'react';
+import CascadingSelectors from './create/CascadingSelectors';
+import OfferInformationSection from './create/OfferInformationSection';
+import AcceptanceSection from './create/AcceptanceSection';
+import LeaseInformationSection from './create/LeaseInformationSection';
+import RenewalInformationSection from './create/RenewalInformationSection';
+import AdditionalFieldsSection from './create/AdditionalFieldsSection';
+import DateOfDeclineSection from './create/DateOfDeclineSection';
 
 interface HierarchicalData {
-  id: number;
-  name: string;
-  properties: {
     id: number;
     name: string;
-    city_id: number;
-    units: {
-      id: number;
-      name: string;
-      property_id: number;
-      tenants: {
+    properties: {
         id: number;
         name: string;
-        first_name: string;
-        last_name: string;
-        unit_id: number;
-      }[];
+        city_id: number;
+        units: {
+            id: number;
+            name: string;
+            property_id: number;
+            tenants: {
+                id: number;
+                name: string;
+                first_name: string;
+                last_name: string;
+                unit_id: number;
+            }[];
+        }[];
     }[];
-  }[];
 }
 
 interface Props {
@@ -45,7 +44,7 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
     const propertyRef = useRef<HTMLButtonElement>(null);
     const unitRef = useRef<HTMLButtonElement>(null);
     const tenantRef = useRef<HTMLButtonElement>(null);
-    
+
     const [validationErrors, setValidationErrors] = useState<{
         city?: string;
         property?: string;
@@ -53,7 +52,7 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
         tenant?: string;
         date_sent_offer?: string;
     }>({});
-    
+
     const [calendarStates, setCalendarStates] = useState({
         date_sent_offer: false,
         date_of_acceptance: false,
@@ -61,6 +60,7 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
         date_sent_lease: false,
         date_signed: false,
         last_notice_sent_2: false,
+        date_of_decline: false,
     });
 
     const setCalendarOpen = (field: keyof typeof calendarStates, open: boolean) => {
@@ -72,6 +72,7 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
         city_id: '',
         property_id: '',
         unit_id: '',
+        other_tenants: '',
         date_sent_offer: '',
         status: '',
         date_of_acceptance: '',
@@ -84,35 +85,14 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
         last_notice_sent_2: '',
         notice_kind_2: '',
         notes: '',
-        how_many_days_left: '',
+        date_of_decline: '',
     });
-
-    // Get available properties based on selected city
-    const availableProperties = useMemo(() => {
-        if (!data.city_id) return [];
-        const selectedCity = hierarchicalData.find(city => city.id.toString() === data.city_id);
-        return selectedCity ? selectedCity.properties : [];
-    }, [hierarchicalData, data.city_id]);
-
-    // Get available units based on selected property
-    const availableUnits = useMemo(() => {
-        if (!data.property_id) return [];
-        const selectedProperty = availableProperties.find(property => property.id.toString() === data.property_id);
-        return selectedProperty ? selectedProperty.units : [];
-    }, [availableProperties, data.property_id]);
-
-    // Get available tenants based on selected unit
-    const availableTenants = useMemo(() => {
-        if (!data.unit_id) return [];
-        const selectedUnit = availableUnits.find(unit => unit.id.toString() === data.unit_id);
-        return selectedUnit ? selectedUnit.tenants : [];
-    }, [availableUnits, data.unit_id]);
 
     const handleCityChange = (cityId: string) => {
         setData({
             ...data,
             city_id: cityId,
-            property_id: '', // Reset dependent fields
+            property_id: '',
             unit_id: '',
             tenant_id: ''
         });
@@ -123,7 +103,7 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
         setData({
             ...data,
             property_id: propertyId,
-            unit_id: '', // Reset dependent fields
+            unit_id: '',
             tenant_id: ''
         });
         setValidationErrors(prev => ({ ...prev, property: undefined }));
@@ -133,7 +113,7 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
         setData({
             ...data,
             unit_id: unitId,
-            tenant_id: '' // Reset dependent field
+            tenant_id: ''
         });
         setValidationErrors(prev => ({ ...prev, unit: undefined }));
     };
@@ -143,21 +123,27 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
         setValidationErrors(prev => ({ ...prev, tenant: undefined }));
     };
 
+    const handleOtherTenantsChange = (value: string) => {
+        setData('other_tenants', value);
+    };
+
     const handleDateSentOfferChange = (date: string) => {
         setData('date_sent_offer', date);
         setValidationErrors(prev => ({ ...prev, date_sent_offer: undefined }));
     };
 
+    const handleDateOfDeclineChange = (date: string) => {
+        setData('date_of_decline', date);
+    };
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Clear any previous validation errors
+
         setValidationErrors({});
-        
+
         let hasValidationErrors = false;
         const newValidationErrors: typeof validationErrors = {};
-        
-        // Validate required fields in cascading order
+
         if (!data.city_id || data.city_id.trim() === '') {
             newValidationErrors.city = 'Please select a city before submitting the form.';
             if (cityRef.current) {
@@ -166,7 +152,7 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
             }
             hasValidationErrors = true;
         }
-        
+
         if (!data.property_id || data.property_id.trim() === '') {
             newValidationErrors.property = 'Please select a property before submitting the form.';
             if (propertyRef.current && !hasValidationErrors) {
@@ -175,7 +161,7 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
             }
             hasValidationErrors = true;
         }
-        
+
         if (!data.unit_id || data.unit_id.trim() === '') {
             newValidationErrors.unit = 'Please select a unit before submitting the form.';
             if (unitRef.current && !hasValidationErrors) {
@@ -184,7 +170,7 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
             }
             hasValidationErrors = true;
         }
-        
+
         if (!data.tenant_id || data.tenant_id.trim() === '') {
             newValidationErrors.tenant = 'Please select a tenant before submitting the form.';
             if (tenantRef.current && !hasValidationErrors) {
@@ -193,17 +179,12 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
             }
             hasValidationErrors = true;
         }
-        
-        if (!data.date_sent_offer || data.date_sent_offer.trim() === '') {
-            newValidationErrors.date_sent_offer = 'Please select a date sent offer before submitting the form.';
-            hasValidationErrors = true;
-        }
-        
+
         if (hasValidationErrors) {
             setValidationErrors(newValidationErrors);
             return;
         }
-        
+
         post(route('offers_and_renewals.store'), {
             onSuccess: () => {
                 reset();
@@ -226,488 +207,96 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={submit} className="space-y-4">
-                            {/* Cascading Selection */}
-                            <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="city" className="text-base font-semibold">
-                                        City *
-                                    </Label>
-                                </div>
-                                <Select onValueChange={handleCityChange} value={data.city_id}>
-                                    <SelectTrigger ref={cityRef}>
-                                        <SelectValue placeholder="Select city" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {hierarchicalData.map((city) => (
-                                            <SelectItem key={city.id} value={city.id.toString()}>
-                                                {city.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.city_id && <p className="mt-1 text-sm text-red-600">{errors.city_id}</p>}
-                                {validationErrors.city && <p className="mt-1 text-sm text-red-600">{validationErrors.city}</p>}
-                            </div>
+                            <CascadingSelectors
+                                hierarchicalData={hierarchicalData}
+                                cityId={data.city_id}
+                                propertyId={data.property_id}
+                                unitId={data.unit_id}
+                                tenantId={data.tenant_id}
+                                otherTenants={data.other_tenants}
+                                onCityChange={handleCityChange}
+                                onPropertyChange={handlePropertyChange}
+                                onUnitChange={handleUnitChange}
+                                onTenantChange={handleTenantChange}
+                                onOtherTenantsChange={handleOtherTenantsChange}
+                                errors={errors}
+                                validationErrors={validationErrors}
+                                cityRef={cityRef}
+                                propertyRef={propertyRef}
+                                unitRef={unitRef}
+                                tenantRef={tenantRef}
+                            />
 
-                            <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="property" className="text-base font-semibold">
-                                        Property *
-                                    </Label>
-                                </div>
-                                <Select 
-                                    onValueChange={handlePropertyChange} 
-                                    value={data.property_id}
-                                    disabled={!data.city_id || availableProperties.length === 0}
-                                >
-                                    <SelectTrigger ref={propertyRef}>
-                                        <SelectValue placeholder={
-                                            !data.city_id 
-                                                ? "Select city first" 
-                                                : availableProperties.length === 0 
-                                                    ? "No properties available"
-                                                    : "Select property"
-                                        } />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableProperties.map((property) => (
-                                            <SelectItem key={property.id} value={property.id.toString()}>
-                                                {property.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.property_id && <p className="mt-1 text-sm text-red-600">{errors.property_id}</p>}
-                                {validationErrors.property && <p className="mt-1 text-sm text-red-600">{validationErrors.property}</p>}
-                            </div>
+                            <OfferInformationSection
+                                dateSentOffer={data.date_sent_offer}
+                                status={data.status}
+                                onDateSentOfferChange={handleDateSentOfferChange}
+                                onStatusChange={(value) => setData('status', value)}
+                                errors={errors}
+                                validationErrors={validationErrors}
+                                calendarOpen={calendarStates.date_sent_offer}
+                                onCalendarOpenChange={(open) => setCalendarOpen('date_sent_offer', open)}
+                            />
 
-                            <div className="rounded-lg border-l-4 border-l-green-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="unit" className="text-base font-semibold">
-                                        Unit *
-                                    </Label>
-                                </div>
-                                <Select 
-                                    onValueChange={handleUnitChange} 
-                                    value={data.unit_id}
-                                    disabled={!data.property_id || availableUnits.length === 0}
-                                >
-                                    <SelectTrigger ref={unitRef}>
-                                        <SelectValue placeholder={
-                                            !data.property_id 
-                                                ? "Select property first" 
-                                                : availableUnits.length === 0 
-                                                    ? "No units available"
-                                                    : "Select unit"
-                                        } />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableUnits.map((unit) => (
-                                            <SelectItem key={unit.id} value={unit.id.toString()}>
-                                                {unit.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.unit_id && <p className="mt-1 text-sm text-red-600">{errors.unit_id}</p>}
-                                {validationErrors.unit && <p className="mt-1 text-sm text-red-600">{validationErrors.unit}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="tenant" className="text-base font-semibold">
-                                        Tenant *
-                                    </Label>
-                                </div>
-                                <Select 
-                                    onValueChange={handleTenantChange} 
-                                    value={data.tenant_id}
-                                    disabled={!data.unit_id || availableTenants.length === 0}
-                                >
-                                    <SelectTrigger ref={tenantRef}>
-                                        <SelectValue placeholder={
-                                            !data.unit_id 
-                                                ? "Select unit first" 
-                                                : availableTenants.length === 0 
-                                                    ? "No tenants available"
-                                                    : "Select tenant"
-                                        } />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableTenants.map((tenant) => (
-                                            <SelectItem key={tenant.id} value={tenant.id.toString()}>
-                                                {tenant.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.tenant_id && <p className="mt-1 text-sm text-red-600">{errors.tenant_id}</p>}
-                                {validationErrors.tenant && <p className="mt-1 text-sm text-red-600">{validationErrors.tenant}</p>}
-                            </div>
-
-                            {/* Offer Information */}
-                            <div className="rounded-lg border-l-4 border-l-orange-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="date_sent_offer" className="text-base font-semibold">
-                                        Date Sent Offer *
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarStates.date_sent_offer}
-                                    onOpenChange={(open) => setCalendarOpen('date_sent_offer', open)}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.date_sent_offer && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.date_sent_offer
-                                                ? format(parse(data.date_sent_offer, 'yyyy-MM-dd', new Date()), 'PPP')
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={data.date_sent_offer ? parse(data.date_sent_offer, 'yyyy-MM-dd', new Date()) : undefined}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    handleDateSentOfferChange(format(date, 'yyyy-MM-dd'));
-                                                    setCalendarOpen('date_sent_offer', false);
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.date_sent_offer && <p className="mt-1 text-sm text-red-600">{errors.date_sent_offer}</p>}
-                                {validationErrors.date_sent_offer && <p className="mt-1 text-sm text-red-600">{validationErrors.date_sent_offer}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-emerald-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="status" className="text-base font-semibold">
-                                        Status
-                                    </Label>
-                                </div>
-                                <RadioGroup
-                                    value={data.status}
-                                    onValueChange={(value) => setData('status', value)}
-                                    name="status"
-                                    options={[
-                                        { value: 'Accepted', label: 'Accepted' },
-                                        { value: "Didn't Accept", label: "Didn't Accept" },
-                                        { value: "Didn't respond", label: "Didn't respond" }
-                                    ]}
+                            {data.status === "Didn't Accept" ? (
+                                <DateOfDeclineSection
+                                    dateOfDecline={data.date_of_decline}
+                                    onDateOfDeclineChange={handleDateOfDeclineChange}
+                                    errors={errors}
+                                    calendarOpen={calendarStates.date_of_decline}
+                                    onCalendarOpenChange={(open) => setCalendarOpen('date_of_decline', open)}
                                 />
-                                {errors.status && <p className="mt-1 text-sm text-red-600">{errors.status}</p>}
-                            </div>
+                            ) : (
+                                <>
+                                    <AcceptanceSection
+                                        dateOfAcceptance={data.date_of_acceptance}
+                                        lastNoticeSent={data.last_notice_sent}
+                                        noticeKind={data.notice_kind}
+                                        onDateOfAcceptanceChange={(date) => setData('date_of_acceptance', date)}
+                                        onLastNoticeSentChange={(date) => setData('last_notice_sent', date)}
+                                        onNoticeKindChange={(value) => setData('notice_kind', value)}
+                                        errors={errors}
+                                        calendarStates={{
+                                            date_of_acceptance: calendarStates.date_of_acceptance,
+                                            last_notice_sent: calendarStates.last_notice_sent
+                                        }}
+                                        onCalendarOpenChange={setCalendarOpen}
+                                    />
 
-                            <div className="rounded-lg border-l-4 border-l-teal-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="date_of_acceptance" className="text-base font-semibold">
-                                        Date of Acceptance
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarStates.date_of_acceptance}
-                                    onOpenChange={(open) => setCalendarOpen('date_of_acceptance', open)}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.date_of_acceptance && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.date_of_acceptance
-                                                ? format(parse(data.date_of_acceptance, 'yyyy-MM-dd', new Date()), 'PPP')
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={data.date_of_acceptance ? parse(data.date_of_acceptance, 'yyyy-MM-dd', new Date()) : undefined}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    setData('date_of_acceptance', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarOpen('date_of_acceptance', false);
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.date_of_acceptance && <p className="mt-1 text-sm text-red-600">{errors.date_of_acceptance}</p>}
-                            </div>
+                                    <LeaseInformationSection
+                                        leaseSent={data.lease_sent}
+                                        dateSentLease={data.date_sent_lease}
+                                        leaseSigned={data.lease_signed}
+                                        dateSigned={data.date_signed}
+                                        onLeaseSentChange={(value) => setData('lease_sent', value)}
+                                        onDateSentLeaseChange={(date) => setData('date_sent_lease', date)}
+                                        onLeaseSignedChange={(value) => setData('lease_signed', value)}
+                                        onDateSignedChange={(date) => setData('date_signed', date)}
+                                        errors={errors}
+                                        calendarStates={{
+                                            date_sent_lease: calendarStates.date_sent_lease,
+                                            date_signed: calendarStates.date_signed
+                                        }}
+                                        onCalendarOpenChange={setCalendarOpen}
+                                    />
 
-                            <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="last_notice_sent" className="text-base font-semibold">
-                                        Offer Last Notice Sent
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarStates.last_notice_sent}
-                                    onOpenChange={(open) => setCalendarOpen('last_notice_sent', open)}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.last_notice_sent && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.last_notice_sent
-                                                ? format(parse(data.last_notice_sent, 'yyyy-MM-dd', new Date()), 'PPP')
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={data.last_notice_sent ? parse(data.last_notice_sent, 'yyyy-MM-dd', new Date()) : undefined}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    setData('last_notice_sent', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarOpen('last_notice_sent', false);
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.last_notice_sent && <p className="mt-1 text-sm text-red-600">{errors.last_notice_sent}</p>}
-                            </div>
+                                    <RenewalInformationSection
+                                        lastNoticeSent2={data.last_notice_sent_2}
+                                        noticeKind2={data.notice_kind_2}
+                                        onLastNoticeSent2Change={(date) => setData('last_notice_sent_2', date)}
+                                        onNoticeKind2Change={(value) => setData('notice_kind_2', value)}
+                                        errors={errors}
+                                        calendarOpen={calendarStates.last_notice_sent_2}
+                                        onCalendarOpenChange={(open) => setCalendarOpen('last_notice_sent_2', open)}
+                                    />
 
-                            <div className="rounded-lg border-l-4 border-l-pink-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="notice_kind" className="text-base font-semibold">
-                                        Offer Notice Kind
-                                    </Label>
-                                </div>
-                                <RadioGroup
-                                    value={data.notice_kind}
-                                    onValueChange={(value) => setData('notice_kind', value)}
-                                    name="notice_kind"
-                                    options={[
-                                        { value: 'Email', label: 'Email' },
-                                        { value: 'Call', label: 'Call' }
-                                    ]}
-                                />
-                                {errors.notice_kind && <p className="mt-1 text-sm text-red-600">{errors.notice_kind}</p>}
-                            </div>
-
-                            {/* Lease Information */}
-                            <div className="rounded-lg border-l-4 border-l-red-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="lease_sent" className="text-base font-semibold">
-                                        Lease Sent?
-                                    </Label>
-                                </div>
-                                <RadioGroup
-                                    value={data.lease_sent}
-                                    onValueChange={(value) => setData('lease_sent', value)}
-                                    name="lease_sent"
-                                    options={[
-                                        { value: 'Yes', label: 'Yes' },
-                                        { value: 'No', label: 'No' }
-                                    ]}
-                                />
-                                {errors.lease_sent && <p className="mt-1 text-sm text-red-600">{errors.lease_sent}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-yellow-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="date_sent_lease" className="text-base font-semibold">
-                                        Date Sent Lease
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarStates.date_sent_lease}
-                                    onOpenChange={(open) => setCalendarOpen('date_sent_lease', open)}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.date_sent_lease && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.date_sent_lease
-                                                ? format(parse(data.date_sent_lease, 'yyyy-MM-dd', new Date()), 'PPP')
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={data.date_sent_lease ? parse(data.date_sent_lease, 'yyyy-MM-dd', new Date()) : undefined}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    setData('date_sent_lease', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarOpen('date_sent_lease', false);
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.date_sent_lease && <p className="mt-1 text-sm text-red-600">{errors.date_sent_lease}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-cyan-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="lease_signed" className="text-base font-semibold">
-                                        Lease Signed?
-                                    </Label>
-                                </div>
-                                <RadioGroup
-                                    value={data.lease_signed}
-                                    onValueChange={(value) => setData('lease_signed', value)}
-                                    name="lease_signed"
-                                    options={[
-                                        { value: 'Signed', label: 'Signed' },
-                                        { value: 'Unsigned', label: 'Unsigned' }
-                                    ]}
-                                />
-                                {errors.lease_signed && <p className="mt-1 text-sm text-red-600">{errors.lease_signed}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-violet-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="date_signed" className="text-base font-semibold">
-                                        Date Signed
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarStates.date_signed}
-                                    onOpenChange={(open) => setCalendarOpen('date_signed', open)}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.date_signed && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.date_signed
-                                                ? format(parse(data.date_signed, 'yyyy-MM-dd', new Date()), 'PPP')
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={data.date_signed ? parse(data.date_signed, 'yyyy-MM-dd', new Date()) : undefined}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    setData('date_signed', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarOpen('date_signed', false);
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.date_signed && <p className="mt-1 text-sm text-red-600">{errors.date_signed}</p>}
-                            </div>
-
-                            {/* Renewal Information */}
-                            <div className="rounded-lg border-l-4 border-l-rose-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="last_notice_sent_2" className="text-base font-semibold">
-                                        Renewal Last Notice Sent
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarStates.last_notice_sent_2}
-                                    onOpenChange={(open) => setCalendarOpen('last_notice_sent_2', open)}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.last_notice_sent_2 && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.last_notice_sent_2
-                                                ? format(parse(data.last_notice_sent_2, 'yyyy-MM-dd', new Date()), 'PPP')
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={data.last_notice_sent_2 ? parse(data.last_notice_sent_2, 'yyyy-MM-dd', new Date()) : undefined}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    setData('last_notice_sent_2', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarOpen('last_notice_sent_2', false);
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.last_notice_sent_2 && <p className="mt-1 text-sm text-red-600">{errors.last_notice_sent_2}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-amber-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="notice_kind_2" className="text-base font-semibold">
-                                        Renewal Notice Kind
-                                    </Label>
-                                </div>
-                                <RadioGroup
-                                    value={data.notice_kind_2}
-                                    onValueChange={(value) => setData('notice_kind_2', value)}
-                                    name="notice_kind_2"
-                                    options={[
-                                        { value: 'Email', label: 'Email' },
-                                        { value: 'Call', label: 'Call' }
-                                    ]}
-                                />
-                                {errors.notice_kind_2 && <p className="mt-1 text-sm text-red-600">{errors.notice_kind_2}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-lime-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="how_many_days_left" className="text-base font-semibold">
-                                        How Many Days Left
-                                    </Label>
-                                </div>
-                                <Input
-                                    id="how_many_days_left"
-                                    type="number"
-                                    step={1}
-                                    value={data.how_many_days_left ?? ''}
-                                    onChange={(e) => setData('how_many_days_left', e.target.value)}
-                                    placeholder="Enter number of days"
-                                />
-                                {errors.how_many_days_left && <p className="mt-1 text-sm text-red-600">{errors.how_many_days_left}</p>}
-                            </div>
-
-                            {/* Notes */}
-                            <div className="rounded-lg border-l-4 border-l-slate-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="notes" className="text-base font-semibold">
-                                        Notes
-                                    </Label>
-                                </div>
-                                <textarea
-                                    id="notes"
-                                    value={data.notes ?? ''}
-                                    onChange={(e) => setData('notes', e.target.value)}
-                                    rows={3}
-                                    placeholder="Enter any notes..."
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[100px] resize-vertical"
-                                />
-                                {errors.notes && <p className="mt-1 text-sm text-red-600">{errors.notes}</p>}
-                            </div>
+                                    <AdditionalFieldsSection
+                                        notes={data.notes}
+                                        onNotesChange={(value) => setData('notes', value)}
+                                        errors={errors}
+                                    />
+                                </>
+                            )}
                         </form>
                     </div>
 

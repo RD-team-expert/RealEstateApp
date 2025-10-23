@@ -61,49 +61,24 @@ class OffersAndRenewalRequest extends FormRequest
                     $this->merge(['resolved_tenant_id' => $tenant->id]);
                 }
             ],
-            'date_sent_offer' => 'required|date|before_or_equal:today',
-            'date_offer_expires' => 'nullable|date|after_or_equal:date_sent_offer',
+            'date_sent_offer' => 'required|date',
+            'date_offer_expires' => 'nullable|date',
             'status' => 'nullable|string|max:255',
-            'date_of_acceptance' => [
-                'nullable', 'date',
-                function($attribute, $value, $fail) {
-                    if ($value && $this->input('date_sent_offer')) {
-                        if ($value < $this->input('date_sent_offer')) {
-                            $fail('The date of acceptance must be on or after the date the offer was sent.');
-                        }
-                    }
-                }
-            ],
-            'last_notice_sent' => 'nullable|date|before_or_equal:today',
+            'date_of_acceptance' => 'nullable|date',
+            'last_notice_sent' => 'nullable|date',
             'notice_kind' => 'nullable|string|max:255',
             'lease_sent' => 'nullable|string|max:255',
-            'date_sent_lease' => [
-                'nullable', 'date', 'before_or_equal:today',
-                function($attribute, $value, $fail) {
-                    if ($value && $this->input('date_of_acceptance')) {
-                        if ($value < $this->input('date_of_acceptance')) {
-                            $fail('The lease sent date must be on or after the date of acceptance.');
-                        }
-                    }
-                }
-            ],
-            'lease_expires' => 'nullable|date|after_or_equal:date_sent_lease',
+            'date_sent_lease' => 'nullable|date',
+            'lease_expires' => 'nullable|date',
             'lease_signed' => 'nullable|string|max:255',
-            'date_signed' => [
-                'nullable', 'date',
-                function($attribute, $value, $fail) {
-                    if ($value && $this->input('date_sent_lease')) {
-                        if ($value < $this->input('date_sent_lease')) {
-                            $fail('The date signed must be on or after the date the lease was sent.');
-                        }
-                    }
-                }
-            ],
-            'last_notice_sent_2' => 'nullable|date|before_or_equal:today',
+            'date_signed' => 'nullable|date',
+            'last_notice_sent_2' => 'nullable|date',
             'notice_kind_2' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:65535',
             'how_many_days_left' => 'nullable|integer|min:0|max:9999',
             'expired' => 'nullable|string|max:255',
+            'other_tenants' => 'nullable|string|max:255',
+            'date_of_decline' => 'nullable|date',
         ];
     }
 
@@ -118,15 +93,10 @@ class OffersAndRenewalRequest extends FormRequest
             'city_name.exists' => 'The selected city does not exist or is archived.',
             'unit.exists' => 'The selected unit does not exist or is archived.',
             'date_sent_offer.required' => 'The date sent offer field is required.',
-            'date_sent_offer.before_or_equal' => 'The date sent offer cannot be in the future.',
-            'date_offer_expires.after_or_equal' => 'The offer expiration date must be on or after the date sent.',
-            'last_notice_sent.before_or_equal' => 'The last notice sent date cannot be in the future.',
-            'date_sent_lease.before_or_equal' => 'The lease sent date cannot be in the future.',
-            'lease_expires.after_or_equal' => 'The lease expiration date must be on or after the lease sent date.',
-            'last_notice_sent_2.before_or_equal' => 'The second notice sent date cannot be in the future.',
             'how_many_days_left.min' => 'Days left cannot be negative.',
             'how_many_days_left.max' => 'Days left cannot exceed 9999.',
             'notes.max' => 'Notes cannot exceed 65535 characters.',
+            'other_tenants.max' => 'Other tenants field cannot exceed 255 characters.',
         ];
     }
 
@@ -151,6 +121,8 @@ class OffersAndRenewalRequest extends FormRequest
             'last_notice_sent_2' => 'second notice sent date',
             'notice_kind_2' => 'second notice type',
             'how_many_days_left' => 'days left',
+            'other_tenants' => 'other tenants',
+            'date_of_decline' => 'date of decline',
         ];
     }
 
@@ -167,7 +139,7 @@ class OffersAndRenewalRequest extends FormRequest
         }
 
         // Clean up other string inputs
-        $stringFields = ['property', 'city_name', 'unit', 'status', 'notice_kind', 'lease_sent', 'lease_signed', 'notice_kind_2', 'expired'];
+        $stringFields = ['property', 'city_name', 'unit', 'status', 'notice_kind', 'lease_sent', 'lease_signed', 'notice_kind_2', 'expired', 'other_tenants'];
         $cleanedData = [];
         
         foreach ($stringFields as $field) {

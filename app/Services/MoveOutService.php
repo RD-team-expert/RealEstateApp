@@ -14,7 +14,7 @@ class MoveOutService
 {
     public function getAllMoveOuts(int $perPage = 15): LengthAwarePaginator
     {
-        return MoveOut::with(['tenant.unit.property.city'])
+        return MoveOut::with(['unit.property.city'])
                       ->orderBy('move_out_date', 'desc')
                       ->orderBy('created_at', 'desc')
                       ->paginate($perPage);
@@ -22,7 +22,7 @@ class MoveOutService
 
     public function searchMoveOuts(string $search, int $perPage = 15): LengthAwarePaginator
     {
-        return MoveOut::with(['tenant.unit.property.city'])
+        return MoveOut::with(['unit.property.city'])
                       ->where(function ($query) use ($search) {
                           $query->where('lease_status', 'like', "%{$search}%")
                                 ->orWhere('keys_location', 'like', "%{$search}%")
@@ -31,16 +31,13 @@ class MoveOutService
                                 ->orWhere('notes', 'like', "%{$search}%")
                                 ->orWhere('send_back_security_deposit', 'like', "%{$search}%")
                                 ->orWhere('list_the_unit', 'like', "%{$search}%")
-                                ->orWhereHas('tenant', function ($tenantQuery) use ($search) {
-                                    $tenantQuery->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"]);
-                                })
-                                ->orWhereHas('tenant.unit', function ($unitQuery) use ($search) {
+                                ->orWhereHas('unit', function ($unitQuery) use ($search) {
                                     $unitQuery->where('unit_name', 'like', "%{$search}%");
                                 })
-                                ->orWhereHas('tenant.unit.property', function ($propertyQuery) use ($search) {
+                                ->orWhereHas('unit.property', function ($propertyQuery) use ($search) {
                                     $propertyQuery->where('property_name', 'like', "%{$search}%");
                                 })
-                                ->orWhereHas('tenant.unit.property.city', function ($cityQuery) use ($search) {
+                                ->orWhereHas('unit.property.city', function ($cityQuery) use ($search) {
                                     $cityQuery->where('city', 'like', "%{$search}%");
                                 });
                       })
@@ -51,7 +48,7 @@ class MoveOutService
     public function createMoveOut(array $data): MoveOut
     {
         // Remove display-only fields that shouldn't be stored
-        unset($data['units_name'], $data['property_name'], $data['city_name'], $data['tenants_name']);
+        unset($data['unit_name'], $data['property_name'], $data['city_name']);
         
         return MoveOut::create($data);
     }
@@ -59,7 +56,7 @@ class MoveOutService
     public function updateMoveOut(MoveOut $moveOut, array $data): bool
     {
         // Remove display-only fields that shouldn't be stored
-        unset($data['units_name'], $data['property_name'], $data['city_name'], $data['tenants_name']);
+        unset($data['unit_name'], $data['property_name'], $data['city_name']);
         
         return $moveOut->update($data);
     }
@@ -82,7 +79,7 @@ class MoveOutService
     public function getArchivedMoveOuts(int $perPage = 15): LengthAwarePaginator
     {
         return MoveOut::onlyArchived()
-                      ->with(['tenant.unit.property.city'])
+                      ->with(['unit.property.city'])
                       ->orderBy('move_out_date', 'desc')
                       ->orderBy('created_at', 'desc')
                       ->paginate($perPage);
@@ -133,8 +130,7 @@ class MoveOutService
             return $unitTenants->map(function ($tenant) {
                 return [
                     'id' => $tenant->id,
-                    'full_name' => $tenant->full_name,
-                    'tenant_id' => $tenant->id
+                    'full_name' => $tenant->full_name
                 ];
             })->values();
         });
@@ -176,7 +172,7 @@ class MoveOutService
      */
     public function getMoveOutWithRelations(int $id): ?MoveOut
     {
-        return MoveOut::with(['tenant.unit.property.city'])->find($id);
+        return MoveOut::with(['unit.property.city'])->find($id);
     }
 
     /**
@@ -184,30 +180,23 @@ class MoveOutService
      */
     public function searchMoveOutsWithFilters(array $filters, int $perPage = 15): LengthAwarePaginator
     {
-        $query = MoveOut::with(['tenant.unit.property.city']);
+        $query = MoveOut::with(['unit.property.city']);
 
         // Apply unit filter by ID
         if (!empty($filters['unit_id'])) {
-            $query->whereHas('tenant', function ($tenantQuery) use ($filters) {
-                $tenantQuery->where('unit_id', $filters['unit_id']);
-            });
-        }
-
-        // Apply tenant filter by ID
-        if (!empty($filters['tenant_id'])) {
-            $query->where('tenant_id', $filters['tenant_id']);
+            $query->where('unit_id', $filters['unit_id']);
         }
 
         // Apply city filter by ID
         if (!empty($filters['city_id'])) {
-            $query->whereHas('tenant.unit.property', function ($propertyQuery) use ($filters) {
+            $query->whereHas('unit.property', function ($propertyQuery) use ($filters) {
                 $propertyQuery->where('city_id', $filters['city_id']);
             });
         }
 
         // Apply property filter by ID
         if (!empty($filters['property_id'])) {
-            $query->whereHas('tenant.unit', function ($unitQuery) use ($filters) {
+            $query->whereHas('unit', function ($unitQuery) use ($filters) {
                 $unitQuery->where('property_id', $filters['property_id']);
             });
         }

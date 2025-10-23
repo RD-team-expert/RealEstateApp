@@ -15,11 +15,11 @@ class UpdateMoveOutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tenant_id' => [
+            'unit_id' => [
                 'sometimes',
                 'nullable',
                 'integer',
-                'exists:tenants,id'
+                'exists:units,id'
             ],
             'move_out_date' => ['sometimes', 'nullable', 'date'],
             'lease_status' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -40,8 +40,8 @@ class UpdateMoveOutRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'tenant_id.exists' => 'The selected tenant does not exist.',
-            'tenant_id.integer' => 'The tenant ID must be a valid number.',
+            'unit_id.exists' => 'The selected unit does not exist.',
+            'unit_id.integer' => 'The unit ID must be a valid number.',
             'move_out_date.date' => 'The move out date must be a valid date.',
             'date_lease_ending_on_buildium.date' => 'The lease ending date must be a valid date.',
             'date_utility_put_under_our_name.date' => 'The utility date must be a valid date.',
@@ -58,7 +58,7 @@ class UpdateMoveOutRequest extends FormRequest
     {
         // Convert empty strings to null for nullable fields
         $fieldsToNullify = [
-            'tenant_id',
+            'unit_id',
             'move_out_date',
             'date_lease_ending_on_buildium',
             'date_utility_put_under_our_name',
