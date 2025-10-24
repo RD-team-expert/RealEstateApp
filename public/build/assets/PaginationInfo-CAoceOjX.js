@@ -1,0 +1,1 @@
+import{j as o}from"./app-Dn1r5IbR.js";import"./app-BmbQfT0_.js";function e({meta:t}){return t?o.jsxs("div",{className:"mt-4 text-center text-sm text-muted-foreground",children:["Showing ",t.from||0," to ",t.to||0," of ",t.total||0," results"]}):null}export{e as default};

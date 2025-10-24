@@ -27,7 +27,6 @@ class VendorTaskTrackerController extends Controller
 
     public function index(Request $request): Response
     {
-        $perPage = $request->get('per_page', 15);
         $filters = $request->only(['search', 'city', 'property', 'unit_name', 'vendor_name']);
 
         // Check if any filters are applied
@@ -36,13 +35,13 @@ class VendorTaskTrackerController extends Controller
         });
 
         $tasks = $hasFilters
-            ? $this->vendorTaskTrackerService->filterTasks($filters, $perPage)
-            : $this->vendorTaskTrackerService->getAllTasks($perPage);
+            ? $this->vendorTaskTrackerService->filterTasks($filters)
+            : $this->vendorTaskTrackerService->getAllTasks();
 
         // Transform tasks to include name fields for frontend display
-        $tasks->getCollection()->transform(function ($task) {
+        $tasks->transform(function ($task) {
             // Add computed attributes for frontend
-            $task->city = $task->vendor?->city?->city ?? '';
+            $task->city = $task->unit?->property?->city?->city ?? '';
             $task->property_name = $task->unit?->property?->property_name ?? '';
             $task->unit_name = $task->unit?->unit_name ?? '';
             $task->vendor_name = $task->vendor?->vendor_name ?? '';
@@ -53,7 +52,18 @@ class VendorTaskTrackerController extends Controller
         $dropdownData = $this->vendorTaskTrackerService->getDropdownData();
 
         return Inertia::render('VendorTaskTracker/Index', [
-            'tasks' => $tasks,
+            'tasks' => [
+                'data' => $tasks,
+                'links' => [],
+                'meta' => [
+                    'total' => $tasks->count(),
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $tasks->count(),
+                    'from' => $tasks->count() > 0 ? 1 : null,
+                    'to' => $tasks->count(),
+                ]
+            ],
             'filters' => $filters,
             'cities' => $dropdownData['cities'],
             'properties' => $dropdownData['properties'],
@@ -97,7 +107,7 @@ class VendorTaskTrackerController extends Controller
         $vendorTaskTracker->load(['vendor.city', 'unit.property.city']);
         
         // Add computed attributes for frontend
-        $vendorTaskTracker->city = $vendorTaskTracker->vendor?->city?->city ?? '';
+        $vendorTaskTracker->city = $vendorTaskTracker->unit?->property?->city?->city ?? '';
         $vendorTaskTracker->property_name = $vendorTaskTracker->unit?->property?->property_name ?? '';
         $vendorTaskTracker->unit_name = $vendorTaskTracker->unit?->unit_name ?? '';
         $vendorTaskTracker->vendor_name = $vendorTaskTracker->vendor?->vendor_name ?? '';
@@ -113,7 +123,7 @@ class VendorTaskTrackerController extends Controller
         $vendorTaskTracker->load(['vendor.city', 'unit.property.city']);
         
         // Add computed attributes for frontend
-        $vendorTaskTracker->city = $vendorTaskTracker->vendor?->city?->city ?? '';
+        $vendorTaskTracker->city = $vendorTaskTracker->unit?->property?->city?->city ?? '';
         $vendorTaskTracker->property_name = $vendorTaskTracker->unit?->property?->property_name ?? '';
         $vendorTaskTracker->unit_name = $vendorTaskTracker->unit?->unit_name ?? '';
         $vendorTaskTracker->vendor_name = $vendorTaskTracker->vendor?->vendor_name ?? '';

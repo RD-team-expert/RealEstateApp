@@ -1,16 +1,16 @@
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-// import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup } from '@/components/ui/radioGroup';
 import { VendorTaskTracker, VendorTaskTrackerFormData } from '@/types/vendor-task-tracker';
 import { useForm } from '@inertiajs/react';
-import { format, parse, isValid } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
+import CitySelector from './edit/CitySelector';
+import PropertySelector from './edit/PropertySelector';
+import UnitSelector from './edit/UnitSelector';
+import VendorSelector from './edit/VendorSelector';
+import DatePickerField from './edit/DatePickerField';
+import TextAreaField from './edit/TextAreaField';
+import StatusRadioGroup from './edit/StatusRadioGroup';
+import UrgencyRadioGroup from './edit/UrgencyRadioGroup';
 
 interface CityOption {
     id: number;
@@ -54,22 +54,20 @@ interface Props {
 export default function VendorTaskTrackerEditDrawer({ 
     task,
     cities,
-    // properties,
     units,
     vendors,
     unitsByCity, 
     propertiesByCity,
     unitsByProperty,
-    vendorsByCity,
     open, 
     onOpenChange, 
     onSuccess 
 }: Props) {
-    const cityRef = useRef<HTMLButtonElement>(null);
-    const unitRef = useRef<HTMLButtonElement>(null);
-    const vendorRef = useRef<HTMLButtonElement>(null);
-    const taskSubmissionDateRef = useRef<HTMLButtonElement>(null);
-    const assignedTasksRef = useRef<HTMLTextAreaElement>(null);
+    const cityRef = useRef<HTMLButtonElement>(null!);
+    const unitRef = useRef<HTMLButtonElement>(null!);
+    const vendorRef = useRef<HTMLButtonElement>(null!);
+    const taskSubmissionDateRef = useRef<HTMLButtonElement>(null!);
+    const assignedTasksRef = useRef<HTMLTextAreaElement>(null!);
     
     const [validationError, setValidationError] = useState<string>('');
     const [unitValidationError, setUnitValidationError] = useState<string>('');
@@ -86,52 +84,6 @@ export default function VendorTaskTrackerEditDrawer({
     const [, setSelectedUnit] = useState<string>(task.unit_name || '');
     const [, setSelectedVendor] = useState<string>(task.vendor_name || '');
 
-    // Helper function to safely parse dates
-    const safeParseDateString = (dateString: string | null | undefined): Date | undefined => {
-        if (!dateString || dateString.trim() === '') {
-            return undefined;
-        }
-
-        try {
-            // Grab YYYY-MM-DD from the front (works for "2025-10-01" and "2025-10-01T00:00:00Z")
-            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateString);
-            if (m) {
-                const [, y, mo, d] = m;
-                // Construct a local calendar date (no timezone shifting)
-                const date = new Date(Number(y), Number(mo) - 1, Number(d));
-                if (isValid(date)) {
-                    return date;
-                }
-            }
-            
-            // Fallback: Try parsing as YYYY-MM-DD format with date-fns
-            const parsedDate = parse(dateString, 'yyyy-MM-dd', new Date(2000, 0, 1));
-            if (isValid(parsedDate)) {
-                return parsedDate;
-            }
-            
-            return undefined;
-        } catch (error) {
-            console.warn('Failed to parse date:', dateString, error);
-            return undefined;
-        }
-    };
-
-    // Helper function to safely format dates for display
-    const safeFormatDate = (dateString: string | null | undefined): string => {
-        const parsedDate = safeParseDateString(dateString);
-        if (!parsedDate) {
-            return 'Pick a date';
-        }
-
-        try {
-            return format(parsedDate, 'PPP');
-        } catch (error) {
-            console.warn('Failed to format date:', dateString, error);
-            return 'Pick a date';
-        }
-    };
-    
     const [calendarStates, setCalendarStates] = useState({
         task_submission_date: false,
         any_scheduled_visits: false,
@@ -176,12 +128,8 @@ export default function VendorTaskTrackerEditDrawer({
                 setAvailableProperties([]);
             }
 
-            // Set available vendors for the selected city
-            if (vendorsByCity[task.city]) {
-                setAvailableVendors(vendorsByCity[task.city]);
-            } else {
-                setAvailableVendors([]);
-            }
+            // Set all vendors available regardless of city
+            setAvailableVendors(vendors);
 
             // Set available units based on city and property_name
             if (task.property_name && unitsByProperty[task.city] && unitsByProperty[task.city][task.property_name]) {
@@ -197,7 +145,7 @@ export default function VendorTaskTrackerEditDrawer({
             setAvailableVendors([]);
             setAvailableUnits([]);
         }
-    }, [task.city, task.property_name, unitsByCity, propertiesByCity, unitsByProperty, vendorsByCity]);
+    }, [task.city, task.property_name, unitsByCity, propertiesByCity, unitsByProperty, vendors]);
 
     const handleCityChange = (cityName: string) => {
         setSelectedCity(cityName);
@@ -218,12 +166,8 @@ export default function VendorTaskTrackerEditDrawer({
                 setAvailableProperties([]);
             }
 
-            // Set available vendors for the selected city
-            if (vendorsByCity[cityName]) {
-                setAvailableVendors(vendorsByCity[cityName]);
-            } else {
-                setAvailableVendors([]);
-            }
+            // Set all vendors available regardless of city
+            setAvailableVendors(vendors);
         } else {
             setAvailableProperties([]);
             setAvailableVendors([]);
@@ -383,298 +327,112 @@ export default function VendorTaskTrackerEditDrawer({
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={submit} className="space-y-4">
-                            {/* City and Unit Information */}
-                            <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="city" className="text-base font-semibold">
-                                        City *
-                                    </Label>
-                                </div>
-                                <Select onValueChange={handleCityChange} value={selectedCity}>
-                                    <SelectTrigger ref={cityRef}>
-                                        <SelectValue placeholder="Select city" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {cities?.map((city) => (
-                                            <SelectItem key={city.id} value={city.city}>
-                                                {city.city}
-                                            </SelectItem>
-                                        )) || []}
-                                    </SelectContent>
-                                </Select>
-                                {errors.vendor_id && <p className="mt-1 text-sm text-red-600">{errors.vendor_id}</p>}
-                                {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
-                            </div>
+                            <CitySelector
+                                cities={cities}
+                                selectedCity={selectedCity}
+                                onCityChange={handleCityChange}
+                                cityRef={cityRef}
+                                error={errors.city}
+                                validationError={validationError}
+                            />
 
-                            {/* Property Information */}
-                            <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="property" className="text-base font-semibold">
-                                        Property *
-                                    </Label>
-                                </div>
-                                <Select
-                                    onValueChange={handlePropertyChange}
-                                    value={selectedProperty}
-                                    disabled={!selectedCity}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select property" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableProperties?.map((property) => (
-                                            <SelectItem key={property.id} value={property.property_name}>
-                                                {property.property_name}
-                                            </SelectItem>
-                                        )) || []}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            <PropertySelector
+                                properties={availableProperties}
+                                selectedProperty={selectedProperty}
+                                onPropertyChange={handlePropertyChange}
+                                disabled={!selectedCity}
+                            />
 
-                            <div className="rounded-lg border-l-4 border-l-green-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="unit_name" className="text-base font-semibold">
-                                        Unit Name *
-                                    </Label>
-                                </div>
-                                <Select
-                                    onValueChange={handleUnitChange}
-                                    value={data.unit_id}
-                                    disabled={!selectedProperty}
-                                >
-                                    <SelectTrigger ref={unitRef}>
-                                        <SelectValue placeholder="Select unit" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableUnits?.map((unit) => (
-                                            <SelectItem key={unit.id} value={unit.id.toString()}>
-                                                {unit.unit_name}
-                                            </SelectItem>
-                                        )) || []}
-                                    </SelectContent>
-                                </Select>
-                                {errors.unit_id && <p className="mt-1 text-sm text-red-600">{errors.unit_id}</p>}
-                                {unitValidationError && <p className="mt-1 text-sm text-red-600">{unitValidationError}</p>}
-                            </div>
+                            <UnitSelector
+                                units={availableUnits}
+                                selectedUnitId={data.unit_id}
+                                onUnitChange={handleUnitChange}
+                                unitRef={unitRef}
+                                disabled={!selectedProperty}
+                                error={errors.unit_id}
+                                validationError={unitValidationError}
+                            />
 
-                            {/* Vendor Information */}
-                            <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="vendor_name" className="text-base font-semibold">
-                                        Vendor Name *
-                                    </Label>
-                                </div>
-                                <Select 
-                                    onValueChange={handleVendorChange} 
-                                    value={data.vendor_id}
-                                    disabled={!selectedCity}
-                                >
-                                    <SelectTrigger ref={vendorRef}>
-                                        <SelectValue placeholder="Select vendor" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableVendors?.map((vendor) => (
-                                            <SelectItem key={vendor.id} value={vendor.id.toString()}>
-                                                {vendor.vendor_name}
-                                            </SelectItem>
-                                        )) || []}
-                                    </SelectContent>
-                                </Select>
-                                {errors.vendor_id && <p className="mt-1 text-sm text-red-600">{errors.vendor_id}</p>}
-                                {vendorValidationError && <p className="mt-1 text-sm text-red-600">{vendorValidationError}</p>}
-                            </div>
+                            <VendorSelector
+                                vendors={availableVendors}
+                                selectedVendorId={data.vendor_id}
+                                onVendorChange={handleVendorChange}
+                                vendorRef={vendorRef}
+                                disabled={!selectedCity}
+                                error={errors.vendor_id}
+                                validationError={vendorValidationError}
+                            />
 
-                            {/* Date Fields */}
-                            <div className="rounded-lg border-l-4 border-l-orange-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="task_submission_date" className="text-base font-semibold">
-                                        Task Submission Date *
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarStates.task_submission_date}
-                                    onOpenChange={(open) => setCalendarOpen('task_submission_date', open)}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            ref={taskSubmissionDateRef}
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.task_submission_date && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {safeFormatDate(data.task_submission_date)}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={safeParseDateString(data.task_submission_date)}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    setData('task_submission_date', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarOpen('task_submission_date', false);
-                                                    setTaskSubmissionDateValidationError('');
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.task_submission_date && <p className="mt-1 text-sm text-red-600">{errors.task_submission_date}</p>}
-                                {taskSubmissionDateValidationError && <p className="mt-1 text-sm text-red-600">{taskSubmissionDateValidationError}</p>}
-                            </div>
+                            <DatePickerField
+                                label="Task Submission Date"
+                                required
+                                borderColor="border-l-orange-500"
+                                value={data.task_submission_date}
+                                onChange={(date) => {
+                                    setData('task_submission_date', date);
+                                    setTaskSubmissionDateValidationError('');
+                                }}
+                                dateRef={taskSubmissionDateRef}
+                                error={errors.task_submission_date}
+                                validationError={taskSubmissionDateValidationError}
+                                calendarOpen={calendarStates.task_submission_date}
+                                onCalendarOpenChange={(open) => setCalendarOpen('task_submission_date', open)}
+                            />
 
-                            <div className="rounded-lg border-l-4 border-l-emerald-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="any_scheduled_visits" className="text-base font-semibold">
-                                        Any Scheduled Visits
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarStates.any_scheduled_visits}
-                                    onOpenChange={(open) => setCalendarOpen('any_scheduled_visits', open)}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.any_scheduled_visits && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {safeFormatDate(data.any_scheduled_visits)}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={safeParseDateString(data.any_scheduled_visits)}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    setData('any_scheduled_visits', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarOpen('any_scheduled_visits', false);
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.any_scheduled_visits && <p className="mt-1 text-sm text-red-600">{errors.any_scheduled_visits}</p>}
-                            </div>
+                            <DatePickerField
+                                label="Any Scheduled Visits"
+                                borderColor="border-l-emerald-500"
+                                value={data.any_scheduled_visits}
+                                onChange={(date) => setData('any_scheduled_visits', date)}
+                                error={errors.any_scheduled_visits}
+                                calendarOpen={calendarStates.any_scheduled_visits}
+                                onCalendarOpenChange={(open) => setCalendarOpen('any_scheduled_visits', open)}
+                            />
 
-                            <div className="rounded-lg border-l-4 border-l-teal-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="task_ending_date" className="text-base font-semibold">
-                                        Task Ending Date
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarStates.task_ending_date}
-                                    onOpenChange={(open) => setCalendarOpen('task_ending_date', open)}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.task_ending_date && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {safeFormatDate(data.task_ending_date)}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={safeParseDateString(data.task_ending_date)}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    setData('task_ending_date', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarOpen('task_ending_date', false);
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.task_ending_date && <p className="mt-1 text-sm text-red-600">{errors.task_ending_date}</p>}
-                            </div>
+                            <DatePickerField
+                                label="Task Ending Date"
+                                borderColor="border-l-teal-500"
+                                value={data.task_ending_date}
+                                onChange={(date) => setData('task_ending_date', date)}
+                                error={errors.task_ending_date}
+                                calendarOpen={calendarStates.task_ending_date}
+                                onCalendarOpenChange={(open) => setCalendarOpen('task_ending_date', open)}
+                            />
 
-                            {/* Task Details */}
-                            <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="assigned_tasks" className="text-base font-semibold">
-                                        Assigned Tasks *
-                                    </Label>
-                                </div>
-                                <textarea
-                                    ref={assignedTasksRef}
-                                    id="assigned_tasks"
-                                    value={data.assigned_tasks}
-                                    onChange={handleAssignedTasksChange}
-                                    rows={3}
-                                    placeholder="Describe the assigned tasks..."
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                                {errors.assigned_tasks && <p className="mt-1 text-sm text-red-600">{errors.assigned_tasks}</p>}
-                                {assignedTasksValidationError && <p className="mt-1 text-sm text-red-600">{assignedTasksValidationError}</p>}
-                            </div>
+                            <TextAreaField
+                                label="Assigned Tasks"
+                                required
+                                borderColor="border-l-indigo-500"
+                                value={data.assigned_tasks}
+                                onChange={handleAssignedTasksChange}
+                                textAreaRef={assignedTasksRef}
+                                placeholder="Describe the assigned tasks..."
+                                rows={3}
+                                error={errors.assigned_tasks}
+                                validationError={assignedTasksValidationError}
+                            />
 
-                            <div className="rounded-lg border-l-4 border-l-pink-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="notes" className="text-base font-semibold">
-                                        Notes
-                                    </Label>
-                                </div>
-                                <textarea
-                                    id="notes"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    value={data.notes}
-                                    onChange={(e) => setData('notes', e.target.value)}
-                                    rows={3}
-                                    placeholder="Enter any additional notes..."
-                                />
-                                {errors.notes && <p className="mt-1 text-sm text-red-600">{errors.notes}</p>}
-                            </div>
+                            <TextAreaField
+                                label="Notes"
+                                borderColor="border-l-pink-500"
+                                value={data.notes}
+                                onChange={(e) => setData('notes', e.target.value)}
+                                placeholder="Enter any additional notes..."
+                                rows={3}
+                                error={errors.notes}
+                            />
 
-                            {/* Status and Urgency */}
-                            <div className="rounded-lg border-l-4 border-l-red-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="status" className="text-base font-semibold">
-                                        Status
-                                    </Label>
-                                </div>
-                                <RadioGroup
-                                    value={data.status}
-                                    onValueChange={(value) => setData('status', value)}
-                                    name="status"
-                                    options={[
-                                        { value: 'Pending', label: 'Pending' },
-                                        { value: 'In Progress', label: 'In Progress' },
-                                        { value: 'Completed', label: 'Completed' },
-                                        { value: 'On Hold', label: 'On Hold' }
-                                    ]}
-                                    className="flex-wrap"
-                                />
-                                {errors.status && <p className="mt-1 text-sm text-red-600">{errors.status}</p>}
-                            </div>
+                            <StatusRadioGroup
+                                value={data.status}
+                                onChange={(value) => setData('status', value)}
+                                error={errors.status}
+                            />
 
-                            <div className="rounded-lg border-l-4 border-l-yellow-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="urgent" className="text-base font-semibold">
-                                        Urgent
-                                    </Label>
-                                </div>
-                                <RadioGroup
-                                    value={data.urgent}
-                                    onValueChange={(value) => setData('urgent', value as "Yes" | "No")}
-                                    name="urgent"
-                                    options={[
-                                        { value: 'Yes', label: 'Yes' },
-                                        { value: 'No', label: 'No' }
-                                    ]}
-                                />
-                                {errors.urgent && <p className="mt-1 text-sm text-red-600">{errors.urgent}</p>}
-                            </div>
+                            <UrgencyRadioGroup
+                                value={data.urgent}
+                                onChange={(value) => setData('urgent', value)}
+                                error={errors.urgent}
+                            />
                         </form>
                     </div>
 

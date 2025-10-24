@@ -7,25 +7,25 @@ use App\Models\Unit;
 use App\Models\VendorInfo;
 use App\Models\Cities;
 use App\Models\PropertyInfoWithoutInsurance;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 class VendorTaskTrackerService
 {
-    public function getAllTasks(int $perPage = 15): LengthAwarePaginator
+    public function getAllTasks(): Collection
     {
         return VendorTaskTracker::with(['vendor.city', 'unit.property'])
                                ->orderBy('task_submission_date', 'desc')
                                ->orderBy('created_at', 'desc')
-                               ->paginate($perPage);
+                               ->get();
     }
 
-    public function filterTasks(array $filters, int $perPage = 15): LengthAwarePaginator
+    public function filterTasks(array $filters): Collection
     {
-        $query = VendorTaskTracker::with(['vendor.city', 'unit.property']);
+        $query = VendorTaskTracker::with(['vendor.city', 'unit.property.city']);
 
-        // Apply city filter through vendor relationship
+        // Apply city filter through unit->property->city relationship
         if (!empty($filters['city'])) {
-            $query->whereHas('vendor.city', function ($q) use ($filters) {
+            $query->whereHas('unit.property.city', function ($q) use ($filters) {
                 $q->where('city', 'like', "%{$filters['city']}%");
             });
         }
@@ -54,7 +54,7 @@ class VendorTaskTrackerService
         // Apply general search filter across multiple relationships
         if (!empty($filters['search'])) {
             $query->where(function ($q) use ($filters) {
-                $q->whereHas('vendor.city', function ($subQ) use ($filters) {
+                $q->whereHas('unit.property.city', function ($subQ) use ($filters) {
                     $subQ->where('city', 'like', "%{$filters['search']}%");
                 })
                 ->orWhereHas('unit.property', function ($subQ) use ($filters) {
@@ -74,7 +74,7 @@ class VendorTaskTrackerService
 
         return $query->orderBy('task_submission_date', 'desc')
                      ->orderBy('created_at', 'desc')
-                     ->paginate($perPage);
+                     ->get();
     }
 
     public function createTask(array $data): VendorTaskTracker
@@ -106,22 +106,22 @@ class VendorTaskTrackerService
         return $task->restore();
     }
 
-    public function getArchivedTasks(int $perPage = 15): LengthAwarePaginator
+    public function getArchivedTasks(): Collection
     {
         return VendorTaskTracker::onlyArchived()
                                ->with(['vendor.city', 'unit.property'])
                                ->orderBy('task_submission_date', 'desc')
                                ->orderBy('created_at', 'desc')
-                               ->paginate($perPage);
+                               ->get();
     }
 
-    public function getAllTasksWithArchived(int $perPage = 15): LengthAwarePaginator
+    public function getAllTasksWithArchived(): Collection
     {
         return VendorTaskTracker::withArchived()
                                ->with(['vendor.city', 'unit.property'])
                                ->orderBy('task_submission_date', 'desc')
                                ->orderBy('created_at', 'desc')
-                               ->paginate($perPage);
+                               ->get();
     }
 
     public function getDropdownData(): array
@@ -198,7 +198,7 @@ class VendorTaskTrackerService
             }
         }
 
-        // Group vendors by city
+        // Group vendors by city (kept for backward compatibility but not used in dropdowns)
         $vendorsByCity = [];
         foreach ($vendors as $vendor) {
             if ($vendor->city) {
@@ -305,7 +305,7 @@ class VendorTaskTrackerService
             ->map(function ($task) {
                 return [
                     'id' => $task->id,
-                    'city' => $task->vendor?->city?->city ?? '',
+                    'city' => $task->unit?->property?->city?->city ?? '',
                     'property_name' => $task->unit?->property?->property_name ?? '',
                     'unit_name' => $task->unit?->unit_name ?? '',
                     'vendor_name' => $task->vendor?->vendor_name ?? '',

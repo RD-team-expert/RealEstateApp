@@ -207,7 +207,7 @@ class VendorTaskTracker extends Model
      */
     public function getCityNameAttribute(): ?string
     {
-        return $this->vendor?->city?->city;
+        return $this->unit?->property?->city?->city;
     }
 
     /**
