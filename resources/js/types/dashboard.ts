@@ -189,7 +189,8 @@ export interface MoveIn {
 
 export interface MoveOut {
     id: number;
-    tenant_id: number;
+    unit_id: number;
+    tenants?: string; // Tenant names as string
     move_out_date?: string;
     move_out_date_formatted?: string;
     lease_status?: string;
@@ -206,20 +207,19 @@ export interface MoveOut {
     cleaning?: 'cleaned' | 'uncleaned';
     list_the_unit?: string;
     move_out_form?: 'filled' | 'not filled';
+    utility_type?: string;
     is_archived: boolean;
     created_at: string;
     updated_at: string;
     created_at_formatted?: string;
     updated_at_formatted?: string;
-    tenant_name?: string;
+    tenant_name?: string; // Derived from tenants field
     unit_name?: string;
     property_name?: string;
     city_name?: string;
-    tenant?: Tenant & {
-        unit?: Unit & {
-            property?: Property & {
-                city?: City;
-            };
+    unit?: Unit & {
+        property?: Property & {
+            city?: City;
         };
     };
 }

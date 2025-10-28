@@ -163,10 +163,8 @@ class DashboardService
      */
     public function getAllMoveOutInfoByUnit(int $unitId): Collection
     {
-        return MoveOut::with(['tenant.unit.property.city'])
-            ->whereHas('tenant', function($query) use ($unitId) {
-                $query->where('unit_id', $unitId);
-            })
+        return MoveOut::with(['unit.property.city'])
+            ->where('unit_id', $unitId)
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($moveOut) {
@@ -182,14 +180,13 @@ class DashboardService
                 $moveOut->updated_at_formatted = $moveOut->updated_at 
                     ? $moveOut->updated_at->format('M d, Y') : null;
 
-                // Add tenant and property information
-                $moveOut->tenant_name = $moveOut->tenant ? $moveOut->tenant->full_name : null;
-                $moveOut->unit_name = $moveOut->tenant && $moveOut->tenant->unit 
-                    ? $moveOut->tenant->unit->unit_name : null;
-                $moveOut->property_name = $moveOut->tenant && $moveOut->tenant->unit && $moveOut->tenant->unit->property 
-                    ? $moveOut->tenant->unit->property->property_name : null;
-                $moveOut->city_name = $moveOut->tenant && $moveOut->tenant->unit && $moveOut->tenant->unit->property && $moveOut->tenant->unit->property->city 
-                    ? $moveOut->tenant->unit->property->city->city : null;
+                // Add tenant name from string column and property information
+                $moveOut->tenant_name = $moveOut->tenants; // Now a string column
+                $moveOut->unit_name = $moveOut->unit ? $moveOut->unit->unit_name : null;
+                $moveOut->property_name = $moveOut->unit && $moveOut->unit->property 
+                    ? $moveOut->unit->property->property_name : null;
+                $moveOut->city_name = $moveOut->unit && $moveOut->unit->property && $moveOut->unit->property->city 
+                    ? $moveOut->unit->property->city->city : null;
                 
                 return $moveOut;
             });
