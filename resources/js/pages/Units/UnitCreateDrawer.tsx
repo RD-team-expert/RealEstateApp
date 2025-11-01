@@ -1,17 +1,18 @@
 import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup } from '@/components/ui/radioGroup';
-// import { UnitFormData } from '@/types/unit';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { useForm } from '@inertiajs/react';
-import { format, parse } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
+import CitySelection from './create/CitySelection';
+import PropertySelection from './create/PropertySelection';
+import UnitDetails from './create/UnitDetails';
+import TenantDetails from './create/TenantDetails';
+import LeaseDates from './create/LeaseDates';
+import UnitSpecifications from './create/UnitSpecifications';
+import LeaseStatus from './create/LeaseStatus';
+import FinancialInformation from './create/FinancialInformation';
+import UtilityInformation from './create/UtilityInformation';
+import InsuranceInformation from './create/InsuranceInformation';
 
 interface Props {
     cities: Array<{ id: number; city: string }>;
@@ -165,345 +166,86 @@ export default function UnitCreateDrawer({ cities, properties, open, onOpenChang
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={submit} className="space-y-4">
-                            {/* City Selection */}
-                            <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="city" className="text-base font-semibold">
-                                        City *
-                                    </Label>
-                                </div>
-                                <Select onValueChange={handleCityChange} value={selectedCityId}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a city" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {cities?.map((city) => (
-                                            <SelectItem key={city.id} value={city.id.toString()}>
-                                                {city.city}
-                                            </SelectItem>
-                                        )) || []}
-                                    </SelectContent>
-                                </Select>
-                                {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
-                            </div>
+                            <CitySelection
+                                cities={cities}
+                                selectedCityId={selectedCityId}
+                                onCityChange={handleCityChange}
+                                validationError={validationError}
+                            />
 
-                            {/* Property Selection */}
-                            <div className="rounded-lg border-l-4 border-l-green-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="property_id" className="text-base font-semibold">
-                                        Property *
-                                    </Label>
-                                </div>
-                                <Select
-                                    onValueChange={handlePropertyChange}
-                                    value={data.property_id}
-                                    disabled={!selectedCityId || availableProperties.length === 0}
-                                >
-                                    <SelectTrigger ref={propertyRef}>
-                                        <SelectValue placeholder={!selectedCityId ? "Select city first" : "Select property"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableProperties?.map((property) => (
-                                            <SelectItem key={property.id} value={property.id.toString()}>
-                                                {property.property_name}
-                                            </SelectItem>
-                                        )) || []}
-                                    </SelectContent>
-                                </Select>
-                                {errors.property_id && <p className="mt-1 text-sm text-red-600">{errors.property_id}</p>}
-                                {propertyValidationError && <p className="mt-1 text-sm text-red-600">{propertyValidationError}</p>}
-                            </div>
+                            <PropertySelection
+                                ref={propertyRef}
+                                availableProperties={availableProperties}
+                                selectedCityId={selectedCityId}
+                                propertyId={data.property_id}
+                                onPropertyChange={handlePropertyChange}
+                                error={errors.property_id}
+                                validationError={propertyValidationError}
+                            />
 
-                            {/* Unit Details */}
-                            <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="unit_name" className="text-base font-semibold">
-                                        Unit Name *
-                                    </Label>
-                                </div>
-                                <Input
-                                    id="unit_name"
-                                    ref={unitNameRef}
-                                    value={data.unit_name}
-                                    onChange={handleUnitNameChange}
-                                    placeholder="Enter unit name"
-                                />
-                                {errors.unit_name && <p className="mt-1 text-sm text-red-600">{errors.unit_name}</p>}
-                                {unitNameValidationError && <p className="mt-1 text-sm text-red-600">{unitNameValidationError}</p>}
-                            </div>
+                            <UnitDetails
+                                ref={unitNameRef}
+                                unitName={data.unit_name}
+                                onUnitNameChange={handleUnitNameChange}
+                                error={errors.unit_name}
+                                validationError={unitNameValidationError}
+                            />
 
-                            <div className="rounded-lg border-l-4 border-l-orange-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="tenants" className="text-base font-semibold">
-                                        Tenants
-                                    </Label>
-                                </div>
-                                <Input
-                                    id="tenants"
-                                    value={data.tenants}
-                                    onChange={(e) => setData('tenants', e.target.value)}
-                                    placeholder="Enter tenant names"
-                                />
-                                {errors.tenants && <p className="mt-1 text-sm text-red-600">{errors.tenants}</p>}
-                            </div>
+                            <TenantDetails
+                                tenants={data.tenants}
+                                onTenantsChange={(value) => setData('tenants', value)}
+                                error={errors.tenants}
+                            />
 
-                            {/* Lease Dates */}
-                            <div className="rounded-lg border-l-4 border-l-emerald-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="lease_start" className="text-base font-semibold">
-                                        Lease Start
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarStates.lease_start}
-                                    onOpenChange={(open) => setCalendarOpen('lease_start', open)}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.lease_start && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.lease_start
-                                                ? format(parse(data.lease_start, 'yyyy-MM-dd', new Date()), 'PPP')
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={data.lease_start ? parse(data.lease_start, 'yyyy-MM-dd', new Date()) : undefined}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    setData('lease_start', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarOpen('lease_start', false);
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.lease_start && <p className="mt-1 text-sm text-red-600">{errors.lease_start}</p>}
-                            </div>
+                            <LeaseDates
+                                leaseStart={data.lease_start}
+                                leaseEnd={data.lease_end}
+                                calendarStates={calendarStates}
+                                onLeaseStartChange={(value) => setData('lease_start', value)}
+                                onLeaseEndChange={(value) => setData('lease_end', value)}
+                                onCalendarOpenChange={setCalendarOpen}
+                                errors={errors}
+                            />
 
-                            <div className="rounded-lg border-l-4 border-l-teal-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="lease_end" className="text-base font-semibold">
-                                        Lease End
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarStates.lease_end}
-                                    onOpenChange={(open) => setCalendarOpen('lease_end', open)}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.lease_end && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.lease_end
-                                                ? format(parse(data.lease_end, 'yyyy-MM-dd', new Date()), 'PPP')
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={data.lease_end ? parse(data.lease_end, 'yyyy-MM-dd', new Date()) : undefined}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    setData('lease_end', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarOpen('lease_end', false);
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.lease_end && <p className="mt-1 text-sm text-red-600">{errors.lease_end}</p>}
-                            </div>
+                            <UnitSpecifications
+                                countBeds={data.count_beds}
+                                countBaths={data.count_baths}
+                                onCountBedsChange={(value) => setData('count_beds', value)}
+                                onCountBathsChange={(value) => setData('count_baths', value)}
+                                errors={errors}
+                            />
 
-                            {/* Unit Specifications */}
-                            <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    <div>
-                                        <Label htmlFor="count_beds" className="text-base font-semibold">
-                                            Count Beds
-                                        </Label>
-                                        <Input
-                                            id="count_beds"
-                                            type="number"
-                                            step="0.5"
-                                            min="0"
-                                            value={data.count_beds}
-                                            onChange={(e) => setData('count_beds', e.target.value)}
-                                            placeholder="Number of beds"
-                                        />
-                                        {errors.count_beds && <p className="mt-1 text-sm text-red-600">{errors.count_beds}</p>}
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="count_baths" className="text-base font-semibold">
-                                            Count Baths
-                                        </Label>
-                                        <Input
-                                            id="count_baths"
-                                            type="number"
-                                            step="0.5"
-                                            min="0"
-                                            value={data.count_baths}
-                                            onChange={(e) => setData('count_baths', e.target.value)}
-                                            placeholder="Number of baths"
-                                        />
-                                        {errors.count_baths && <p className="mt-1 text-sm text-red-600">{errors.count_baths}</p>}
-                                    </div>
-                                </div>
-                            </div>
+                            <LeaseStatus
+                                leaseStatus={data.lease_status}
+                                onLeaseStatusChange={(value) => setData('lease_status', value)}
+                                error={errors.lease_status}
+                            />
 
-                            {/* Lease Status with RadioGroup */}
-                            <div className="rounded-lg border-l-4 border-l-pink-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="lease_status" className="text-base font-semibold">
-                                        Lease Status
-                                    </Label>
-                                </div>
-                                <RadioGroup
-                                    value={data.lease_status}
-                                    onValueChange={(value) => setData('lease_status', value)}
-                                    name="lease_status"
-                                    options={[
-                                        { value: 'Fixed', label: 'Fixed' },
-                                        { value: 'Fixed with roll over', label: 'Fixed with roll over' },
-                                        { value: 'At will', label: 'At will' }
-                                    ]}
-                                />
-                                {errors.lease_status && <p className="mt-1 text-sm text-red-600">{errors.lease_status}</p>}
-                            </div>
+                            <FinancialInformation
+                                monthlyRent={data.monthly_rent}
+                                recurringTransaction={data.recurring_transaction}
+                                onMonthlyRentChange={(value) => setData('monthly_rent', value)}
+                                onRecurringTransactionChange={(value) => setData('recurring_transaction', value)}
+                                errors={errors}
+                            />
 
-                            {/* Financial Information */}
-                            <div className="rounded-lg border-l-4 border-l-red-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="monthly_rent" className="text-base font-semibold">
-                                        Monthly Rent
-                                    </Label>
-                                </div>
-                                <Input
-                                    id="monthly_rent"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={data.monthly_rent}
-                                    onChange={(e) => setData('monthly_rent', e.target.value)}
-                                    placeholder="Enter monthly rent amount"
-                                />
-                                {errors.monthly_rent && <p className="mt-1 text-sm text-red-600">{errors.monthly_rent}</p>}
-                            </div>
+                            <UtilityInformation
+                                utilityStatus={data.utility_status}
+                                accountNumber={data.account_number}
+                                onUtilityStatusChange={(value) => setData('utility_status', value)}
+                                onAccountNumberChange={(value) => setData('account_number', value)}
+                                errors={errors}
+                            />
 
-                            <div className="rounded-lg border-l-4 border-l-yellow-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="recurring_transaction" className="text-base font-semibold">
-                                        Recurring Transaction
-                                    </Label>
-                                </div>
-                                <Input
-                                    id="recurring_transaction"
-                                    value={data.recurring_transaction}
-                                    onChange={(e) => setData('recurring_transaction', e.target.value)}
-                                    placeholder="Enter recurring transaction details"
-                                />
-                                {errors.recurring_transaction && <p className="mt-1 text-sm text-red-600">{errors.recurring_transaction}</p>}
-                            </div>
-
-                            {/* Utility Information */}
-                            <div className="rounded-lg border-l-4 border-l-cyan-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="utility_status" className="text-base font-semibold">
-                                        Utility Status
-                                    </Label>
-                                </div>
-                                <Input
-                                    id="utility_status"
-                                    value={data.utility_status}
-                                    onChange={(e) => setData('utility_status', e.target.value)}
-                                    placeholder="Enter utility status"
-                                />
-                                {errors.utility_status && <p className="mt-1 text-sm text-red-600">{errors.utility_status}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-gray-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="account_number" className="text-base font-semibold">
-                                        Account Number
-                                    </Label>
-                                </div>
-                                <Input
-                                    id="account_number"
-                                    value={data.account_number}
-                                    onChange={(e) => setData('account_number', e.target.value)}
-                                    placeholder="Enter account number"
-                                />
-                                {errors.account_number && <p className="mt-1 text-sm text-red-600">{errors.account_number}</p>}
-                            </div>
-
-                            {/* Insurance with RadioGroup */}
-                            <div className="rounded-lg border-l-4 border-l-violet-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="insurance" className="text-base font-semibold">
-                                        Insurance
-                                    </Label>
-                                </div>
-                                <RadioGroup
-                                    value={data.insurance}
-                                    onValueChange={(value) => setData('insurance', value)}
-                                    name="insurance"
-                                    options={[
-                                        { value: 'Yes', label: 'Yes' },
-                                        { value: 'No', label: 'No' }
-                                    ]}
-                                />
-                                {errors.insurance && <p className="mt-1 text-sm text-red-600">{errors.insurance}</p>}
-                            </div>
-
-                            <div className="rounded-lg border-l-4 border-l-rose-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="insurance_expiration_date" className="text-base font-semibold">
-                                        Insurance Expiration Date
-                                    </Label>
-                                </div>
-                                <Popover
-                                    open={calendarStates.insurance_expiration_date}
-                                    onOpenChange={(open) => setCalendarOpen('insurance_expiration_date', open)}
-                                    modal={false}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={`w-full justify-start text-left font-normal ${!data.insurance_expiration_date && 'text-muted-foreground'}`}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.insurance_expiration_date
-                                                ? format(parse(data.insurance_expiration_date, 'yyyy-MM-dd', new Date()), 'PPP')
-                                                : 'Pick a date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                        <Calendar
-                                            mode="single"
-                                            selected={data.insurance_expiration_date ? parse(data.insurance_expiration_date, 'yyyy-MM-dd', new Date()) : undefined}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    setData('insurance_expiration_date', format(date, 'yyyy-MM-dd'));
-                                                    setCalendarOpen('insurance_expiration_date', false);
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                {errors.insurance_expiration_date && <p className="mt-1 text-sm text-red-600">{errors.insurance_expiration_date}</p>}
-                            </div>
+                            <InsuranceInformation
+                                insurance={data.insurance}
+                                insuranceExpirationDate={data.insurance_expiration_date}
+                                calendarOpen={calendarStates.insurance_expiration_date}
+                                onInsuranceChange={(value) => setData('insurance', value)}
+                                onInsuranceExpirationDateChange={(value) => setData('insurance_expiration_date', value)}
+                                onCalendarOpenChange={(open) => setCalendarOpen('insurance_expiration_date', open)}
+                                errors={errors}
+                            />
                         </form>
                     </div>
 

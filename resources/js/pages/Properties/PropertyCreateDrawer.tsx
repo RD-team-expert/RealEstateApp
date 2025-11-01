@@ -1,30 +1,14 @@
-// resources/js/pages/Properties/PropertyCreateDrawer.tsx
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-    Building2, 
-    MapPin, 
-    AlertCircle,
-    DollarSign,
-    FileText,
-    Calendar,
-    Shield
-} from 'lucide-react';
-import {  PropertyWithoutInsurance } from '@/types/property';
+import { PropertyWithoutInsurance } from '@/types/property';
 import { City } from '@/types/City';
+import CitySelectionSection from './create/CitySelectionSection';
+import PropertySelectionSection from './create/PropertySelectionSection';
+import InsuranceCompanySection from './create/InsuranceCompanySection';
+import AmountPolicySection from './create/AmountPolicySection';
+import DatesSection from './create/DatesSection';
 
 interface PropertyCreateDrawerProps {
     open: boolean;
@@ -53,12 +37,12 @@ export default function PropertyCreateDrawer({
     const [expirationDateValidationError, setExpirationDateValidationError] = useState<string>('');
     
     // Refs for form fields
-    const propertyIdRef = useRef<HTMLButtonElement>(null);
-    const insuranceCompanyRef = useRef<HTMLInputElement>(null);
-    const amountRef = useRef<HTMLInputElement>(null);
-    const policyNumberRef = useRef<HTMLInputElement>(null);
-    const effectiveDateRef = useRef<HTMLInputElement>(null);
-    const expirationDateRef = useRef<HTMLInputElement>(null);
+    const propertyIdRef = useRef<HTMLButtonElement>(null!);
+    const insuranceCompanyRef = useRef<HTMLInputElement>(null!);
+    const amountRef = useRef<HTMLInputElement>(null!);
+    const policyNumberRef = useRef<HTMLInputElement>(null!);
+    const effectiveDateRef = useRef<HTMLInputElement>(null!);
+    const expirationDateRef = useRef<HTMLInputElement>(null!);
 
     // Define initial form values
     const initialFormValues = {
@@ -95,7 +79,7 @@ export default function PropertyCreateDrawer({
 
     // Function to reset all form state
     const resetForm = () => {
-        reset(); // Reset Inertia form
+        reset();
         setSelectedCityId('');
         setFilteredProperties([]);
         clearAllValidationErrors();
@@ -212,13 +196,8 @@ export default function PropertyCreateDrawer({
         
         post(route('properties-info.store'), {
             onSuccess: () => {
-                // Reset the form completely after successful submission
                 resetForm();
-                
-                // Close the drawer
                 onOpenChange(false);
-                
-                // Call the success callback if provided
                 if (onSuccess) {
                     onSuccess();
                 }
@@ -236,7 +215,7 @@ export default function PropertyCreateDrawer({
 
     const handleCityChange = (value: string) => {
         setSelectedCityId(value);
-        setData('property_id', 0); // Reset property selection
+        setData('property_id', 0);
         clearErrors();
     };
 
@@ -246,169 +225,53 @@ export default function PropertyCreateDrawer({
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* City Selection Section */}
-                            <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="city_select" className="text-base font-semibold">
-                                        <MapPin className="h-4 w-4 inline mr-1" />
-                                        Select City
-                                    </Label>
-                                </div>
-                                <Select value={selectedCityId} onValueChange={handleCityChange}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Choose a city..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {cities.map((city) => (
-                                            <SelectItem key={city.id} value={city.id.toString()}>
-                                                {city.city}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            <CitySelectionSection
+                                selectedCityId={selectedCityId}
+                                cities={cities}
+                                onCityChange={handleCityChange}
+                            />
 
-                            {/* Property Selection Section */}
-                            <div className="rounded-lg border-l-4 border-l-green-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="property_select" className="text-base font-semibold">
-                                        <Building2 className="h-4 w-4 inline mr-1" />
-                                        Select Property *
-                                    </Label>
-                                </div>
-                                <Select 
-                                    value={data.property_id && data.property_id !== 0 ? data.property_id.toString() : ''} 
-                                    onValueChange={handlePropertyIdChange}
-                                    disabled={!selectedCityId}
-                                >
-                                    <SelectTrigger className="w-full" ref={propertyIdRef}>
-                                        <SelectValue 
-                                            placeholder={
-                                                !selectedCityId 
-                                                    ? "Select a city first..." 
-                                                    : "Choose a property..."
-                                            } 
-                                        />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {filteredProperties.map((property) => (
-                                            <SelectItem key={property.id} value={property.id.toString()}>
-                                                {property.property_name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {errors.property_id && <p className="mt-1 text-sm text-red-600">{errors.property_id}</p>}
-                                {propertyIdValidationError && <p className="mt-1 text-sm text-red-600">{propertyIdValidationError}</p>}
-                                {selectedCityId && filteredProperties.length === 0 && (
-                                    <Alert className="mt-2">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <AlertDescription>
-                                            No properties found for the selected city.
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
-                            </div>
+                            <PropertySelectionSection
+                                propertyId={data.property_id}
+                                selectedCityId={selectedCityId}
+                                filteredProperties={filteredProperties}
+                                onPropertyChange={handlePropertyIdChange}
+                                propertyIdRef={propertyIdRef}
+                                errors={errors}
+                                validationError={propertyIdValidationError}
+                            />
 
-                            {/* Insurance Company */}
-                            <div className="rounded-lg border-l-4 border-l-orange-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="insurance_company_name" className="text-base font-semibold">
-                                        <Shield className="h-4 w-4 inline mr-1" />
-                                        Insurance Company *
-                                    </Label>
-                                </div>
-                                <Input
-                                    ref={insuranceCompanyRef}
-                                    id="insurance_company_name"
-                                    value={data.insurance_company_name}
-                                    onChange={handleInsuranceCompanyChange}
-                                    placeholder="Enter insurance company name"
-                                />
-                                {errors.insurance_company_name && <p className="mt-1 text-sm text-red-600">{errors.insurance_company_name}</p>}
-                                {insuranceCompanyValidationError && <p className="mt-1 text-sm text-red-600">{insuranceCompanyValidationError}</p>}
-                            </div>
+                            <InsuranceCompanySection
+                                value={data.insurance_company_name}
+                                onChange={handleInsuranceCompanyChange}
+                                inputRef={insuranceCompanyRef}
+                                errors={errors}
+                                validationError={insuranceCompanyValidationError}
+                            />
 
-                            {/* Amount and Policy Number */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="rounded-lg border-l-4 border-l-emerald-500 p-4">
-                                    <div className="mb-2">
-                                        <Label htmlFor="amount" className="text-base font-semibold">
-                                            <DollarSign className="h-4 w-4 inline mr-1" />
-                                            Amount *
-                                        </Label>
-                                    </div>
-                                    <Input
-                                        ref={amountRef}
-                                        id="amount"
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        value={data.amount}
-                                        onChange={handleAmountChange}
-                                        placeholder="0.00"
-                                    />
-                                    {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
-                                    {amountValidationError && <p className="mt-1 text-sm text-red-600">{amountValidationError}</p>}
-                                </div>
+                            <AmountPolicySection
+                                amount={data.amount}
+                                policyNumber={data.policy_number}
+                                onAmountChange={handleAmountChange}
+                                onPolicyNumberChange={handlePolicyNumberChange}
+                                amountRef={amountRef}
+                                policyNumberRef={policyNumberRef}
+                                errors={errors}
+                                amountValidationError={amountValidationError}
+                                policyNumberValidationError={policyNumberValidationError}
+                            />
 
-                                <div className="rounded-lg border-l-4 border-l-pink-500 p-4">
-                                    <div className="mb-2">
-                                        <Label htmlFor="policy_number" className="text-base font-semibold">
-                                            <FileText className="h-4 w-4 inline mr-1" />
-                                            Policy Number *
-                                        </Label>
-                                    </div>
-                                    <Input
-                                        ref={policyNumberRef}
-                                        id="policy_number"
-                                        value={data.policy_number}
-                                        onChange={handlePolicyNumberChange}
-                                        placeholder="Enter policy number"
-                                    />
-                                    {errors.policy_number && <p className="mt-1 text-sm text-red-600">{errors.policy_number}</p>}
-                                    {policyNumberValidationError && <p className="mt-1 text-sm text-red-600">{policyNumberValidationError}</p>}
-                                </div>
-                            </div>
-
-                            {/* Dates */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
-                                    <div className="mb-2">
-                                        <Label htmlFor="effective_date" className="text-base font-semibold">
-                                            <Calendar className="h-4 w-4 inline mr-1" />
-                                            Effective Date *
-                                        </Label>
-                                    </div>
-                                    <Input
-                                        ref={effectiveDateRef}
-                                        id="effective_date"
-                                        type="date"
-                                        value={data.effective_date}
-                                        onChange={handleEffectiveDateChange}
-                                    />
-                                    {errors.effective_date && <p className="mt-1 text-sm text-red-600">{errors.effective_date}</p>}
-                                    {effectiveDateValidationError && <p className="mt-1 text-sm text-red-600">{effectiveDateValidationError}</p>}
-                                </div>
-
-                                <div className="rounded-lg border-l-4 border-l-teal-500 p-4">
-                                    <div className="mb-2">
-                                        <Label htmlFor="expiration_date" className="text-base font-semibold">
-                                            <Calendar className="h-4 w-4 inline mr-1" />
-                                            Expiration Date *
-                                        </Label>
-                                    </div>
-                                    <Input
-                                        ref={expirationDateRef}
-                                        id="expiration_date"
-                                        type="date"
-                                        value={data.expiration_date}
-                                        onChange={handleExpirationDateChange}
-                                    />
-                                    {errors.expiration_date && <p className="mt-1 text-sm text-red-600">{errors.expiration_date}</p>}
-                                    {expirationDateValidationError && <p className="mt-1 text-sm text-red-600">{expirationDateValidationError}</p>}
-                                </div>
-                            </div>
+                            <DatesSection
+                                effectiveDate={data.effective_date}
+                                expirationDate={data.expiration_date}
+                                onEffectiveDateChange={handleEffectiveDateChange}
+                                onExpirationDateChange={handleExpirationDateChange}
+                                effectiveDateRef={effectiveDateRef}
+                                expirationDateRef={expirationDateRef}
+                                errors={errors}
+                                effectiveDateValidationError={effectiveDateValidationError}
+                                expirationDateValidationError={expirationDateValidationError}
+                            />
                         </form>
                     </div>
 

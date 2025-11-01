@@ -2,24 +2,19 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-import { 
-    Building2, 
-    DollarSign,
-    FileText,
-    Calendar,
-    Shield
-} from 'lucide-react';
-import { Property,  PropertyWithoutInsurance } from '@/types/property';
+import { Button } from '@/components/ui/button';
+import { Property, PropertyWithoutInsurance } from '@/types/property';
+import PropertySelectField from './edit/PropertySelectField';
+import InsuranceCompanyField from './edit/InsuranceCompanyField';
+import AmountPolicyFields from './edit/AmountPolicyFields';
+import DateFields from './edit/DateFields';
 
 interface PropertyEditDrawerProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     property: Property;
-    availableProperties: PropertyWithoutInsurance[]; // Added available properties
+    availableProperties: PropertyWithoutInsurance[];
     onSuccess?: () => void;
 }
 
@@ -27,11 +22,11 @@ export default function PropertyEditDrawer({
     open, 
     onOpenChange, 
     property,
-    availableProperties = [], // Added with default value
+    availableProperties = [],
     onSuccess 
 }: PropertyEditDrawerProps) {
     // Validation error states
-    const [propertyIdValidationError, setPropertyIdValidationError] = useState<string>(''); // Changed from propertyNameValidationError
+    const [propertyIdValidationError, setPropertyIdValidationError] = useState<string>('');
     const [insuranceCompanyValidationError, setInsuranceCompanyValidationError] = useState<string>('');
     const [amountValidationError, setAmountValidationError] = useState<string>('');
     const [policyNumberValidationError, setPolicyNumberValidationError] = useState<string>('');
@@ -39,15 +34,15 @@ export default function PropertyEditDrawer({
     const [expirationDateValidationError, setExpirationDateValidationError] = useState<string>('');
     
     // Refs for form fields
-    const propertyIdRef = useRef<HTMLSelectElement>(null); // Changed from HTMLInputElement to HTMLSelectElement
-    const insuranceCompanyRef = useRef<HTMLInputElement>(null);
-    const amountRef = useRef<HTMLInputElement>(null);
-    const policyNumberRef = useRef<HTMLInputElement>(null);
-    const effectiveDateRef = useRef<HTMLInputElement>(null);
-    const expirationDateRef = useRef<HTMLInputElement>(null);
+    const propertyIdRef = useRef<HTMLSelectElement>(null!);
+    const insuranceCompanyRef = useRef<HTMLInputElement>(null!);
+    const amountRef = useRef<HTMLInputElement>(null!);
+    const policyNumberRef = useRef<HTMLInputElement>(null!);
+    const effectiveDateRef = useRef<HTMLInputElement>(null!);
+    const expirationDateRef = useRef<HTMLInputElement>(null!);
 
-    const { data, setData, put, processing, errors,  clearErrors } = useForm({
-        property_id: property.property_id, // Changed from property_name
+    const { data, setData, put, processing, errors, clearErrors } = useForm({
+        property_id: property.property_id,
         insurance_company_name: property.insurance_company_name,
         amount: property.amount.toString(),
         policy_number: property.policy_number,
@@ -59,7 +54,7 @@ export default function PropertyEditDrawer({
     useEffect(() => {
         if (property) {
             setData({
-                property_id: property.property_id, // Changed from property_name
+                property_id: property.property_id,
                 insurance_company_name: property.insurance_company_name,
                 amount: property.amount.toString(),
                 policy_number: property.policy_number,
@@ -70,8 +65,8 @@ export default function PropertyEditDrawer({
     }, [property]);
 
     // Clear validation errors when data changes
-    const handlePropertyIdChange = (e: React.ChangeEvent<HTMLSelectElement>) => { // Changed from HTMLInputElement to HTMLSelectElement
-        setData('property_id', parseInt(e.target.value)); // Parse as number
+    const handlePropertyIdChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setData('property_id', parseInt(e.target.value));
         setPropertyIdValidationError('');
     };
 
@@ -104,7 +99,7 @@ export default function PropertyEditDrawer({
         e.preventDefault();
         
         // Clear any previous validation errors
-        setPropertyIdValidationError(''); // Changed from setPropertyNameValidationError
+        setPropertyIdValidationError('');
         setInsuranceCompanyValidationError('');
         setAmountValidationError('');
         setPolicyNumberValidationError('');
@@ -114,7 +109,7 @@ export default function PropertyEditDrawer({
         let hasValidationErrors = false;
         
         // Validate required fields
-        if (!data.property_id || data.property_id === 0) { // Changed validation logic
+        if (!data.property_id || data.property_id === 0) {
             setPropertyIdValidationError('Please select a property before submitting the form.');
             if (propertyIdRef.current) {
                 propertyIdRef.current.focus();
@@ -174,7 +169,7 @@ export default function PropertyEditDrawer({
         
         put(route('properties-info.update', property.id), {
             onSuccess: () => {
-                setPropertyIdValidationError(''); // Changed from setPropertyNameValidationError
+                setPropertyIdValidationError('');
                 setInsuranceCompanyValidationError('');
                 setAmountValidationError('');
                 setPolicyNumberValidationError('');
@@ -194,7 +189,7 @@ export default function PropertyEditDrawer({
     const handleCancel = () => {
         // Reset to original property data
         setData({
-            property_id: property.property_id, // Changed from property_name
+            property_id: property.property_id,
             insurance_company_name: property.insurance_company_name,
             amount: property.amount.toString(),
             policy_number: property.policy_number,
@@ -202,7 +197,7 @@ export default function PropertyEditDrawer({
             expiration_date: property.expiration_date,
         });
         clearErrors();
-        setPropertyIdValidationError(''); // Changed from setPropertyNameValidationError
+        setPropertyIdValidationError('');
         setInsuranceCompanyValidationError('');
         setAmountValidationError('');
         setPolicyNumberValidationError('');
@@ -217,136 +212,51 @@ export default function PropertyEditDrawer({
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Property Selection */}
-                            <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="property_id" className="text-base font-semibold">
-                                        <Building2 className="h-4 w-4 inline mr-1" />
-                                        Property *
-                                    </Label>
-                                </div>
-                                <select
-                                    ref={propertyIdRef}
-                                    id="property_id"
-                                    value={data.property_id || ''}
-                                    onChange={handlePropertyIdChange}
-                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <option value="">Select a property...</option>
-                                    {availableProperties.map((availableProperty) => (
-                                        <option key={availableProperty.id} value={availableProperty.id}>
-                                            {availableProperty.property_name}
-                                            {availableProperty.city_id && ` (${availableProperty.city_id})`}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.property_id && <p className="mt-1 text-sm text-red-600">{errors.property_id}</p>}
-                                {propertyIdValidationError && <p className="mt-1 text-sm text-red-600">{propertyIdValidationError}</p>}
-                            </div>
+                            <PropertySelectField
+                                ref={propertyIdRef}
+                                value={data.property_id}
+                                onChange={handlePropertyIdChange}
+                                availableProperties={availableProperties}
+                                error={errors.property_id}
+                                validationError={propertyIdValidationError}
+                            />
 
-                            {/* Insurance Company */}
-                            <div className="rounded-lg border-l-4 border-l-green-500 p-4">
-                                <div className="mb-2">
-                                    <Label htmlFor="insurance_company_name" className="text-base font-semibold">
-                                        <Shield className="h-4 w-4 inline mr-1" />
-                                        Insurance Company *
-                                    </Label>
-                                </div>
-                                <Input
-                                    ref={insuranceCompanyRef}
-                                    id="insurance_company_name"
-                                    value={data.insurance_company_name}
-                                    onChange={handleInsuranceCompanyChange}
-                                    placeholder="Enter insurance company name"
-                                />
-                                {errors.insurance_company_name && <p className="mt-1 text-sm text-red-600">{errors.insurance_company_name}</p>}
-                                {insuranceCompanyValidationError && <p className="mt-1 text-sm text-red-600">{insuranceCompanyValidationError}</p>}
-                            </div>
+                            <InsuranceCompanyField
+                                ref={insuranceCompanyRef}
+                                value={data.insurance_company_name}
+                                onChange={handleInsuranceCompanyChange}
+                                error={errors.insurance_company_name}
+                                validationError={insuranceCompanyValidationError}
+                            />
 
-                            {/* Amount and Policy Number */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="rounded-lg border-l-4 border-l-emerald-500 p-4">
-                                    <div className="mb-2">
-                                        <Label htmlFor="amount" className="text-base font-semibold">
-                                            <DollarSign className="h-4 w-4 inline mr-1" />
-                                            Amount *
-                                        </Label>
-                                    </div>
-                                    <Input
-                                        ref={amountRef}
-                                        id="amount"
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        value={data.amount}
-                                        onChange={handleAmountChange}
-                                        placeholder="0.00"
-                                    />
-                                    {errors.amount && <p className="mt-1 text-sm text-red-600">{errors.amount}</p>}
-                                    {amountValidationError && <p className="mt-1 text-sm text-red-600">{amountValidationError}</p>}
-                                </div>
+                            <AmountPolicyFields
+                                amountRef={amountRef}
+                                policyNumberRef={policyNumberRef}
+                                amountValue={data.amount}
+                                policyNumberValue={data.policy_number}
+                                onAmountChange={handleAmountChange}
+                                onPolicyNumberChange={handlePolicyNumberChange}
+                                amountError={errors.amount}
+                                policyNumberError={errors.policy_number}
+                                amountValidationError={amountValidationError}
+                                policyNumberValidationError={policyNumberValidationError}
+                            />
 
-                                <div className="rounded-lg border-l-4 border-l-pink-500 p-4">
-                                    <div className="mb-2">
-                                        <Label htmlFor="policy_number" className="text-base font-semibold">
-                                            <FileText className="h-4 w-4 inline mr-1" />
-                                            Policy Number *
-                                        </Label>
-                                    </div>
-                                    <Input
-                                        ref={policyNumberRef}
-                                        id="policy_number"
-                                        value={data.policy_number}
-                                        onChange={handlePolicyNumberChange}
-                                        placeholder="Enter policy number"
-                                    />
-                                    {errors.policy_number && <p className="mt-1 text-sm text-red-600">{errors.policy_number}</p>}
-                                    {policyNumberValidationError && <p className="mt-1 text-sm text-red-600">{policyNumberValidationError}</p>}
-                                </div>
-                            </div>
-
-                            {/* Dates */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
-                                    <div className="mb-2">
-                                        <Label htmlFor="effective_date" className="text-base font-semibold">
-                                            <Calendar className="h-4 w-4 inline mr-1" />
-                                            Effective Date *
-                                        </Label>
-                                    </div>
-                                    <Input
-                                        ref={effectiveDateRef}
-                                        id="effective_date"
-                                        type="date"
-                                        value={data.effective_date}
-                                        onChange={handleEffectiveDateChange}
-                                    />
-                                    {errors.effective_date && <p className="mt-1 text-sm text-red-600">{errors.effective_date}</p>}
-                                    {effectiveDateValidationError && <p className="mt-1 text-sm text-red-600">{effectiveDateValidationError}</p>}
-                                </div>
-
-                                <div className="rounded-lg border-l-4 border-l-teal-500 p-4">
-                                    <div className="mb-2">
-                                        <Label htmlFor="expiration_date" className="text-base font-semibold">
-                                            <Calendar className="h-4 w-4 inline mr-1" />
-                                            Expiration Date *
-                                        </Label>
-                                    </div>
-                                    <Input
-                                        ref={expirationDateRef}
-                                        id="expiration_date"
-                                        type="date"
-                                        value={data.expiration_date}
-                                        onChange={handleExpirationDateChange}
-                                    />
-                                    {errors.expiration_date && <p className="mt-1 text-sm text-red-600">{errors.expiration_date}</p>}
-                                    {expirationDateValidationError && <p className="mt-1 text-sm text-red-600">{expirationDateValidationError}</p>}
-                                </div>
-                            </div>
+                            <DateFields
+                                effectiveDateRef={effectiveDateRef}
+                                expirationDateRef={expirationDateRef}
+                                effectiveDateValue={data.effective_date}
+                                expirationDateValue={data.expiration_date}
+                                onEffectiveDateChange={handleEffectiveDateChange}
+                                onExpirationDateChange={handleExpirationDateChange}
+                                effectiveDateError={errors.effective_date}
+                                expirationDateError={errors.expiration_date}
+                                effectiveDateValidationError={effectiveDateValidationError}
+                                expirationDateValidationError={expirationDateValidationError}
+                            />
                         </form>
                     </div>
 
-                    {/* Footer with action buttons */}
                     <DrawerFooter>
                         <div className="flex justify-end gap-2">
                             <Button
