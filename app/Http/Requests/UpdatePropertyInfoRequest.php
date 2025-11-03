@@ -18,35 +18,32 @@ class UpdatePropertyInfoRequest extends FormRequest
         $propertyInfoId = $this->route('properties_info') ?? $this->route('id');
         
         return [
-            'property_id' => 'required|integer|exists:property_info_without_insurance,id',  // Changed from property_name
-            'insurance_company_name' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0|max:999999999999.99',
+            'property_id' => 'required|integer|exists:property_info_without_insurance,id',
+            'insurance_company_name' => 'nullable|string|max:255',
+            'amount' => 'nullable|numeric|min:0|max:999999999999.99',
             'policy_number' => [
-                'required',
+                'nullable',
                 'string',
                 'max:255',
-                Rule::unique('properties_info', 'policy_number')->ignore($propertyInfoId),  // Added unique rule with ignore
+                Rule::unique('properties_info', 'policy_number')->ignore($propertyInfoId),
             ],
-            'effective_date' => 'required|date|before_or_equal:expiration_date',
-            'expiration_date' => 'required|date|after:effective_date',
+            'effective_date' => 'nullable|date',
+            'expiration_date' => 'nullable|date',
+            'notes' => 'nullable|string|max:65535',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'property_id.required' => 'Property is required.',  // Updated message
-            'property_id.integer' => 'Property must be a valid selection.',  // Added message
-            'property_id.exists' => 'The selected property does not exist.',  // Added message
-            'insurance_company_name.required' => 'Insurance company name is required.',
-            'amount.required' => 'Amount is required.',
+            'property_id.required' => 'Property is required.',
+            'property_id.integer' => 'Property must be a valid selection.',
+            'property_id.exists' => 'The selected property does not exist.',
+            'insurance_company_name.string' => 'Insurance company name must be a valid text.',
             'amount.numeric' => 'Amount must be a valid number.',
-            'policy_number.required' => 'Policy number is required.',
             'policy_number.unique' => 'Policy number already exists.',
-            'effective_date.required' => 'Effective date is required.',
-            'effective_date.before_or_equal' => 'Effective date must be before or equal to expiration date.',
-            'expiration_date.required' => 'Expiration date is required.',
-            'expiration_date.after' => 'Expiration date must be after effective date.',
+            'effective_date.date' => 'Effective date must be a valid date.',
+            'expiration_date.date' => 'Expiration date must be a valid date.',
         ];
     }
 }

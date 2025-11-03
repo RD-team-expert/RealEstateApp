@@ -14,6 +14,7 @@ import PropertyFilters from './index/PropertyFilters';
 import PropertyTable from './index/PropertyTable';
 import PropertyEmptyState from './index/PropertyEmptyState';
 import FlashMessages from './index/FlashMessages';
+import PropertyPagination from './index/PropertyPagination';
 
 // CSV Export utility function
 const exportToCSV = (data: Property[], filename: string = 'properties.csv') => {
@@ -76,32 +77,91 @@ interface Props extends PageProps {
 
 export default function Index({ properties, filters, cities = [], availableProperties = [] }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+    
+    // State for filters - initialized with filters from backend
     const [searchFilters, setSearchFilters] = useState<PropertyFiltersType>(filters);
+    
+    // State for export loading
     const [isExporting, setIsExporting] = useState(false);
+    
+    // State for create drawer
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    
+    // State for edit drawer
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+    
+    // State for selected property to edit
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+    
+    // Get flash messages from Inertia
     const { flash } = usePage().props;
 
+    /**
+     * Get current query parameters including page and per_page
+     * This is used to preserve pagination state when making requests
+     */
+    const getCurrentQueryParams = (): Record<string, string> => {
+        const params: Record<string, string> = {};
+        
+        // Add current page if exists
+        if (properties.current_page && properties.current_page > 1) {
+            params.page = properties.current_page.toString();
+        }
+        
+        // Add per_page if exists
+        if (properties.per_page) {
+            params.per_page = properties.per_page.toString();
+        }
+        
+        // Add filters
+        Object.entries(searchFilters).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                params[key] = String(value);
+            }
+        });
+        
+        return params;
+    };
+
+    /**
+     * Handle filter input changes
+     * Updates local state but doesn't trigger API call until search is clicked
+     */
     const handleFilterChange = (key: keyof PropertyFiltersType, value: string) => {
         const newFilters = { ...searchFilters, [key]: value };
         setSearchFilters(newFilters);
     };
 
+    /**
+     * Handle search button click
+     * Makes API call with current filters and resets to page 1
+     */
     const handleSearch = () => {
         const filterParams: Record<string, string> = {};
+        
+        // Add filters to params
         Object.entries(searchFilters).forEach(([key, value]) => {
             if (value !== null && value !== undefined && value !== '') {
                 filterParams[key] = String(value);
             }
         });
         
+        // Add per_page if exists to maintain user's selection
+        if (properties.per_page) {
+            filterParams.per_page = properties.per_page.toString();
+        }
+        
+        // Reset to page 1 when searching with new filters
         router.get(route('properties-info.index'), filterParams, {
-            preserveState: true,
-            preserveScroll: true,
+            preserveState: true,  // Preserve component state
+            preserveScroll: true, // Keep scroll position
         });
     };
 
+    /**
+     * Handle clear filters button click
+     * Resets all filters and returns to page 1
+     */
     const handleClearFilters = () => {
         const clearedFilters: PropertyFiltersType = {
             property_name: '',
@@ -110,18 +170,38 @@ export default function Index({ properties, filters, cities = [], availablePrope
             status: undefined
         };
         setSearchFilters(clearedFilters);
-        router.get(route('properties-info.index'), {}, {
+        
+        // Only preserve per_page when clearing filters
+        const params: Record<string, string> = {};
+        if (properties.per_page) {
+            params.per_page = properties.per_page.toString();
+        }
+        
+        router.get(route('properties-info.index'), params, {
             preserveState: true,
             preserveScroll: true,
         });
     };
 
+    /**
+     * Handle delete action
+     * Sends delete request with current query params to maintain pagination/filter state
+     */
     const handleDelete = (property: Property) => {
         if (confirm('Are you sure you want to delete this property?')) {
-            router.delete(route('properties-info.destroy', property.id));
+            // Include current query params in the delete request
+            // This is handled automatically by the backend now
+            router.delete(route('properties-info.destroy', property.id), {
+                preserveState: true,
+                preserveScroll: true,
+            });
         }
     };
 
+    /**
+     * Handle CSV export
+     * Exports current page data to CSV file
+     */
     const handleCSVExport = () => {
         if (properties.data.length === 0) {
             alert('No data to export');
@@ -140,17 +220,70 @@ export default function Index({ properties, filters, cities = [], availablePrope
         }
     };
 
+    /**
+     * Handle successful creation in drawer
+     * Reloads the page to show updated data while preserving state
+     */
     const handleDrawerSuccess = () => {
-        router.reload();
+        setIsDrawerOpen(false);
+        // Reload is better than router.reload() here because it preserves query params
+        router.get(route('properties-info.index'), getCurrentQueryParams(), {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
+    /**
+     * Handle successful edit in drawer
+     * Reloads the page to show updated data while preserving state
+     */
     const handleEditDrawerSuccess = () => {
-        router.reload();
+        setIsEditDrawerOpen(false);
+        router.get(route('properties-info.index'), getCurrentQueryParams(), {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
+    /**
+     * Handle edit button click
+     * Opens edit drawer with selected property
+     */
     const handleEdit = (property: Property) => {
         setSelectedProperty(property);
         setIsEditDrawerOpen(true);
+    };
+
+    /**
+     * Handle per page change
+     * Updates the number of records per page and resets to page 1
+     */
+    const handlePerPageChange = (perPage: number | 'all') => {
+        const params = getCurrentQueryParams();
+        
+        // Remove current page when changing per_page (reset to page 1)
+        delete params.page;
+        
+        // Set new per_page value
+        params.per_page = perPage.toString();
+        
+        router.get(route('properties-info.index'), params, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    /**
+     * Handle show/view button click
+     * Navigates to show page with current filters as query params
+     */
+    const handleShow = (property: Property) => {
+        // Pass current filters to the show page for next/previous navigation
+        const params = getCurrentQueryParams();
+        
+        router.get(route('properties-info.show', property.id), params, {
+            preserveState: false, // Don't preserve state when navigating to different page
+        });
     };
 
     return (
@@ -158,11 +291,13 @@ export default function Index({ properties, filters, cities = [], availablePrope
             <Head title="Properties Insurance" />
             <div className="py-12 bg-background text-foreground transition-colors min-h-screen">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    {/* Flash messages for success/error notifications */}
                     <FlashMessages 
                         success={(flash as any)?.success} 
                         error={(flash as any)?.error} 
                     />
 
+                    {/* Page header with export and add buttons */}
                     <PropertyPageHeader
                         onExport={handleCSVExport}
                         onAddProperty={() => setIsDrawerOpen(true)}
@@ -173,6 +308,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
 
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
+                            {/* Filters section */}
                             <PropertyFilters
                                 filters={searchFilters}
                                 onFilterChange={handleFilterChange}
@@ -181,29 +317,47 @@ export default function Index({ properties, filters, cities = [], availablePrope
                             />
                         </CardHeader>
                         <CardContent>
+                            {/* Properties table */}
                             <PropertyTable
                                 properties={properties.data}
                                 onEdit={handleEdit}
                                 onDelete={handleDelete}
+                                onShow={handleShow}
                                 canEdit={hasAllPermissions(['properties.update', 'properties.edit'])}
                                 canDelete={hasPermission('properties.destroy')}
+                                canShow={hasPermission('properties.show')}
                                 hasAnyActionPermission={hasAnyPermission(['properties.destroy', 'properties.update', 'properties.edit', 'properties.show'])}
                             />
                             
+                            {/* Empty state when no properties found */}
                             {properties.data.length === 0 && <PropertyEmptyState />}
+                            
+                            {/* Pagination controls */}
+                            {properties.data.length > 0 && (
+                                <PropertyPagination
+                                    paginatedData={properties}
+                                    currentPerPage={properties.per_page || 15}
+                                    onPerPageChange={handlePerPageChange}
+                                />
+                            )}
                         </CardContent>
                     </Card>
                 </div>
             </div>
 
+            {/* Create drawer - passes current filters and pagination info */}
             <PropertyCreateDrawer
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
                 cities={cities}
                 availableProperties={availableProperties}
                 onSuccess={handleDrawerSuccess}
+                currentFilters={searchFilters}
+                currentPage={properties.current_page || 1}
+                currentPerPage={properties.per_page || 15}
             />
 
+            {/* Edit drawer - passes current filters and pagination info */}
             {selectedProperty && (
                 <PropertyEditDrawer
                     open={isEditDrawerOpen}
@@ -211,6 +365,9 @@ export default function Index({ properties, filters, cities = [], availablePrope
                     property={selectedProperty}
                     availableProperties={availableProperties}
                     onSuccess={handleEditDrawerSuccess}
+                    currentFilters={searchFilters}
+                    currentPage={properties.current_page || 1}
+                    currentPerPage={properties.per_page || 15}
                 />
             )}
         </AppLayout>

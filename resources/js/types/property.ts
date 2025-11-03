@@ -26,6 +26,7 @@ export interface Property {
     policy_number: string;
     effective_date: string;
     expiration_date: string;
+    notes?: string;  // Added notes field
     status: 'Active' | 'Expired';
     formatted_amount: string;
     is_archived: boolean;
@@ -39,6 +40,29 @@ export interface Property {
     property?: PropertyWithoutInsurance;
 }
 
+// Add these to your existing property types
+
+export interface PaginatedProperties {
+    current_page: number;
+    data: Property[];
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: {
+        url: string | null;
+        label: string;
+        active: boolean;
+    }[];
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
+}
+
+
 // Updated form data interface to match request validation
 export interface PropertyFormData {
     property_id: number;  // Changed from property_name to property_id
@@ -47,6 +71,7 @@ export interface PropertyFormData {
     policy_number: string;
     effective_date: string;
     expiration_date: string;
+    notes?: string;  // Added notes field
 }
 
 // Updated filters interface - keeping property_name for UI filtering

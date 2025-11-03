@@ -1,3 +1,4 @@
+// resources/js/Pages/Properties/index/PropertyTable.tsx
 import {
     Table,
     TableBody,
@@ -12,17 +13,25 @@ interface PropertyTableProps {
     properties: Property[];
     onEdit: (property: Property) => void;
     onDelete: (property: Property) => void;
+    onShow: (property: Property) => void;
     canEdit: boolean;
     canDelete: boolean;
+    canShow: boolean;
     hasAnyActionPermission: boolean;
 }
 
+/**
+ * Table component for displaying property list
+ * Renders table header and rows with action buttons
+ */
 export default function PropertyTable({
     properties,
     onEdit,
     onDelete,
+    onShow,
     canEdit,
     canDelete,
+    canShow,
     hasAnyActionPermission,
 }: PropertyTableProps) {
     return (
@@ -54,6 +63,7 @@ export default function PropertyTable({
                         <TableHead className="text-muted-foreground border border-border bg-muted">
                             Status
                         </TableHead>
+                        {/* Only show Actions column if user has any action permission */}
                         {hasAnyActionPermission && (
                             <TableHead className="text-muted-foreground border border-border bg-muted">
                                 Actions
@@ -68,8 +78,10 @@ export default function PropertyTable({
                             property={property}
                             onEdit={onEdit}
                             onDelete={onDelete}
+                            onShow={onShow}
                             canEdit={canEdit}
                             canDelete={canDelete}
+                            canShow={canShow}
                             hasAnyActionPermission={hasAnyActionPermission}
                         />
                     ))}

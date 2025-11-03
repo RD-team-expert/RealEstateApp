@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+// resources/js/Pages/Properties/PropertyCreateDrawer.tsx
+import React, { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-import { PropertyWithoutInsurance } from '@/types/property';
+import { PropertyWithoutInsurance, PropertyFilters as PropertyFiltersType } from '@/types/property';
 import { City } from '@/types/City';
 import CitySelectionSection from './create/CitySelectionSection';
 import PropertySelectionSection from './create/PropertySelectionSection';
 import InsuranceCompanySection from './create/InsuranceCompanySection';
 import AmountPolicySection from './create/AmountPolicySection';
 import DatesSection from './create/DatesSection';
+import NotesSection from './create/NotesSection';
 
 interface PropertyCreateDrawerProps {
     open: boolean;
@@ -16,6 +18,10 @@ interface PropertyCreateDrawerProps {
     cities: City[];
     availableProperties: PropertyWithoutInsurance[];
     onSuccess?: () => void;
+    // New props for preserving pagination and filters
+    currentFilters: PropertyFiltersType;
+    currentPage: number;
+    currentPerPage: number;
 }
 
 export default function PropertyCreateDrawer({ 
@@ -23,26 +29,16 @@ export default function PropertyCreateDrawer({
     onOpenChange, 
     cities = [],
     availableProperties = [],
-    onSuccess 
+    onSuccess,
+    currentFilters,
+    currentPage,
+    currentPerPage
 }: PropertyCreateDrawerProps) {
     const [selectedCityId, setSelectedCityId] = useState<string>('');
     const [filteredProperties, setFilteredProperties] = useState<PropertyWithoutInsurance[]>([]);
     
-    // Validation error states
+    // Only validation error for required field (property_id)
     const [propertyIdValidationError, setPropertyIdValidationError] = useState<string>('');
-    const [insuranceCompanyValidationError, setInsuranceCompanyValidationError] = useState<string>('');
-    const [amountValidationError, setAmountValidationError] = useState<string>('');
-    const [policyNumberValidationError, setPolicyNumberValidationError] = useState<string>('');
-    const [effectiveDateValidationError, setEffectiveDateValidationError] = useState<string>('');
-    const [expirationDateValidationError, setExpirationDateValidationError] = useState<string>('');
-    
-    // Refs for form fields
-    const propertyIdRef = useRef<HTMLButtonElement>(null!);
-    const insuranceCompanyRef = useRef<HTMLInputElement>(null!);
-    const amountRef = useRef<HTMLInputElement>(null!);
-    const policyNumberRef = useRef<HTMLInputElement>(null!);
-    const effectiveDateRef = useRef<HTMLInputElement>(null!);
-    const expirationDateRef = useRef<HTMLInputElement>(null!);
 
     // Define initial form values
     const initialFormValues = {
@@ -52,11 +48,15 @@ export default function PropertyCreateDrawer({
         policy_number: '',
         effective_date: '',
         expiration_date: '',
+        notes: '',
     };
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm(initialFormValues);
 
-    // Filter properties by selected city
+    /**
+     * Filter properties by selected city
+     * When city changes, reset property selection
+     */
     useEffect(() => {
         if (selectedCityId) {
             const filtered = availableProperties.filter(
@@ -70,131 +70,129 @@ export default function PropertyCreateDrawer({
         setData('property_id', 0);
     }, [selectedCityId, availableProperties]);
 
-    // Reset form when drawer opens
+    /**
+     * Reset form when drawer opens
+     */
     useEffect(() => {
         if (open) {
             resetForm();
         }
     }, [open]);
 
-    // Function to reset all form state
+    /**
+     * Function to reset all form state
+     */
     const resetForm = () => {
         reset();
         setSelectedCityId('');
         setFilteredProperties([]);
-        clearAllValidationErrors();
+        setPropertyIdValidationError('');
         clearErrors();
     };
 
-    // Function to clear all validation errors
-    const clearAllValidationErrors = () => {
-        setPropertyIdValidationError('');
-        setInsuranceCompanyValidationError('');
-        setAmountValidationError('');
-        setPolicyNumberValidationError('');
-        setEffectiveDateValidationError('');
-        setExpirationDateValidationError('');
-    };
-
-    // Clear validation errors when data changes
+    /**
+     * Handle property ID change
+     * Clear validation error when user interacts with field
+     */
     const handlePropertyIdChange = (value: string) => {
         setData('property_id', parseInt(value));
         setPropertyIdValidationError('');
     };
 
+    /**
+     * Handle insurance company name change
+     * No validation needed - field is nullable
+     */
     const handleInsuranceCompanyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setData('insurance_company_name', e.target.value);
-        setInsuranceCompanyValidationError('');
     };
 
+    /**
+     * Handle amount change
+     * No validation needed - field is nullable
+     */
     const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setData('amount', e.target.value);
-        setAmountValidationError('');
     };
 
+    /**
+     * Handle policy number change
+     * No validation needed - field is nullable
+     */
     const handlePolicyNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setData('policy_number', e.target.value);
-        setPolicyNumberValidationError('');
     };
 
+    /**
+     * Handle effective date change
+     * No validation needed - field is nullable
+     */
     const handleEffectiveDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setData('effective_date', e.target.value);
-        setEffectiveDateValidationError('');
     };
 
+    /**
+     * Handle expiration date change
+     * No validation needed - field is nullable
+     */
     const handleExpirationDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setData('expiration_date', e.target.value);
-        setExpirationDateValidationError('');
     };
 
+    /**
+     * Handle notes change
+     * No validation needed - field is optional
+     */
+    const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setData('notes', e.target.value);
+    };
+
+    /**
+     * Build the store URL with query parameters
+     * Appends pagination and filter parameters to the route URL
+     */
+    const buildStoreUrl = (): string => {
+        const params: string[] = [];
+        
+        // Add pagination info
+        if (currentPage && currentPage > 1) {
+            params.push(`page=${currentPage}`);
+        }
+        
+        if (currentPerPage) {
+            params.push(`per_page=${currentPerPage}`);
+        }
+        
+        // Add filters
+        Object.entries(currentFilters).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                params.push(`${key}=${encodeURIComponent(String(value))}`);
+            }
+        });
+        
+        // Build the complete URL with query parameters
+        const baseUrl = route('properties-info.store');
+        return params.length > 0 ? `${baseUrl}?${params.join('&')}` : baseUrl;
+    };
+
+    /**
+     * Handle form submission
+     * Only validates that property_id is selected (required field)
+     * All other fields are optional/nullable
+     */
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         
-        // Clear any previous validation errors
-        clearAllValidationErrors();
-        
-        let hasValidationErrors = false;
-        
-        // Validate required fields
+        // Only validate required field: property_id
         if (!data.property_id || data.property_id === 0) {
             setPropertyIdValidationError('Please select a property before submitting the form.');
-            if (propertyIdRef.current) {
-                propertyIdRef.current.focus();
-                propertyIdRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            hasValidationErrors = true;
-        }
-        
-        if (!data.insurance_company_name || data.insurance_company_name.trim() === '') {
-            setInsuranceCompanyValidationError('Please enter an insurance company name before submitting the form.');
-            if (insuranceCompanyRef.current && !hasValidationErrors) {
-                insuranceCompanyRef.current.focus();
-                insuranceCompanyRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            hasValidationErrors = true;
-        }
-        
-        if (!data.amount || data.amount.trim() === '') {
-            setAmountValidationError('Please enter an amount before submitting the form.');
-            if (amountRef.current && !hasValidationErrors) {
-                amountRef.current.focus();
-                amountRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            hasValidationErrors = true;
-        }
-        
-        if (!data.policy_number || data.policy_number.trim() === '') {
-            setPolicyNumberValidationError('Please enter a policy number before submitting the form.');
-            if (policyNumberRef.current && !hasValidationErrors) {
-                policyNumberRef.current.focus();
-                policyNumberRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            hasValidationErrors = true;
-        }
-        
-        if (!data.effective_date || data.effective_date.trim() === '') {
-            setEffectiveDateValidationError('Please select an effective date before submitting the form.');
-            if (effectiveDateRef.current && !hasValidationErrors) {
-                effectiveDateRef.current.focus();
-                effectiveDateRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            hasValidationErrors = true;
-        }
-        
-        if (!data.expiration_date || data.expiration_date.trim() === '') {
-            setExpirationDateValidationError('Please select an expiration date before submitting the form.');
-            if (expirationDateRef.current && !hasValidationErrors) {
-                expirationDateRef.current.focus();
-                expirationDateRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            hasValidationErrors = true;
-        }
-        
-        if (hasValidationErrors) {
             return;
         }
-        
-        post(route('properties-info.store'), {
+
+        // Build store URL with query parameters
+        // Inertia will send the form data in the request body
+        // and the query parameters will be preserved in the URL
+        post(buildStoreUrl(), {
             onSuccess: () => {
                 resetForm();
                 onOpenChange(false);
@@ -203,16 +201,25 @@ export default function PropertyCreateDrawer({
                 }
             },
             onError: () => {
-                // Errors will be handled by the form's error state
+                // Errors from backend will be automatically handled
+                // They will appear in the errors state and shown in the form
             }
         });
     };
 
+    /**
+     * Handle cancel button
+     * Resets form and closes drawer
+     */
     const handleCancel = () => {
         resetForm();
         onOpenChange(false);
     };
 
+    /**
+     * Handle city change
+     * Updates selected city and filters properties
+     */
     const handleCityChange = (value: string) => {
         setSelectedCityId(value);
         setData('property_id', 0);
@@ -225,52 +232,53 @@ export default function PropertyCreateDrawer({
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={handleSubmit} className="space-y-4">
+                            {/* City selection - required to filter properties */}
                             <CitySelectionSection
                                 selectedCityId={selectedCityId}
                                 cities={cities}
                                 onCityChange={handleCityChange}
                             />
 
+                            {/* Property selection - REQUIRED */}
                             <PropertySelectionSection
                                 propertyId={data.property_id}
                                 selectedCityId={selectedCityId}
                                 filteredProperties={filteredProperties}
                                 onPropertyChange={handlePropertyIdChange}
-                                propertyIdRef={propertyIdRef}
                                 errors={errors}
                                 validationError={propertyIdValidationError}
                             />
 
+                            {/* Insurance company - optional (nullable) */}
                             <InsuranceCompanySection
                                 value={data.insurance_company_name}
                                 onChange={handleInsuranceCompanyChange}
-                                inputRef={insuranceCompanyRef}
                                 errors={errors}
-                                validationError={insuranceCompanyValidationError}
                             />
 
+                            {/* Amount and policy number - optional (nullable) */}
                             <AmountPolicySection
                                 amount={data.amount}
                                 policyNumber={data.policy_number}
                                 onAmountChange={handleAmountChange}
                                 onPolicyNumberChange={handlePolicyNumberChange}
-                                amountRef={amountRef}
-                                policyNumberRef={policyNumberRef}
                                 errors={errors}
-                                amountValidationError={amountValidationError}
-                                policyNumberValidationError={policyNumberValidationError}
                             />
 
+                            {/* Dates - optional (nullable) */}
                             <DatesSection
                                 effectiveDate={data.effective_date}
                                 expirationDate={data.expiration_date}
                                 onEffectiveDateChange={handleEffectiveDateChange}
                                 onExpirationDateChange={handleExpirationDateChange}
-                                effectiveDateRef={effectiveDateRef}
-                                expirationDateRef={expirationDateRef}
                                 errors={errors}
-                                effectiveDateValidationError={effectiveDateValidationError}
-                                expirationDateValidationError={expirationDateValidationError}
+                            />
+
+                            {/* Notes - optional */}
+                            <NotesSection
+                                value={data.notes}
+                                onChange={handleNotesChange}
+                                errors={errors}
                             />
                         </form>
                     </div>

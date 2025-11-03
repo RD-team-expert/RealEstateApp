@@ -1,5 +1,4 @@
-// resources/js/pages/Properties/components/PropertySelectField.tsx
-
+// resources/js/pages/Properties/edit/PropertySelectField.tsx
 import React, { forwardRef } from 'react';
 import { Label } from '@/components/ui/label';
 import { Building2 } from 'lucide-react';
@@ -13,6 +12,10 @@ interface PropertySelectFieldProps {
     validationError?: string;
 }
 
+/**
+ * Property selection field
+ * This is the ONLY required field for updates
+ */
 const PropertySelectField = forwardRef<HTMLSelectElement, PropertySelectFieldProps>(
     ({ value, onChange, availableProperties, error, validationError }, ref) => {
         return (
@@ -34,11 +37,13 @@ const PropertySelectField = forwardRef<HTMLSelectElement, PropertySelectFieldPro
                     {availableProperties.map((availableProperty) => (
                         <option key={availableProperty.id} value={availableProperty.id}>
                             {availableProperty.property_name}
-                            {availableProperty.city_id && ` (${availableProperty.city_id})`}
                         </option>
                     ))}
                 </select>
+                {/* Show backend validation errors if any */}
                 {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+                
+                {/* Show frontend validation error if user tries to submit without selecting */}
                 {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
             </div>
         );

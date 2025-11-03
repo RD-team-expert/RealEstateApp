@@ -1,4 +1,4 @@
-import React from 'react';
+// resources/js/Pages/Properties/create/PropertySelectionSection.tsx
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -16,17 +16,20 @@ interface PropertySelectionSectionProps {
     selectedCityId: string;
     filteredProperties: PropertyWithoutInsurance[];
     onPropertyChange: (value: string) => void;
-    propertyIdRef: React.RefObject<HTMLButtonElement>;
     errors: any;
     validationError: string;
 }
 
+/**
+ * Property selection component
+ * Displays available properties for selected city
+ * This is the ONLY required field
+ */
 export default function PropertySelectionSection({
     propertyId,
     selectedCityId,
     filteredProperties,
     onPropertyChange,
-    propertyIdRef,
     errors,
     validationError
 }: PropertySelectionSectionProps) {
@@ -43,7 +46,7 @@ export default function PropertySelectionSection({
                 onValueChange={onPropertyChange}
                 disabled={!selectedCityId}
             >
-                <SelectTrigger className="w-full" ref={propertyIdRef}>
+                <SelectTrigger className="w-full">
                     <SelectValue 
                         placeholder={
                             !selectedCityId 
@@ -60,8 +63,14 @@ export default function PropertySelectionSection({
                     ))}
                 </SelectContent>
             </Select>
+            
+            {/* Show backend validation errors if any */}
             {errors.property_id && <p className="mt-1 text-sm text-red-600">{errors.property_id}</p>}
+            
+            {/* Show frontend validation error if user tries to submit without selecting */}
             {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
+            
+            {/* Show alert if city is selected but no properties available */}
             {selectedCityId && filteredProperties.length === 0 && (
                 <Alert className="mt-2">
                     <AlertCircle className="h-4 w-4" />

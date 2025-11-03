@@ -22,6 +22,7 @@ class PropertyInfo extends Model
         'policy_number',
         'effective_date',
         'expiration_date',
+        'notes',
         'status',
         'is_archived'
     ];

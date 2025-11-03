@@ -37,13 +37,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/city/{city_id}', [DashboardController::class, 'getProperties'])->name('dashboard.properties');
     Route::get('/dashboard/city/{city_id}/property/{property_id}', [DashboardController::class, 'getUnits'])->name('dashboard.units');
     Route::get('/dashboard/city/{city_id}/property/{property_id}/unit/{unit_id}', [DashboardController::class, 'getUnitInfo'])->name('dashboard.unit-info');
+
     /**
-     * Properties quick filters
+     * properties-info CRUD & other resource routes
      */
-    Route::get('properties/expiring-soon', [PropertyInfoController::class, 'expiringSoon'])
-        ->name('properties.expiring-soon');
-    Route::get('properties/expired', [PropertyInfoController::class, 'expired'])
-        ->name('properties.expired');
+    Route::resource('properties-info', PropertyInfoController::class)->except(['create', 'edit']);
+
 
     /**
      * Applications filters
@@ -72,10 +71,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/tenants/properties', [TenantController::class, 'getPropertiesForAutocomplete'])
         ->name('api.tenants.properties');
 
-    /**
-     * CRUD & other resource routes
-     */
-    Route::resource('properties-info', PropertyInfoController::class);
+
 
     // Property Info Without Insurance
     Route::resource('all-properties', PropertyInfoWithoutInsuranceController::class);

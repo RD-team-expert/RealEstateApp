@@ -1,3 +1,4 @@
+// resources/js/Pages/Properties/create/CitySelectionSection.tsx
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -15,6 +16,11 @@ interface CitySelectionSectionProps {
     onCityChange: (value: string) => void;
 }
 
+/**
+ * City selection section
+ * Users must select a city first to filter properties
+ * No validation needed - just a helper to filter properties
+ */
 export default function CitySelectionSection({
     selectedCityId,
     cities,
