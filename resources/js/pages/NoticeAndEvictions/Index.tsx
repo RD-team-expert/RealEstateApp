@@ -1,4 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { usePermissions } from '@/hooks/usePermissions';
 import AppLayout from '@/layouts/app-layout';
 import { City, Notice, NoticeAndEviction } from '@/types/NoticeAndEviction';
@@ -170,6 +172,9 @@ const Index = ({
     const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [selectedRecord, setSelectedRecord] = useState<NoticeAndEviction | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [recordToDelete, setRecordToDelete] = useState<NoticeAndEviction | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(initialPagination.current_page);
@@ -359,13 +364,30 @@ const Index = ({
      * Handle delete with filters and pagination
      */
     const handleDelete = (record: NoticeAndEviction) => {
-        if (window.confirm('Delete this record? This cannot be undone.')) {
-            const params = getCurrentQueryParams();
-            router.delete(`/notice_and_evictions/${record.id}`, {
-                data: params,
-            });
-        }
+        setRecordToDelete(record);
+        setIsDeleteDialogOpen(true);
     };
+
+    const performDelete = async () => {
+    if (!recordToDelete) return;
+    setIsDeleting(true);
+    try {
+        const params = getCurrentQueryParams();
+        const queryString = new URLSearchParams(params).toString();
+        router.delete(
+            `/notice_and_evictions/${recordToDelete.id}?${queryString}`,
+            {
+                onFinish: () => {
+                    setIsDeleteDialogOpen(false);
+                    setRecordToDelete(null);
+                },
+            }
+        );
+    } finally {
+        setIsDeleting(false);
+    }
+};
+
 
     const handleEdit = (record: NoticeAndEviction) => {
         setSelectedRecord(record);
@@ -527,6 +549,49 @@ const Index = ({
                     queryParams={getCurrentQueryParams()}
                 />
             )}
+
+            {/* Delete confirmation dialog */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+                setIsDeleteDialogOpen(open);
+                if (!open) setRecordToDelete(null);
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Record</DialogTitle>
+                        <DialogDescription>
+                            Delete this record? This cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="text-sm text-muted-foreground">
+                        {recordToDelete && (
+                            <p>
+                                You are deleting record ID <span className="font-medium text-foreground">{recordToDelete.id}</span>.
+                            </p>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => {
+                                setIsDeleteDialogOpen(false);
+                                setRecordToDelete(null);
+                            }}
+                            disabled={isDeleting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={performDelete}
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? 'Deleting…' : 'Delete'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 };

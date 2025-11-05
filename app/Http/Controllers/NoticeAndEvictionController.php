@@ -42,7 +42,7 @@ class NoticeAndEvictionController extends Controller
         $recordsToUpdate = NoticeAndEviction::with(['tenant.unit.property.city'])
             ->where('is_archived', false)
             ->get();
-        
+
         foreach ($recordsToUpdate as $record) {
             if ($record->have_an_exception === 'Yes') {
                 $record->evictions = 'Have An Exception';
@@ -191,10 +191,10 @@ class NoticeAndEvictionController extends Controller
     {
         // Create the record using only validated entity data
         $nev = $this->service->create($request->getValidatedData());
-        
+
         // Get pagination/filter parameters for redirect
         $redirectParams = $this->getRedirectParams($request);
-        
+
         return redirect()->route('notice_and_evictions.index', $redirectParams)
             ->with('success', 'Created successfully.');
     }
@@ -203,10 +203,7 @@ class NoticeAndEvictionController extends Controller
     public function show(NoticeAndEviction $notice_and_eviction, Request $request)
     {
         $notice_and_eviction->load(['tenant.unit.property.city']);
-
-
         $recordData = $this->mapRecordToArray($notice_and_eviction);
-
 
         // Get filters from query string or request body
         $filters = [
@@ -221,14 +218,14 @@ class NoticeAndEvictionController extends Controller
             'search' => $request->query('search') ?? $request->input('search'),
         ];
 
-
         // Remove null/empty filters
         $filters = array_filter($filters);
 
-
-        // Get navigation records (previous and next)
-        $navigation = $this->service->getNavigationRecords($notice_and_eviction->id, $filters);
-
+        // IMPORTANT: Pass filters to getNavigationRecords
+        $navigation = $this->service->getNavigationRecords(
+            $notice_and_eviction->id,
+            $filters  // Include filters here
+        );
 
         // Build filter query string for navigation links
         $filterQueryString = http_build_query(array_filter([
@@ -243,24 +240,24 @@ class NoticeAndEvictionController extends Controller
             'search' => $request->query('search') ?? $request->input('search'),
         ]));
 
-
         return Inertia::render('NoticeAndEvictions/Show', [
             'record' => $recordData,
             'navigation' => $navigation,
             'filters' => $filters,
-            'filterQueryString' => $filterQueryString,
+            'filterQueryString' => $filterQueryString ? '?' . $filterQueryString : '',
         ]);
     }
+
 
 
     public function update(NoticeAndEvictionRequest $request, NoticeAndEviction $notice_and_eviction)
     {
         // Update the record using only validated entity data
         $this->service->update($notice_and_eviction, $request->getValidatedData());
-        
+
         // Get pagination/filter parameters for redirect
         $redirectParams = $this->getRedirectParams($request);
-        
+
         return redirect()->route('notice_and_evictions.index', $redirectParams)
             ->with('success', 'Updated successfully.');
     }
@@ -269,10 +266,10 @@ class NoticeAndEvictionController extends Controller
     public function destroy(NoticeAndEvictionRequest $request, NoticeAndEviction $notice_and_eviction)
     {
         $this->service->delete($notice_and_eviction);
-        
+
         // Get pagination/filter parameters for redirect
         $redirectParams = $this->getRedirectParams($request);
-        
+
         return redirect()->route('notice_and_evictions.index', $redirectParams)
             ->with('success', 'Deleted successfully.');
     }

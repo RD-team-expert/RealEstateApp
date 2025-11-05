@@ -85,8 +85,8 @@ class NoticeAndEvictionService
                         ->orWhere('last_name', 'like', "%{$tenantName}%")
                         ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$tenantName}%"]);
                 })
-                // Also search in other_tenants field
-                ->orWhere('other_tenants', 'like', "%{$tenantName}%");
+                    // Also search in other_tenants field
+                    ->orWhere('other_tenants', 'like', "%{$tenantName}%");
             });
         }
 
@@ -132,51 +132,42 @@ class NoticeAndEvictionService
      * Get next and previous records based on current filters
      * Returns an array with 'previous' and 'next' record IDs and basic info
      */
-    public function getNavigationRecords(int $currentId, array $filters = []): array
+    public function getNavigationRecords($currentRecordId, $filters = [])
     {
-        // Build the base query with filters
+        // Build base query with filters applied
         $query = NoticeAndEviction::with(['tenant.unit.property.city'])
             ->where('is_archived', false);
-        
-        $query = $this->applyFilters($query, $filters);
-        
-        // Get all filtered records ordered by ID (or by date desc, your preference)
-        $allRecords = $query->orderBy('id', 'asc')->get(['id']);
-        
-        // Find the current record position
-        $currentPosition = $allRecords->search(function ($record) use ($currentId) {
-            return $record->id === $currentId;
-        });
 
-        $navigation = [
-            'previous' => null,
-            'next' => null,
-            'total_in_filter' => $allRecords->count(),
+        // Apply filters
+        if (!empty($filters)) {
+            $query = $this->applyFilters($query, $filters);
+        }
+
+        // Get all filtered record IDs ordered
+        $filteredIds = $query->pluck('id')->toArray();
+        $currentPosition = array_search($currentRecordId, $filteredIds);
+
+        return [
+            'previous' => $currentPosition > 0
+                ? $this->getRecordBasicInfo($filteredIds[$currentPosition - 1])
+                : null,
+            'next' => $currentPosition < count($filteredIds) - 1
+                ? $this->getRecordBasicInfo($filteredIds[$currentPosition + 1])
+                : null,
+            'total_in_filter' => count($filteredIds),
             'current_position' => $currentPosition !== false ? $currentPosition + 1 : null,
         ];
+    }
 
-        // Get previous record
-        if ($currentPosition !== false && $currentPosition > 0) {
-            $previousId = $allRecords[$currentPosition - 1]->id;
-            $previousRecord = NoticeAndEviction::with(['tenant.unit.property.city'])->find($previousId);
-            $navigation['previous'] = [
-                'id' => $previousRecord->id,
-                'tenant_name' => $previousRecord->tenant ? $previousRecord->tenant->first_name . ' ' . $previousRecord->tenant->last_name : 'N/A',
-                'unit_name' => $previousRecord->tenant?->unit?->unit_name ?? 'N/A',
-            ];
-        }
+    private function getRecordBasicInfo($recordId)
+    {
+        $record = NoticeAndEviction::with(['tenant.unit'])
+            ->find($recordId);
 
-        // Get next record
-        if ($currentPosition !== false && $currentPosition < $allRecords->count() - 1) {
-            $nextId = $allRecords[$currentPosition + 1]->id;
-            $nextRecord = NoticeAndEviction::with(['tenant.unit.property.city'])->find($nextId);
-            $navigation['next'] = [
-                'id' => $nextRecord->id,
-                'tenant_name' => $nextRecord->tenant ? $nextRecord->tenant->first_name . ' ' . $nextRecord->tenant->last_name : 'N/A',
-                'unit_name' => $nextRecord->tenant?->unit?->unit_name ?? 'N/A',
-            ];
-        }
-
-        return $navigation;
+        return [
+            'id' => $record->id,
+            'tenant_name' => $record->tenant ? $record->tenant->first_name . ' ' . $record->tenant->last_name : 'N/A',
+            'unit_name' => $record->tenant?->unit?->unit_name ?? 'N/A',
+        ];
     }
 }

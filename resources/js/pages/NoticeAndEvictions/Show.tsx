@@ -89,13 +89,6 @@ export default function Show({ record, navigation, filterQueryString = '' }: Pro
                                 </div>
                             </div>
                             <div className="flex gap-3">
-                                {/* {hasAllPermissions(['notice-and-evictions.edit','notice-and-evictions.update']) && (
-                                    <Link href={`/notice_and_evictions/${record.id}/edit`}>
-                                        <Button className="bg-blue-600 hover:bg-blue-700">
-                                            Edit Record
-                                        </Button>
-                                    </Link>
-                                )} */}
                                 <Link href={`/notice_and_evictions${filterQueryString}`}>
                                     <Button variant="outline">Back to List</Button>
                                 </Link>
