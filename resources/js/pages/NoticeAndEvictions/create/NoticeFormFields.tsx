@@ -1,18 +1,25 @@
-import StatusField from './StatusField';
 import DateField from './DateField';
-import TypeOfNoticeField from './TypeOfNoticeField';
-import HaveAnExceptionField from './HaveAnExceptionField';
-import NoteField from './NoteField';
-import EvictionsField from './EvictionsField';
-import SentToAttorneyField from './SentToAttorneyField';
-import HearingDatesField from './HearingDatesField';
 import EvectedOrPaymentPlanField from './EvectedOrPaymentPlanField';
+import EvictionsField from './EvictionsField';
+import HaveAnExceptionField from './HaveAnExceptionField';
+import HearingDatesField from './HearingDatesField';
 import IfLeftField from './IfLeftField';
+import NoteField from './NoteField';
+import OtherTenantsField from './OtherTenantsField';
+import SentToAttorneyField from './SentToAttorneyField';
+import StatusField from './StatusField';
+import TypeOfNoticeField from './TypeOfNoticeField';
 import WritDateField from './WritDateField';
 
 interface Notice {
     id: number;
     notice_name: string;
+}
+
+interface Tenant {
+    id: number;
+    first_name: string;
+    last_name: string;
 }
 
 interface FormData {
@@ -27,18 +34,40 @@ interface FormData {
     evected_or_payment_plan: string;
     if_left: string;
     writ_date: string;
+    other_tenants: string;
 }
 
 interface Props {
     data: FormData;
-    setData: (key: string, value: string) => void;
+    setData: (key: string, value: string | number | null) => void;
     errors: { [key: string]: string };
     notices: Notice[];
+    filteredTenants?: Tenant[];
+    selectedUnitId?: number | null;
+    otherTenantsValue?: string;
+    onOtherTenantsChange?: (value: string) => void;
 }
 
-export default function NoticeFormFields({ data, setData, errors, notices }: Props) {
+export default function NoticeFormFields({
+    data,
+    setData,
+    errors,
+    notices,
+    filteredTenants = [],
+    selectedUnitId = null,
+    otherTenantsValue = '',
+    onOtherTenantsChange,
+}: Props) {
     return (
         <>
+            <OtherTenantsField
+                value={otherTenantsValue}
+                onChange={onOtherTenantsChange || ((value) => setData('other_tenants', value))}
+                error={errors.other_tenants}
+                tenants={filteredTenants}
+                disabled={!selectedUnitId}
+            />
+
             <StatusField value={data.status} onChange={(value) => setData('status', value)} error={errors.status} />
 
             <DateField value={data.date} onChange={(value) => setData('date', value)} error={errors.date} />

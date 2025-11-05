@@ -1,5 +1,4 @@
 import React from 'react';
-// import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { NoticeAndEviction } from '@/types/NoticeAndEviction';
 import AppLayout from '@/layouts/app-layout';
@@ -7,14 +6,31 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-// import { usePermissions } from '@/hooks/usePermissions';
-import { Calendar, MapPin, User, Home, Clock, FileText, AlertTriangle, Scale, Gavel, Bell } from 'lucide-react';
+import { Calendar, MapPin, User, Home, Clock, FileText, AlertTriangle, Scale, Gavel, Bell, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+
+
+interface NavigationRecord {
+    id: number;
+    tenant_name: string;
+    unit_name: string;
+}
+
+interface Navigation {
+    previous: NavigationRecord | null;
+    next: NavigationRecord | null;
+    total_in_filter: number;
+    current_position: number | null;
+}
 
 interface Props {
     record: NoticeAndEviction;
+    navigation?: Navigation;
+    filters?: Record<string, any>;
+    filterQueryString?: string;
 }
 
-export default function Show({ record }: Props) {
+
+export default function Show({ record, navigation, filterQueryString = '' }: Props) {
 
     const getYesNoBadge = (value: string | null | undefined) => {
         if (!value || value === '-') return <Badge variant="outline" className="text-xs">N/A</Badge>;
@@ -56,8 +72,6 @@ export default function Show({ record }: Props) {
         </div>
     );
 
-    // const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
-
     return (
         <AppLayout>
             <Head title={`Notice & Eviction Details #${record.id}`} />
@@ -82,7 +96,7 @@ export default function Show({ record }: Props) {
                                         </Button>
                                     </Link>
                                 )} */}
-                                <Link href="/notice_and_evictions">
+                                <Link href={`/notice_and_evictions${filterQueryString}`}>
                                     <Button variant="outline">Back to List</Button>
                                 </Link>
                             </div>
@@ -230,6 +244,25 @@ export default function Show({ record }: Props) {
                         </Card>
                     </div>
 
+                    {/* Other Tenants Section */}
+                    {record.other_tenants && (
+                        <Card className="mb-6">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <Users className="h-5 w-5" />
+                                    Other Tenants
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-700">
+                                        {record.other_tenants}
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     {/* Notes Section */}
                     {record.note && (
                         <Card className="mb-6">
@@ -253,7 +286,7 @@ export default function Show({ record }: Props) {
                     <Card className="mt-8 bg-gray-50">
                         <CardContent className="pt-6">
                             <Separator className="mb-4" />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600 mb-6">
                                 <div className="flex items-center gap-2">
                                     <Clock className="h-4 w-4" />
                                     <span>Created: {record.created_at ? new Date(record.created_at).toLocaleDateString('en-US', {
@@ -275,6 +308,62 @@ export default function Show({ record }: Props) {
                                     }) : 'N/A'}</span>
                                 </div>
                             </div>
+
+                            <Separator className="mb-6" />
+
+                            {/* Navigation Section */}
+                            {navigation && (
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="flex items-center justify-center gap-4 w-full flex-wrap">
+                                        {/* Previous Button */}
+                                        {navigation.previous ? (
+                                            <Link href={`/notice_and_evictions/${navigation.previous.id}${filterQueryString}`}>
+                                                <Button variant="outline" className="gap-2">
+                                                    <ChevronLeft className="h-4 w-4" />
+                                                    Previous
+                                                </Button>
+                                            </Link>
+                                        ) : (
+                                            <Button variant="outline" disabled className="gap-2">
+                                                <ChevronLeft className="h-4 w-4" />
+                                                Previous
+                                            </Button>
+                                        )}
+
+                                        {/* Position Indicator */}
+                                        <div className="px-4 py-2 bg-gray-100 rounded-lg border border-gray-300 text-center min-w-[150px]">
+                                            <p className="text-sm font-medium text-gray-700">
+                                                Record <span className="font-bold">{navigation.current_position || '?'}</span> of <span className="font-bold">{navigation.total_in_filter}</span>
+                                            </p>
+                                        </div>
+
+                                        {/* Next Button */}
+                                        {navigation.next ? (
+                                            <Link href={`/notice_and_evictions/${navigation.next.id}${filterQueryString}`}>
+                                                <Button variant="outline" className="gap-2">
+                                                    Next
+                                                    <ChevronRight className="h-4 w-4" />
+                                                </Button>
+                                            </Link>
+                                        ) : (
+                                            <Button variant="outline" disabled className="gap-2">
+                                                Next
+                                                <ChevronRight className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    {/* Navigation Info */}
+                                    <div className="text-xs text-gray-500 text-center">
+                                        {navigation.previous && (
+                                            <p>← {navigation.previous.tenant_name} ({navigation.previous.unit_name})</p>
+                                        )}
+                                        {navigation.next && (
+                                            <p>{navigation.next.tenant_name} ({navigation.next.unit_name}) →</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

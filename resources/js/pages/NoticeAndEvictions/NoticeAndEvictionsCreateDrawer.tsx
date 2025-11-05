@@ -1,7 +1,7 @@
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { City, Notice, PropertyInfoWithoutInsurance, Tenant } from '@/types/NoticeAndEviction';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import React, { useState } from 'react';
 import CascadingSelectionFields from './create/CascadingSelectionFields';
 import SelectionSummary from './create/SelectionSummary';
@@ -37,9 +37,20 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    queryParams?: Record<string, any>;
 }
 
-export default function NoticeAndEvictionsCreateDrawer({ cities, properties, units, tenants, notices, open, onOpenChange, onSuccess }: Props) {
+export default function NoticeAndEvictionsCreateDrawer({
+    cities,
+    properties,
+    units,
+    tenants,
+    notices,
+    open,
+    onOpenChange,
+    onSuccess,
+    queryParams = {},
+}: Props) {
     const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
 
     const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
@@ -50,7 +61,7 @@ export default function NoticeAndEvictionsCreateDrawer({ cities, properties, uni
     const [filteredUnits, setFilteredUnits] = useState<Unit[]>([]);
     const [filteredTenants, setFilteredTenants] = useState<ExtendedTenant[]>([]);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, processing, errors, reset } = useForm({
         tenant_id: null as number | null,
         status: '',
         date: '',
@@ -63,6 +74,7 @@ export default function NoticeAndEvictionsCreateDrawer({ cities, properties, uni
         evected_or_payment_plan: '',
         if_left: '',
         writ_date: '',
+        other_tenants: '',
     });
 
     const handleCascadingChange = {
@@ -72,6 +84,7 @@ export default function NoticeAndEvictionsCreateDrawer({ cities, properties, uni
             setSelectedPropertyId(null);
             setSelectedUnitId(null);
             setData('tenant_id', null);
+            setData('other_tenants', '');
 
             const filtered = properties.filter((property) => property.city_id === cityIdNum);
             setFilteredProperties(filtered);
@@ -85,6 +98,7 @@ export default function NoticeAndEvictionsCreateDrawer({ cities, properties, uni
             setSelectedPropertyId(propertyIdNum);
             setSelectedUnitId(null);
             setData('tenant_id', null);
+            setData('other_tenants', '');
 
             const filtered = units.filter((unit) => unit.property_id === propertyIdNum);
             setFilteredUnits(filtered);
@@ -96,6 +110,7 @@ export default function NoticeAndEvictionsCreateDrawer({ cities, properties, uni
             const unitIdNum = parseInt(unitId);
             setSelectedUnitId(unitIdNum);
             setData('tenant_id', null);
+            setData('other_tenants', '');
 
             const filtered = tenants.filter((tenant) => tenant.unit_id === unitIdNum);
             setFilteredTenants(filtered);
@@ -118,6 +133,21 @@ export default function NoticeAndEvictionsCreateDrawer({ cities, properties, uni
         setFilteredUnits([]);
         setFilteredTenants([]);
         setValidationErrors({});
+    };
+
+    /**
+     * Build query string from pagination and filter params
+     */
+    const buildQueryString = (): string => {
+        const params = new URLSearchParams();
+        
+        Object.entries(queryParams).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                params.append(key, String(value));
+            }
+        });
+        
+        return params.toString() ? `?${params.toString()}` : '';
     };
 
     const submit = (e: React.FormEvent) => {
@@ -153,7 +183,12 @@ export default function NoticeAndEvictionsCreateDrawer({ cities, properties, uni
             return;
         }
 
-        post('/notice_and_evictions', {
+        // Build the URL with query parameters
+        const queryString = buildQueryString();
+        const url = `/notice_and_evictions${queryString}`;
+
+        // POST form data to URL with query parameters
+        router.post(url, data, {
             onSuccess: () => {
                 resetForm();
                 onOpenChange(false);
@@ -215,7 +250,16 @@ export default function NoticeAndEvictionsCreateDrawer({ cities, properties, uni
                                 selectedNames={getSelectedNames()}
                             />
 
-                            <NoticeFormFields data={data} setData={setData} errors={errors} notices={notices} />
+                            <NoticeFormFields
+                                data={data}
+                                setData={setData}
+                                errors={errors}
+                                notices={notices}
+                                filteredTenants={filteredTenants}
+                                selectedUnitId={selectedUnitId}
+                                otherTenantsValue={data.other_tenants}
+                                onOtherTenantsChange={(value) => setData('other_tenants', value)}
+                            />
                         </form>
                     </div>
 

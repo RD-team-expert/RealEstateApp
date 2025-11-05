@@ -17,6 +17,7 @@ export interface NoticeAndEviction {
     evected_or_payment_plan?: string; // "Evected" | "Payment Plan"
     if_left?: string; // "Yes" | "No"
     writ_date?: string;
+    other_tenants?: string;
     is_archived?: boolean;
     created_at?: string;
     updated_at?: string;
@@ -127,6 +128,7 @@ export interface NoticeAndEvictionFormData {
     evected_or_payment_plan?: EvictionStatus | '';
     if_left?: YesNoOption | '';
     writ_date?: string;
+    other_tenants?: string;
 }
 
 // Cascading dropdown data interfaces

@@ -25,6 +25,7 @@ interface NoticeEvictionsTableRowProps {
     hasDeletePermission: boolean;
     onEdit: (record: NoticeAndEviction) => void;
     onDelete: (record: NoticeAndEviction) => void;
+    filterQueryString: string;
 }
 
 export function NoticeEvictionsTableRow({
@@ -34,6 +35,7 @@ export function NoticeEvictionsTableRow({
     hasDeletePermission,
     onEdit,
     onDelete,
+    filterQueryString,
 }: NoticeEvictionsTableRowProps) {
     return (
         <TableRow className="border-border hover:bg-muted/50">
@@ -48,6 +50,15 @@ export function NoticeEvictionsTableRow({
             </TableCell>
             <TableCell className="sticky left-[390px] z-10 border border-border bg-muted text-center font-medium text-foreground">
                 {record.tenants_name || 'N/A'}
+            </TableCell>
+            <TableCell className="border border-border text-center">
+                {record.other_tenants ? (
+                    <div className="max-w-32 truncate" title={record.other_tenants}>
+                        {record.other_tenants}
+                    </div>
+                ) : (
+                    <span className="text-muted-foreground">N/A</span>
+                )}
             </TableCell>
             <TableCell className="border border-border text-center">
                 <StatusBadge status={record.status ?? null} />
@@ -92,7 +103,7 @@ export function NoticeEvictionsTableRow({
                 <TableCell className="border border-border text-center">
                     <div className="flex gap-1">
                         {hasShowPermission && (
-                            <Link href={`/notice_and_evictions/${record.id}`}>
+                            <Link href={`/notice_and_evictions/${record.id}${filterQueryString}`}>
                                 <Button variant="outline" size="sm">
                                     <Eye className="h-4 w-4" />
                                 </Button>

@@ -2,6 +2,7 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components
 import { NoticeAndEviction } from '@/types/NoticeAndEviction';
 import { NoticeEvictionsTableRow } from './NoticeEvictionsTableRow';
 
+
 interface NoticeEvictionsTableProps {
     records: NoticeAndEviction[];
     hasShowPermission: boolean;
@@ -10,7 +11,9 @@ interface NoticeEvictionsTableProps {
     hasAnyActionPermission: boolean;
     onEdit: (record: NoticeAndEviction) => void;
     onDelete: (record: NoticeAndEviction) => void;
+    filterQueryString: string;
 }
+
 
 export function NoticeEvictionsTable({
     records,
@@ -20,6 +23,7 @@ export function NoticeEvictionsTable({
     hasAnyActionPermission,
     onEdit,
     onDelete,
+    filterQueryString,
 }: NoticeEvictionsTableProps) {
     return (
         <div className="relative overflow-x-auto">
@@ -35,8 +39,11 @@ export function NoticeEvictionsTable({
                         <TableHead className="sticky left-[270px] z-10 min-w-[120px] border border-border bg-muted text-muted-foreground">
                             Unit Name
                         </TableHead>
-                        <TableHead className="sticky left-[390px] z-10 min-w-[120px] border border-border bg-muted text-muted-foreground">
+                        <TableHead className="sticky left-[390px] z-10 min-w-[150px] border border-border bg-muted text-muted-foreground">
                             Tenants Name
+                        </TableHead>
+                        <TableHead className="text-muted-foreground border border-border bg-muted min-w-[150px]">
+                            Other Tenants
                         </TableHead>
                         <TableHead className="text-muted-foreground border border-border bg-muted">Status</TableHead>
                         <TableHead className="text-muted-foreground border border-border bg-muted">Date</TableHead>
@@ -64,6 +71,7 @@ export function NoticeEvictionsTable({
                             hasDeletePermission={hasDeletePermission}
                             onEdit={onEdit}
                             onDelete={onDelete}
+                            filterQueryString={filterQueryString}
                         />
                     ))}
                 </TableBody>

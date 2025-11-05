@@ -43,6 +43,10 @@ Route::middleware(['auth'])->group(function () {
      */
     Route::resource('properties-info', PropertyInfoController::class)->except(['create', 'edit']);
 
+    // Notice & Evictions
+    Route::resource('notice_and_evictions', NoticeAndEvictionController::class)->except(['create', 'edit']);
+
+
 
     /**
      * Applications filters
@@ -142,8 +146,7 @@ Route::middleware(['auth'])->group(function () {
     // Notices
     Route::resource('notices', NoticeController::class);
 
-    // Notice & Evictions
-    Route::resource('notice_and_evictions', NoticeAndEvictionController::class);
+    
 
     // Applications
     Route::resource('applications', ApplicationController::class);

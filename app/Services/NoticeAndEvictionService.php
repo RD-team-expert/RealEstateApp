@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\NoticeAndEviction;
+use Illuminate\Database\Eloquent\Builder;
 
 class NoticeAndEvictionService
 {
@@ -27,10 +28,11 @@ class NoticeAndEvictionService
         $nev->archive();
     }
 
-    public function listAll($filters = [])
+    /**
+     * Apply filters to query builder
+     */
+    public function applyFilters(Builder $query, array $filters = []): Builder
     {
-        $query = NoticeAndEviction::with(['tenant.unit.property.city']);
-
         // Handle individual filter parameters (ID-based filtering)
         if (isset($filters['city_id']) && $filters['city_id']) {
             $query->whereHas('tenant.unit.property.city', function ($q) use ($filters) {
@@ -73,41 +75,108 @@ class NoticeAndEvictionService
             });
         }
 
+        // Updated tenant_name filter to search in both tenant and other_tenants
         if (isset($filters['tenant_name']) && $filters['tenant_name']) {
             $tenantName = $filters['tenant_name'];
-            $query->whereHas('tenant', function ($q) use ($tenantName) {
-                $q->where('first_name', 'like', "%{$tenantName}%")
-                    ->orWhere('last_name', 'like', "%{$tenantName}%")
-                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$tenantName}%"]);
+            $query->where(function ($q) use ($tenantName) {
+                // Search in main tenant
+                $q->whereHas('tenant', function ($subQ) use ($tenantName) {
+                    $subQ->where('first_name', 'like', "%{$tenantName}%")
+                        ->orWhere('last_name', 'like', "%{$tenantName}%")
+                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$tenantName}%"]);
+                })
+                // Also search in other_tenants field
+                ->orWhere('other_tenants', 'like', "%{$tenantName}%");
             });
         }
 
         // Handle general search functionality
         if (isset($filters['search']) && $filters['search']) {
             $searchTerm = $filters['search'];
-            $query->whereHas('tenant', function ($q) use ($searchTerm) {
-                $q->where('first_name', 'like', "%{$searchTerm}%")
-                    ->orWhere('last_name', 'like', "%{$searchTerm}%")
-                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$searchTerm}%"]);
-            })
-                ->orWhereHas('tenant.unit', function ($q) use ($searchTerm) {
-                    $q->where('unit_name', 'like', "%{$searchTerm}%");
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereHas('tenant', function ($subQ) use ($searchTerm) {
+                    $subQ->where('first_name', 'like', "%{$searchTerm}%")
+                        ->orWhere('last_name', 'like', "%{$searchTerm}%")
+                        ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$searchTerm}%"]);
                 })
-                ->orWhereHas('tenant.unit.property', function ($q) use ($searchTerm) {
-                    $q->where('property_name', 'like', "%{$searchTerm}%");
-                })
-                ->orWhereHas('tenant.unit.property.city', function ($q) use ($searchTerm) {
-                    $q->where('city', 'like', "%{$searchTerm}%");
-                })
-                ->orWhere('status', 'like', "%{$searchTerm}%")
-                ->orWhere('type_of_notice', 'like', "%{$searchTerm}%");
+                    ->orWhereHas('tenant.unit', function ($subQ) use ($searchTerm) {
+                        $subQ->where('unit_name', 'like', "%{$searchTerm}%");
+                    })
+                    ->orWhereHas('tenant.unit.property', function ($subQ) use ($searchTerm) {
+                        $subQ->where('property_name', 'like', "%{$searchTerm}%");
+                    })
+                    ->orWhereHas('tenant.unit.property.city', function ($subQ) use ($searchTerm) {
+                        $subQ->where('city', 'like', "%{$searchTerm}%");
+                    })
+                    ->orWhere('status', 'like', "%{$searchTerm}%")
+                    ->orWhere('type_of_notice', 'like', "%{$searchTerm}%")
+                    ->orWhere('other_tenants', 'like', "%{$searchTerm}%");
+            });
         }
 
-        return $query->get();
+        return $query;
+    }
+
+    public function listAll($filters = [])
+    {
+        $query = NoticeAndEviction::with(['tenant.unit.property.city']);
+        return $this->applyFilters($query, $filters)->get();
     }
 
     public function findById(int $id)
     {
         return NoticeAndEviction::with(['tenant.unit.property.city'])->findOrFail($id);
+    }
+
+    /**
+     * Get next and previous records based on current filters
+     * Returns an array with 'previous' and 'next' record IDs and basic info
+     */
+    public function getNavigationRecords(int $currentId, array $filters = []): array
+    {
+        // Build the base query with filters
+        $query = NoticeAndEviction::with(['tenant.unit.property.city'])
+            ->where('is_archived', false);
+        
+        $query = $this->applyFilters($query, $filters);
+        
+        // Get all filtered records ordered by ID (or by date desc, your preference)
+        $allRecords = $query->orderBy('id', 'asc')->get(['id']);
+        
+        // Find the current record position
+        $currentPosition = $allRecords->search(function ($record) use ($currentId) {
+            return $record->id === $currentId;
+        });
+
+        $navigation = [
+            'previous' => null,
+            'next' => null,
+            'total_in_filter' => $allRecords->count(),
+            'current_position' => $currentPosition !== false ? $currentPosition + 1 : null,
+        ];
+
+        // Get previous record
+        if ($currentPosition !== false && $currentPosition > 0) {
+            $previousId = $allRecords[$currentPosition - 1]->id;
+            $previousRecord = NoticeAndEviction::with(['tenant.unit.property.city'])->find($previousId);
+            $navigation['previous'] = [
+                'id' => $previousRecord->id,
+                'tenant_name' => $previousRecord->tenant ? $previousRecord->tenant->first_name . ' ' . $previousRecord->tenant->last_name : 'N/A',
+                'unit_name' => $previousRecord->tenant?->unit?->unit_name ?? 'N/A',
+            ];
+        }
+
+        // Get next record
+        if ($currentPosition !== false && $currentPosition < $allRecords->count() - 1) {
+            $nextId = $allRecords[$currentPosition + 1]->id;
+            $nextRecord = NoticeAndEviction::with(['tenant.unit.property.city'])->find($nextId);
+            $navigation['next'] = [
+                'id' => $nextRecord->id,
+                'tenant_name' => $nextRecord->tenant ? $nextRecord->tenant->first_name . ' ' . $nextRecord->tenant->last_name : 'N/A',
+                'unit_name' => $nextRecord->tenant?->unit?->unit_name ?? 'N/A',
+            ];
+        }
+
+        return $navigation;
     }
 }

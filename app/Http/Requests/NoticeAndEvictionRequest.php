@@ -17,6 +17,7 @@ class NoticeAndEvictionRequest extends FormRequest
     public function rules()
     {
         return [
+            // Entity fields
             'tenant_id' => [
                 'nullable',
                 'integer',
@@ -42,6 +43,23 @@ class NoticeAndEvictionRequest extends FormRequest
             'evected_or_payment_plan' => ['nullable', 'string', Rule::in(['Evected', 'Payment Plan'])],
             'if_left' => ['nullable', 'string', Rule::in(['Yes', 'No'])],
             'writ_date' => 'nullable|date|after_or_equal:date',
+            'other_tenants' => 'nullable|string|max:255',
+            
+            // Pagination parameters
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1',
+            
+            // Filter parameters (ID-based)
+            'city_id' => 'nullable|integer|exists:cities,id',
+            'property_id' => 'nullable|integer|exists:property_info_without_insurances,id',
+            'unit_id' => 'nullable|integer|exists:units,id',
+            
+            // Filter parameters (name-based)
+            'city_name' => 'nullable|string|max:255',
+            'property_name' => 'nullable|string|max:255',
+            'unit_name' => 'nullable|string|max:255',
+            'tenant_name' => 'nullable|string|max:255',
+            'search' => 'nullable|string|max:255',
         ];
     }
 
@@ -64,6 +82,11 @@ class NoticeAndEvictionRequest extends FormRequest
                     $validator->errors()->add('writ_date', 'The writ date must be after or equal to the hearing date.');
                 }
             }
+
+            // Validate per_page - allow 'all' or numeric values
+            if ($this->has('per_page') && $this->per_page !== 'all' && !is_numeric($this->per_page)) {
+                $validator->errors()->add('per_page', 'The per page value must be numeric or "all".');
+            }
         });
     }
 
@@ -84,6 +107,15 @@ class NoticeAndEvictionRequest extends FormRequest
             'sent_to_atorney.in' => 'The sent to attorney field must be either Yes or No.',
             'evected_or_payment_plan.in' => 'The evicted or payment plan field must be either Evected or Payment Plan.',
             'if_left.in' => 'The if left field must be either Yes or No.',
+            'other_tenants.string' => 'The other tenants field must be a valid string.',
+            'other_tenants.max' => 'The other tenants field must not exceed 255 characters.',
+            'city_id.exists' => 'The selected city does not exist.',
+            'property_id.exists' => 'The selected property does not exist.',
+            'unit_id.exists' => 'The selected unit does not exist.',
+            'page.integer' => 'The page must be a valid integer.',
+            'page.min' => 'The page must be at least 1.',
+            'per_page.integer' => 'The per page must be a valid integer.',
+            'per_page.min' => 'The per page must be at least 1.',
         ];
     }
 
@@ -101,6 +133,8 @@ class NoticeAndEvictionRequest extends FormRequest
             'evected_or_payment_plan' => 'evicted or payment plan',
             'if_left' => 'if left',
             'writ_date' => 'writ date',
+            'other_tenants' => 'other tenants',
+            'per_page' => 'per page',
         ];
     }
 
@@ -117,8 +151,23 @@ class NoticeAndEvictionRequest extends FormRequest
         }
 
         // Trim string fields
-        $stringFields = ['status', 'type_of_notice', 'have_an_exception', 'note', 'evictions', 'sent_to_atorney', 'evected_or_payment_plan', 'if_left'];
-        
+        $stringFields = [
+            'status',
+            'type_of_notice',
+            'have_an_exception',
+            'note',
+            'evictions',
+            'sent_to_atorney',
+            'evected_or_payment_plan',
+            'if_left',
+            'other_tenants',
+            'city_name',
+            'property_name',
+            'unit_name',
+            'tenant_name',
+            'search',
+        ];
+
         foreach ($stringFields as $field) {
             if ($this->has($field) && is_string($this->$field)) {
                 $this->merge([
@@ -126,5 +175,72 @@ class NoticeAndEvictionRequest extends FormRequest
                 ]);
             }
         }
+
+        // Convert per_page to appropriate value
+        if ($this->has('per_page') && $this->per_page !== 'all' && is_string($this->per_page)) {
+            $this->merge([
+                'per_page' => (int) $this->per_page,
+            ]);
+        }
+    }
+
+    /**
+     * Get validated data excluding pagination and filter parameters.
+     * This returns only the entity fields for create/update operations.
+     */
+    public function getValidatedData(): array
+    {
+        $validated = $this->validated();
+
+        // Remove pagination and filter parameters
+        $excludeKeys = [
+            'page',
+            'per_page',
+            'city_id',
+            'property_id',
+            'unit_id',
+            'city_name',
+            'property_name',
+            'unit_name',
+            'tenant_name',
+            'search',
+        ];
+
+        foreach ($excludeKeys as $key) {
+            unset($validated[$key]);
+        }
+
+        return $validated;
+    }
+
+    /**
+     * Get pagination and filter parameters.
+     * This returns only the pagination and filter fields.
+     */
+    public function getPaginationAndFilters(): array
+    {
+        $validated = $this->validated();
+
+        $includeKeys = [
+            'page',
+            'per_page',
+            'city_id',
+            'property_id',
+            'unit_id',
+            'city_name',
+            'property_name',
+            'unit_name',
+            'tenant_name',
+            'search',
+        ];
+
+        $result = [];
+        foreach ($includeKeys as $key) {
+            if (isset($validated[$key])) {
+                $result[$key] = $validated[$key];
+            }
+        }
+
+        return $result;
     }
 }

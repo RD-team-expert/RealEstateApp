@@ -27,6 +27,7 @@ class NoticeAndEviction extends Model
         'evected_or_payment_plan',
         'if_left',
         'writ_date',
+        'other_tenants',
         'is_archived'
     ];
 
@@ -150,47 +151,5 @@ class NoticeAndEviction extends Model
                 }
             }
         }
-    }
-
-    /**
-     * Validation rules for the model
-     */
-    public static function validationRules(): array
-    {
-        return [
-            'tenant_id' => 'nullable|integer|exists:tenants,id',
-            'status' => 'nullable|string|max:255',
-            'date' => 'nullable|date',
-            'type_of_notice' => 'nullable|string|max:255',
-            'have_an_exception' => 'nullable|string|max:255',
-            'note' => 'nullable|string',
-            'evictions' => 'nullable|string|max:255',
-            'sent_to_atorney' => 'nullable|string|max:255',
-            'hearing_dates' => 'nullable|date',
-            'evected_or_payment_plan' => 'nullable|string|max:255',
-            'if_left' => 'nullable|string|max:255',
-            'writ_date' => 'nullable|date',
-        ];
-    }
-
-    /**
-     * Validation rules for updating the model
-     */
-    public static function updateValidationRules($id = null): array
-    {
-        return [
-            'tenant_id' => 'sometimes|nullable|integer|exists:tenants,id',
-            'status' => 'sometimes|nullable|string|max:255',
-            'date' => 'sometimes|nullable|date',
-            'type_of_notice' => 'sometimes|nullable|string|max:255',
-            'have_an_exception' => 'sometimes|nullable|string|max:255',
-            'note' => 'sometimes|nullable|string',
-            'evictions' => 'sometimes|nullable|string|max:255',
-            'sent_to_atorney' => 'sometimes|nullable|string|max:255',
-            'hearing_dates' => 'sometimes|nullable|date',
-            'evected_or_payment_plan' => 'sometimes|nullable|string|max:255',
-            'if_left' => 'sometimes|nullable|string|max:255',
-            'writ_date' => 'sometimes|nullable|date',
-        ];
     }
 }

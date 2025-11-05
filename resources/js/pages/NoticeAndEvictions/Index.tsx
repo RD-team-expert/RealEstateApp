@@ -10,7 +10,8 @@ import NoticeAndEvictionsEditDrawer from './NoticeAndEvictionsEditDrawer';
 import { FilterBar } from './index/FilterBar';
 import { NoticeEvictionsTable } from './index/NoticeEvictionsTable';
 import { PageHeader } from './index/PageHeader';
-import { Unit, ExtendedTenant, ExtendedProperty } from './index/types';
+import { PaginationControls } from './index/PaginationControls';
+import { ExtendedProperty, ExtendedTenant, Unit } from './index/types';
 
 const formatDateForInput = (value?: string | null): string => {
     if (!value) return '';
@@ -46,6 +47,7 @@ const exportToCSV = (data: NoticeAndEviction[], filename: string = 'notice-evict
             'City Name',
             'Property Name',
             'Tenants Name',
+            'Other Tenants',
             'Status',
             'Date',
             'Type of Notice',
@@ -70,6 +72,7 @@ const exportToCSV = (data: NoticeAndEviction[], filename: string = 'notice-evict
                             `"${formatString(record.city_name)}"`,
                             `"${formatString(record.property_name)}"`,
                             `"${formatString(record.tenants_name)}"`,
+                            `"${formatString(record.other_tenants)}"`,
                             `"${formatString(record.status)}"`,
                             `"${formatDateOnly(record.date, '')}"`,
                             `"${formatString(record.type_of_notice)}"`,
@@ -110,22 +113,70 @@ const exportToCSV = (data: NoticeAndEviction[], filename: string = 'notice-evict
     }
 };
 
+interface PaginationData {
+    current_page: number;
+    per_page: number | string;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+}
+
 interface Props {
-    records: NoticeAndEviction[];
+    paginatedRecords: {
+        data: NoticeAndEviction[];
+        current_page: number;
+        per_page: number | string;
+        total: number;
+        last_page: number;
+        from: number;
+        to: number;
+    };
     search?: string;
     cities: City[];
     properties: ExtendedProperty[];
     units: Unit[];
     tenants: ExtendedTenant[];
     notices: Notice[];
+    filters: {
+        city_id?: number;
+        property_id?: number;
+        unit_id?: number;
+        tenant_id?: number;
+        city_name?: string;
+        property_name?: string;
+        unit_name?: string;
+        tenant_name?: string;
+        search?: string;
+    };
+    pagination: {
+        current_page: number;
+        per_page: number | string;
+        total: number;
+        last_page: number;
+    };
 }
 
-const Index = ({ records, cities = [], properties = [], units = [], tenants = [], notices = [] }: Props) => {
+const Index = ({
+    paginatedRecords,
+    cities = [],
+    properties = [],
+    units = [],
+    tenants = [],
+    notices = [],
+    pagination: initialPagination = { current_page: 1, per_page: 15, total: 0, last_page: 1 },
+}: Props) => {
     const [isExporting, setIsExporting] = useState(false);
     const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [selectedRecord, setSelectedRecord] = useState<NoticeAndEviction | null>(null);
 
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(initialPagination.current_page);
+    const [perPage, setPerPage] = useState<number | string>(initialPagination.per_page);
+    const [pagination] = useState<PaginationData>(paginatedRecords);
+
+    // Filter state
     const [tempFilters, setTempFilters] = useState({
         city: '',
         property: '',
@@ -193,41 +244,67 @@ const Index = ({ records, cities = [], properties = [], units = [], tenants = []
         setShowTenantDropdown(false);
     };
 
-    const handleSearchClick = () => {
-        setFilters(tempFilters);
-
+    /**
+     * Build query parameters with filters and pagination
+     */
+    const buildQueryParams = (page: number = 1, pageSize: number | string = perPage) => {
         const selectedCity = cities.find((city) => city.city === tempFilters.city);
         const selectedProperty = properties.find((property) => property.property_name === tempFilters.property);
         const selectedUnit = units.find((unit) => unit.unit_name === tempFilters.unit);
         const selectedTenant = tenants.find((tenant) => tenant.full_name === tempFilters.tenant);
 
-        const searchParams: Record<string, any> = {};
+        const params: Record<string, any> = {
+            page,
+            per_page: pageSize,
+        };
 
         if (selectedCity?.id) {
-            searchParams.city_id = selectedCity.id;
+            params.city_id = selectedCity.id;
         } else if (tempFilters.city.trim()) {
-            searchParams.city_name = tempFilters.city.trim();
+            params.city_name = tempFilters.city.trim();
         }
 
         if (selectedProperty?.id) {
-            searchParams.property_id = selectedProperty.id;
+            params.property_id = selectedProperty.id;
         } else if (tempFilters.property.trim()) {
-            searchParams.property_name = tempFilters.property.trim();
+            params.property_name = tempFilters.property.trim();
         }
 
         if (selectedUnit?.id) {
-            searchParams.unit_id = selectedUnit.id;
+            params.unit_id = selectedUnit.id;
         } else if (tempFilters.unit.trim()) {
-            searchParams.unit_name = tempFilters.unit.trim();
+            params.unit_name = tempFilters.unit.trim();
         }
 
         if (selectedTenant?.id) {
-            searchParams.tenant_id = selectedTenant.id;
+            params.tenant_id = selectedTenant.id;
         } else if (tempFilters.tenant.trim()) {
-            searchParams.tenant_name = tempFilters.tenant.trim();
+            params.tenant_name = tempFilters.tenant.trim();
         }
 
-        router.get(route('notice_and_evictions.index'), searchParams, { preserveState: true });
+        return params;
+    };
+
+    /**
+     * Build filter query string for passing to show page
+     */
+    const buildFilterQueryString = (): string => {
+        const params = buildQueryParams(currentPage, perPage);
+        const queryParts: string[] = [];
+
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+                queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
+            }
+        });
+
+        return queryParts.length > 0 ? '?' + queryParts.join('&') : '';
+    };
+
+    const handleSearchClick = () => {
+        setFilters(tempFilters);
+        const params = buildQueryParams(1); // Reset to page 1 on search
+        router.get(route('notice_and_evictions.index'), params, { preserveState: true });
     };
 
     const handleClearFilters = () => {
@@ -252,9 +329,41 @@ const Index = ({ records, cities = [], properties = [], units = [], tenants = []
         router.get(route('notice_and_evictions.index'), {}, { preserveState: false });
     };
 
+    /**
+     * Handle page change
+     */
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+        const params = buildQueryParams(newPage, perPage);
+        router.get(route('notice_and_evictions.index'), params, { preserveState: true });
+    };
+
+    /**
+     * Handle per_page change
+     */
+    const handlePerPageChange = (newPerPage: number | string) => {
+        setPerPage(newPerPage);
+        setCurrentPage(1); // Reset to page 1 when changing per_page
+        const params = buildQueryParams(1, newPerPage);
+        router.get(route('notice_and_evictions.index'), params, { preserveState: true });
+    };
+
+    /**
+     * Get current filter and pagination params for drawer submission
+     */
+    const getCurrentQueryParams = () => {
+        return buildQueryParams(currentPage, perPage);
+    };
+
+    /**
+     * Handle delete with filters and pagination
+     */
     const handleDelete = (record: NoticeAndEviction) => {
         if (window.confirm('Delete this record? This cannot be undone.')) {
-            router.delete(`/notice_and_evictions/${record.id}`);
+            const params = getCurrentQueryParams();
+            router.delete(`/notice_and_evictions/${record.id}`, {
+                data: params,
+            });
         }
     };
 
@@ -275,7 +384,7 @@ const Index = ({ records, cities = [], properties = [], units = [], tenants = []
     };
 
     const handleCSVExport = () => {
-        if (!records || records.length === 0) {
+        if (!paginatedRecords.data || paginatedRecords.data.length === 0) {
             alert('No data to export');
             return;
         }
@@ -283,11 +392,8 @@ const Index = ({ records, cities = [], properties = [], units = [], tenants = []
         setIsExporting(true);
 
         try {
-            console.log('Exporting notice and evictions data:', records);
             const filename = `notice-evictions-${new Date().toISOString().split('T')[0]}.csv`;
-            exportToCSV(records, filename);
-
-            console.log('Export completed successfully');
+            exportToCSV(paginatedRecords.data, filename);
         } catch (error) {
             console.error('Export failed:', error);
             alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please check the console for details.`);
@@ -297,6 +403,8 @@ const Index = ({ records, cities = [], properties = [], units = [], tenants = []
     };
 
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+
+    const filterQueryString = buildFilterQueryString();
 
     return (
         <AppLayout>
@@ -309,7 +417,7 @@ const Index = ({ records, cities = [], properties = [], units = [], tenants = []
                         onExport={handleCSVExport}
                         onAdd={() => setIsCreateDrawerOpen(true)}
                         isExporting={isExporting}
-                        hasRecords={records && records.length > 0}
+                        hasRecords={paginatedRecords.data && paginatedRecords.data.length > 0}
                         canCreate={hasAllPermissions(['notice-and-evictions.create', 'notice-and-evictions.store'])}
                     />
 
@@ -344,7 +452,7 @@ const Index = ({ records, cities = [], properties = [], units = [], tenants = []
 
                         <CardContent>
                             <NoticeEvictionsTable
-                                records={records}
+                                records={paginatedRecords.data}
                                 hasShowPermission={hasPermission('notice-and-evictions.show')}
                                 hasEditPermission={hasAllPermissions(['notice-and-evictions.edit', 'notice-and-evictions.update'])}
                                 hasDeletePermission={hasPermission('notice-and-evictions.destroy')}
@@ -356,18 +464,32 @@ const Index = ({ records, cities = [], properties = [], units = [], tenants = []
                                 ])}
                                 onEdit={handleEdit}
                                 onDelete={handleDelete}
+                                filterQueryString={filterQueryString}
                             />
 
-                            {records.length === 0 && (
+                            {paginatedRecords.data.length === 0 && (
                                 <div className="py-8 text-center text-muted-foreground">
                                     <p className="text-lg">No records found.</p>
                                     <p className="text-sm">Try adjusting your search criteria.</p>
                                 </div>
                             )}
 
-                            <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
-                                <div className="text-sm text-muted-foreground">Showing {records.length} records</div>
-                            </div>
+                            {paginatedRecords.data.length > 0 && (
+                                <div className="mt-6 border-t border-border pt-4">
+                                    <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+                                        <div className="text-sm text-muted-foreground">
+                                            Showing {pagination.from} to {pagination.to} of {pagination.total} records
+                                        </div>
+                                        <PaginationControls
+                                            currentPage={pagination.current_page}
+                                            lastPage={pagination.last_page}
+                                            perPage={perPage}
+                                            onPageChange={handlePageChange}
+                                            onPerPageChange={handlePerPageChange}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
@@ -382,10 +504,12 @@ const Index = ({ records, cities = [], properties = [], units = [], tenants = []
                 tenants={tenants}
                 notices={notices}
                 onSuccess={handleCreateSuccess}
+                queryParams={getCurrentQueryParams()}
             />
 
             {selectedRecord && (
                 <NoticeAndEvictionsEditDrawer
+                    key={selectedRecord.id} // ⬅️ important: remount when record changes
                     record={{
                         ...selectedRecord,
                         date: formatDateForInput(selectedRecord.date),
@@ -400,6 +524,7 @@ const Index = ({ records, cities = [], properties = [], units = [], tenants = []
                     open={isEditDrawerOpen}
                     onOpenChange={setIsEditDrawerOpen}
                     onSuccess={handleEditSuccess}
+                    queryParams={getCurrentQueryParams()}
                 />
             )}
         </AppLayout>

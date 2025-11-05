@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
 import { City, Notice, NoticeAndEviction, PropertyInfoWithoutInsurance, Tenant } from '@/types/NoticeAndEviction';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import React, { useEffect, useState } from 'react';
 import { CascadingSelectionSection } from './edit/CascadingSelectionSection';
 import { SelectionSummary } from './edit/SelectionSummary';
@@ -16,6 +16,7 @@ import { HearingDatesSection } from './edit/HearingDatesSection';
 import { EvictionPaymentPlanSection } from './edit/EvictionPaymentPlanSection';
 import { IfLeftSection } from './edit/IfLeftSection';
 import { WritDateSection } from './edit/WritDateSection';
+import { OtherTenantsSection } from './edit/OtherTenantsSection';
 
 interface Unit {
     id: number;
@@ -48,9 +49,21 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    queryParams?: Record<string, any>;
 }
 
-export default function NoticeAndEvictionsEditDrawer({ record, cities, properties, units, tenants, notices, open, onOpenChange, onSuccess }: Props) {
+export default function NoticeAndEvictionsEditDrawer({
+    record,
+    cities,
+    properties,
+    units,
+    tenants,
+    notices,
+    open,
+    onOpenChange,
+    onSuccess,
+    queryParams = {},
+}: Props) {
     const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
 
     const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
@@ -78,7 +91,7 @@ export default function NoticeAndEvictionsEditDrawer({ record, cities, propertie
         }
     };
 
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, processing, errors } = useForm({
         tenant_id: record.tenant_id || null,
         status: record.status || '',
         date: formatDateForInput(record.date) || '',
@@ -91,6 +104,7 @@ export default function NoticeAndEvictionsEditDrawer({ record, cities, propertie
         evected_or_payment_plan: record.evected_or_payment_plan || '',
         if_left: record.if_left || '',
         writ_date: formatDateForInput(record.writ_date) || '',
+        other_tenants: record.other_tenants || '',
     });
 
     useEffect(() => {
@@ -125,6 +139,7 @@ export default function NoticeAndEvictionsEditDrawer({ record, cities, propertie
         setSelectedPropertyId(null);
         setSelectedUnitId(null);
         setData('tenant_id', null);
+        setData('other_tenants', '');
 
         const filtered = properties.filter((property) => property.city_id === cityIdNum);
         setFilteredProperties(filtered);
@@ -139,6 +154,7 @@ export default function NoticeAndEvictionsEditDrawer({ record, cities, propertie
         setSelectedPropertyId(propertyIdNum);
         setSelectedUnitId(null);
         setData('tenant_id', null);
+        setData('other_tenants', '');
 
         const filtered = units.filter((unit) => unit.property_id === propertyIdNum);
         setFilteredUnits(filtered);
@@ -151,6 +167,7 @@ export default function NoticeAndEvictionsEditDrawer({ record, cities, propertie
         const unitIdNum = parseInt(unitId);
         setSelectedUnitId(unitIdNum);
         setData('tenant_id', null);
+        setData('other_tenants', '');
 
         const filtered = tenants.filter((tenant) => tenant.unit_id === unitIdNum);
         setFilteredTenants(filtered);
@@ -198,7 +215,14 @@ export default function NoticeAndEvictionsEditDrawer({ record, cities, propertie
             return;
         }
 
-        put(`/notice_and_evictions/${record.id}`, {
+        // Merge form data with pagination/filter parameters in request body
+        const submitData = {
+            ...data,
+            ...queryParams,
+        };
+
+        // PUT form data with pagination/filter params in the request body
+        router.put(`/notice_and_evictions/${record.id}`, submitData, {
             onSuccess: () => {
                 setValidationErrors({});
                 onOpenChange(false);
@@ -224,6 +248,7 @@ export default function NoticeAndEvictionsEditDrawer({ record, cities, propertie
             evected_or_payment_plan: record.evected_or_payment_plan || '',
             if_left: record.if_left || '',
             writ_date: formatDateForInput(record.writ_date) || '',
+            other_tenants: record.other_tenants || '',
         });
         setValidationErrors({});
         onOpenChange(false);
@@ -261,6 +286,14 @@ export default function NoticeAndEvictionsEditDrawer({ record, cities, propertie
                                 selectedPropertyId={selectedPropertyId}
                                 selectedUnitId={selectedUnitId}
                                 tenantId={data.tenant_id}
+                            />
+
+                            <OtherTenantsSection
+                                value={data.other_tenants}
+                                onChange={(value) => setData('other_tenants', value)}
+                                error={errors.other_tenants}
+                                tenants={filteredTenants}
+                                disabled={!selectedUnitId}
                             />
 
                             <StatusSection value={data.status} onChange={(value) => setData('status', value)} error={errors.status} />
