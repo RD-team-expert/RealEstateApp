@@ -16,6 +16,13 @@ import VendorPagination from './index/VendorPagination';
 const exportToCSV = (data: VendorInfo[], filename: string = 'vendors.csv') => {
     const headers = ['ID', 'City', 'Vendor Name', 'Number', 'Email', 'Service Type'];
 
+    const formatArrayField = (field: string[] | null | undefined): string => {
+        if (!field || !Array.isArray(field) || field.length === 0) {
+            return '';
+        }
+        return field.join('; ');
+    };
+
     const csvData = [
         headers.join(','),
         ...data.map((vendor) =>
@@ -23,9 +30,9 @@ const exportToCSV = (data: VendorInfo[], filename: string = 'vendors.csv') => {
                 vendor.id,
                 `"${vendor.city?.city || 'N/A'}"`,
                 `"${vendor.vendor_name}"`,
-                `"${vendor.number || ''}"`,
-                `"${vendor.email || ''}"`,
-                `"${vendor.service_type || ''}"`,
+                `"${formatArrayField(vendor.number as string[])}"`,
+                `"${formatArrayField(vendor.email as string[])}"`,
+                `"${formatArrayField(vendor.service_type as string[])}"`,
             ].join(','),
         ),
     ].join('\n');

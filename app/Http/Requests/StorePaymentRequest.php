@@ -1,9 +1,12 @@
 <?php
 
+
 namespace App\Http\Requests;
+
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+
 
 class StorePaymentRequest extends FormRequest
 {
@@ -11,6 +14,7 @@ class StorePaymentRequest extends FormRequest
     {
         return true;
     }
+
 
     public function rules(): array
     {
@@ -30,8 +34,13 @@ class StorePaymentRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'reversed_payments' => ['nullable', 'string', 'max:255'],
             'permanent' => ['required', 'string', Rule::in(['Yes', 'No'])],
+            'has_assistance' => ['nullable', 'boolean'],
+            'assistance_amount' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'assistance_company' => ['nullable', 'string', 'max:255'],
+            'is_hidden' => ['nullable', 'boolean'],
         ];
     }
+
 
     public function messages(): array
     {
@@ -49,8 +58,14 @@ class StorePaymentRequest extends FormRequest
             'paid.max' => 'The paid amount cannot exceed $999,999.99.',
             'permanent.required' => 'The permanent status is required.',
             'permanent.in' => 'The permanent field must be either Yes or No.',
+            'assistance_amount.numeric' => 'The assistance amount must be a valid number.',
+            'assistance_amount.min' => 'The assistance amount must be at least 0.',
+            'assistance_amount.max' => 'The assistance amount cannot exceed $999,999.99.',
+            'assistance_company.string' => 'The assistance company must be a valid string.',
+            'assistance_company.max' => 'The assistance company cannot exceed 255 characters.',
         ];
     }
+
 
     /**
      * Prepare the data for validation.
@@ -60,6 +75,16 @@ class StorePaymentRequest extends FormRequest
         // If unit_id is provided as empty string, convert to null
         if ($this->unit_id === '') {
             $this->merge(['unit_id' => null]);
+        }
+
+        // Convert assistance_amount to null if empty string
+        if ($this->assistance_amount === '') {
+            $this->merge(['assistance_amount' => null]);
+        }
+
+        // Convert assistance_company to null if empty string
+        if ($this->assistance_company === '') {
+            $this->merge(['assistance_company' => null]);
         }
     }
 }

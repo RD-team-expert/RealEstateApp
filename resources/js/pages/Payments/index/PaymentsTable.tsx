@@ -1,27 +1,30 @@
-// components/PaymentsTable.tsx
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Payment } from '@/types/payments';
 import PaymentRow from './PaymentRow';
 
+
 interface PaymentsTableProps {
     payments: Payment[];
     onEdit: (payment: Payment) => void;
     onDelete: (payment: Payment) => void;
+    onHide: (payment: Payment) => void;
     hasAnyPermission: (permissions: string[]) => boolean;
     hasAllPermissions: (permissions: string[]) => boolean;
     hasPermission: (permission: string) => boolean;
 }
 
+
 export default function PaymentsTable({
     payments,
     onEdit,
     onDelete,
+    onHide,
     hasAnyPermission,
     hasAllPermissions,
     hasPermission
 }: PaymentsTableProps) {
-    const showActions = hasAnyPermission(['payments.show', 'payments.edit', 'payments.update', 'payments.destroy']);
+    const showActions = hasAnyPermission(['payments.show', 'payments.edit', 'payments.update', 'payments.destroy', 'payments.hide']);
 
     return (
         <Card className="bg-card text-card-foreground shadow-lg">
@@ -41,6 +44,7 @@ export default function PaymentsTable({
                                 <TableHead className="border border-border bg-muted text-muted-foreground">Note</TableHead>
                                 <TableHead className="border border-border bg-muted text-muted-foreground">Reversed Payments</TableHead>
                                 <TableHead className="border border-border bg-muted text-muted-foreground">Permanent</TableHead>
+                                <TableHead className="border border-border bg-muted text-muted-foreground">Assistance</TableHead>
                                 {showActions && (
                                     <TableHead className="border border-border bg-muted text-muted-foreground">Actions</TableHead>
                                 )}
@@ -53,6 +57,7 @@ export default function PaymentsTable({
                                     payment={payment}
                                     onEdit={onEdit}
                                     onDelete={onDelete}
+                                    onHide={onHide}
                                     showActions={showActions}
                                     hasPermission={hasPermission}
                                     hasAllPermissions={hasAllPermissions}

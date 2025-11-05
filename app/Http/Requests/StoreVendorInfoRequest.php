@@ -24,10 +24,12 @@ class StoreVendorInfoRequest extends FormRequest
                 })
             ],
             'vendor_name' => 'required|string|max:255',
-            'number' => 'nullable|string|max:255',
-            'service_type' => ['nullable', Rule::in(['Maintenance', 'Appliances', 'Pest control', 'HVAC Repairs',
-                                                                'Plumping','Landscaping','Lock Smith','Garage door'])],
-            'email' => 'nullable|email|max:255',
+            'number' => 'nullable|array',
+            'number.*' => 'nullable|string|max:255',
+            'email' => 'nullable|array',
+            'email.*' => 'nullable|email|max:255',
+            'service_type' => 'nullable|array',
+            'service_type.*' => 'nullable',
         ];
     }
 
@@ -39,9 +41,13 @@ class StoreVendorInfoRequest extends FormRequest
             'city_id.exists' => 'The selected city is not valid. Please choose from available cities.',
             'vendor_name.required' => 'Vendor name is required.',
             'vendor_name.max' => 'Vendor name cannot exceed 255 characters.',
-            'number.max' => 'Number cannot exceed 255 characters.',
-            'email.email' => 'Please provide a valid email address.',
-            'email.max' => 'Email cannot exceed 255 characters.',
+            'number.array' => 'Numbers must be an array.',
+            'number.*.string' => 'Each number must be a string.',
+            'number.*.max' => 'Each number cannot exceed 255 characters.',
+            'email.array' => 'Emails must be an array.',
+            'email.*.email' => 'Each email must be a valid email address.',
+            'email.*.max' => 'Each email cannot exceed 255 characters.',
+            'service_type.array' => 'Service types must be an array.',
         ];
     }
 }

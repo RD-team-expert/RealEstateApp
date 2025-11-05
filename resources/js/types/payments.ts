@@ -20,6 +20,11 @@ export interface Payment {
     reversed_payments: string | null;
     permanent: 'Yes' | 'No';
     
+    // Assistance fields
+    has_assistance: boolean;
+    assistance_amount: number | null;
+    assistance_company: string | null;
+    
     // Audit fields
     is_archived: boolean;
     created_at: string;

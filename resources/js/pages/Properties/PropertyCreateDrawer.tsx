@@ -197,7 +197,7 @@ export default function PropertyCreateDrawer({
                 resetForm();
                 onOpenChange(false);
                 if (onSuccess) {
-                    onSuccess();
+                    // onSuccess();
                 }
             },
             onError: () => {

@@ -13,6 +13,7 @@ import TaskTable from './index/TaskTable';
 import VendorTaskTrackerCreateDrawer from './VendorTaskTrackerCreateDrawer';
 import VendorTaskTrackerEditDrawer from './VendorTaskTrackerEditDrawer';
 
+
 /**
  * Always treat the value as a date-only (no time, no TZ).
  * Works for "YYYY-MM-DD" and for ISO strings by grabbing the first 10 chars.
@@ -27,6 +28,7 @@ const formatDateOnly = (value?: string | null, fallback = '-'): string => {
     const date = new Date(Number(y), Number(mo) - 1, Number(d));
     return format(date, 'P');
 };
+
 
 // Export utility function
 const exportToCSV = (data: VendorTaskTracker[], filename: string = 'vendor-tasks.csv') => {
@@ -79,16 +81,19 @@ const exportToCSV = (data: VendorTaskTracker[], filename: string = 'vendor-tasks
     URL.revokeObjectURL(url);
 };
 
+
 interface CityOption {
     id: number;
     city: string;
 }
+
 
 interface PropertyOption {
     id: number;
     property_name: string;
     city?: string;
 }
+
 
 interface UnitOption {
     id: number;
@@ -97,11 +102,13 @@ interface UnitOption {
     city?: string;
 }
 
+
 interface VendorOption {
     id: number;
     vendor_name: string;
     city?: string;
 }
+
 
 interface Props {
     tasks: {
@@ -115,6 +122,7 @@ interface Props {
         property?: string;
         unit_name?: string;
         vendor_name?: string;
+        status?: string;
     };
     cities: CityOption[];
     properties: PropertyOption[];
@@ -125,6 +133,7 @@ interface Props {
     unitsByProperty: Record<string, Record<string, UnitOption[]>>;
     vendorsByCity: Record<string, VendorOption[]>;
 }
+
 
 export default function Index({
     tasks,

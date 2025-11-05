@@ -27,16 +27,21 @@ class VendorTaskTrackerController extends Controller
 
     public function index(Request $request): Response
     {
-        $filters = $request->only(['search', 'city', 'property', 'unit_name', 'vendor_name']);
+        $filters = $request->only(['search', 'city', 'property', 'unit_name', 'vendor_name', 'status']);
 
         // Check if any filters are applied
         $hasFilters = array_filter($filters, function($value) {
             return !empty($value);
         });
 
+        // Set default status filter to exclude "Completed" unless explicitly requested
+        if (!isset($filters['status']) || empty($filters['status'])) {
+            $filters['status'] = 'exclude_completed';
+        }
+
         $tasks = $hasFilters
             ? $this->vendorTaskTrackerService->filterTasks($filters)
-            : $this->vendorTaskTrackerService->getAllTasks();
+            : $this->vendorTaskTrackerService->getAllTasksExcludingCompleted();
 
         // Transform tasks to include name fields for frontend display
         $tasks->transform(function ($task) {

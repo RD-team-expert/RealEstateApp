@@ -1,6 +1,8 @@
 <?php
 
+
 namespace App\Services;
+
 
 use App\Models\Payment;
 use App\Models\Unit;
@@ -8,6 +10,7 @@ use App\Models\Cities;
 use App\Models\PropertyInfoWithoutInsurance;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+
 
 class PaymentService
 {
@@ -18,6 +21,7 @@ class PaymentService
                      ->orderBy('created_at', 'desc')
                      ->paginate($perPage);
     }
+
 
     public function searchPayments(string $search, int $perPage = 15): LengthAwarePaginator
     {
@@ -39,12 +43,14 @@ class PaymentService
                      ->paginate($perPage);
     }
 
+
     public function createPayment(array $data): Payment
     {
         // Normalize paid: treat null or empty as 0
         if (!array_key_exists('paid', $data) || $data['paid'] === null || $data['paid'] === '') {
             $data['paid'] = 0;
         }
+
 
         // Convert unit selection to unit_id if provided as names
         if (isset($data['city']) && isset($data['unit_name']) && !isset($data['unit_id'])) {
@@ -56,9 +62,11 @@ class PaymentService
             unset($data['city'], $data['property_name'], $data['unit_name']);
         }
 
+
         // The model's boot method will automatically calculate left_to_pay and status
         return Payment::create($data);
     }
+
 
     public function updatePayment(Payment $payment, array $data): bool
     {
@@ -67,6 +75,7 @@ class PaymentService
             $data['paid'] = 0;
         }
 
+
         // Convert unit selection to unit_id if provided as names
         if (isset($data['city']) && isset($data['unit_name']) && !isset($data['unit_id'])) {
             $unit = $this->findUnitByNames($data['city'], $data['property_name'] ?? null, $data['unit_name']);
@@ -77,14 +86,17 @@ class PaymentService
             unset($data['city'], $data['property_name'], $data['unit_name']);
         }
 
+
         // The model's boot method will automatically recalculate left_to_pay and status
         return $payment->update($data);
     }
+
 
     public function deletePayment(Payment $payment): bool
     {
         return $payment->archive();
     }
+
 
     /**
      * Archive a payment (soft delete)
@@ -94,6 +106,25 @@ class PaymentService
         return $payment->archive();
     }
 
+
+    /**
+     * Hide a payment (set is_hidden to true)
+     */
+    public function hidePayment(Payment $payment): bool
+    {
+        return $payment->update(['is_hidden' => true]);
+    }
+
+
+    /**
+     * Unhide a payment (set is_hidden to false)
+     */
+    public function unhidePayment(Payment $payment): bool
+    {
+        return $payment->update(['is_hidden' => false]);
+    }
+
+
     /**
      * Restore an archived payment
      */
@@ -102,12 +133,14 @@ class PaymentService
         return $payment->restore();
     }
 
+
     public function getUnitsForDropdowns(): array
     {
         $units = Unit::with(['property.city'])
                     ->select('id', 'property_id', 'unit_name')
                     ->orderBy('unit_name')
                     ->get();
+
 
         $cities = [];
         $properties = [];
@@ -116,20 +149,24 @@ class PaymentService
         $propertiesByCity = [];
         $unitsData = [];
 
+
         foreach ($units as $unit) {
             $cityName = $unit->property && $unit->property->city ? $unit->property->city->city : 'Unknown City';
             $propertyName = $unit->property ? $unit->property->property_name : 'Unknown Property';
             $unitName = $unit->unit_name;
+
 
             // Collect unique cities
             if (!in_array($cityName, $cities)) {
                 $cities[] = $cityName;
             }
 
+
             // Collect unique properties
             if (!in_array($propertyName, $properties)) {
                 $properties[] = $propertyName;
             }
+
 
             // Group units by city
             if (!isset($unitsByCity[$cityName])) {
@@ -139,6 +176,7 @@ class PaymentService
                 $unitsByCity[$cityName][] = $unitName;
             }
 
+
             // Group units by property
             if (!isset($unitsByProperty[$propertyName])) {
                 $unitsByProperty[$propertyName] = [];
@@ -146,6 +184,7 @@ class PaymentService
             if (!in_array($unitName, $unitsByProperty[$propertyName])) {
                 $unitsByProperty[$propertyName][] = $unitName;
             }
+
 
             // Group properties by city
             if (!isset($propertiesByCity[$cityName])) {
@@ -155,6 +194,7 @@ class PaymentService
                 $propertiesByCity[$cityName][] = $propertyName;
             }
 
+
             // Store complete unit data with relationships
             $unitsData[] = [
                 'id' => $unit->id,
@@ -163,6 +203,7 @@ class PaymentService
                 'city' => $cityName,
             ];
         }
+
 
         return [
             'cities' => $cities,
@@ -174,6 +215,7 @@ class PaymentService
         ];
     }
 
+
     /**
      * Get all cities from the database
      */
@@ -181,6 +223,7 @@ class PaymentService
     {
         return Cities::orderBy('city')->pluck('city')->toArray();
     }
+
 
     /**
      * Get all properties from the database
@@ -190,6 +233,7 @@ class PaymentService
         return PropertyInfoWithoutInsurance::orderBy('property_name')->pluck('property_name')->toArray();
     }
 
+
     /**
      * Find unit by city, property, and unit names
      */
@@ -198,11 +242,13 @@ class PaymentService
         $query = Unit::with(['property.city'])
                     ->where('unit_name', $unitName);
 
+
         if ($cityName) {
             $query->whereHas('property.city', function ($q) use ($cityName) {
                 $q->where('city', $cityName);
             });
         }
+
 
         if ($propertyName) {
             $query->whereHas('property', function ($q) use ($propertyName) {
@@ -210,8 +256,10 @@ class PaymentService
             });
         }
 
+
         return $query->first();
     }
+
 
     /**
      * Get unit by ID with relationships
@@ -220,6 +268,7 @@ class PaymentService
     {
         return Unit::with(['property.city'])->find($unitId);
     }
+
 
     /**
      * Update all payment statuses based on current left_to_pay values
@@ -240,6 +289,7 @@ class PaymentService
         }
     }
 
+
     /**
      * Get payment statistics
      */
@@ -250,21 +300,59 @@ class PaymentService
         $paid = Payment::where('status', 'Paid')->count();
         $didntPay = Payment::where('status', 'Didn\'t Pay')->count();
         $paidPartly = Payment::where('status', 'Paid Partly')->count();
+        $overpaid = Payment::where('status', 'Overpaid')->count();
+
 
         return [
             'total' => $total,
             'paid' => $paid,
             'didnt_pay' => $didntPay,
             'paid_partly' => $paidPartly,
+            'overpaid' => $overpaid,
         ];
     }
 
+
     /**
-     * Filter payments by city, property, and unit
+     * Filter payments by status, permanent, is_hidden, city, property, and unit
      */
-    public function filterPayments(?string $city, ?string $property, ?string $unit, int $perPage = 15): LengthAwarePaginator
+    public function filterPayments(
+        ?array $statusFilter = null,
+        ?array $permanentFilter = null,
+        ?bool $isHiddenFilter = false,
+        ?string $city = null,
+        ?string $property = null,
+        ?string $unit = null,
+        int $perPage = 15
+    ): LengthAwarePaginator
     {
         $query = Payment::with(['unit.property.city']);
+
+
+        // Filter by status - exclude 'Paid' by default
+        if ($statusFilter && count($statusFilter) > 0) {
+            $query->whereIn('status', $statusFilter);
+        } else {
+            // Default: exclude 'Paid' records
+            $query->where('status', '!=', 'Paid');
+        }
+
+
+        // Filter by permanent - show both by default
+        if ($permanentFilter && count($permanentFilter) > 0) {
+            $query->whereIn('permanent', $permanentFilter);
+        }
+
+
+        // Filter by is_hidden - show only is_hidden false by default
+        if ($isHiddenFilter === true) {
+            // Show only hidden records
+            $query->where('is_hidden', true);
+        } else {
+            // Default: show only non-hidden records
+            $query->where('is_hidden', false);
+        }
+
 
         if ($city) {
             $query->whereHas('unit.property.city', function ($q) use ($city) {
@@ -272,17 +360,20 @@ class PaymentService
             });
         }
 
+
         if ($property) {
             $query->whereHas('unit.property', function ($q) use ($property) {
                 $q->where('property_name', 'like', "%{$property}%");
             });
         }
 
+
         if ($unit) {
             $query->whereHas('unit', function ($q) use ($unit) {
                 $q->where('unit_name', 'like', "%{$unit}%");
             });
         }
+
 
         return $query->orderBy('date', 'desc')
                     ->orderBy('created_at', 'desc')

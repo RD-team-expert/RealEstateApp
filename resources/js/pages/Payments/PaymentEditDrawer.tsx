@@ -14,6 +14,24 @@ interface UnitData {
     city: string;
 }
 
+
+interface PaymentFormData {
+    date: string;
+    unit_id: string;
+    owes: string;
+    paid: string;
+    status: string;
+    notes: string;
+    reversed_payments: string;
+    permanent: 'Yes' | 'No';
+    has_assistance: boolean;
+    assistance_amount: string;
+    assistance_company: string;
+    is_hidden: boolean;
+    [key: string]: any;
+}
+
+
 interface Props {
     payment: Payment;
     units: UnitData[];
@@ -26,6 +44,7 @@ interface Props {
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
 }
+
 
 export default function PaymentEditDrawer({ 
     payment, 
@@ -54,7 +73,7 @@ export default function PaymentEditDrawer({
     const [selectedProperty, setSelectedProperty] = useState<string>('');
     const [selectedUnit, setSelectedUnit] = useState<string>('');
 
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing, errors } = useForm<PaymentFormData>({
         date: '',
         unit_id: '',
         owes: '',
@@ -63,28 +82,37 @@ export default function PaymentEditDrawer({
         notes: '',
         reversed_payments: '',
         permanent: 'No',
+        has_assistance: false,
+        assistance_amount: '',
+        assistance_company: '',
+        is_hidden: false,
     });
 
     useEffect(() => {
-        if (payment && open) {
-            setData({
-                date: payment.date ?? '',
-                unit_id: payment.unit_id?.toString() ?? '',
-                owes: payment.owes?.toString() ?? '',
-                paid: payment.paid?.toString() ?? '',
-                status: payment.status ?? '',
-                notes: payment.notes ?? '',
-                reversed_payments: payment.reversed_payments ?? '',
-                permanent: payment.permanent ?? 'No',
-            });
+    if (payment && open) {
+        setData({
+            date: payment.date ?? '',
+            unit_id: payment.unit_id?.toString() ?? '',
+            owes: payment.owes?.toString() ?? '',
+            paid: payment.paid?.toString() ?? '',
+            status: payment.status ?? '',
+            notes: payment.notes ?? '',
+            reversed_payments: payment.reversed_payments ?? '',
+            permanent: (payment.permanent as 'Yes' | 'No') ?? 'No',
+            has_assistance: (payment as any).has_assistance ?? false,
+            assistance_amount: (payment as any).assistance_amount?.toString() ?? '',
+            assistance_company: (payment as any).assistance_company ?? '',
+            is_hidden: (payment as any).is_hidden ?? false,
+        });
 
-            setSelectedCity(payment.city ?? '');
-            setSelectedProperty(payment.property_name ?? '');
-            setSelectedUnit(payment.unit_name ?? '');
+        setSelectedCity(payment.city ?? '');
+        setSelectedProperty(payment.property_name ?? '');
+        setSelectedUnit(payment.unit_name ?? '');
 
-            clearValidationErrors();
-        }
-    }, [payment, open]);
+        clearValidationErrors();
+    }
+}, [payment, open]);
+
 
     const clearValidationErrors = () => {
         setValidationError('');
@@ -254,27 +282,32 @@ export default function PaymentEditDrawer({
     };
 
     const handleCancel = () => {
-        if (payment) {
-            setData({
-                date: payment.date ?? '',
-                unit_id: payment.unit_id?.toString() ?? '',
-                owes: payment.owes?.toString() ?? '',
-                paid: payment.paid?.toString() ?? '',
-                status: payment.status ?? '',
-                notes: payment.notes ?? '',
-                reversed_payments: payment.reversed_payments ?? '',
-                permanent: payment.permanent ?? 'No',
-            });
+    if (payment) {
+        setData({
+            date: payment.date ?? '',
+            unit_id: payment.unit_id?.toString() ?? '',
+            owes: payment.owes?.toString() ?? '',
+            paid: payment.paid?.toString() ?? '',
+            status: payment.status ?? '',
+            notes: payment.notes ?? '',
+            reversed_payments: payment.reversed_payments ?? '',
+            permanent: (payment.permanent as 'Yes' | 'No') ?? 'No',
+            has_assistance: (payment as any).has_assistance ?? false,
+            assistance_amount: (payment as any).assistance_amount?.toString() ?? '',
+            assistance_company: (payment as any).assistance_company ?? '',
+            is_hidden: (payment as any).is_hidden ?? false,
+        });
 
-            setSelectedCity(payment.city ?? '');
-            setSelectedProperty(payment.property_name ?? '');
-            setSelectedUnit(payment.unit_name ?? '');
-        }
-        
-        clearValidationErrors();
-        setCalendarOpen(false);
-        onOpenChange(false);
-    };
+        setSelectedCity(payment.city ?? '');
+        setSelectedProperty(payment.property_name ?? '');
+        setSelectedUnit(payment.unit_name ?? '');
+    }
+    
+    clearValidationErrors();
+    setCalendarOpen(false);
+    onOpenChange(false);
+};
+
 
     return (
         <Drawer open={open} onOpenChange={onOpenChange} modal={false}>

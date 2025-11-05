@@ -1,9 +1,12 @@
-    // components/FilterSection.tsx
 import { Card, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import React from 'react';
 import FilterDropdown from './FilterDropdown';
+import StatusFilter from './StatusFilter';
+import PermanentFilter from './PermanentFilter';
+import HiddenFilter from './HiddenFilter';
+
 
 interface UnitData {
     id: number;
@@ -12,13 +15,20 @@ interface UnitData {
     city: string;
 }
 
+
 interface FilterSectionProps {
     cityFilter: string;
     propertyFilter: string;
     unitFilter: string;
+    statusFilter: string[];
+    permanentFilter: string[];
+    isHiddenFilter: boolean;
     setCityFilter: (value: string) => void;
     setPropertyFilter: (value: string) => void;
     setUnitFilter: (value: string) => void;
+    setStatusFilter: (value: string[]) => void;
+    setPermanentFilter: (value: string[]) => void;
+    setIsHiddenFilter: (value: boolean) => void;
     uniqueCities: string[];
     uniqueProperties: string[];
     units: UnitData[];
@@ -27,13 +37,20 @@ interface FilterSectionProps {
     onClear: () => void;
 }
 
+
 export default function FilterSection({
     cityFilter,
     propertyFilter,
     unitFilter,
+    statusFilter,
+    permanentFilter,
+    isHiddenFilter,
     setCityFilter,
     setPropertyFilter,
     setUnitFilter,
+    setStatusFilter,
+    setPermanentFilter,
+    setIsHiddenFilter,
     uniqueCities,
     uniqueProperties,
     units,
@@ -65,7 +82,7 @@ export default function FilterSection({
     return (
         <Card className="bg-card text-card-foreground shadow-lg mb-6">
             <CardHeader>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
                     <FilterDropdown
                         value={cityFilter}
                         onChange={setCityFilter}
@@ -87,21 +104,36 @@ export default function FilterSection({
                         options={getFilteredUnits()}
                     />
 
-                    <div className="flex gap-2">
-                        <Button onClick={onSearch} variant="default" className="flex-1">
-                            <Search className="mr-2 h-4 w-4" />
-                            Search
-                        </Button>
-                        
-                        <Button 
-                            onClick={onClear} 
-                            variant="outline" 
-                            size="sm"
-                            className="whitespace-nowrap"
-                        >
-                            Clear
-                        </Button>
-                    </div>
+                    <StatusFilter
+                        value={statusFilter}
+                        onChange={setStatusFilter}
+                    />
+
+                    <PermanentFilter
+                        value={permanentFilter}
+                        onChange={setPermanentFilter}
+                    />
+
+                    <HiddenFilter
+                        value={isHiddenFilter}
+                        onChange={setIsHiddenFilter}
+                    />
+                </div>
+
+                <div className="flex gap-2 mt-4">
+                    <Button onClick={onSearch} variant="default" className="flex-1">
+                        <Search className="mr-2 h-4 w-4" />
+                        Search
+                    </Button>
+                    
+                    <Button 
+                        onClick={onClear} 
+                        variant="outline" 
+                        size="sm"
+                        className="whitespace-nowrap"
+                    >
+                        Clear
+                    </Button>
                 </div>
             </CardHeader>
         </Card>

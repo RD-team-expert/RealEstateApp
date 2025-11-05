@@ -1,11 +1,7 @@
-// utils/paymentUtils.ts
 import { format } from 'date-fns';
 import { Payment } from '@/types/payments';
 
-/**
- * Always treat the value as a date-only (no time, no TZ).
- * Works for "YYYY-MM-DD" and for ISO strings by grabbing the first 10 chars.
- */
+
 export const formatDateOnly = (value?: string | null, fallback = '-'): string => {
     if (!value) return fallback;
 
@@ -16,6 +12,7 @@ export const formatDateOnly = (value?: string | null, fallback = '-'): string =>
     const date = new Date(Number(y), Number(mo) - 1, Number(d));
     return format(date, 'P');
 };
+
 
 export const exportToCSV = (data: Payment[], filename: string = 'payments.csv') => {
     try {
@@ -51,6 +48,9 @@ export const exportToCSV = (data: Payment[], filename: string = 'payments.csv') 
             'Notes',
             'Reversed Payments',
             'Permanent',
+            'Has Assistance',
+            'Assistance Amount',
+            'Assistance Company',
         ];
 
         const csvData = [
@@ -71,6 +71,9 @@ export const exportToCSV = (data: Payment[], filename: string = 'payments.csv') 
                             `"${formatString(payment.notes)}"`,
                             `"${formatString(payment.reversed_payments)}"`,
                             `"${formatString(payment.permanent)}"`,
+                            payment.has_assistance ? 'Yes' : 'No',
+                            formatCurrency(payment.assistance_amount),
+                            `"${formatString(payment.assistance_company)}"`,
                         ].join(',');
                     } catch (rowError) {
                         console.error('Error processing payment row:', payment, rowError);

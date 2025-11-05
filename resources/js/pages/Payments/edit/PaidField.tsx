@@ -1,11 +1,13 @@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
+
 interface PaidFieldProps {
     data: any;
     setData: (data: any) => void;
     errors: any;
 }
+
 
 export default function PaidField({ data, setData, errors }: PaidFieldProps) {
     return (
@@ -14,6 +16,7 @@ export default function PaidField({ data, setData, errors }: PaidFieldProps) {
                 <Label htmlFor="paid" className="text-base font-semibold">
                     Paid
                 </Label>
+                <p className="text-xs text-muted-foreground mt-1">Can exceed amount owed (overpayment)</p>
             </div>
             <Input
                 id="paid"

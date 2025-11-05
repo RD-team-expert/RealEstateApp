@@ -17,6 +17,14 @@ export default function VendorTableRow({
     onEdit,
     onDelete,
 }: VendorTableRowProps) {
+    // Helper function to format array display
+    const formatArrayField = (field: string[] | null | undefined): string => {
+        if (!field || !Array.isArray(field) || field.length === 0) {
+            return 'N/A';
+        }
+        return field.join(', ');
+    };
+
     return (
         <TableRow className="border-b border-gray-200 hover:bg-gray-50">
             <TableCell className="sticky left-0 z-10 border-r border-gray-200 bg-white px-4 py-3 text-center">
@@ -26,13 +34,13 @@ export default function VendorTableRow({
                 {vendor.vendor_name}
             </TableCell>
             <TableCell className="border-r border-gray-200 px-4 py-3 text-center">
-                {vendor.number || 'N/A'}
+                {formatArrayField(vendor.number as string[])}
             </TableCell>
             <TableCell className="border-r border-gray-200 px-4 py-3 text-center">
-                {vendor.email || 'N/A'}
+                {formatArrayField(vendor.email as string[])}
             </TableCell>
             <TableCell className="border-r border-gray-200 px-4 py-3 text-center">
-                {vendor.service_type || 'N/A'}
+                {formatArrayField(vendor.service_type as string[])}
             </TableCell>
             <TableCell className="px-4 py-3 text-center">
                 <div className="flex justify-center gap-2">

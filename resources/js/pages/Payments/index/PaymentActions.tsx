@@ -1,21 +1,24 @@
-// components/PaymentActions.tsx
 import { Button } from '@/components/ui/button';
 import { Payment } from '@/types/payments';
 import { Link } from '@inertiajs/react';
-import { Edit, Eye, Trash2 } from 'lucide-react';
+import { Edit, Eye, Trash2, EyeOff } from 'lucide-react';
+
 
 interface PaymentActionsProps {
     payment: Payment;
     onEdit: (payment: Payment) => void;
     onDelete: (payment: Payment) => void;
+    onHide: (payment: Payment) => void;
     hasPermission: (permission: string) => boolean;
     hasAllPermissions: (permissions: string[]) => boolean;
 }
+
 
 export default function PaymentActions({
     payment,
     onEdit,
     onDelete,
+    onHide,
     hasPermission,
     hasAllPermissions
 }: PaymentActionsProps) {
@@ -31,6 +34,16 @@ export default function PaymentActions({
             {hasAllPermissions(['payments.edit', 'payments.update']) && (
                 <Button variant="outline" size="sm" onClick={() => onEdit(payment)}>
                     <Edit className="h-4 w-4" />
+                </Button>
+            )}
+            {hasPermission('payments.hide') && (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onHide(payment)}
+                    className="border-yellow-200 text-yellow-600 hover:bg-yellow-50 dark:border-yellow-900 dark:text-yellow-400 dark:hover:bg-yellow-950"
+                >
+                    <EyeOff className="h-4 w-4" />
                 </Button>
             )}
             {hasPermission('payments.destroy') && (

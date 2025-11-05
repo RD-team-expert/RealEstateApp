@@ -26,6 +26,9 @@ class VendorInfo extends Model
 
     protected $casts = [
         'is_archived' => 'boolean',
+        'number' => 'array',
+        'email' => 'array',
+        'service_type' => 'array',
     ];
 
     // Global scope to exclude archived records by default
@@ -76,7 +79,6 @@ class VendorInfo extends Model
         return $this->hasMany(VendorTaskTracker::class, 'vendor_id');
     }
 
-
     // Scope for filtering by city ID
     public function scopeByCityId(Builder $query, $cityId): Builder
     {
@@ -109,6 +111,99 @@ class VendorInfo extends Model
         return $query->whereHas('city', function ($q) use ($cityName) {
             $q->where('city', $cityName);
         });
+    }
+
+    // Scope to filter by phone number (searches within JSON array)
+    public function scopeByPhoneNumber(Builder $query, $phoneNumber): Builder
+    {
+        return $phoneNumber ? $query->whereJsonContains('number', $phoneNumber) : $query;
+    }
+
+    // Scope to filter by email (searches within JSON array)
+    public function scopeByEmail(Builder $query, $email): Builder
+    {
+        return $email ? $query->whereJsonContains('email', $email) : $query;
+    }
+
+    // Scope to filter by service type (searches within JSON array)
+    public function scopeByServiceType(Builder $query, $serviceType): Builder
+    {
+        return $serviceType ? $query->whereJsonContains('service_type', $serviceType) : $query;
+    }
+
+    // Helper method: get first phone number or null
+    public function getFirstPhoneNumber(): ?string
+    {
+        return is_array($this->number) && count($this->number) > 0 ? $this->number[0] : null;
+    }
+
+    // Helper method: get first email or null
+    public function getFirstEmail(): ?string
+    {
+        return is_array($this->email) && count($this->email) > 0 ? $this->email[0] : null;
+    }
+
+    // Helper method: get first service type or null
+    public function getFirstServiceType(): ?string
+    {
+        return is_array($this->service_type) && count($this->service_type) > 0 ? $this->service_type[0] : null;
+    }
+
+    // Helper method: add phone number to array
+    public function addPhoneNumber(string $phoneNumber): self
+    {
+        $numbers = $this->number ?? [];
+        if (!in_array($phoneNumber, $numbers)) {
+            $numbers[] = $phoneNumber;
+            $this->number = $numbers;
+        }
+        return $this;
+    }
+
+    // Helper method: add email to array
+    public function addEmail(string $email): self
+    {
+        $emails = $this->email ?? [];
+        if (!in_array($email, $emails)) {
+            $emails[] = $email;
+            $this->email = $emails;
+        }
+        return $this;
+    }
+
+    // Helper method: add service type to array
+    public function addServiceType(string $serviceType): self
+    {
+        $services = $this->service_type ?? [];
+        if (!in_array($serviceType, $services)) {
+            $services[] = $serviceType;
+            $this->service_type = $services;
+        }
+        return $this;
+    }
+
+    // Helper method: remove phone number from array
+    public function removePhoneNumber(string $phoneNumber): self
+    {
+        $numbers = $this->number ?? [];
+        $this->number = array_values(array_filter($numbers, fn($n) => $n !== $phoneNumber));
+        return $this;
+    }
+
+    // Helper method: remove email from array
+    public function removeEmail(string $email): self
+    {
+        $emails = $this->email ?? [];
+        $this->email = array_values(array_filter($emails, fn($e) => $e !== $email));
+        return $this;
+    }
+
+    // Helper method: remove service type from array
+    public function removeServiceType(string $serviceType): self
+    {
+        $services = $this->service_type ?? [];
+        $this->service_type = array_values(array_filter($services, fn($s) => $s !== $serviceType));
+        return $this;
     }
 
     // Accessor for formatted display name

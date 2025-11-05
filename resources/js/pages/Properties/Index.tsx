@@ -16,6 +16,7 @@ import PropertyEmptyState from './index/PropertyEmptyState';
 import FlashMessages from './index/FlashMessages';
 import PropertyPagination from './index/PropertyPagination';
 
+
 // CSV Export utility function
 const exportToCSV = (data: Property[], filename: string = 'properties.csv') => {
     const headers = [
@@ -30,6 +31,7 @@ const exportToCSV = (data: Property[], filename: string = 'properties.csv') => {
         'Status'
     ];
 
+
     const calculateDaysLeft = (expirationDate: string): number => {
         const today = new Date();
         const expDate = new Date(expirationDate);
@@ -37,6 +39,7 @@ const exportToCSV = (data: Property[], filename: string = 'properties.csv') => {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return diffDays;
     };
+
 
     const csvData = [
         headers.join(','),
@@ -53,19 +56,23 @@ const exportToCSV = (data: Property[], filename: string = 'properties.csv') => {
         ].join(','))
     ].join('\n');
 
+
     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
 
+
     link.setAttribute('href', url);
     link.setAttribute('download', filename);
     link.style.visibility = 'hidden';
+
 
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 };
+
 
 interface Props extends PageProps {
     properties: PaginatedProperties;
@@ -74,6 +81,7 @@ interface Props extends PageProps {
     cities: City[];
     availableProperties: PropertyWithoutInsurance[];
 }
+
 
 export default function Index({ properties, filters, cities = [], availableProperties = [] }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
@@ -95,6 +103,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
     
     // Get flash messages from Inertia
     const { flash } = usePage().props;
+
 
     /**
      * Get current query parameters including page and per_page
@@ -123,6 +132,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
         return params;
     };
 
+
     /**
      * Handle filter input changes
      * Updates local state but doesn't trigger API call until search is clicked
@@ -131,6 +141,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
         const newFilters = { ...searchFilters, [key]: value };
         setSearchFilters(newFilters);
     };
+
 
     /**
      * Handle search button click
@@ -158,6 +169,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
         });
     };
 
+
     /**
      * Handle clear filters button click
      * Resets all filters and returns to page 1
@@ -183,6 +195,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
         });
     };
 
+
     /**
      * Handle delete action
      * Sends delete request with current query params to maintain pagination/filter state
@@ -190,13 +203,15 @@ export default function Index({ properties, filters, cities = [], availablePrope
     const handleDelete = (property: Property) => {
         if (confirm('Are you sure you want to delete this property?')) {
             // Include current query params in the delete request
-            // This is handled automatically by the backend now
+            // This preserves pagination and filters when redirecting back to index
             router.delete(route('properties-info.destroy', property.id), {
+                data: getCurrentQueryParams(),
                 preserveState: true,
                 preserveScroll: true,
             });
         }
     };
+
 
     /**
      * Handle CSV export
@@ -207,6 +222,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
             alert('No data to export');
             return;
         }
+
 
         setIsExporting(true);
         try {
@@ -219,6 +235,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
             setIsExporting(false);
         }
     };
+
 
     /**
      * Handle successful creation in drawer
@@ -233,6 +250,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
         });
     };
 
+
     /**
      * Handle successful edit in drawer
      * Reloads the page to show updated data while preserving state
@@ -245,6 +263,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
         });
     };
 
+
     /**
      * Handle edit button click
      * Opens edit drawer with selected property
@@ -253,6 +272,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
         setSelectedProperty(property);
         setIsEditDrawerOpen(true);
     };
+
 
     /**
      * Handle per page change
@@ -273,6 +293,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
         });
     };
 
+
     /**
      * Handle show/view button click
      * Navigates to show page with current filters as query params
@@ -286,6 +307,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
         });
     };
 
+
     return (
         <AppLayout>
             <Head title="Properties Insurance" />
@@ -297,6 +319,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
                         error={(flash as any)?.error} 
                     />
 
+
                     {/* Page header with export and add buttons */}
                     <PropertyPageHeader
                         onExport={handleCSVExport}
@@ -305,6 +328,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
                         hasExportData={properties.data.length > 0}
                         canCreate={hasAllPermissions(['properties.create', 'properties.store'])}
                     />
+
 
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
@@ -345,6 +369,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
                 </div>
             </div>
 
+
             {/* Create drawer - passes current filters and pagination info */}
             <PropertyCreateDrawer
                 open={isDrawerOpen}
@@ -356,6 +381,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
                 currentPage={properties.current_page || 1}
                 currentPerPage={properties.per_page || 15}
             />
+
 
             {/* Edit drawer - passes current filters and pagination info */}
             {selectedProperty && (

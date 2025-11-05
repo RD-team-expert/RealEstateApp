@@ -1,4 +1,3 @@
-// components/PaymentRow.tsx
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Payment } from '@/types/payments';
 import { formatDateOnly } from './paymentUtils';
@@ -6,19 +5,23 @@ import PaymentActions from './PaymentActions';
 import StatusBadge from './StatusBadge';
 import PermanentBadge from './PermanentBadge';
 
+
 interface PaymentRowProps {
     payment: Payment;
     onEdit: (payment: Payment) => void;
     onDelete: (payment: Payment) => void;
+    onHide: (payment: Payment) => void;
     showActions: boolean;
     hasPermission: (permission: string) => boolean;
     hasAllPermissions: (permissions: string[]) => boolean;
 }
 
+
 export default function PaymentRow({
     payment,
     onEdit,
     onDelete,
+    onHide,
     showActions,
     hasPermission,
     hasAllPermissions
@@ -60,11 +63,21 @@ export default function PaymentRow({
             <TableCell className="border border-border text-center text-foreground max-w-32 truncate">
                 {payment.notes}
             </TableCell>
-            <TableCell className="border border-border text-center text-foreground">
+            <TableCell className="border border-border text-center text-foreground max-w-32 truncate">
                 {payment.reversed_payments}
             </TableCell>
             <TableCell className="border border-border text-center">
                 <PermanentBadge permanent={payment.permanent} />
+            </TableCell>
+            <TableCell className="border border-border text-center">
+                {payment.has_assistance ? (
+                    <div className="text-sm">
+                        <div className="font-medium text-foreground">{formatCurrency(payment.assistance_amount)}</div>
+                        <div className="text-xs text-muted-foreground">{payment.assistance_company || 'N/A'}</div>
+                    </div>
+                ) : (
+                    <span className="text-muted-foreground">-</span>
+                )}
             </TableCell>
             {showActions && (
                 <TableCell className="border border-border text-center">
@@ -72,6 +85,7 @@ export default function PaymentRow({
                         payment={payment}
                         onEdit={onEdit}
                         onDelete={onDelete}
+                        onHide={onHide}
                         hasPermission={hasPermission}
                         hasAllPermissions={hasAllPermissions}
                     />

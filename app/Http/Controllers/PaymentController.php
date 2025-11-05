@@ -1,6 +1,8 @@
 <?php
 
+
 namespace App\Http\Controllers;
+
 
 use App\Http\Requests\StorePaymentRequest;
 use App\Http\Requests\UpdatePaymentRequest;
@@ -10,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+
 
 class PaymentController extends Controller
 {
@@ -23,7 +26,9 @@ class PaymentController extends Controller
         $this->middleware('permission:payments.edit')->only('edit');
         $this->middleware('permission:payments.update')->only('update');
         $this->middleware('permission:payments.destroy')->only('destroy');
+        $this->middleware('permission:payments.hide')->only('hide');
     }
+
 
     public function index(Request $request): Response
     {
@@ -31,18 +36,31 @@ class PaymentController extends Controller
         $cityFilter = $request->get('city');
         $propertyFilter = $request->get('property');
         $unitFilter = $request->get('unit');
+        $statusFilter = $request->get('status') ? explode(',', $request->get('status')) : null;
+        $permanentFilter = $request->get('permanent') ? explode(',', $request->get('permanent')) : null;
+        $isHiddenFilter = $request->get('is_hidden') === 'true';
+
 
         // Update all payment statuses before displaying
         $this->paymentService->updateAllStatuses();
 
+
         // Handle filtering
-        if ($cityFilter || $propertyFilter || $unitFilter) {
-            $payments = $this->paymentService->filterPayments($cityFilter, $propertyFilter, $unitFilter);
+        if ($statusFilter || $permanentFilter || $isHiddenFilter !== false || $cityFilter || $propertyFilter || $unitFilter) {
+            $payments = $this->paymentService->filterPayments(
+                $statusFilter,
+                $permanentFilter,
+                $isHiddenFilter,
+                $cityFilter,
+                $propertyFilter,
+                $unitFilter
+            );
         } elseif ($search) {
             $payments = $this->paymentService->searchPayments($search);
         } else {
             $payments = $this->paymentService->getAllPayments();
         }
+
 
         // Transform payments to include relationship data for the frontend
         $payments->getCollection()->transform(function ($payment) {
@@ -58,6 +76,10 @@ class PaymentController extends Controller
                 'reversed_payments' => $payment->reversed_payments,
                 'permanent' => $payment->permanent,
                 'is_archived' => $payment->is_archived,
+                'has_assistance' => $payment->has_assistance,
+                'assistance_amount' => $payment->assistance_amount ?? 0,
+                'assistance_company' => $payment->assistance_company,
+                'is_hidden' => $payment->is_hidden,
                 'created_at' => $payment->created_at,
                 'updated_at' => $payment->updated_at,
                 // Add relationship data for display
@@ -69,12 +91,19 @@ class PaymentController extends Controller
             ];
         });
 
+
         // Get dropdown data for the create drawer
         $dropdownData = $this->paymentService->getUnitsForDropdowns();
+
 
         // Get all cities and properties from database
         $allCities = $this->paymentService->getAllCities();
         $allProperties = $this->paymentService->getAllProperties();
+
+
+        // Get statistics
+        $statistics = $this->paymentService->getStatistics();
+
 
         return Inertia::render('Payments/Index', [
             'payments' => $payments,
@@ -83,6 +112,9 @@ class PaymentController extends Controller
                 'city' => $cityFilter,
                 'property' => $propertyFilter,
                 'unit' => $unitFilter,
+                'status' => $statusFilter,
+                'permanent' => $permanentFilter,
+                'is_hidden' => $isHiddenFilter,
             ],
             'cities' => $dropdownData['cities'],
             'properties' => $dropdownData['properties'],
@@ -92,12 +124,15 @@ class PaymentController extends Controller
             'units' => $dropdownData['units'],
             'allCities' => $allCities,
             'allProperties' => $allProperties,
+            'statistics' => $statistics,
         ]);
     }
+
 
     public function create(): Response
     {
         $dropdownData = $this->paymentService->getUnitsForDropdowns();
+
 
         return Inertia::render('Payments/Create', [
             'cities' => $dropdownData['cities'],
@@ -109,19 +144,23 @@ class PaymentController extends Controller
         ]);
     }
 
+
     public function store(StorePaymentRequest $request): RedirectResponse
     {
         $this->paymentService->createPayment($request->validated());
+
 
         return redirect()
             ->route('payments.index')
             ->with('success', 'Payment created successfully.');
     }
 
+
     public function show(Payment $payment): Response
     {
         // Load relationships for display
         $payment->load(['unit.property.city']);
+
 
         // Transform for consistent display
         $paymentData = [
@@ -136,6 +175,10 @@ class PaymentController extends Controller
             'reversed_payments' => $payment->reversed_payments,
             'permanent' => $payment->permanent,
             'is_archived' => $payment->is_archived,
+            'has_assistance' => $payment->has_assistance,
+            'assistance_amount' => $payment->assistance_amount ?? 0,
+            'assistance_company' => $payment->assistance_company,
+            'is_hidden' => $payment->is_hidden,
             'created_at' => $payment->created_at,
             'updated_at' => $payment->updated_at,
             // Add relationship data for display
@@ -145,18 +188,22 @@ class PaymentController extends Controller
                 ? $payment->unit->property->property_name : 'N/A',
             'unit_name' => $payment->unit ? $payment->unit->unit_name : 'N/A',
         ];
+
 
         return Inertia::render('Payments/Show', [
             'payment' => $paymentData
         ]);
     }
 
+
     public function edit(Payment $payment): Response
     {
         // Load relationships for display
         $payment->load(['unit.property.city']);
 
+
         $dropdownData = $this->paymentService->getUnitsForDropdowns();
+
 
         // Transform for consistent display
         $paymentData = [
@@ -171,6 +218,10 @@ class PaymentController extends Controller
             'reversed_payments' => $payment->reversed_payments,
             'permanent' => $payment->permanent,
             'is_archived' => $payment->is_archived,
+            'has_assistance' => $payment->has_assistance,
+            'assistance_amount' => $payment->assistance_amount ?? 0,
+            'assistance_company' => $payment->assistance_company,
+            'is_hidden' => $payment->is_hidden,
             'created_at' => $payment->created_at,
             'updated_at' => $payment->updated_at,
             // Add relationship data for display
@@ -180,6 +231,7 @@ class PaymentController extends Controller
                 ? $payment->unit->property->property_name : 'N/A',
             'unit_name' => $payment->unit ? $payment->unit->unit_name : 'N/A',
         ];
+
 
         return Inertia::render('Payments/Edit', [
             'payment' => $paymentData,
@@ -192,21 +244,47 @@ class PaymentController extends Controller
         ]);
     }
 
+
     public function update(UpdatePaymentRequest $request, Payment $payment): RedirectResponse
     {
         $this->paymentService->updatePayment($payment, $request->validated());
+
 
         return redirect()
             ->route('payments.index')
             ->with('success', 'Payment updated successfully.');
     }
 
+
     public function destroy(Payment $payment): RedirectResponse
     {
         $this->paymentService->deletePayment($payment);
 
+
         return redirect()
             ->route('payments.index')
             ->with('success', 'Payment deleted successfully.');
+    }
+
+
+    public function hide(Payment $payment): RedirectResponse
+    {
+        $this->paymentService->hidePayment($payment);
+
+
+        return redirect()
+            ->route('payments.index')
+            ->with('success', 'Payment hidden successfully.');
+    }
+
+
+    public function unhide(Payment $payment): RedirectResponse
+    {
+        $this->paymentService->unhidePayment($payment);
+
+
+        return redirect()
+            ->route('payments.index')
+            ->with('success', 'Payment unhidden successfully.');
     }
 }

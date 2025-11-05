@@ -5,11 +5,14 @@ import UnitField from './UnitField';
 import DateField from './DateField';
 import OwesField from './OwesField';
 import PaidField from './PaidField';
+import AssistanceField from './AssistanceField';
 import PermanentField from './PermanentField';
+import HiddenField from './HiddenField';
 import ReversedPaymentsField from './ReversedPaymentsField';
 import NotesField from './NotesField';
 import DebugInfo from './DebugInfo';
 import { Payment } from '@/types/payments';
+
 
 interface PaymentFormProps {
     data: any;
@@ -41,6 +44,7 @@ interface PaymentFormProps {
     payment: Payment;
     onSubmit: (e: React.FormEvent) => void;
 }
+
 
 export default function PaymentForm({
     data,
@@ -125,10 +129,21 @@ export default function PaymentForm({
                 errors={errors}
             />
 
+            <AssistanceField
+                data={data}
+                setData={setData}
+                errors={errors}
+            />
+
             <PermanentField
                 data={data}
                 setData={setData}
                 errors={errors}
+            />
+
+            <HiddenField
+                data={data}
+                setData={setData}
             />
 
             <ReversedPaymentsField

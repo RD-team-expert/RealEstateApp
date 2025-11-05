@@ -7,10 +7,13 @@ import { CityField } from './create/CityField';
 import { PropertyField } from './create/PropertyField';
 import { UnitField } from './create/UnitField';
 import { FinancialFields } from './create/FinancialFields';
+import { AssistanceFields } from './create/AssistanceFields';
 import { PermanentField } from './create/PermanentField';
+import { HiddenField } from './create/HiddenField';
 import { ReversedPaymentsField } from './create/ReversedPaymentsField';
 import { NotesField } from './create/NotesField';
 import { DebugInfo } from './create/DebugInfo';
+
 
 interface UnitData {
     id: number;
@@ -18,6 +21,7 @@ interface UnitData {
     property_name: string;
     city: string;
 }
+
 
 interface Props {
     units: UnitData[];
@@ -30,6 +34,7 @@ interface Props {
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
 }
+
 
 export default function PaymentCreateDrawer({ 
     units, 
@@ -60,6 +65,10 @@ export default function PaymentCreateDrawer({
         notes: '',
         reversed_payments: '',
         permanent: 'No',
+        has_assistance: false as boolean,
+        assistance_amount: '',
+        assistance_company: '',
+        is_hidden: false as boolean,
     });
 
     const getAvailableProperties = (): string[] => {
@@ -271,10 +280,26 @@ export default function PaymentCreateDrawer({
                                 owesValidationError={owesValidationError}
                             />
 
+                            <AssistanceFields
+                                hasAssistance={data.has_assistance}
+                                assistanceAmount={data.assistance_amount}
+                                assistanceCompany={data.assistance_company}
+                                onHasAssistanceChange={(value) => setData('has_assistance', value)}
+                                onAssistanceAmountChange={(value) => setData('assistance_amount', value)}
+                                onAssistanceCompanyChange={(value) => setData('assistance_company', value)}
+                                assistanceAmountError={errors.assistance_amount}
+                                assistanceCompanyError={errors.assistance_company}
+                            />
+
                             <PermanentField
                                 permanent={data.permanent}
                                 onPermanentChange={(value) => setData('permanent', value as 'Yes' | 'No')}
                                 error={errors.permanent}
+                            />
+
+                            <HiddenField
+                                isHidden={data.is_hidden}
+                                onHiddenChange={(value) => setData('is_hidden', value)}
                             />
 
                             <ReversedPaymentsField

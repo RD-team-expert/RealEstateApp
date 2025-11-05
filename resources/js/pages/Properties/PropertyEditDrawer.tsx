@@ -170,7 +170,7 @@ export default function PropertyEditDrawer({
                 setPropertyIdValidationError('');
                 onOpenChange(false);
                 if (onSuccess) {
-                    onSuccess();
+                    // onSuccess();
                 }
             },
             onError: () => {

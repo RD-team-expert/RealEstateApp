@@ -19,9 +19,32 @@ class VendorTaskTrackerService
                                ->get();
     }
 
+    public function getAllTasksExcludingCompleted(): Collection
+    {
+        return VendorTaskTracker::with(['vendor.city', 'unit.property'])
+                               ->where('status', '!=', 'Completed')
+                               ->orderBy('task_submission_date', 'desc')
+                               ->orderBy('created_at', 'desc')
+                               ->get();
+    }
+
     public function filterTasks(array $filters): Collection
     {
         $query = VendorTaskTracker::with(['vendor.city', 'unit.property.city']);
+
+        // Apply status filter
+        if (!empty($filters['status'])) {
+            if ($filters['status'] === 'exclude_completed') {
+                $query->where('status', '!=', 'Completed');
+            } elseif ($filters['status'] !== 'all') {
+                // Filter by specific status
+                $query->where('status', $filters['status']);
+            }
+            // If 'all', don't apply any status filter
+        } else {
+            // Default: exclude completed
+            $query->where('status', '!=', 'Completed');
+        }
 
         // Apply city filter through unit->property->city relationship
         if (!empty($filters['city'])) {

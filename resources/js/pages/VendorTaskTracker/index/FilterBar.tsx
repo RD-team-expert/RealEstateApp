@@ -27,6 +27,7 @@ interface FilterBarProps {
         property?: string;
         unit_name?: string;
         vendor_name?: string;
+        status?: string;
     };
     cities: CityOption[];
     properties: PropertyOption[];
@@ -34,6 +35,14 @@ interface FilterBarProps {
     onSearch: (filters: any) => void;
     onClear: () => void;
 }
+
+const STATUS_OPTIONS = [
+    { value: 'exclude_completed', label: 'Exclude Completed' },
+    { value: 'all', label: 'Show All' },
+    { value: 'Completed', label: 'Completed' },
+    { value: 'In Progress', label: 'In Progress' },
+    { value: 'Pending', label: 'Pending' },
+];
 
 export default function FilterBar({
     filters,
@@ -63,6 +72,9 @@ export default function FilterBar({
     const [showVendorDropdown, setShowVendorDropdown] = useState(false);
     const vendorInputRef = useRef<HTMLInputElement>(null);
     const vendorDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Status filter state
+    const [statusInput, setStatusInput] = useState(filters.status || 'exclude_completed');
 
     // Filter cities based on input
     useEffect(() => {
@@ -165,6 +177,12 @@ export default function FilterBar({
         setShowVendorDropdown(false);
     };
 
+    const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+        setStatusInput(value);
+        handleTempFilterChange('status', value);
+    };
+
     const handleSearchClick = () => {
         onSearch(tempFilters);
     };
@@ -174,6 +192,7 @@ export default function FilterBar({
         setCityInput('');
         setPropertyInput('');
         setVendorInput('');
+        setStatusInput('exclude_completed');
         setShowCityDropdown(false);
         setShowPropertyDropdown(false);
         setShowVendorDropdown(false);
@@ -181,7 +200,7 @@ export default function FilterBar({
     };
 
     return (
-        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-6">
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-7">
             {/* City Filter with Autocomplete */}
             <div className="relative">
                 <Input
@@ -293,6 +312,19 @@ export default function FilterBar({
                     </div>
                 )}
             </div>
+
+            {/* Status Filter Dropdown */}
+            <select
+                value={statusInput}
+                onChange={handleStatusChange}
+                className="rounded-md border border-input bg-input px-3 py-2 text-sm text-input-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+                {STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                        {option.label}
+                    </option>
+                ))}
+            </select>
 
             {/* Search Button */}
             <Button onClick={handleSearchClick} variant="default" className="flex items-center">

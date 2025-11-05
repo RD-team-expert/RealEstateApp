@@ -13,12 +13,23 @@ import PaymentCreateDrawer from './PaymentCreateDrawer';
 import PaymentEditDrawer from './PaymentEditDrawer';
 import { exportToCSV } from './index/paymentUtils';
 
+
 interface UnitData {
     id: number;
     unit_name: string;
     property_name: string;
     city: string;
 }
+
+
+interface Statistics {
+    total: number;
+    paid: number;
+    didnt_pay: number;
+    paid_partly: number;
+    overpaid: number;
+}
+
 
 interface Props {
     payments: {
@@ -31,6 +42,9 @@ interface Props {
         city?: string;
         property?: string;
         unit?: string;
+        status?: string[];
+        permanent?: string[];
+        is_hidden?: boolean;
     };
     units: UnitData[];
     cities: string[];
@@ -40,7 +54,9 @@ interface Props {
     propertiesByCity: Record<string, string[]>;
     allCities: string[];
     allProperties: string[];
+    statistics: Statistics;
 }
+
 
 export default function Index({ 
     payments, 
@@ -52,7 +68,8 @@ export default function Index({
     unitsByProperty,
     propertiesByCity,
     allCities, 
-    allProperties 
+    allProperties,
+    statistics
 }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [isExporting, setIsExporting] = useState(false);
@@ -60,10 +77,17 @@ export default function Index({
     const [editDrawerOpen, setEditDrawerOpen] = useState(false);
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
-    // Filter states
+
+    // Location filters
     const [cityFilter, setCityFilter] = useState(filters?.city || '');
     const [propertyFilter, setPropertyFilter] = useState(filters?.property || '');
     const [unitFilter, setUnitFilter] = useState(filters?.unit || '');
+
+    // Status and other filters
+    const [statusFilter, setStatusFilter] = useState<string[]>(filters?.status || []);
+    const [permanentFilter, setPermanentFilter] = useState<string[]>(filters?.permanent || []);
+    const [isHiddenFilter, setIsHiddenFilter] = useState<boolean>(filters?.is_hidden || false);
+
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -72,6 +96,9 @@ export default function Index({
         if (cityFilter) params.city = cityFilter;
         if (propertyFilter) params.property = propertyFilter;
         if (unitFilter) params.unit = unitFilter;
+        if (statusFilter && statusFilter.length > 0) params.status = statusFilter.join(',');
+        if (permanentFilter && permanentFilter.length > 0) params.permanent = permanentFilter.join(',');
+        if (isHiddenFilter) params.is_hidden = 'true';
 
         router.get(route('payments.index'), params, { 
             preserveState: true,
@@ -79,10 +106,14 @@ export default function Index({
         });
     };
 
+
     const clearFilters = () => {
         setCityFilter('');
         setPropertyFilter('');
         setUnitFilter('');
+        setStatusFilter([]);
+        setPermanentFilter([]);
+        setIsHiddenFilter(false);
         
         router.get(route('payments.index'), {}, { 
             preserveState: true,
@@ -90,20 +121,31 @@ export default function Index({
         });
     };
 
+
     const handleDelete = (payment: Payment) => {
         if (confirm('Are you sure you want to delete this payment?')) {
             router.delete(route('payments.destroy', payment.id));
         }
     };
 
+
+    const handleHide = (payment: Payment) => {
+        if (confirm('Are you sure you want to hide this payment?')) {
+            router.post(route('payments.hide', payment.id), {});
+        }
+    };
+
+
     const handleEdit = (payment: Payment) => {
         setSelectedPayment(payment);
         setEditDrawerOpen(true);
     };
 
+
     const handleEditSuccess = () => {
         router.reload();
     };
+
 
     const handleCSVExport = () => {
         if (!payments || !payments.data || payments.data.length === 0) {
@@ -126,6 +168,7 @@ export default function Index({
         }
     };
 
+
     return (
         <AppLayout>
             <Head title="Payments" />
@@ -138,15 +181,22 @@ export default function Index({
                         isExporting={isExporting}
                         hasData={payments?.data && payments.data.length > 0}
                         canCreate={hasAllPermissions(['payments.create', 'payments.store'])}
+                        statistics={statistics}
                     />
 
                     <FilterSection
                         cityFilter={cityFilter}
                         propertyFilter={propertyFilter}
                         unitFilter={unitFilter}
+                        statusFilter={statusFilter}
+                        permanentFilter={permanentFilter}
+                        isHiddenFilter={isHiddenFilter}
                         setCityFilter={setCityFilter}
                         setPropertyFilter={setPropertyFilter}
                         setUnitFilter={setUnitFilter}
+                        setStatusFilter={setStatusFilter}
+                        setPermanentFilter={setPermanentFilter}
+                        setIsHiddenFilter={setIsHiddenFilter}
                         uniqueCities={allCities}
                         uniqueProperties={allProperties}
                         units={units}
@@ -163,6 +213,7 @@ export default function Index({
                                 payments={payments.data}
                                 onEdit={handleEdit}
                                 onDelete={handleDelete}
+                                onHide={handleHide}
                                 hasAnyPermission={hasAnyPermission}
                                 hasAllPermissions={hasAllPermissions}
                                 hasPermission={hasPermission}

@@ -25,10 +25,29 @@ export default function VendorCreateDrawer({ cities, open, onOpenChange, onSucce
     const { data, setData, post, processing, errors, reset } = useForm({
         city_id: '',
         vendor_name: '',
-        number: '',
-        email: '',
-        service_type: ''
+        number: [] as string[],
+        email: [] as string[],
+        service_type: [] as string[]
     });
+
+    // Helper function to get array field errors
+    const getArrayFieldErrors = (fieldName: string): string | undefined => {
+        // Check if parent field has error
+        if (errors[fieldName as keyof typeof errors]) {
+            return errors[fieldName as keyof typeof errors];
+        }
+        
+        // Check for element-level errors (e.g., "number.0", "number.1")
+        const elementError = Object.keys(errors).find(key => 
+            key.startsWith(`${fieldName}.`)
+        );
+        
+        if (elementError) {
+            return errors[elementError as keyof typeof errors];
+        }
+        
+        return undefined;
+    };
 
     const handleCityChange = (cityId: string) => {
         setData('city_id', cityId);
@@ -42,6 +61,18 @@ export default function VendorCreateDrawer({ cities, open, onOpenChange, onSucce
     const handleVendorNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setData('vendor_name', e.target.value);
         setVendorNameValidationError('');
+    };
+
+    const handlePhoneNumberChange = (phoneNumbers: string[]) => {
+        setData('number', phoneNumbers);
+    };
+
+    const handleEmailChange = (emails: string[]) => {
+        setData('email', emails);
+    };
+
+    const handleServiceTypeChange = (serviceTypes: string[]) => {
+        setData('service_type', serviceTypes);
     };
 
     const submit = (e: React.FormEvent) => {
@@ -119,20 +150,20 @@ export default function VendorCreateDrawer({ cities, open, onOpenChange, onSucce
 
                             <PhoneNumberField
                                 value={data.number}
-                                onChange={(e) => setData('number', e.target.value)}
-                                error={errors.number}
+                                onChange={handlePhoneNumberChange}
+                                error={getArrayFieldErrors('number')}
                             />
 
                             <EmailField
                                 value={data.email}
-                                onChange={(e) => setData('email', e.target.value)}
-                                error={errors.email}
+                                onChange={handleEmailChange}
+                                error={getArrayFieldErrors('email')}
                             />
 
                             <ServiceTypeField
                                 value={data.service_type}
-                                onChange={(value) => setData('service_type', value)}
-                                error={errors.service_type}
+                                onChange={handleServiceTypeChange}
+                                error={getArrayFieldErrors('service_type')}
                             />
                         </form>
                     </div>

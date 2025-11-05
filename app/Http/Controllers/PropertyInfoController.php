@@ -166,12 +166,13 @@ class PropertyInfoController extends Controller
             $property = $this->propertyInfoService->findById($id);
             $this->propertyInfoService->delete($property);
 
-            // Redirect to index route with all query parameters preserved
-            // This ensures the user returns to the same page and filter state they were viewing
-            return redirect()->route('properties-info.index', $request->query())
+            // Pull params from body or query (without _token/_method)
+            $keep = $request->except(['_token', '_method']);
+
+            return redirect()
+                ->route('properties-info.index', $keep)
                 ->with('success', 'Property deleted successfully');
         } catch (\Exception $e) {
-            // On error, redirect back with query parameters preserved
             return redirect()->back()
                 ->with('error', 'Failed to delete property: ' . $e->getMessage());
         }

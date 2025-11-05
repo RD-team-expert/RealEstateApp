@@ -1,9 +1,12 @@
 <?php
 
+
 namespace App\Http\Requests;
+
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+
 
 class UpdatePaymentRequest extends FormRequest
 {
@@ -11,6 +14,7 @@ class UpdatePaymentRequest extends FormRequest
     {
         return true;
     }
+
 
     public function rules(): array
     {
@@ -31,8 +35,13 @@ class UpdatePaymentRequest extends FormRequest
             'notes' => ['sometimes', 'nullable', 'string'],
             'reversed_payments' => ['sometimes', 'nullable', 'string', 'max:255'],
             'permanent' => ['sometimes', 'required', 'string', Rule::in(['Yes', 'No'])],
+            'has_assistance' => ['sometimes', 'nullable', 'boolean'],
+            'assistance_amount' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'assistance_company' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'is_hidden' => ['sometimes', 'nullable', 'boolean'],
         ];
     }
+
 
     public function messages(): array
     {
@@ -50,8 +59,14 @@ class UpdatePaymentRequest extends FormRequest
             'paid.max' => 'The paid amount cannot exceed $999,999.99.',
             'permanent.required' => 'The permanent status is required.',
             'permanent.in' => 'The permanent field must be either Yes or No.',
+            'assistance_amount.numeric' => 'The assistance amount must be a valid number.',
+            'assistance_amount.min' => 'The assistance amount must be at least 0.',
+            'assistance_amount.max' => 'The assistance amount cannot exceed $999,999.99.',
+            'assistance_company.string' => 'The assistance company must be a valid string.',
+            'assistance_company.max' => 'The assistance company cannot exceed 255 characters.',
         ];
     }
+
 
     /**
      * Prepare the data for validation.
@@ -62,7 +77,18 @@ class UpdatePaymentRequest extends FormRequest
         if ($this->unit_id === '') {
             $this->merge(['unit_id' => null]);
         }
+
+        // Convert assistance_amount to null if empty string
+        if ($this->assistance_amount === '') {
+            $this->merge(['assistance_amount' => null]);
+        }
+
+        // Convert assistance_company to null if empty string
+        if ($this->assistance_company === '') {
+            $this->merge(['assistance_company' => null]);
+        }
     }
+
 
     /**
      * Configure the validator instance.
@@ -70,11 +96,9 @@ class UpdatePaymentRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            // Custom validation logic can be added here if needed
-            // For example, business rule validations that depend on multiple fields
-            if ($this->paid && $this->owes && $this->paid > $this->owes) {
-                $validator->errors()->add('paid', 'The paid amount cannot exceed the amount owed.');
-            }
+            // Allow overpayment scenario
+            // Paid amount can exceed owes amount (resulting in Overpaid status)
+            // This validation has been removed to support the overpayment feature
         });
     }
 }

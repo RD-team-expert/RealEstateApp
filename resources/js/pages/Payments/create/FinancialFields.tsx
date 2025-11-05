@@ -1,6 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+
 interface FinancialFieldsProps {
     owes: string;
     paid: string;
@@ -10,6 +11,7 @@ interface FinancialFieldsProps {
     paidError?: string;
     owesValidationError?: string;
 }
+
 
 export function FinancialFields({ 
     owes, 
@@ -46,6 +48,7 @@ export function FinancialFields({
                     <Label htmlFor="paid" className="text-base font-semibold">
                         Paid
                     </Label>
+                    <p className="text-xs text-muted-foreground mt-1">Can exceed amount owed (overpayment)</p>
                 </div>
                 <Input
                     id="paid"

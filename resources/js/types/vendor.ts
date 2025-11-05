@@ -10,9 +10,9 @@ export interface VendorInfo {
     city_id: number | null;
     city?: City | null; // Optional relationship - may be loaded via eager loading
     vendor_name: string; // Not nullable
-    number: string | null;
-    email: string | null;
-    service_type: string | null;
+    number: string[] | null; // JSON array of phone numbers
+    email: string[] | null; // JSON array of emails
+    service_type: string[] | null; // JSON array of service types
     display_name: string;
     created_at: string;
     updated_at: string;
@@ -21,17 +21,17 @@ export interface VendorInfo {
 export interface VendorFormData {
     city_id: string; // Form sends as string, backend converts to int
     vendor_name: string;
-    number: string;
-    email: string;
-    service_type: string;
+    number: string[] | undefined; // Array of phone numbers
+    email: string[] | undefined; // Array of emails
+    service_type: string[] | undefined; // Array of service types
 }
 
 export interface VendorFilters {
     city?: string; // City name for filtering (not ID)
     city_id?: string; // City ID for direct filtering
     vendor_name?: string;
-    number?: string;
-    email?: string;
+    number?: string; // Search for specific phone number
+    email?: string; // Search for specific email
 }
 
 export interface VendorStatistics {
@@ -73,9 +73,9 @@ export interface PageProps {
 export interface VendorCreateFormData {
     city_id: string;
     vendor_name: string;
-    number?: string;
-    email?: string;
-    service_type?: string;
+    number?: string[] | undefined; // Array of phone numbers
+    email?: string[] | undefined; // Array of emails
+    service_type?: string[] | undefined; // Array of service types
 }
 
 export interface VendorUpdateFormData extends VendorCreateFormData {

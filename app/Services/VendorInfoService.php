@@ -30,12 +30,14 @@ class VendorInfoService
             $query->where('vendor_name', 'like', '%' . $filters['vendor_name'] . '%');
         }
 
+        // Filter by phone number within JSON array
         if (!empty($filters['number'])) {
-            $query->where('number', 'like', '%' . $filters['number'] . '%');
+            $query->whereJsonContains('number', $filters['number']);
         }
 
+        // Filter by email within JSON array
         if (!empty($filters['email'])) {
-            $query->where('email', 'like', '%' . $filters['email'] . '%');
+            $query->whereJsonContains('email', $filters['email']);
         }
 
         return $query->orderBy('city_id', 'asc')->orderBy('vendor_name', 'asc')->paginate($perPage);
@@ -43,8 +45,8 @@ class VendorInfoService
 
     public function create(array $data): VendorInfo
     {
-        // Clean empty strings to null for nullable fields only
-        $data = $this->cleanEmptyStringsForNullableFields($data);
+        // Clean empty strings/arrays and convert to proper format
+        $data = $this->cleanAndFormatJsonFields($data);
         return VendorInfo::create($data);
     }
 
@@ -55,8 +57,8 @@ class VendorInfoService
 
     public function update(VendorInfo $vendorInfo, array $data): VendorInfo
     {
-        // Clean empty strings to null for nullable fields only
-        $data = $this->cleanEmptyStringsForNullableFields($data);
+        // Clean empty strings/arrays and convert to proper format
+        $data = $this->cleanAndFormatJsonFields($data);
         $vendorInfo->update($data);
         return $vendorInfo->fresh('city');
     }
@@ -86,29 +88,6 @@ class VendorInfoService
             ->get();
     }
 
-    // public function getStatistics(): array
-    // {
-    //     $total = VendorInfo::count();
-        
-    //     // Get city counts with city names using joins
-    //     $cityCounts = VendorInfo::join('cities', 'vendors_info.city_id', '=', 'cities.id')
-    //         ->selectRaw('cities.city, COUNT(*) as count')
-    //         ->groupBy('cities.city')
-    //         ->orderBy('count', 'desc')
-    //         ->pluck('count', 'city')
-    //         ->toArray();
-
-    //     $withEmail = VendorInfo::whereNotNull('email')->count();
-    //     $withNumber = VendorInfo::whereNotNull('number')->count();
-
-    //     return [
-    //         'total' => $total,
-    //         'city_counts' => $cityCounts,
-    //         'with_email' => $withEmail,
-    //         'with_number' => $withNumber,
-    //     ];
-    // }
-
     public function getRecentVendors(int $limit = 10): Collection
     {
         return VendorInfo::with('city')
@@ -124,14 +103,33 @@ class VendorInfoService
             ->get(['id', 'city']); // returns Collection with id and city
     }
 
-    private function cleanEmptyStringsForNullableFields(array $data): array
+    /**
+     * Clean and format JSON fields for storage
+     * Converts empty strings/arrays to null, and ensures JSON fields are properly formatted
+     */
+    private function cleanAndFormatJsonFields(array $data): array
     {
-        // Only clean nullable fields - city_id and vendor_name should not be cleaned
-        $nullableFields = ['number', 'email', 'service_type'];
+        // Fields that should be stored as JSON arrays
+        $jsonArrayFields = ['number', 'email', 'service_type'];
 
-        foreach ($nullableFields as $field) {
-            if (isset($data[$field]) && $data[$field] === '') {
-                $data[$field] = null;
+        foreach ($jsonArrayFields as $field) {
+            if (isset($data[$field])) {
+                // If it's an empty string or empty array, set to null
+                if ($data[$field] === '' || (is_array($data[$field]) && count($data[$field]) === 0)) {
+                    $data[$field] = null;
+                }
+                // If it's a string, convert to single-element array
+                elseif (is_string($data[$field])) {
+                    $data[$field] = [$data[$field]];
+                }
+                // If it's already an array, filter out empty strings
+                elseif (is_array($data[$field])) {
+                    $data[$field] = array_values(array_filter($data[$field], fn($item) => $item !== '' && $item !== null));
+                    // If array becomes empty after filtering, set to null
+                    if (count($data[$field]) === 0) {
+                        $data[$field] = null;
+                    }
+                }
             }
         }
 
