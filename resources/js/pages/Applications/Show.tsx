@@ -3,7 +3,7 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { Application } from '@/types/application';
+import { Application, Attachment } from '@/types/application';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -165,14 +165,22 @@ export default function Show({ application }: Props) {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-lg">
                                     <User className="h-5 w-5" />
-                                    Applicant & Co-signer
+                                    Applicant Information
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="space-y-3">
                                     <InfoItem icon={User} label="Applicant Name" value={application.name || 'N/A'} />
-                                    <InfoItem icon={User} label="Co-signer" value={application.co_signer || 'N/A'} />
-                                    <InfoItem icon={Home} label="Unit" value={application.unit_name || application.unit?.unit_name || 'N/A'} />
+                                    <InfoItem
+                                        icon={User}
+                                        label="Co-signer"
+                                        value={application.co_signer || <span className="text-gray-400 italic">Not provided</span>}
+                                    />
+                                    <InfoItem
+                                        icon={Home}
+                                        label="Unit"
+                                        value={application.unit_name || application.unit?.unit_name || 'N/A'}
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
@@ -188,37 +196,71 @@ export default function Show({ application }: Props) {
                             <CardContent className="space-y-4">
                                 <div className="space-y-3">
                                     <InfoItem icon={FileText} label="Status" value={getStatusBadge(application.status)} />
-                                    <InfoItem icon={ClipboardList} label="Stage in Progress" value={application.stage_in_progress || 'Not specified'} />
-                                    <InfoItem icon={Calendar} label="Application Date" value={formatDate(application.date)} />
+                                    <InfoItem
+                                        icon={ClipboardList}
+                                        label="Stage in Progress"
+                                        value={application.stage_in_progress || 'Not specified'}
+                                    />
+                                    <InfoItem
+                                        icon={Home}
+                                        label="Applied From"
+                                        value={application.applicant_applied_from || <span className="text-gray-400 italic">Not specified</span>}
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
 
-                    {/* Attachment Section */}
-                    {application.attachment_name && (
+                    {/* Attachments Section */}
+                    {application.attachments && application.attachments.length > 0 && (
                         <Card className="mb-6">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-lg">
                                     <FileText className="h-5 w-5" />
-                                    Attachment
+                                    Attachments ({application.attachments.length})
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-primary/10 p-2 rounded-lg">
-                                        <FileText className="w-6 h-6 text-primary" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-medium text-foreground">{application.attachment_name}</p>
-                                        <p className="text-sm text-muted-foreground">Click to download</p>
-                                    </div>
-                                    <Button asChild size="sm">
-                                        <a href={`/applications/${application.id}/download`}>
-                                            <Download className="w-4 h-4 mr-2" />
-                                            Download
-                                        </a>
-                                    </Button>
+                            <CardContent>
+                                <div className="space-y-3">
+                                    {application.attachments.map((attachment: Attachment) => (
+                                        <div
+                                            key={attachment.index}
+                                            className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30 hover:bg-muted/50 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                <div className="bg-primary/10 p-2 rounded-lg flex-shrink-0">
+                                                    <FileText className="w-5 h-5 text-primary" />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-medium text-foreground truncate">{attachment.name}</p>
+                                                    <p className="text-xs text-muted-foreground mt-0.5">Click to download</p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                asChild
+                                                size="sm"
+                                                variant="outline"
+                                                className="flex-shrink-0 ml-2"
+                                            >
+                                                <a href={attachment.download_url} target="_blank" rel="noopener noreferrer">
+                                                    <Download className="w-4 h-4 mr-2" />
+                                                    Download
+                                                </a>
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* No Attachments Message */}
+                    {(!application.attachments || application.attachments.length === 0) && (
+                        <Card className="mb-6 border-dashed">
+                            <CardContent className="pt-6">
+                                <div className="text-center py-8">
+                                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                                    <p className="text-muted-foreground">No attachments uploaded for this application</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -226,7 +268,7 @@ export default function Show({ application }: Props) {
 
                     {/* Notes Section */}
                     {application.notes && (
-                        <Card>
+                        <Card className="mb-6">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-lg">
                                     <FileText className="h-5 w-5" />

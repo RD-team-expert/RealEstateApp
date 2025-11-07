@@ -21,6 +21,7 @@ class Application extends Model
         'name',
         'co_signer',
         'status',
+        'applicant_applied_from',
         'date',
         'stage_in_progress',
         'notes',
@@ -33,6 +34,8 @@ class Application extends Model
         'date' => 'date',
         'is_archived' => 'boolean',
         'unit_id' => 'integer',
+        'attachment_name' => 'array',
+        'attachment_path' => 'array',
     ];
 
     /**
@@ -166,41 +169,5 @@ class Application extends Model
             $query->where('date', '<=', $endDate);
         }
         return $query;
-    }
-
-    /**
-     * Validation rules for the model
-     */
-    public static function validationRules(): array
-    {
-        return [
-            'unit_id' => 'nullable|integer|exists:units,id',
-            'name' => 'required|string|max:255',
-            'co_signer' => 'required|string|max:255',
-            'status' => 'nullable|string|max:255',
-            'date' => 'nullable|date',
-            'stage_in_progress' => 'nullable|string|max:255',
-            'notes' => 'nullable|string',
-            'attachment_name' => 'nullable|string|max:255',
-            'attachment_path' => 'nullable|string|max:255',
-        ];
-    }
-
-    /**
-     * Validation rules for updating the model
-     */
-    public static function updateValidationRules($id = null): array
-    {
-        return [
-            'unit_id' => 'sometimes|nullable|integer|exists:units,id',
-            'name' => 'sometimes|required|string|max:255',
-            'co_signer' => 'sometimes|required|string|max:255',
-            'status' => 'sometimes|nullable|string|max:255',
-            'date' => 'sometimes|nullable|date',
-            'stage_in_progress' => 'sometimes|nullable|string|max:255',
-            'notes' => 'sometimes|nullable|string',
-            'attachment_name' => 'sometimes|nullable|string|max:255',
-            'attachment_path' => 'sometimes|nullable|string|max:255',
-        ];
     }
 }

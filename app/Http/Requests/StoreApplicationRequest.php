@@ -57,12 +57,14 @@ class StoreApplicationRequest extends FormRequest
                 }
             ],
             'name' => 'required|string|max:255',
-            'co_signer' => 'required|string|max:255',
+            'co_signer' => 'nullable|string|max:255',
             'status' => 'nullable|string|max:255',
+            'applicant_applied_from' => 'nullable|string|max:255',
             'date' => 'nullable|date',
             'stage_in_progress' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:65535',
-            'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240', // 10MB max
+            'attachments' => 'nullable|array|max:10',
+            'attachments.*' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
         ];
     }
 
@@ -80,15 +82,18 @@ class StoreApplicationRequest extends FormRequest
             'unit_id.exists' => 'The selected unit does not exist.',
             'name.required' => 'Name is required.',
             'name.max' => 'Name must not exceed 255 characters.',
-            'co_signer.required' => 'Co-signer is required.',
             'co_signer.max' => 'Co-signer must not exceed 255 characters.',
             'status.max' => 'Status must not exceed 255 characters.',
+            'applicant_applied_from.max' => 'Applicant applied from must not exceed 255 characters.',
             'date.date' => 'Date must be a valid date.',
             'stage_in_progress.max' => 'Stage in progress must not exceed 255 characters.',
             'notes.max' => 'Notes must not exceed 65,535 characters.',
-            'attachment.file' => 'Attachment must be a valid file.',
-            'attachment.mimes' => 'The attachment must be a PDF, Word document, or image file.',
-            'attachment.max' => 'The attachment must not be larger than 10MB.',
+            'attachments.array' => 'Attachments must be an array.',
+            'attachments.max' => 'You can upload a maximum of 10 attachments.',
+            'attachments.*.required' => 'Each attachment is required.',
+            'attachments.*.file' => 'Each attachment must be a valid file.',
+            'attachments.*.mimes' => 'Each attachment must be a PDF, Word document, or image file.',
+            'attachments.*.max' => 'Each attachment must not be larger than 10MB.',
         ];
     }
 
@@ -98,10 +103,10 @@ class StoreApplicationRequest extends FormRequest
     public function validated($key = null, $default = null)
     {
         $validated = parent::validated($key, $default);
-        
+
         // Remove helper fields that aren't part of the model
         unset($validated['city_id'], $validated['property_id']);
-        
+
         return $validated;
     }
 
@@ -110,7 +115,7 @@ class StoreApplicationRequest extends FormRequest
      */
     protected function prepareForValidation()
     {
-        // If unit_id is provided, we can derive city_id and property_id for validation
+        // keep your existing unit->property->city derivation
         if ($this->has('unit_id') && !$this->has('city_id')) {
             $unit = Unit::with('property.city')->find($this->input('unit_id'));
             if ($unit && $unit->property && $unit->property->city) {
@@ -119,6 +124,11 @@ class StoreApplicationRequest extends FormRequest
                     'property_id' => $unit->property->id,
                 ]);
             }
+        }
+
+        // ✅ normalize empty string dates to null so 'nullable|date' passes
+        if ($this->has('date') && $this->input('date') === '') {
+            $this->merge(['date' => null]);
         }
     }
 }

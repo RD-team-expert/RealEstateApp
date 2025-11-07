@@ -1,4 +1,4 @@
-// resources/js/Pages/Applications/components/FilterBar.tsx
+// resources/js/Pages/Applications/index/FilterBar.tsx
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, X, ChevronDown } from 'lucide-react';
@@ -30,6 +30,7 @@ interface FilterBarProps {
         property: string;
         unit: string;
         name: string;
+        applicant_applied_from: string;
     }) => void;
     onClear: () => void;
 }
@@ -40,6 +41,7 @@ export default function FilterBar({ cities, properties, units, onSearch, onClear
         property: '',
         unit: '',
         name: '',
+        applicant_applied_from: '',
     });
 
     const [showCityDropdown, setShowCityDropdown] = useState(false);
@@ -132,6 +134,7 @@ export default function FilterBar({ cities, properties, units, onSearch, onClear
             property: '',
             unit: '',
             name: '',
+            applicant_applied_from: '',
         };
         setTempFilters(cleared);
         onClear();
@@ -255,8 +258,14 @@ export default function FilterBar({ cities, properties, units, onSearch, onClear
                 className="text-input-foreground bg-input"
             />
 
-            {/* Placeholder columns for responsive grid */}
-            <div className="hidden md:block"></div>
+            {/* Applicant Applied From Filter */}
+            <Input
+                type="text"
+                placeholder="Applied From"
+                value={tempFilters.applicant_applied_from}
+                onChange={(e) => handleTempFilterChange('applicant_applied_from', e.target.value)}
+                className="text-input-foreground bg-input"
+            />
 
             {/* Search and Clear Buttons */}
             <div className="flex gap-2">

@@ -146,12 +146,13 @@ Route::middleware(['auth'])->group(function () {
     // Notices
     Route::resource('notices', NoticeController::class);
 
-    
+
 
     // Applications
     Route::resource('applications', ApplicationController::class);
-    Route::get('/applications/{application}/download', [ApplicationController::class, 'downloadAttachment'])
+    Route::get('/applications/{application}/download/{index}', [ApplicationController::class, 'downloadAttachment'])
         ->name('applications.download');
+
 
     // Vendors
     Route::resource('vendors', VendorInfoController::class);

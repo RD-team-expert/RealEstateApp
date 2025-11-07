@@ -8,6 +8,11 @@ use App\Models\PropertyInfoWithoutInsurance;
 use App\Models\Cities;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
+
+
 
 class ApplicationService
 {
@@ -49,6 +54,10 @@ class ApplicationService
             $query->where('status', $filters['status']);
         }
 
+        if (!empty($filters['applicant_applied_from'])) {
+            $query->where('applicant_applied_from', $filters['applicant_applied_from']);
+        }
+
         if (!empty($filters['stage_in_progress'])) {
             $query->where('stage_in_progress', $filters['stage_in_progress']);
         }
@@ -66,8 +75,17 @@ class ApplicationService
 
     public function create(array $data): Application
     {
+        // Handle file uploads if attachments are present
+        if (isset($data['attachments']) && is_array($data['attachments'])) {
+            $attachmentData = $this->handleFileUploads($data['attachments']);
+            $data['attachment_name'] = $attachmentData['names'];
+            $data['attachment_path'] = $attachmentData['paths'];
+            unset($data['attachments']);
+        }
+
         // Clean empty strings to null for nullable fields only
         $data = $this->cleanEmptyStringsForNullableFields($data);
+
         return Application::create($data);
     }
 
@@ -76,16 +94,45 @@ class ApplicationService
         return Application::with(['unit.property.city'])->findOrFail($id);
     }
 
+    // App\Services\ApplicationService.php
     public function update(Application $application, array $data): Application
     {
-        // Clean empty strings to null for nullable fields only
+        Log::info('UPDATE payload', [
+            'id' => $application->id,
+            'removed' => $data['removed_attachment_indices'],
+            'files_count' => is_array($data['attachments']) ? count($data['attachments']) : 0,
+        ]);
+        if (!empty($data['removed_attachment_indices'])) {
+            $this->removeAttachmentsByIndices($application, $data['removed_attachment_indices']);
+            unset($data['removed_attachment_indices']);
+            $application->refresh(); // ✅ ensure we see arrays after removal
+        }
+
+        if (!empty($data['attachments'])) {
+            $attachmentData = $this->handleFileUploads($data['attachments']);
+            $existingNames = $application->attachment_name ?? [];
+            $existingPaths = $application->attachment_path ?? [];
+
+            $data['attachment_name'] = array_merge($existingNames, $attachmentData['names']);
+            $data['attachment_path'] = array_merge($existingPaths, $attachmentData['paths']);
+            unset($data['attachments']);
+        }
+
+        // optional: normalize date if still ''
+        if (isset($data['date']) && $data['date'] === '') $data['date'] = null;
+
         $data = $this->cleanEmptyStringsForNullableFields($data);
         $application->update($data);
+
         return $application->fresh(['unit.property.city']);
     }
 
+
     public function delete(Application $application): bool
     {
+        // Delete associated files before archiving
+        $this->deleteAttachments($application);
+
         // Use soft delete by archiving instead of hard delete
         return $application->archive();
     }
@@ -98,6 +145,35 @@ class ApplicationService
     public function restore(Application $application): bool
     {
         return $application->restore();
+    }
+
+    public function deleteAttachment(Application $application, int $index): bool
+    {
+        $names = $application->attachment_name ?? [];
+        $paths = $application->attachment_path ?? [];
+
+        if (isset($paths[$index])) {
+            // Delete the file from storage
+            Storage::disk('public')->delete($paths[$index]);
+
+            // Remove from arrays
+            unset($names[$index]);
+            unset($paths[$index]);
+
+            // Re-index arrays
+            $names = array_values($names);
+            $paths = array_values($paths);
+
+            // Update the application
+            $application->update([
+                'attachment_name' => $names,
+                'attachment_path' => $paths,
+            ]);
+
+            return true;
+        }
+
+        return false;
     }
 
     public function getByStatus(string $status): Collection
@@ -129,10 +205,17 @@ class ApplicationService
             ->pluck('count', 'stage_in_progress')
             ->toArray();
 
+        $appliedFromCounts = Application::selectRaw('applicant_applied_from, COUNT(*) as count')
+            ->whereNotNull('applicant_applied_from')
+            ->groupBy('applicant_applied_from')
+            ->pluck('count', 'applicant_applied_from')
+            ->toArray();
+
         return [
             'total' => $total,
             'status_counts' => $statusCounts,
             'stage_counts' => $stageCounts,
+            'applied_from_counts' => $appliedFromCounts,
         ];
     }
 
@@ -153,10 +236,71 @@ class ApplicationService
             ->get();
     }
 
+    private function handleFileUploads(array $files): array
+    {
+        $names = [];
+        $paths = [];
+
+        foreach ($files as $file) {
+            if ($file instanceof UploadedFile) {
+                $originalName = $file->getClientOriginalName();
+                $path = $file->store('applications', 'public');
+
+                $names[] = $originalName;
+                $paths[] = $path;
+            }
+        }
+
+        return [
+            'names' => $names,
+            'paths' => $paths,
+        ];
+    }
+
+    private function removeAttachmentsByIndices(Application $application, array $indices): void
+    {
+        $names = $application->attachment_name ?? [];
+        $paths = $application->attachment_path ?? [];
+
+        // Delete files from storage for the specified indices
+        foreach ($indices as $index) {
+            if (isset($paths[$index])) {
+                Storage::disk('public')->delete($paths[$index]);
+            }
+        }
+
+        // Remove items at specified indices (in reverse order to maintain correct indexing)
+        foreach (array_reverse($indices) as $index) {
+            unset($names[$index]);
+            unset($paths[$index]);
+        }
+
+        // Re-index arrays
+        $names = array_values($names);
+        $paths = array_values($paths);
+
+        // Update the application
+        $application->update([
+            'attachment_name' => $names,
+            'attachment_path' => $paths,
+        ]);
+    }
+
+    private function deleteAttachments(Application $application): void
+    {
+        $paths = $application->attachment_path ?? [];
+
+        foreach ($paths as $path) {
+            if (Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+        }
+    }
+
     private function cleanEmptyStringsForNullableFields(array $data): array
     {
-        // Only clean nullable fields - unit_id, name, co_signer should not be cleaned
-        $nullableFields = ['status', 'stage_in_progress', 'notes'];
+        // Updated list of nullable fields including new ones
+        $nullableFields = ['status', 'applicant_applied_from', 'stage_in_progress', 'notes', 'co_signer'];
 
         foreach ($nullableFields as $field) {
             if (isset($data[$field]) && $data[$field] === '') {

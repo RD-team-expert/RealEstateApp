@@ -21,28 +21,32 @@ class ApplicationController extends Controller
     public function __construct(
         private ApplicationService $applicationService
     ) {
-        $this->middleware('permission:properties.index')->only('index');
-        $this->middleware('permission:properties.create')->only('create');
-        $this->middleware('permission:properties.store')->only('store');
-        $this->middleware('permission:properties.show')->only('show');
-        $this->middleware('permission:properties.edit')->only('edit');
-        $this->middleware('permission:properties.update')->only('update');
-        $this->middleware('permission:properties.destroy')->only('destroy');
+        $this->middleware('permission:applications.index')->only('index');
+        $this->middleware('permission:applications.create')->only('create');
+        $this->middleware('permission:applications.store')->only('store');
+        $this->middleware('permission:applications.show')->only('show');
+        $this->middleware('permission:applications.edit')->only('edit');
+        $this->middleware('permission:applications.update')->only('update');
+        $this->middleware('permission:applications.destroy')->only('destroy');
     }
 
     public function index(Request $request): Response
     {
         $perPage = $request->get('per_page', 15);
-        $filters = $request->only(['city', 'property', 'name', 'co_signer', 'unit', 'status', 'stage_in_progress', 'date_from', 'date_to']);
+        $filters = $request->only(['city', 'property', 'name', 'co_signer', 'unit', 'status', 'applicant_applied_from', 'stage_in_progress', 'date_from', 'date_to']);
 
         $applications = $this->applicationService->getAllPaginated($perPage, $filters);
         $statistics = $this->applicationService->getStatistics();
 
-        // Transform applications to include display names
+        // Transform applications to include display names and attachment info
         $applications->getCollection()->transform(function ($application) {
             $application->city = $application->unit->property->city->city ?? 'N/A';
             $application->property = $application->unit->property->property_name ?? 'N/A';
             $application->unit_name = $application->unit->unit_name ?? 'N/A';
+
+            // Transform attachment data for frontend
+            $application->attachments = $this->formatAttachments($application);
+
             return $application;
         });
 
@@ -89,63 +93,12 @@ class ApplicationController extends Controller
         ]);
     }
 
-    public function create(): Response
-    {
-        // Get hierarchical data for dropdowns
-        $cities = Cities::orderBy('city')->get();
-        $properties = PropertyInfoWithoutInsurance::with('city')->orderBy('property_name')->get();
-        $units = Unit::with(['property.city'])->orderBy('unit_name')->get();
-
-        // Create structured data for frontend
-        $citiesData = $cities->map(function ($city) {
-            return [
-                'id' => $city->id,
-                'name' => $city->city,
-            ];
-        });
-
-        $propertiesData = $properties->groupBy('city_id')->map(function ($cityProperties, $cityId) {
-            return $cityProperties->map(function ($property) {
-                return [
-                    'id' => $property->id,
-                    'name' => $property->property_name,
-                    'city_id' => $property->city_id,
-                ];
-            })->values();
-        });
-
-        $unitsData = $units->groupBy('property_id')->map(function ($propertyUnits, $propertyId) {
-            return $propertyUnits->map(function ($unit) {
-                return [
-                    'id' => $unit->id,
-                    'name' => $unit->unit_name,
-                    'property_id' => $unit->property_id,
-                ];
-            })->values();
-        });
-
-        return Inertia::render('Applications/Create', [
-            'cities' => $citiesData,
-            'properties' => $propertiesData,
-            'units' => $unitsData,
-        ]);
-    }
-
     public function store(StoreApplicationRequest $request): RedirectResponse
     {
         try {
+            // store
             $data = $request->validated();
-
-            // Handle file upload
-            if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs('applications', $filename, 'public');
-
-                $data['attachment_name'] = $file->getClientOriginalName();
-                $data['attachment_path'] = $path;
-            }
-
+            $data['attachments'] = $request->file('attachments', []); // ✅ always an array
             $this->applicationService->create($data);
 
             return redirect()->route('applications.index')
@@ -166,60 +119,11 @@ class ApplicationController extends Controller
         $application->property = $application->unit->property->property_name ?? 'N/A';
         $application->unit_name = $application->unit->unit_name ?? 'N/A';
 
+        // Format attachments for display
+        $application->attachments = $this->formatAttachments($application);
+
         return Inertia::render('Applications/Show', [
             'application' => $application,
-        ]);
-    }
-
-    public function edit(string $id): Response
-    {
-        $application = $this->applicationService->findById((int) $id);
-
-        // Get hierarchical data for dropdowns
-        $cities = Cities::orderBy('city')->get();
-        $properties = PropertyInfoWithoutInsurance::with('city')->orderBy('property_name')->get();
-        $units = Unit::with(['property.city'])->orderBy('unit_name')->get();
-
-        // Create structured data for frontend
-        $citiesData = $cities->map(function ($city) {
-            return [
-                'id' => $city->id,
-                'name' => $city->city,
-            ];
-        });
-
-        $propertiesData = $properties->groupBy('city_id')->map(function ($cityProperties, $cityId) {
-            return $cityProperties->map(function ($property) {
-                return [
-                    'id' => $property->id,
-                    'name' => $property->property_name,
-                    'city_id' => $property->city_id,
-                ];
-            })->values();
-        });
-
-        $unitsData = $units->groupBy('property_id')->map(function ($propertyUnits, $propertyId) {
-            return $propertyUnits->map(function ($unit) {
-                return [
-                    'id' => $unit->id,
-                    'name' => $unit->unit_name,
-                    'property_id' => $unit->property_id,
-                ];
-            })->values();
-        });
-
-        // Add current selection data
-        $application->city = $application->unit->property->city->city ?? 'N/A';
-        $application->property = $application->unit->property->property_name ?? 'N/A';
-        $application->unit_name = $application->unit->unit_name ?? 'N/A';
-        $application->selected_city_id = $application->unit->property->city_id ?? null;
-        $application->selected_property_id = $application->unit->property_id ?? null;
-
-        return Inertia::render('Applications/Edit', [
-            'application' => $application,
-            'cities' => $citiesData,
-            'properties' => $propertiesData,
-            'units' => $unitsData,
         ]);
     }
 
@@ -227,23 +131,10 @@ class ApplicationController extends Controller
     {
         try {
             $application = $this->applicationService->findById((int) $id);
+            // update
             $data = $request->validated();
-
-            // Handle file upload
-            if ($request->hasFile('attachment')) {
-                // Delete old file if exists
-                if ($application->attachment_path) {
-                    Storage::disk('public')->delete($application->attachment_path);
-                }
-
-                $file = $request->file('attachment');
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $path = $file->storeAs('applications', $filename, 'public');
-
-                $data['attachment_name'] = $file->getClientOriginalName();
-                $data['attachment_path'] = $path;
-            }
-
+            $data['removed_attachment_indices'] = $request->input('removed_attachment_indices', []);
+            $data['attachments'] = $request->file('attachments', []); // ✅
             $this->applicationService->update($application, $data);
 
             return redirect()->route('applications.index')
@@ -261,6 +152,7 @@ class ApplicationController extends Controller
             $application = $this->applicationService->findById((int) $id);
 
             // Use soft delete (archive) instead of hard delete
+            // Service will handle file cleanup
             $this->applicationService->delete($application);
 
             return redirect()->route('applications.index')
@@ -271,28 +163,51 @@ class ApplicationController extends Controller
         }
     }
 
-    public function downloadAttachment(string $id)
+    public function downloadAttachment(string $id, int $index)
     {
         $application = $this->applicationService->findById((int) $id);
 
-        if (!$application->attachment_path || !$application->attachment_name) {
+        $names = $application->attachment_name ?? [];
+        $paths = $application->attachment_path ?? [];
+
+        if (!isset($names[$index]) || !isset($paths[$index])) {
             abort(404, 'Attachment not found.');
         }
 
-        $filePath = storage_path('app/public/' . $application->attachment_path);
+        $filePath = storage_path('app/public/' . $paths[$index]);
 
         if (!file_exists($filePath)) {
             abort(404, 'File not found.');
         }
 
-        return response()->download($filePath, $application->attachment_name);
+        return response()->download($filePath, $names[$index]);
+    }
+
+    public function deleteAttachment(string $id, int $index): RedirectResponse
+    {
+        try {
+            $application = $this->applicationService->findById((int) $id);
+
+            $success = $this->applicationService->deleteAttachment($application, $index);
+
+            if ($success) {
+                return redirect()->back()
+                    ->with('success', 'Attachment deleted successfully');
+            }
+
+            return redirect()->back()
+                ->with('error', 'Attachment not found');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to delete attachment: ' . $e->getMessage());
+        }
     }
 
     // API endpoints for dynamic loading
     public function getPropertiesByCity(Request $request): JsonResponse
     {
         $cityId = $request->get('city_id');
-        
+
         $properties = PropertyInfoWithoutInsurance::where('city_id', $cityId)
             ->orderBy('property_name')
             ->get()
@@ -321,5 +236,29 @@ class ApplicationController extends Controller
             });
 
         return response()->json($units);
+    }
+
+    /**
+     * Helper method to format attachments for frontend display
+     */
+    private function formatAttachments(Application $application): array
+    {
+        $names = $application->attachment_name ?? [];
+        $paths = $application->attachment_path ?? [];
+        $attachments = [];
+
+        foreach ($names as $index => $name) {
+            if (isset($paths[$index])) {
+                $attachments[] = [
+                    'index' => $index,
+                    'name' => $name,
+                    'path' => $paths[$index],
+                    'url' => asset('storage/' . $paths[$index]),
+                    'download_url' => route('applications.download', ['application' => $application->id, 'index' => $index]),
+                ];
+            }
+        }
+
+        return $attachments;
     }
 }

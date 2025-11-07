@@ -5,35 +5,19 @@ import React, { useEffect, useRef, useState } from 'react';
 import { CityPropertyUnitSelector } from './create/CityPropertyUnitSelector';
 import { ApplicantInformationSection } from './create/ApplicantInformationSection';
 import { StatusAndDateSection } from './create/StatusAndDateSection';
-import { AdditionalDetailsSection } from './create/AdditionalDetailsSection';   
-
-// Types for hierarchical data structure
-interface CityData {
-    id: number;
-    name: string;
-}
-
-interface PropertyData {
-    id: number;
-    name: string;
-    city_id: number;
-}
-
-interface UnitData {
-    id: number;
-    name: string;
-    property_id: number;
-}
+import { AdditionalDetailsSection } from './create/AdditionalDetailsSection';
+import { CityData, PropertyData, UnitData } from '@/types/application';
 
 type ApplicationFormData = {
     unit_id: number | null;
     name: string;
     co_signer: string;
     status: string;
+    applicant_applied_from: string;
     date: string;
     stage_in_progress: string;
     notes: string;
-    attachment: File | null;
+    attachments: File[];
 };
 
 interface Props {
@@ -53,7 +37,6 @@ export default function ApplicationCreateDrawer({ cities, properties, units, ope
         property?: string;
         unit?: string;
         name?: string;
-        co_signer?: string;
         status?: string;
     }>({});
 
@@ -67,10 +50,11 @@ export default function ApplicationCreateDrawer({ cities, properties, units, ope
         name: '',
         co_signer: '',
         status: 'New',
+        applicant_applied_from: '',
         date: '',
         stage_in_progress: '',
         notes: '',
-        attachment: null,
+        attachments: [],
     });
 
     // Reset form when drawer closes
@@ -130,7 +114,10 @@ export default function ApplicationCreateDrawer({ cities, properties, units, ope
 
     const handleCoSignerChange = (coSigner: string) => {
         setData('co_signer', coSigner);
-        setValidationErrors((prev) => ({ ...prev, co_signer: undefined }));
+    };
+
+    const handleApplicantAppliedFromChange = (value: string) => {
+        setData('applicant_applied_from', value);
     };
 
     const handleStatusChange = (status: string) => {
@@ -163,11 +150,6 @@ export default function ApplicationCreateDrawer({ cities, properties, units, ope
 
         if (!data.name || data.name.trim() === '') {
             newValidationErrors.name = 'Please enter a name before submitting the form.';
-            hasValidationErrors = true;
-        }
-
-        if (!data.co_signer || data.co_signer.trim() === '') {
-            newValidationErrors.co_signer = 'Please enter a co-signer before submitting the form.';
             hasValidationErrors = true;
         }
 
@@ -226,8 +208,10 @@ export default function ApplicationCreateDrawer({ cities, properties, units, ope
                             <ApplicantInformationSection
                                 name={data.name}
                                 coSigner={data.co_signer}
+                                applicantAppliedFrom={data.applicant_applied_from}
                                 onNameChange={handleNameChange}
                                 onCoSignerChange={handleCoSignerChange}
+                                onApplicantAppliedFromChange={handleApplicantAppliedFromChange}
                                 errors={errors}
                                 validationErrors={validationErrors}
                             />
@@ -244,10 +228,10 @@ export default function ApplicationCreateDrawer({ cities, properties, units, ope
                             <AdditionalDetailsSection
                                 stageInProgress={data.stage_in_progress}
                                 notes={data.notes}
-                                attachment={data.attachment}
+                                attachments={data.attachments}
                                 onStageInProgressChange={(value) => setData('stage_in_progress', value)}
                                 onNotesChange={(value) => setData('notes', value)}
-                                onAttachmentChange={(file) => setData('attachment', file)}
+                                onAttachmentsChange={(files) => setData('attachments', files)}
                                 fileInputRef={fileInputRef}
                                 errors={errors}
                             />

@@ -1,11 +1,11 @@
-// resources/js/Pages/Applications/components/ApplicationsTableRow.tsx
+// resources/js/Pages/Applications/index/ApplicationsTableRow.tsx
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Application } from '@/types/application';
 import { Link } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { Edit, Eye, Trash2 } from 'lucide-react';
+import { Edit, Eye, Trash2, FileText } from 'lucide-react';
 
 interface ApplicationsTableRowProps {
     application: Application;
@@ -40,6 +40,8 @@ export default function ApplicationsTableRow({
     hasEditPermission,
     hasDeletePermission,
 }: ApplicationsTableRowProps) {
+    const attachmentCount = application.attachments?.length || 0;
+
     return (
         <TableRow className="border-border hover:bg-muted/50">
             <TableCell className="sticky left-0 z-10 border border-border bg-muted text-center font-medium text-foreground">
@@ -52,8 +54,13 @@ export default function ApplicationsTableRow({
                 {application.unit_name}
             </TableCell>
             <TableCell className="border border-border text-center text-foreground">{application.name}</TableCell>
-            <TableCell className="border border-border text-center text-foreground">{application.co_signer}</TableCell>
+            <TableCell className="border border-border text-center text-foreground">
+                {application.co_signer || <span className="text-muted-foreground">N/A</span>}
+            </TableCell>
             <TableCell className="border border-border text-center">{getStatusBadge(application.status)}</TableCell>
+            <TableCell className="border border-border text-center text-foreground">
+                {application.applicant_applied_from || <span className="text-muted-foreground">N/A</span>}
+            </TableCell>
             <TableCell className="border border-border text-center text-foreground">{formatDateOnly(application.date)}</TableCell>
             <TableCell className="border border-border text-center text-foreground">
                 {application.stage_in_progress || 'N/A'}
@@ -68,12 +75,13 @@ export default function ApplicationsTableRow({
                 )}
             </TableCell>
             <TableCell className="border border-border text-center">
-                {application.attachment_name ? (
-                    <a href={`/applications/${application.id}/download`} className="text-sm text-primary hover:underline">
-                        {application.attachment_name}
-                    </a>
+                {attachmentCount > 0 ? (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                        <FileText className="h-3 w-3" />
+                        {attachmentCount} {attachmentCount === 1 ? 'file' : 'files'}
+                    </Badge>
                 ) : (
-                    <span className="text-sm text-muted-foreground">No attachment</span>
+                    <span className="text-sm text-muted-foreground">No files</span>
                 )}
             </TableCell>
             {(hasViewPermission || hasEditPermission || hasDeletePermission) && (

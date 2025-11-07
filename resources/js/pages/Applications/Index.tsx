@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { usePermissions } from '@/hooks/usePermissions';
 import AppLayout from '@/layouts/app-layout';
-import { Application, ApplicationFilters, PaginatedApplications } from '@/types/application';
+import { Application, ApplicationFilters, PaginatedApplications , Attachment } from '@/types/application';
 import { PageProps } from '@/types/auth';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -55,7 +55,26 @@ const exportToCSV = (data: Application[], filename: string = 'applications.csv')
             return value.substring(0, 10);
         };
 
-        const headers = ['ID', 'City', 'Property', 'Unit', 'Name', 'Co-signer', 'Status', 'Date', 'Stage in Progress', 'Notes', 'Attachment Name'];
+        const formatAttachments = (attachments?: Attachment[]): string => {
+            if (!attachments || attachments.length === 0) return '';
+            return attachments.map(a => a.name).join('; ');
+        };
+
+        const headers = [
+            'ID',
+            'City',
+            'Property',
+            'Unit',
+            'Name',
+            'Co-signer',
+            'Status',
+            'Applicant Applied From',
+            'Date',
+            'Stage in Progress',
+            'Notes',
+            'Attachments Count',
+            'Attachment Names'
+        ];
 
         const csvData = [
             headers.join(','),
@@ -70,10 +89,12 @@ const exportToCSV = (data: Application[], filename: string = 'applications.csv')
                             `"${formatString(application.name)}"`,
                             `"${formatString(application.co_signer)}"`,
                             `"${formatString(application.status)}"`,
+                            `"${formatString(application.applicant_applied_from)}"`,
                             `"${formatDateOnly(application.date)}"`,
                             `"${formatString(application.stage_in_progress)}"`,
                             `"${formatString(application.notes)}"`,
-                            `"${formatString(application.attachment_name)}"`,
+                            application.attachments?.length || 0,
+                            `"${formatAttachments(application.attachments)}"`,
                         ].join(',');
                     } catch (rowError) {
                         console.error('Error processing application row:', application, rowError);
@@ -116,9 +137,10 @@ export default function Index({ applications, cities, properties, units }: Props
         property: '',
         unit: '',
         name: '',
+        applicant_applied_from: '',
     });
 
-    const handleSearch = (filters: { city: string; property: string; unit: string; name: string }) => {
+    const handleSearch = (filters: { city: string; property: string; unit: string; name: string; applicant_applied_from: string }) => {
         setSearchFilters(filters);
         router.get(route('applications.index'), filters, {
             preserveState: true,
@@ -132,6 +154,7 @@ export default function Index({ applications, cities, properties, units }: Props
             property: '',
             unit: '',
             name: '',
+            applicant_applied_from: '',
         };
         setSearchFilters(cleared);
         router.get(route('applications.index'), {}, { preserveState: false });

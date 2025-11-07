@@ -18,18 +18,29 @@ export interface UnitData {
     property_id: number;
 }
 
+// Attachment interface for structured file data
+export interface Attachment {
+    index: number;
+    name: string;
+    path: string;
+    url: string;
+    download_url: string;
+}
+
 // Main Application interface
 export interface Application {
     id: number;
     unit_id: number;
     name: string;
-    co_signer: string;
+    co_signer: string | null;
     status: string | null;
+    applicant_applied_from: string | null;
     date: string | null;
     stage_in_progress: string | null;
     notes: string | null;
-    attachment_name: string | null;
-    attachment_path: string | null;
+    attachment_name: string[] | null;
+    attachment_path: string[] | null;
+    attachments?: Attachment[];
     is_archived: boolean;
     created_at: string;
     updated_at: string;
@@ -70,10 +81,11 @@ export interface ApplicationFormData {
     name: string;
     co_signer: string;
     status: string;
+    applicant_applied_from: string;
     date: string;
     stage_in_progress: string;
     notes: string;
-    attachment?: File | null;
+    attachments?: File[] | null;
 }
 
 // For create/update requests that include validation helper fields
@@ -101,6 +113,7 @@ export interface ApplicationStatistics {
     total: number;
     status_counts: Record<string, number>;
     stage_counts: Record<string, number>;
+    applied_from_counts: Record<string, number>;
 }
 
 // Pagination interface
@@ -127,6 +140,7 @@ export interface ApplicationFilters {
     co_signer?: string;
     unit?: string;
     status?: string;
+    applicant_applied_from?: string;
     stage_in_progress?: string;
     date_from?: string;
     date_to?: string;
@@ -141,6 +155,7 @@ export interface ApplicationFiltersById {
     name?: string;
     co_signer?: string;
     status?: string;
+    applicant_applied_from?: string;
     stage_in_progress?: string;
     date_from?: string;
     date_to?: string;
@@ -153,6 +168,11 @@ export interface StatusOption {
 }
 
 export interface StageOption {
+    value: string;
+    label: string;
+}
+
+export interface AppliedFromOption {
     value: string;
     label: string;
 }
@@ -176,6 +196,12 @@ export const COMMON_STAGE_OPTIONS: StageOption[] = [
     { value: 'Lease Preparation', label: 'Lease Preparation' },
 ];
 
+// Applicant applied from options
+export const APPLIED_FROM_OPTIONS: AppliedFromOption[] = [
+    { value: 'buildium', label: 'Buildium' },
+    { value: 'Zillow', label: 'Zillow' },
+];
+
 // Type guards for runtime type checking
 export function isApplication(obj: any): obj is Application {
     return (
@@ -184,7 +210,7 @@ export function isApplication(obj: any): obj is Application {
         typeof obj.id === 'number' &&
         typeof obj.unit_id === 'number' &&
         typeof obj.name === 'string' &&
-        typeof obj.co_signer === 'string'
+        (typeof obj.co_signer === 'string' || obj.co_signer === null)
     );
 }
 
@@ -217,9 +243,21 @@ export function isUnitData(obj: any): obj is UnitData {
     );
 }
 
+export function isAttachment(obj: any): obj is Attachment {
+    return (
+        typeof obj === 'object' &&
+        obj !== null &&
+        typeof obj.index === 'number' &&
+        typeof obj.name === 'string' &&
+        typeof obj.path === 'string' &&
+        typeof obj.url === 'string' &&
+        typeof obj.download_url === 'string'
+    );
+}
+
 // Utility types for form handling
-export type ApplicationCreateData = Omit<ApplicationFormData, 'attachment'> & {
-    attachment?: File;
+export type ApplicationCreateData = Omit<ApplicationFormData, 'attachments'> & {
+    attachments?: File[];
 };
 
 export type ApplicationUpdateData = Partial<ApplicationCreateData>;
@@ -232,10 +270,12 @@ export interface ApplicationValidationErrors {
     name?: string;
     co_signer?: string;
     status?: string;
+    applicant_applied_from?: string;
     date?: string;
     stage_in_progress?: string;
     notes?: string;
-    attachment?: string;
+    attachments?: string;
+    'attachments.*'?: string;
 }
 
 // Props interfaces for components
@@ -266,3 +306,4 @@ export interface ApplicationShowProps {
 export type ApplicationSubmitHandler = (data: ApplicationFormData) => void;
 export type ApplicationDeleteHandler = (application: Application) => void;
 export type ApplicationFilterHandler = (filters: ApplicationFilters) => void;
+export type AttachmentDeleteHandler = (applicationId: number, attachmentIndex: number) => void;

@@ -1,61 +1,27 @@
-import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
+import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
+import { Application, CityData, PropertyData, UnitData } from '@/types/application';
 import { useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import React, { useEffect, useState } from 'react';
-import { CityPropertyUnitSelector } from './edit/CityPropertyUnitSelector';
 import { ApplicantInformationFields } from './edit/ApplicantInformationFields';
-import { StatusAndDateFields } from './edit/StatusAndDateFields';
-import { StageAndNotesFields } from './edit/StageAndNotesFields';
 import { AttachmentField } from './edit/AttachmentField';
+import { CityPropertyUnitSelector } from './edit/CityPropertyUnitSelector';
 import { CurrentSelectionDisplay } from './edit/CurrentSelectionDisplay';
-
-// Types for hierarchical data structure
-interface CityData {
-    id: number;
-    name: string;
-}
-
-interface PropertyData {
-    id: number;
-    name: string;
-    city_id: number;
-}
-
-interface UnitData {
-    id: number;
-    name: string;
-    property_id: number;
-}
-
-interface Application {
-    id: number;
-    name: string;
-    co_signer: string;
-    unit_id: number;
-    status: string | null;
-    date: string | null;
-    stage_in_progress: string | null;
-    notes: string | null;
-    attachment_name: string | null;
-    attachment_path: string | null;
-    // Display properties (added by controller)
-    city?: string;
-    property?: string;
-    unit_name?: string;
-    selected_city_id?: number;
-    selected_property_id?: number;
-}
+import { StageAndNotesFields } from './edit/StageAndNotesFields';
+import { StatusAndDateFields } from './edit/StatusAndDateFields';
 
 type ApplicationFormData = {
     unit_id: number | null;
     name: string;
     co_signer: string;
     status: string;
+    applicant_applied_from: string;
     date: string;
     stage_in_progress: string;
     notes: string;
-    attachment: File | null;
+    attachments: File[];
+    removed_attachment_indices?: number[];
 };
 
 interface Props {
@@ -74,7 +40,6 @@ export default function ApplicationEditDrawer({ application, cities, properties,
         property?: string;
         unit?: string;
         name?: string;
-        co_signer?: string;
         status?: string;
     }>({});
 
@@ -82,6 +47,8 @@ export default function ApplicationEditDrawer({ application, cities, properties,
     const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(application.selected_property_id || null);
     const [availableProperties, setAvailableProperties] = useState<PropertyData[]>([]);
     const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
+    const [removedAttachmentIndices, setRemovedAttachmentIndices] = useState<number[]>([]);
+    const [newAttachments, setNewAttachments] = useState<File[]>([]);
 
     // Safe date formatting function
     const formatDateForInput = (dateString: string | null | undefined): string => {
@@ -101,15 +68,17 @@ export default function ApplicationEditDrawer({ application, cities, properties,
         }
     };
 
-    const { data, setData, put, processing, errors } = useForm<ApplicationFormData>({
+    const { data, setData, post, processing, errors, transform } = useForm<ApplicationFormData>({
         unit_id: application.unit_id,
         name: application.name || '',
-        co_signer: application.co_signer || '',
+        co_signer: application.co_signer ?? '',
         status: application.status || 'New',
+        applicant_applied_from: application.applicant_applied_from ?? '',
         date: formatDateForInput(application.date),
         stage_in_progress: application.stage_in_progress || '',
         notes: application.notes || '',
-        attachment: null,
+        attachments: [],
+        removed_attachment_indices: [],
     });
 
     // Derive selected city and property from the record if not explicitly provided
@@ -147,6 +116,8 @@ export default function ApplicationEditDrawer({ application, cities, properties,
 
             setSelectedCityId(cityId);
             setSelectedPropertyId(propertyId);
+            setRemovedAttachmentIndices([]);
+            setNewAttachments([]);
 
             // Set available properties for the city
             if (cityId && properties[cityId]) {
@@ -166,12 +137,14 @@ export default function ApplicationEditDrawer({ application, cities, properties,
             setData({
                 unit_id: application.unit_id,
                 name: application.name || '',
-                co_signer: application.co_signer || '',
+                co_signer: application.co_signer ?? '',
                 status: application.status || 'New',
+                applicant_applied_from: application.applicant_applied_from ?? '',
                 date: formatDateForInput(application.date),
                 stage_in_progress: application.stage_in_progress || '',
                 notes: application.notes || '',
-                attachment: null,
+                attachments: [],
+                removed_attachment_indices: [],
             });
         }
     }, [application, open, properties, units]);
@@ -180,6 +153,8 @@ export default function ApplicationEditDrawer({ application, cities, properties,
     useEffect(() => {
         if (!open) {
             setValidationErrors({});
+            setRemovedAttachmentIndices([]);
+            setNewAttachments([]);
         }
     }, [open]);
 
@@ -221,6 +196,33 @@ export default function ApplicationEditDrawer({ application, cities, properties,
         setValidationErrors((prev) => ({ ...prev, unit: undefined }));
     };
 
+    const handleRemoveAttachment = (index: number) => {
+        if (!removedAttachmentIndices.includes(index)) {
+            const newRemovedIndices = [...removedAttachmentIndices, index];
+            setRemovedAttachmentIndices(newRemovedIndices);
+            setData('removed_attachment_indices', newRemovedIndices);
+        }
+    };
+
+    const handleUndoRemoveAttachment = (index: number) => {
+        const newRemovedIndices = removedAttachmentIndices.filter((i) => i !== index);
+        setRemovedAttachmentIndices(newRemovedIndices);
+        setData('removed_attachment_indices', newRemovedIndices);
+    };
+
+    const handleAddAttachments = (files: File[]) => {
+        // Combine new files with existing new attachments
+        const combinedFiles = [...newAttachments, ...files];
+        setNewAttachments(combinedFiles);
+        setData('attachments', combinedFiles);
+    };
+
+    const handleRemoveNewAttachment = (index: number) => {
+        const updatedFiles = newAttachments.filter((_, i) => i !== index);
+        setNewAttachments(updatedFiles);
+        setData('attachments', updatedFiles);
+    };
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -251,11 +253,6 @@ export default function ApplicationEditDrawer({ application, cities, properties,
             hasValidationErrors = true;
         }
 
-        if (!data.co_signer || data.co_signer.trim() === '') {
-            newValidationErrors.co_signer = 'Please enter a co-signer before submitting the form.';
-            hasValidationErrors = true;
-        }
-
         if (!data.status || data.status.trim() === '') {
             newValidationErrors.status = 'Please select a status before submitting the form.';
             hasValidationErrors = true;
@@ -266,19 +263,34 @@ export default function ApplicationEditDrawer({ application, cities, properties,
             return;
         }
 
-        put(route('applications.update', application.id), {
+        transform((payload) => ({
+            ...payload,
+            _method: 'put', // method spoofing
+        }));
+
+        // Use put method for UPDATE request
+        post(route('applications.update', application.id), {
+            forceFormData: true, // REQUIRED for files
             onSuccess: () => {
                 setValidationErrors({});
+                setNewAttachments([]);
+                setRemovedAttachmentIndices([]);
                 onOpenChange(false);
                 onSuccess?.();
             },
+            onError: () => console.error('Update failed'),
         });
     };
 
     const handleCancel = () => {
         setValidationErrors({});
+        setRemovedAttachmentIndices([]);
+        setNewAttachments([]);
         onOpenChange(false);
     };
+
+    // Filter out removed attachments for display
+    const visibleAttachments = (application.attachments || []).filter((_, index) => !removedAttachmentIndices.includes(index));
 
     return (
         <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
@@ -300,22 +312,21 @@ export default function ApplicationEditDrawer({ application, cities, properties,
                                 validationErrors={validationErrors}
                             />
 
-                            <CurrentSelectionDisplay
-                                city={application.city}
-                                property={application.property}
-                                unitName={application.unit_name}
-                            />
+                            <CurrentSelectionDisplay city={application.city} property={application.property} unitName={application.unit_name} />
 
                             <ApplicantInformationFields
                                 name={data.name}
                                 coSigner={data.co_signer}
+                                applicantAppliedFrom={data.applicant_applied_from}
                                 onNameChange={(name) => {
                                     setData('name', name);
                                     setValidationErrors((prev) => ({ ...prev, name: undefined }));
                                 }}
                                 onCoSignerChange={(coSigner) => {
                                     setData('co_signer', coSigner);
-                                    setValidationErrors((prev) => ({ ...prev, co_signer: undefined }));
+                                }}
+                                onApplicantAppliedFromChange={(value) => {
+                                    setData('applicant_applied_from', value);
                                 }}
                                 errors={errors}
                                 validationErrors={validationErrors}
@@ -342,9 +353,15 @@ export default function ApplicationEditDrawer({ application, cities, properties,
                             />
 
                             <AttachmentField
-                                currentAttachmentName={application.attachment_name}
-                                onAttachmentChange={(file) => setData('attachment', file)}
-                                error={errors.attachment}
+                                currentAttachments={visibleAttachments}
+                                allAttachments={application.attachments}
+                                removedAttachmentIndices={removedAttachmentIndices}
+                                newAttachments={newAttachments}
+                                onRemoveAttachment={handleRemoveAttachment}
+                                onUndoRemoveAttachment={handleUndoRemoveAttachment}
+                                onAddAttachments={handleAddAttachments}
+                                onRemoveNewAttachment={handleRemoveNewAttachment}
+                                errors={errors}
                             />
                         </form>
                     </div>

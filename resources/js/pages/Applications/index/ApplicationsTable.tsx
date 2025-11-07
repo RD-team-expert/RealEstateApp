@@ -1,4 +1,4 @@
-// resources/js/Pages/Applications/components/ApplicationsTable.tsx
+// resources/js/Pages/Applications/index/ApplicationsTable.tsx
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Application } from '@/types/application';
 import ApplicationsTableRow from './ApplicationsTableRow';
@@ -39,10 +39,11 @@ export default function ApplicationsTable({
                         <TableHead className="border border-border bg-muted text-muted-foreground">Name</TableHead>
                         <TableHead className="border border-border bg-muted text-muted-foreground">Co-signer</TableHead>
                         <TableHead className="border border-border bg-muted text-muted-foreground">Status</TableHead>
+                        <TableHead className="border border-border bg-muted text-muted-foreground">Applied From</TableHead>
                         <TableHead className="border border-border bg-muted text-muted-foreground">Date</TableHead>
                         <TableHead className="border border-border bg-muted text-muted-foreground">Stage</TableHead>
                         <TableHead className="border border-border bg-muted text-muted-foreground">Note</TableHead>
-                        <TableHead className="border border-border bg-muted text-muted-foreground">Attachment</TableHead>
+                        <TableHead className="border border-border bg-muted text-muted-foreground">Files</TableHead>
                         {hasAnyActionPermission && (
                             <TableHead className="border border-border bg-muted text-muted-foreground">Actions</TableHead>
                         )}
