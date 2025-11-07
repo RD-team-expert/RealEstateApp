@@ -22,8 +22,6 @@ use App\Http\Controllers\DashboardController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    // If you want to land on dashboard when authenticated, change to:
-    // return redirect()->route('dashboard');
     return redirect()->route('login');
 })->name('home');
 
@@ -46,8 +44,6 @@ Route::middleware(['auth'])->group(function () {
     // Notice & Evictions
     Route::resource('notice_and_evictions', NoticeAndEvictionController::class)->except(['create', 'edit']);
 
-
-
     /**
      * Applications filters
      */
@@ -63,7 +59,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/properties-by-city', [ApplicationController::class, 'getPropertiesByCity'])
         ->name('api.properties-by-city');
 
-    // Keep only ONE units-by-property helper route — choose the controller you actually use.
+    // Keep only ONE units-by-property helper route
     Route::get('/api/units-by-property', [TenantController::class, 'getUnitsByProperty'])
         ->name('api.units-by-property');
 
@@ -74,8 +70,6 @@ Route::middleware(['auth'])->group(function () {
         ->name('api.tenants.cities');
     Route::get('/api/tenants/properties', [TenantController::class, 'getPropertiesForAutocomplete'])
         ->name('api.tenants.properties');
-
-
 
     // Property Info Without Insurance
     Route::resource('all-properties', PropertyInfoWithoutInsuranceController::class);
@@ -97,23 +91,20 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('tenants', TenantController::class);
     Route::patch('/tenants/{tenant}/archive', [TenantController::class, 'archive'])
         ->name('tenants.archive')
-        ->middleware('permission:tenants.destroy'); // same perm as delete
+        ->middleware('permission:tenants.destroy');
+    
     /**
      * Additional tenant helper & import routes
      */
-    // Dynamic units-by-property (for forms or AJAX)
     Route::get('tenants/units-by-property', [TenantController::class, 'getUnitsByProperty'])
         ->name('tenants.units-by-property');
 
-    // Tenant import form (shows the upload page)
     Route::get('tenants/import/form', [TenantController::class, 'import'])
         ->name('tenants.import');
 
-    // Process tenant import (handles uploaded file)
     Route::post('tenants/import/process', [TenantController::class, 'processImport'])
         ->name('tenants.import.process');
 
-    // Download import template (Excel or CSV)
     Route::get('tenants/import/template', [TenantController::class, 'downloadTemplate'])
         ->name('tenants.import.template');
 
@@ -122,6 +113,12 @@ Route::middleware(['auth'])->group(function () {
 
     // Payments
     Route::resource('payments', PaymentController::class);
+    
+    // Payment hide/unhide actions - separate routes similar to archive pattern
+    Route::patch('/payments/{payment}/hide', [PaymentController::class, 'hide'])
+        ->name('payments.hide');
+    Route::patch('/payments/{payment}/unhide', [PaymentController::class, 'unhide'])
+        ->name('payments.unhide');
 
     // Vendor Task Tracker
     Route::resource('vendor-task-tracker', VendorTaskTrackerController::class);
@@ -146,13 +143,10 @@ Route::middleware(['auth'])->group(function () {
     // Notices
     Route::resource('notices', NoticeController::class);
 
-
-
     // Applications
     Route::resource('applications', ApplicationController::class);
     Route::get('/applications/{application}/download/{index}', [ApplicationController::class, 'downloadAttachment'])
         ->name('applications.download');
-
 
     // Vendors
     Route::resource('vendors', VendorInfoController::class);

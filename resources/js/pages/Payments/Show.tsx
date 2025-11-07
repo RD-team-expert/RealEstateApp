@@ -1,20 +1,45 @@
 import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
-import { Payment } from '@/types/payments';
+import { Payment, PaymentFilters } from '@/types/payments';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { usePermissions } from '@/hooks/usePermissions';
-import { MapPin, Home, Calendar, DollarSign, FileText, AlertCircle, User, Clock } from 'lucide-react';
+import { MapPin, Home, Calendar, DollarSign, FileText, AlertCircle, User, Clock, EyeOff } from 'lucide-react';
 
 interface Props {
     payment: Payment;
+    prevPaymentId?: number | null;
+    nextPaymentId?: number | null;
+    filters?: PaymentFilters;
 }
 
-export default function Show({ payment }: Props) {
-    const {  hasAnyPermission } = usePermissions();
+export default function Show({ payment, prevPaymentId, nextPaymentId, filters }: Props) {
+
+    const buildShowRoute = (id: number) => {
+        const query: Record<string, any> = { payment: id };
+        if (filters) {
+            if (filters.city) query.city = filters.city;
+            if (filters.property) query.property = filters.property;
+            if (filters.unit) query.unit = filters.unit;
+            if (filters.permanent && filters.permanent.length > 0) query.permanent = filters.permanent.join(',');
+            if (typeof filters.is_hidden === 'boolean') query.is_hidden = filters.is_hidden ? 'true' : 'false';
+        }
+        return route('payments.show', query);
+    };
+
+    const buildIndexRoute = () => {
+        const query: Record<string, any> = {};
+        if (filters) {
+            if (filters.city) query.city = filters.city;
+            if (filters.property) query.property = filters.property;
+            if (filters.unit) query.unit = filters.unit;
+            if (filters.permanent && filters.permanent.length > 0) query.permanent = filters.permanent.join(',');
+            if (filters.is_hidden === true) query.is_hidden = 'true';
+        }
+        return route('payments.index', query);
+    };
 
     const formatCurrency = (amount: number | null) => {
         if (amount === null) return 'N/A';
@@ -41,15 +66,41 @@ export default function Show({ payment }: Props) {
         );
     };
 
-    const getYesNoBadge = (value: 'Yes' | 'No' | string | null) => {
-        if (value === null || value === '') return <Badge variant="outline" className="text-xs">N/A</Badge>;
-        const isYes = String(value).toLowerCase() === 'yes';
+    const getYesNoBadge = (
+        value: 'Yes' | 'No' | string | number | boolean | null
+    ) => {
+        if (value === null || value === '') {
+            return <Badge variant="outline" className="text-xs">N/A</Badge>;
+        }
+
+        let isYes = false;
+        let isNo = false;
+
+        if (typeof value === 'number') {
+            isYes = value === 1;
+            isNo = value === 0;
+        } else if (typeof value === 'boolean') {
+            isYes = value === true;
+            isNo = value === false;
+        } else {
+            const lowered = String(value).trim().toLowerCase();
+            isYes = lowered === 'yes' || lowered === '1' || lowered === 'true';
+            isNo = lowered === 'no' || lowered === '0' || lowered === 'false';
+        }
+
+        const displayText = isYes ? 'Yes' : isNo ? 'No' : String(value);
+        const isAffirmative = isYes;
+
         return (
-            <Badge 
-                variant={isYes ? 'default' : 'secondary'} 
-                className={`text-xs ${isYes ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}
+            <Badge
+                variant={isAffirmative ? 'default' : 'secondary'}
+                className={`text-xs ${
+                    isAffirmative
+                        ? 'bg-green-100 text-green-800 border-green-200'
+                        : 'bg-gray-100 text-gray-600 border-gray-200'
+                }`}
             >
-                {value}
+                {displayText}
             </Badge>
         );
     };
@@ -96,14 +147,33 @@ export default function Show({ payment }: Props) {
                                 </div>
                             </div>
                             <div className="flex gap-3">
-                                {hasAnyPermission(['payments.edit','payments.update']) && (
-                                    <Link href={route('payments.edit', payment.id)}>
-                                        <Button className="bg-blue-600 hover:bg-blue-700">Edit Payment</Button>
-                                    </Link>
-                                )}
-                                <Link href={route('payments.index')}>
+                                <Link href={buildIndexRoute()}>
                                     <Button variant="outline">Back to List</Button>
                                 </Link>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        disabled={!prevPaymentId}
+                                        asChild
+                                    >
+                                        {prevPaymentId ? (
+                                            <Link href={buildShowRoute(prevPaymentId)}>Previous</Link>
+                                        ) : (
+                                            <span>Previous</span>
+                                        )}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        disabled={!nextPaymentId}
+                                        asChild
+                                    >
+                                        {nextPaymentId ? (
+                                            <Link href={buildShowRoute(nextPaymentId)}>Next</Link>
+                                        ) : (
+                                            <span>Next</span>
+                                        )}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -149,7 +219,7 @@ export default function Show({ payment }: Props) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg border border-red-200">
                                     <div className="flex items-center gap-2 mb-2">
                                         <AlertCircle className="h-4 w-4 text-red-600" />
@@ -177,6 +247,15 @@ export default function Show({ payment }: Props) {
                                         {formatCurrency(payment.left_to_pay)}
                                     </p>
                                 </div>
+                                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 rounded-lg border border-gray-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <FileText className="h-4 w-4 text-gray-600" />
+                                        <p className="text-sm font-medium text-gray-800">Status</p>
+                                    </div>
+                                    <div className="text-lg font-bold">
+                                        {getStatusBadge(payment.status)}
+                                    </div>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -199,9 +278,9 @@ export default function Show({ payment }: Props) {
                                         value={formatDate(payment.date)}
                                     />
                                     <InfoItem
-                                        icon={FileText}
-                                        label="Status"
-                                        value={getStatusBadge(payment.status)}
+                                        icon={EyeOff}
+                                        label="Hidden"
+                                        value={getYesNoBadge(payment.is_hidden as any)}
                                     />
                                     {payment.reversed_payments && (
                                         <InfoItem
@@ -214,30 +293,30 @@ export default function Show({ payment }: Props) {
                             </CardContent>
                         </Card>
 
-                        {/* Payment Details */}
+                        {/* Assistance */}
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-lg">
-                                    <DollarSign className="h-5 w-5" />
-                                    Payment Details
+                                    <FileText className="h-5 w-5" />
+                                    Assistance
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="space-y-3">
                                     <InfoItem
-                                        icon={DollarSign}
-                                        label="Owes"
-                                        value={formatCurrency(payment.owes)}
+                                        icon={FileText}
+                                        label="Has Assistance"
+                                        value={getYesNoBadge(payment.has_assistance as any)}
                                     />
                                     <InfoItem
                                         icon={DollarSign}
-                                        label="Paid"
-                                        value={formatCurrency(payment.paid)}
+                                        label="Assistance Amount"
+                                        value={formatCurrency(payment.assistance_amount as any)}
                                     />
                                     <InfoItem
-                                        icon={DollarSign}
-                                        label="Left to Pay"
-                                        value={formatCurrency(payment.left_to_pay)}
+                                        icon={User}
+                                        label="Assistance Company"
+                                        value={payment.assistance_company || 'N/A'}
                                     />
                                 </div>
                             </CardContent>

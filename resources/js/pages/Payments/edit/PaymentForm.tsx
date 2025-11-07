@@ -7,7 +7,6 @@ import OwesField from './OwesField';
 import PaidField from './PaidField';
 import AssistanceField from './AssistanceField';
 import PermanentField from './PermanentField';
-import HiddenField from './HiddenField';
 import ReversedPaymentsField from './ReversedPaymentsField';
 import NotesField from './NotesField';
 import DebugInfo from './DebugInfo';
@@ -139,11 +138,6 @@ export default function PaymentForm({
                 data={data}
                 setData={setData}
                 errors={errors}
-            />
-
-            <HiddenField
-                data={data}
-                setData={setData}
             />
 
             <ReversedPaymentsField

@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import React from 'react';
 import FilterDropdown from './FilterDropdown';
-import StatusFilter from './StatusFilter';
 import PermanentFilter from './PermanentFilter';
 import HiddenFilter from './HiddenFilter';
 
@@ -20,19 +19,16 @@ interface FilterSectionProps {
     cityFilter: string;
     propertyFilter: string;
     unitFilter: string;
-    statusFilter: string[];
     permanentFilter: string[];
     isHiddenFilter: boolean;
     setCityFilter: (value: string) => void;
     setPropertyFilter: (value: string) => void;
     setUnitFilter: (value: string) => void;
-    setStatusFilter: (value: string[]) => void;
     setPermanentFilter: (value: string[]) => void;
     setIsHiddenFilter: (value: boolean) => void;
     uniqueCities: string[];
     uniqueProperties: string[];
     units: UnitData[];
-    propertiesByCity: Record<string, string[]>;
     onSearch: (e: React.FormEvent) => void;
     onClear: () => void;
 }
@@ -42,41 +38,27 @@ export default function FilterSection({
     cityFilter,
     propertyFilter,
     unitFilter,
-    statusFilter,
     permanentFilter,
     isHiddenFilter,
     setCityFilter,
     setPropertyFilter,
     setUnitFilter,
-    setStatusFilter,
     setPermanentFilter,
     setIsHiddenFilter,
     uniqueCities,
     uniqueProperties,
     units,
-    propertiesByCity,
     onSearch,
     onClear
 }: FilterSectionProps) {
     const getFilteredProperties = (): string[] => {
-        if (!cityFilter) {
-            return uniqueProperties;
-        }
-        return propertiesByCity[cityFilter] || [];
+        // Properties should be independent of city selection
+        return uniqueProperties;
     };
 
     const getFilteredUnits = (): string[] => {
-        let filteredUnits = units;
-
-        if (cityFilter) {
-            filteredUnits = filteredUnits.filter(unit => unit.city === cityFilter);
-        }
-
-        if (propertyFilter) {
-            filteredUnits = filteredUnits.filter(unit => unit.property_name === propertyFilter);
-        }
-
-        return [...new Set(filteredUnits.map(unit => unit.unit_name))].sort();
+        // Units should be independent of city and property selection
+        return [...new Set(units.map(unit => unit.unit_name))].sort();
     };
 
     return (
@@ -102,11 +84,6 @@ export default function FilterSection({
                         onChange={setUnitFilter}
                         placeholder="Filter by unit..."
                         options={getFilteredUnits()}
-                    />
-
-                    <StatusFilter
-                        value={statusFilter}
-                        onChange={setStatusFilter}
                     />
 
                     <PermanentFilter

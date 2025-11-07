@@ -9,7 +9,6 @@ import { UnitField } from './create/UnitField';
 import { FinancialFields } from './create/FinancialFields';
 import { AssistanceFields } from './create/AssistanceFields';
 import { PermanentField } from './create/PermanentField';
-import { HiddenField } from './create/HiddenField';
 import { ReversedPaymentsField } from './create/ReversedPaymentsField';
 import { NotesField } from './create/NotesField';
 import { DebugInfo } from './create/DebugInfo';
@@ -33,6 +32,15 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    filtersContext?: {
+        city?: string;
+        property?: string;
+        unit?: string;
+        permanent?: string[];
+        is_hidden?: boolean;
+        per_page?: string;
+        page?: number;
+    };
 }
 
 
@@ -43,7 +51,8 @@ export default function PaymentCreateDrawer({
     propertiesByCity,
     open, 
     onOpenChange, 
-    onSuccess 
+    onSuccess,
+    filtersContext
 }: Props) {
     const [validationError, setValidationError] = useState<string>('');
     const [propertyValidationError, setPropertyValidationError] = useState<string>('');
@@ -56,7 +65,7 @@ export default function PaymentCreateDrawer({
     const [selectedProperty, setSelectedProperty] = useState<string>('');
     const [selectedUnit, setSelectedUnit] = useState<string>('');
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, transform } = useForm({
         date: '',
         unit_id: '',
         owes: '',
@@ -68,7 +77,6 @@ export default function PaymentCreateDrawer({
         has_assistance: false as boolean,
         assistance_amount: '',
         assistance_company: '',
-        is_hidden: false as boolean,
     });
 
     const getAvailableProperties = (): string[] => {
@@ -192,7 +200,22 @@ export default function PaymentCreateDrawer({
             return;
         }
 
+        // Namespace filter context to avoid colliding with form field names
+        const params: any = {};
+        if (filtersContext?.city) params.filter_city = filtersContext.city;
+        if (filtersContext?.property) params.filter_property = filtersContext.property;
+        if (filtersContext?.unit) params.filter_unit = filtersContext.unit;
+        if (filtersContext?.permanent && filtersContext.permanent.length > 0) {
+            params.filter_permanent = filtersContext.permanent.join(',');
+        }
+        if (filtersContext?.is_hidden) params.filter_is_hidden = 'true';
+        if (filtersContext?.per_page) params.filter_per_page = filtersContext.per_page;
+        if (filtersContext?.page) params.filter_page = filtersContext.page;
+
+        transform((formData) => ({ ...formData, ...params }));
         post(route('payments.store'), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 reset();
                 setSelectedCity('');
@@ -295,11 +318,6 @@ export default function PaymentCreateDrawer({
                                 permanent={data.permanent}
                                 onPermanentChange={(value) => setData('permanent', value as 'Yes' | 'No')}
                                 error={errors.permanent}
-                            />
-
-                            <HiddenField
-                                isHidden={data.is_hidden}
-                                onHiddenChange={(value) => setData('is_hidden', value)}
                             />
 
                             <ReversedPaymentsField

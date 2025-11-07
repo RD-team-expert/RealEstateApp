@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ChevronsUpDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface UnitFieldProps {
     selectedUnit: string;
@@ -19,6 +23,8 @@ export default function UnitField({
     unitNameRef,
     unitValidationError,
 }: UnitFieldProps) {
+    const [openUnit, setOpenUnit] = useState(false);
+
     return (
         <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
             <div className="mb-2">
@@ -26,22 +32,44 @@ export default function UnitField({
                     Unit Name *
                 </Label>
             </div>
-            <Select 
-                onValueChange={handleUnitChange} 
-                value={selectedUnit || undefined} 
-                disabled={!selectedCity}
-            >
-                <SelectTrigger ref={unitNameRef}>
-                    <SelectValue placeholder={!selectedCity ? 'Select city first' : 'Select unit'} />
-                </SelectTrigger>
-                <SelectContent>
-                    {getAvailableUnits().map((unit) => (
-                        <SelectItem key={unit} value={unit}>
-                            {unit}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            <Popover open={openUnit} onOpenChange={setOpenUnit}>
+                <PopoverTrigger asChild>
+                    <Button
+                        ref={unitNameRef as React.RefObject<HTMLButtonElement>}
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openUnit}
+                        className="w-full justify-between"
+                        disabled={!selectedCity}
+                    >
+                        {selectedUnit || (selectedCity ? 'Select unit...' : 'Select city first')}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                    <Command>
+                        <CommandInput placeholder="Search unit..." />
+                        <CommandEmpty>No unit found.</CommandEmpty>
+                        <CommandList>
+                            <CommandGroup>
+                                {getAvailableUnits().map((unit) => (
+                                    <CommandItem
+                                        key={unit}
+                                        value={unit}
+                                        onSelect={() => {
+                                            handleUnitChange(unit);
+                                            setOpenUnit(false);
+                                        }}
+                                    >
+                                        <Check className={cn('mr-2 h-4 w-4', selectedUnit === unit ? 'opacity-100' : 'opacity-0')} />
+                                        {unit}
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
             {unitValidationError && <p className="mt-1 text-sm text-red-600">{unitValidationError}</p>}
         </div>
     );

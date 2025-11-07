@@ -25,11 +25,15 @@ export interface Payment {
     assistance_amount: number | null;
     assistance_company: string | null;
     
+    // Visibility field - managed only via separate hide/unhide actions
+    is_hidden: boolean;
+    
     // Audit fields
     is_archived: boolean;
     created_at: string;
     updated_at: string;
 }
+
 
 export interface PaymentFormData {
     // Form fields that map to database
@@ -46,6 +50,7 @@ export interface PaymentFormData {
     [key: string]: any;
 }
 
+
 export interface PaymentCreateFormData {
     // Required fields for creation
     date: string;
@@ -57,7 +62,11 @@ export interface PaymentCreateFormData {
     paid?: string;
     notes?: string;
     reversed_payments?: string;
+    
+    // NOTE: is_hidden is NOT included - it's managed via separate hide/unhide actions
+    // Auto-set to true when status becomes 'Paid' or 'Overpaid'
 }
+
 
 export interface PaymentUpdateFormData extends Partial<PaymentCreateFormData> {
     // At least one field must be provided for updates
@@ -68,7 +77,22 @@ export interface PaymentUpdateFormData extends Partial<PaymentCreateFormData> {
     notes?: string;
     reversed_payments?: string;
     permanent?: 'Yes' | 'No';
+    
+    // NOTE: is_hidden is NOT included - it's managed via separate hide/unhide actions
 }
+
+
+export interface PaymentHideActionData {
+    // Used for PATCH /payments/{payment}/hide
+    // Body is empty - only sets is_hidden to true
+}
+
+
+export interface PaymentUnhideActionData {
+    // Used for PATCH /payments/{payment}/unhide
+    // Body is empty - only sets is_hidden to false
+}
+
 
 export interface UnitData {
     // Database fields
@@ -99,6 +123,7 @@ export interface UnitData {
     is_archived?: boolean;
 }
 
+
 export interface PropertyData {
     id: number;
     city_id: number | null;
@@ -109,11 +134,13 @@ export interface PropertyData {
     city?: string;
 }
 
+
 export interface CityData {
     id: number;
     city: string;
     is_archived: boolean;
 }
+
 
 // Utility types for different contexts
 export interface PaymentDisplayData extends Payment {
@@ -124,25 +151,31 @@ export interface PaymentDisplayData extends Payment {
     formatted_date?: string;
 }
 
+
 export interface PaymentFilters {
     city?: string;
     property?: string;
     unit?: string;
-    status?: string;
+    status?: string[];
+    permanent?: string[];
+    is_hidden?: boolean;
     date_from?: string;
     date_to?: string;
     search?: string;
 }
+
 
 export interface PaymentStatistics {
     total: number;
     paid: number;
     didnt_pay: number;
     paid_partly: number;
-    total_owes: number;
-    total_paid: number;
-    total_left_to_pay: number;
+    overpaid: number;
+    total_owes?: number;
+    total_paid?: number;
+    total_left_to_pay?: number;
 }
+
 
 // Dropdown data structures
 export interface DropdownData {
@@ -153,6 +186,7 @@ export interface DropdownData {
     propertiesByCity: Record<string, string[]>;
     units: UnitData[];
 }
+
 
 // API Response structures
 export interface PaymentsPaginatedResponse {
@@ -172,10 +206,12 @@ export interface PaymentsPaginatedResponse {
     };
 }
 
+
 export interface PaymentApiResponse {
     payment: Payment;
     message?: string;
 }
+
 
 // Form validation types
 export interface PaymentValidationErrors {
@@ -188,6 +224,7 @@ export interface PaymentValidationErrors {
     permanent?: string;
 }
 
+
 // Component prop types
 export interface PaymentComponentProps {
     payments: PaymentsPaginatedResponse;
@@ -196,6 +233,7 @@ export interface PaymentComponentProps {
     dropdownData: DropdownData;
     statistics?: PaymentStatistics;
 }
+
 
 export interface PaymentDrawerProps {
     open: boolean;
@@ -209,13 +247,39 @@ export interface PaymentDrawerProps {
     propertiesByCity: Record<string, string[]>;
 }
 
+
 export interface PaymentCreateDrawerProps extends PaymentDrawerProps {
     // No additional props needed for create
 }
 
+
 export interface PaymentEditDrawerProps extends PaymentDrawerProps {
     payment: Payment;
 }
+
+
+export interface PaymentTableProps {
+    payments: Payment[];
+    onEdit: (payment: Payment) => void;
+    onDelete: (payment: Payment) => void;
+    onHide: (payment: Payment) => void;
+    onUnhide: (payment: Payment) => void;
+    hasAnyPermission: (permissions: string[]) => boolean;
+    hasAllPermissions: (permissions: string[]) => boolean;
+    hasPermission: (permission: string) => boolean;
+}
+
+
+export interface PaymentActionsProps {
+    payment: Payment;
+    onEdit: (payment: Payment) => void;
+    onDelete: (payment: Payment) => void;
+    onHide: (payment: Payment) => void;
+    onUnhide: (payment: Payment) => void;
+    hasPermission: (permission: string) => boolean;
+    hasAllPermissions: (permissions: string[]) => boolean;
+}
+
 
 // Type guards
 export const isValidPayment = (obj: any): obj is Payment => {
@@ -227,9 +291,11 @@ export const isValidPayment = (obj: any): obj is Payment => {
         typeof obj.city === 'string' &&
         typeof obj.unit_name === 'string' &&
         typeof obj.owes === 'number' &&
+        typeof obj.is_hidden === 'boolean' &&
         (obj.permanent === 'Yes' || obj.permanent === 'No')
     );
 };
+
 
 export const isValidUnitData = (obj: any): obj is UnitData => {
     return (
@@ -242,6 +308,22 @@ export const isValidUnitData = (obj: any): obj is UnitData => {
     );
 };
 
+
+export const isPaymentHidden = (payment: Payment): boolean => {
+    return payment.is_hidden === true;
+};
+
+
+export const isPaymentVisible = (payment: Payment): boolean => {
+    return payment.is_hidden === false;
+};
+
+
+export const isPaidOrOverpaid = (payment: Payment): boolean => {
+    return payment.status === 'Paid' || payment.status === 'Overpaid';
+};
+
+
 // Utility type transformations
 export type OptionalNullable<T> = {
     [K in keyof T as null extends T[K] ? K : never]?: Exclude<T[K], null>;
@@ -249,14 +331,40 @@ export type OptionalNullable<T> = {
     [K in keyof T as null extends T[K] ? never : K]: T[K];
 };
 
+
 export type RequiredFields<T, K extends keyof T> = T & Required<Pick<T, K>>;
+
 
 export type PaymentWithRequiredUnit = RequiredFields<Payment, 'unit_id'>;
 
+
+export type HiddenPayment = Payment & { is_hidden: true };
+
+
+export type VisiblePayment = Payment & { is_hidden: false };
+
+
+export type PaidPayment = Payment & { status: 'Paid' | 'Overpaid'; is_hidden: true };
+
+
 // Export commonly used type combinations
 export type PaymentFormSubmission = PaymentCreateFormData | PaymentUpdateFormData;
+
+
 export type PaymentWithRelations = Payment & {
     unit?: UnitData;
     property?: PropertyData;
     city_data?: CityData;
 };
+
+
+// Action types for hide/unhide operations
+export type PaymentVisibilityAction = 'hide' | 'unhide';
+
+
+export interface PaymentVisibilityChange {
+    paymentId: number;
+    action: PaymentVisibilityAction;
+    previousState: boolean;
+    newState: boolean;
+}

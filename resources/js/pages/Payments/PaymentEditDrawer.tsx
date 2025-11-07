@@ -27,7 +27,6 @@ interface PaymentFormData {
     has_assistance: boolean;
     assistance_amount: string;
     assistance_company: string;
-    is_hidden: boolean;
     [key: string]: any;
 }
 
@@ -43,6 +42,15 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    filtersContext?: {
+        city?: string;
+        property?: string;
+        unit?: string;
+        permanent?: string[];
+        is_hidden?: boolean;
+        per_page?: string;
+        page?: number;
+    };
 }
 
 
@@ -54,7 +62,8 @@ export default function PaymentEditDrawer({
     propertiesByCity,
     open, 
     onOpenChange, 
-    onSuccess 
+    onSuccess,
+    filtersContext
 }: Props) {
     const cityRef = useRef<HTMLButtonElement>(null!);
     const propertyRef = useRef<HTMLButtonElement>(null!);
@@ -73,7 +82,7 @@ export default function PaymentEditDrawer({
     const [selectedProperty, setSelectedProperty] = useState<string>('');
     const [selectedUnit, setSelectedUnit] = useState<string>('');
 
-    const { data, setData, put, processing, errors } = useForm<PaymentFormData>({
+    const { data, setData, put, processing, errors, transform } = useForm<PaymentFormData>({
         date: '',
         unit_id: '',
         owes: '',
@@ -85,7 +94,6 @@ export default function PaymentEditDrawer({
         has_assistance: false,
         assistance_amount: '',
         assistance_company: '',
-        is_hidden: false,
     });
 
     useEffect(() => {
@@ -102,7 +110,6 @@ export default function PaymentEditDrawer({
             has_assistance: (payment as any).has_assistance ?? false,
             assistance_amount: (payment as any).assistance_amount?.toString() ?? '',
             assistance_company: (payment as any).assistance_company ?? '',
-            is_hidden: (payment as any).is_hidden ?? false,
         });
 
         setSelectedCity(payment.city ?? '');
@@ -269,7 +276,22 @@ export default function PaymentEditDrawer({
             return;
         }
 
+        // Namespace filter context to avoid colliding with form field names
+        const params: any = {};
+        if (filtersContext?.city) params.filter_city = filtersContext.city;
+        if (filtersContext?.property) params.filter_property = filtersContext.property;
+        if (filtersContext?.unit) params.filter_unit = filtersContext.unit;
+        if (filtersContext?.permanent && filtersContext.permanent.length > 0) {
+            params.filter_permanent = filtersContext.permanent.join(',');
+        }
+        if (filtersContext?.is_hidden) params.filter_is_hidden = 'true';
+        if (filtersContext?.per_page) params.filter_per_page = filtersContext.per_page;
+        if (filtersContext?.page) params.filter_page = filtersContext.page;
+
+        transform((formData) => ({ ...formData, ...params }));
         put(route('payments.update', payment.id), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 clearValidationErrors();
                 onOpenChange(false);
@@ -295,7 +317,6 @@ export default function PaymentEditDrawer({
             has_assistance: (payment as any).has_assistance ?? false,
             assistance_amount: (payment as any).assistance_amount?.toString() ?? '',
             assistance_company: (payment as any).assistance_company ?? '',
-            is_hidden: (payment as any).is_hidden ?? false,
         });
 
         setSelectedCity(payment.city ?? '');

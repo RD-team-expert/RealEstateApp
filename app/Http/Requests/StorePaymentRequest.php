@@ -1,12 +1,9 @@
 <?php
 
-
 namespace App\Http\Requests;
-
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-
 
 class StorePaymentRequest extends FormRequest
 {
@@ -14,7 +11,6 @@ class StorePaymentRequest extends FormRequest
     {
         return true;
     }
-
 
     public function rules(): array
     {
@@ -37,10 +33,8 @@ class StorePaymentRequest extends FormRequest
             'has_assistance' => ['nullable', 'boolean'],
             'assistance_amount' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'assistance_company' => ['nullable', 'string', 'max:255'],
-            'is_hidden' => ['nullable', 'boolean'],
         ];
     }
-
 
     public function messages(): array
     {
@@ -65,7 +59,6 @@ class StorePaymentRequest extends FormRequest
             'assistance_company.max' => 'The assistance company cannot exceed 255 characters.',
         ];
     }
-
 
     /**
      * Prepare the data for validation.

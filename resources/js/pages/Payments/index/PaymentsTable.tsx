@@ -1,28 +1,30 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Payment } from '@/types/payments';
+import { Payment, PaymentFilters } from '@/types/payments';
 import PaymentRow from './PaymentRow';
-
 
 interface PaymentsTableProps {
     payments: Payment[];
     onEdit: (payment: Payment) => void;
     onDelete: (payment: Payment) => void;
     onHide: (payment: Payment) => void;
+    onUnhide: (payment: Payment) => void;
     hasAnyPermission: (permissions: string[]) => boolean;
     hasAllPermissions: (permissions: string[]) => boolean;
     hasPermission: (permission: string) => boolean;
+    filters?: PaymentFilters;
 }
-
 
 export default function PaymentsTable({
     payments,
     onEdit,
     onDelete,
     onHide,
+    onUnhide,
     hasAnyPermission,
     hasAllPermissions,
-    hasPermission
+    hasPermission,
+    filters
 }: PaymentsTableProps) {
     const showActions = hasAnyPermission(['payments.show', 'payments.edit', 'payments.update', 'payments.destroy', 'payments.hide']);
 
@@ -44,7 +46,9 @@ export default function PaymentsTable({
                                 <TableHead className="border border-border bg-muted text-muted-foreground">Note</TableHead>
                                 <TableHead className="border border-border bg-muted text-muted-foreground">Reversed Payments</TableHead>
                                 <TableHead className="border border-border bg-muted text-muted-foreground">Permanent</TableHead>
-                                <TableHead className="border border-border bg-muted text-muted-foreground">Assistance</TableHead>
+                                <TableHead className="border border-border bg-muted text-muted-foreground">Has Assistance</TableHead>
+                                <TableHead className="border border-border bg-muted text-muted-foreground">Assistance Amount</TableHead>
+                                <TableHead className="border border-border bg-muted text-muted-foreground">Assistance Company</TableHead>
                                 {showActions && (
                                     <TableHead className="border border-border bg-muted text-muted-foreground">Actions</TableHead>
                                 )}
@@ -58,9 +62,11 @@ export default function PaymentsTable({
                                     onEdit={onEdit}
                                     onDelete={onDelete}
                                     onHide={onHide}
+                                    onUnhide={onUnhide}
                                     showActions={showActions}
                                     hasPermission={hasPermission}
                                     hasAllPermissions={hasAllPermissions}
+                                    filters={filters}
                                 />
                             ))}
                         </TableBody>

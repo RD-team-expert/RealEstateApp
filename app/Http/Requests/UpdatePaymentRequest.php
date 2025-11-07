@@ -1,12 +1,9 @@
 <?php
 
-
 namespace App\Http\Requests;
-
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-
 
 class UpdatePaymentRequest extends FormRequest
 {
@@ -14,7 +11,6 @@ class UpdatePaymentRequest extends FormRequest
     {
         return true;
     }
-
 
     public function rules(): array
     {
@@ -38,10 +34,8 @@ class UpdatePaymentRequest extends FormRequest
             'has_assistance' => ['sometimes', 'nullable', 'boolean'],
             'assistance_amount' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:999999.99'],
             'assistance_company' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'is_hidden' => ['sometimes', 'nullable', 'boolean'],
         ];
     }
-
 
     public function messages(): array
     {
@@ -67,7 +61,6 @@ class UpdatePaymentRequest extends FormRequest
         ];
     }
 
-
     /**
      * Prepare the data for validation.
      */
@@ -88,7 +81,6 @@ class UpdatePaymentRequest extends FormRequest
             $this->merge(['assistance_company' => null]);
         }
     }
-
 
     /**
      * Configure the validator instance.

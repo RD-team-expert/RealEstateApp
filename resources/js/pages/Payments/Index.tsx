@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Payment } from '@/types/payments';
@@ -12,7 +12,7 @@ import EmptyState from './index/EmptyState';
 import PaymentCreateDrawer from './PaymentCreateDrawer';
 import PaymentEditDrawer from './PaymentEditDrawer';
 import { exportToCSV } from './index/paymentUtils';
-
+import PaginationControls from './index/PaginationControls';
 
 interface UnitData {
     id: number;
@@ -21,7 +21,6 @@ interface UnitData {
     city: string;
 }
 
-
 interface Statistics {
     total: number;
     paid: number;
@@ -29,7 +28,6 @@ interface Statistics {
     paid_partly: number;
     overpaid: number;
 }
-
 
 interface Props {
     payments: {
@@ -42,9 +40,9 @@ interface Props {
         city?: string;
         property?: string;
         unit?: string;
-        status?: string[];
         permanent?: string[];
         is_hidden?: boolean;
+        per_page?: string;
     };
     units: UnitData[];
     cities: string[];
@@ -57,17 +55,16 @@ interface Props {
     statistics: Statistics;
 }
 
-
-export default function Index({ 
-    payments, 
-    filters, 
-    units, 
-    cities, 
+export default function Index({
+    payments,
+    filters,
+    units,
+    cities,
     properties,
-    unitsByCity, 
+    unitsByCity,
     unitsByProperty,
     propertiesByCity,
-    allCities, 
+    allCities,
     allProperties,
     statistics
 }: Props) {
@@ -77,17 +74,21 @@ export default function Index({
     const [editDrawerOpen, setEditDrawerOpen] = useState(false);
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
-
     // Location filters
     const [cityFilter, setCityFilter] = useState(filters?.city || '');
     const [propertyFilter, setPropertyFilter] = useState(filters?.property || '');
     const [unitFilter, setUnitFilter] = useState(filters?.unit || '');
 
     // Status and other filters
-    const [statusFilter, setStatusFilter] = useState<string[]>(filters?.status || []);
     const [permanentFilter, setPermanentFilter] = useState<string[]>(filters?.permanent || []);
     const [isHiddenFilter, setIsHiddenFilter] = useState<boolean>(filters?.is_hidden || false);
 
+    // Shared per-page state for pagination and search
+    const [perPage, setPerPage] = useState<string>(filters?.per_page || '15');
+    useEffect(() => {
+        // Sync local perPage when server-provided filters change
+        setPerPage(filters?.per_page || '15');
+    }, [filters?.per_page]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -96,56 +97,103 @@ export default function Index({
         if (cityFilter) params.city = cityFilter;
         if (propertyFilter) params.property = propertyFilter;
         if (unitFilter) params.unit = unitFilter;
-        if (statusFilter && statusFilter.length > 0) params.status = statusFilter.join(',');
         if (permanentFilter && permanentFilter.length > 0) params.permanent = permanentFilter.join(',');
         if (isHiddenFilter) params.is_hidden = 'true';
 
-        router.get(route('payments.index'), params, { 
+        // Ensure current per-page is respected and reset to first page
+        params.per_page = perPage;
+        params.page = 1;
+
+        router.get(route('payments.index'), params, {
             preserveState: true,
-            preserveScroll: true 
+            preserveScroll: true
         });
     };
-
 
     const clearFilters = () => {
         setCityFilter('');
         setPropertyFilter('');
         setUnitFilter('');
-        setStatusFilter([]);
         setPermanentFilter([]);
         setIsHiddenFilter(false);
-        
-        router.get(route('payments.index'), {}, { 
+        // Reset per_page to 15 and page to 1 when clearing filters
+        setPerPage('15');
+        router.get(route('payments.index'), { per_page: '15', page: 1 }, {
             preserveState: true,
-            preserveScroll: true 
+            preserveScroll: true
         });
     };
 
-
     const handleDelete = (payment: Payment) => {
         if (confirm('Are you sure you want to delete this payment?')) {
-            router.delete(route('payments.destroy', payment.id));
+            const params: any = {};
+            if (cityFilter) params.city = cityFilter;
+            if (propertyFilter) params.property = propertyFilter;
+            if (unitFilter) params.unit = unitFilter;
+            if (permanentFilter && permanentFilter.length > 0) params.permanent = permanentFilter.join(',');
+            if (isHiddenFilter) params.is_hidden = 'true';
+            params.per_page = perPage;
+            params.page = payments?.meta?.current_page || 1;
+
+            router.delete(route('payments.destroy', payment.id), {
+                data: params,
+                preserveState: true,
+                preserveScroll: true,
+            });
         }
     };
-
 
     const handleHide = (payment: Payment) => {
         if (confirm('Are you sure you want to hide this payment?')) {
-            router.post(route('payments.hide', payment.id), {});
+            const params: any = {};
+            if (cityFilter) params.city = cityFilter;
+            if (propertyFilter) params.property = propertyFilter;
+            if (unitFilter) params.unit = unitFilter;
+            if (permanentFilter && permanentFilter.length > 0) params.permanent = permanentFilter.join(',');
+            if (isHiddenFilter) params.is_hidden = 'true';
+            params.per_page = perPage;
+            params.page = payments?.meta?.current_page || 1;
+
+            router.patch(route('payments.hide', payment.id), params, {
+                preserveState: true,
+                preserveScroll: true,
+            });
         }
     };
 
+    const handleUnhide = (payment: Payment) => {
+        if (confirm('Are you sure you want to unhide this payment?')) {
+            const params: any = {};
+            if (cityFilter) params.city = cityFilter;
+            if (propertyFilter) params.property = propertyFilter;
+            if (unitFilter) params.unit = unitFilter;
+            if (permanentFilter && permanentFilter.length > 0) params.permanent = permanentFilter.join(',');
+            if (isHiddenFilter) params.is_hidden = 'true';
+            params.per_page = perPage;
+            params.page = payments?.meta?.current_page || 1;
 
-    const handleEdit = (payment: Payment) => {
-        setSelectedPayment(payment);
-        setEditDrawerOpen(true);
+            router.patch(route('payments.unhide', payment.id), params, {
+                preserveState: true,
+                preserveScroll: true,
+            });
+        }
     };
 
+    const handleEdit = (payment: Payment) => {
+        // Ensure date is in 'yyyy-MM-dd' format for the edit drawer
+        const normalizedDate = (() => {
+            if (!payment.date) return '' as string;
+            const match = payment.date.match(/^(\d{4}-\d{2}-\d{2})/);
+            return match ? match[1] : payment.date;
+        })();
+
+        setSelectedPayment({ ...payment, date: normalizedDate });
+        setEditDrawerOpen(true);
+    };
 
     const handleEditSuccess = () => {
         router.reload();
     };
-
 
     const handleCSVExport = () => {
         if (!payments || !payments.data || payments.data.length === 0) {
@@ -168,7 +216,6 @@ export default function Index({
         }
     };
 
-
     return (
         <AppLayout>
             <Head title="Payments" />
@@ -188,19 +235,16 @@ export default function Index({
                         cityFilter={cityFilter}
                         propertyFilter={propertyFilter}
                         unitFilter={unitFilter}
-                        statusFilter={statusFilter}
                         permanentFilter={permanentFilter}
                         isHiddenFilter={isHiddenFilter}
                         setCityFilter={setCityFilter}
                         setPropertyFilter={setPropertyFilter}
                         setUnitFilter={setUnitFilter}
-                        setStatusFilter={setStatusFilter}
                         setPermanentFilter={setPermanentFilter}
                         setIsHiddenFilter={setIsHiddenFilter}
                         uniqueCities={allCities}
                         uniqueProperties={allProperties}
                         units={units}
-                        propertiesByCity={propertiesByCity}
                         onSearch={handleSearch}
                         onClear={clearFilters}
                     />
@@ -214,9 +258,30 @@ export default function Index({
                                 onEdit={handleEdit}
                                 onDelete={handleDelete}
                                 onHide={handleHide}
+                                onUnhide={handleUnhide}
                                 hasAnyPermission={hasAnyPermission}
                                 hasAllPermissions={hasAllPermissions}
                                 hasPermission={hasPermission}
+                                filters={{
+                                    city: cityFilter || undefined,
+                                    property: propertyFilter || undefined,
+                                    unit: unitFilter || undefined,
+                                    permanent: permanentFilter,
+                                    is_hidden: isHiddenFilter,
+                                }}
+                            />
+                            <PaginationControls
+                                meta={payments.meta}
+                                links={payments.links}
+                                perPage={perPage}
+                                onPerPageChange={setPerPage}
+                                filters={{
+                                    city: cityFilter || undefined,
+                                    property: propertyFilter || undefined,
+                                    unit: unitFilter || undefined,
+                                    permanent: permanentFilter,
+                                    is_hidden: isHiddenFilter,
+                                }}
                             />
                             <PaginationInfo meta={payments.meta} />
                         </>
@@ -224,15 +289,24 @@ export default function Index({
                 </div>
             </div>
 
-            <PaymentCreateDrawer 
-                open={drawerOpen} 
-                onOpenChange={setDrawerOpen} 
-                units={units} 
+            <PaymentCreateDrawer
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
+                units={units}
                 cities={cities}
                 properties={properties}
-                unitsByCity={unitsByCity} 
+                unitsByCity={unitsByCity}
                 unitsByProperty={unitsByProperty}
                 propertiesByCity={propertiesByCity}
+                filtersContext={{
+                    city: cityFilter || undefined,
+                    property: propertyFilter || undefined,
+                    unit: unitFilter || undefined,
+                    permanent: permanentFilter,
+                    is_hidden: isHiddenFilter,
+                    per_page: perPage,
+                    page: payments?.meta?.current_page || 1,
+                }}
             />
 
             {selectedPayment && (
@@ -247,6 +321,15 @@ export default function Index({
                     open={editDrawerOpen}
                     onOpenChange={setEditDrawerOpen}
                     onSuccess={handleEditSuccess}
+                    filtersContext={{
+                        city: cityFilter || undefined,
+                        property: propertyFilter || undefined,
+                        unit: unitFilter || undefined,
+                        permanent: permanentFilter,
+                        is_hidden: isHiddenFilter,
+                        per_page: perPage,
+                        page: payments?.meta?.current_page || 1,
+                    }}
                 />
             )}
         </AppLayout>
