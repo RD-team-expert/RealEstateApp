@@ -19,6 +19,7 @@ interface PaymentPlanDetailsProps {
     onDatesChange: (dates: string) => void;
     onAmountChange: (amount: number) => void;
     onPaidChange: (paid: number) => void;
+    dateRef?: React.RefObject<HTMLButtonElement>;
 }
 
 export default function PaymentPlanDetails({
@@ -29,6 +30,7 @@ export default function PaymentPlanDetails({
     onDatesChange,
     onAmountChange,
     onPaidChange,
+    dateRef,
 }: PaymentPlanDetailsProps) {
     const [calendarOpen, setCalendarOpen] = useState(false);
 
@@ -53,6 +55,7 @@ export default function PaymentPlanDetails({
                 calendarOpen={calendarOpen}
                 onCalendarOpenChange={setCalendarOpen}
                 onDateSelect={handleDateSelect}
+                dateRef={dateRef}
             />
 
             <AmountField
@@ -76,9 +79,10 @@ interface DateFieldProps {
     calendarOpen: boolean;
     onCalendarOpenChange: (open: boolean) => void;
     onDateSelect: (date: Date | undefined) => void;
+    dateRef?: React.RefObject<HTMLButtonElement>;
 }
 
-function DateField({ dates, error, calendarOpen, onCalendarOpenChange, onDateSelect }: DateFieldProps) {
+function DateField({ dates, error, calendarOpen, onCalendarOpenChange, onDateSelect, dateRef }: DateFieldProps) {
     return (
         <div className="mt-4">
             <Label htmlFor="dates" className="text-sm font-medium mb-2 block">
@@ -91,6 +95,7 @@ function DateField({ dates, error, calendarOpen, onCalendarOpenChange, onDateSel
             >
                 <PopoverTrigger asChild>
                     <Button
+                        ref={dateRef}
                         variant="outline"
                         className={`w-full justify-start text-left font-normal ${!dates && 'text-muted-foreground'}`}
                     >

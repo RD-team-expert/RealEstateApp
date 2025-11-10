@@ -32,6 +32,11 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    // Context from Index page for preserving state after store/redirect
+    search?: string | null;
+    filters?: { city?: string | null; property?: string | null; unit?: string | null; tenant?: string | null };
+    perPage?: number | string;
+    currentPage?: number;
 }
 
 export default function PaymentPlanCreateDrawer({ 
@@ -41,7 +46,11 @@ export default function PaymentPlanCreateDrawer({
     tenantsByUnitId,
     open, 
     onOpenChange, 
-    onSuccess 
+    onSuccess,
+    search,
+    filters,
+    perPage,
+    currentPage
 }: Props) {
     const [selectedCity, setSelectedCity] = useState<number | null>(null);
     const [selectedProperty, setSelectedProperty] = useState<number | null>(null);
@@ -63,14 +72,17 @@ export default function PaymentPlanCreateDrawer({
     const propertyRef = useRef<HTMLButtonElement>(null!);
     const unitRef = useRef<HTMLButtonElement>(null!);
     const tenantRef = useRef<HTMLButtonElement>(null!);
+    const dateRef = useRef<HTMLButtonElement>(null!);
 
-    const { data, setData, post, processing, errors, reset } = useForm<PaymentPlanFormData>({
+    const { data, setData, post, processing, errors, reset, transform } = useForm<PaymentPlanFormData>({
         tenant_id: null,
         amount: 0,
         dates: '',
         paid: 0,
         notes: '',
     });
+
+    const [dateError, setDateError] = useState<string>('');
 
     const handleCityChange = (cityId: string) => {
         const cityIdNum = parseInt(cityId);
@@ -142,6 +154,7 @@ export default function PaymentPlanCreateDrawer({
             unit: '',
             tenant: ''
         });
+        setDateError('');
         
         let hasValidationErrors = false;
         
@@ -181,11 +194,35 @@ export default function PaymentPlanCreateDrawer({
             hasValidationErrors = true;
         }
         
+        // Require payment date
+        if (!data.dates || !String(data.dates).trim()) {
+            setDateError('Please select a payment date.');
+            if (dateRef.current) {
+                dateRef.current.focus();
+                dateRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            hasValidationErrors = true;
+        }
+        
         if (hasValidationErrors) {
             return;
         }
 
+        // Inject filters/search/pagination into the outgoing payload
+        transform((formData) => ({
+            ...formData,
+            search: search ?? null,
+            city: filters?.city ?? null,
+            property: filters?.property ?? null,
+            unit: filters?.unit ?? null,
+            tenant: filters?.tenant ?? null,
+            per_page: perPage ?? null,
+            page: currentPage ?? null,
+        }));
+
         post(route('payment-plans.store'), {
+            preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
                 handleCancel();
                 onSuccess?.();
@@ -242,10 +279,14 @@ export default function PaymentPlanCreateDrawer({
                                 dates={data.dates}
                                 amount={data.amount}
                                 paid={data.paid}
-                                errors={errors}
-                                onDatesChange={(dates) => setData('dates', dates)}
+                                errors={dateError ? { ...errors, dates: dateError } : errors}
+                                onDatesChange={(dates) => {
+                                    setData('dates', dates);
+                                    setDateError('');
+                                }}
                                 onAmountChange={(amount) => setData('amount', amount)}
                                 onPaidChange={(paid) => setData('paid', paid)}
+                                dateRef={dateRef}
                             />
 
                             <NotesSection

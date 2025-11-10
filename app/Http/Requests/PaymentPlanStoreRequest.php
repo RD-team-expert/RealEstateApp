@@ -24,7 +24,7 @@ class PaymentPlanStoreRequest extends FormRequest
             ],
             'amount' => 'required|numeric|min:0',
             'dates' => 'required|date',
-            'paid' => 'nullable|numeric|min:0|lte:amount',
+            'paid' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:1000'
         ];
     }
@@ -43,7 +43,6 @@ class PaymentPlanStoreRequest extends FormRequest
             'dates.date' => 'The date must be a valid date.',
             'paid.numeric' => 'The paid amount must be a valid number.',
             'paid.min' => 'The paid amount must be at least 0.',
-            'paid.lte' => 'The paid amount cannot exceed the total amount.',
             'notes.max' => 'The notes field cannot exceed 1000 characters.'
         ];
     }
@@ -65,13 +64,6 @@ class PaymentPlanStoreRequest extends FormRequest
      */
     public function withValidator($validator): void
     {
-        $validator->after(function ($validator) {
-            // Additional validation can be added here if needed
-            if ($this->filled('paid') && $this->filled('amount')) {
-                if ($this->paid > $this->amount) {
-                    $validator->errors()->add('paid', 'The paid amount cannot exceed the total amount.');
-                }
-            }
-        });
+        // No additional cross-field validation beyond base rules
     }
 }

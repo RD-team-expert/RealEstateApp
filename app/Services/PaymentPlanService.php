@@ -7,74 +7,114 @@ use App\Models\Tenant;
 use App\Models\Unit;
 use App\Models\PropertyInfoWithoutInsurance;
 use App\Models\Cities;
-use Illuminate\Support\Facades\DB;
 
 class PaymentPlanService
 {
-    public function getAllPaymentPlans()
+    public function getAllPaymentPlans($perPage = 15)
     {
-        return PaymentPlan::with(['tenant.unit.property.city'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
-    }
+        $perPageValue = ($perPage === 'all')
+            ? PaymentPlan::count()
+            : (int) $perPage;
 
-    public function searchPaymentPlans(string $search)
-    {
         return PaymentPlan::with(['tenant.unit.property.city'])
-            ->where(function ($query) use ($search) {
-                $query->where('notes', 'like', "%{$search}%")
-                      ->orWhere('amount', 'like', "%{$search}%")
-                      ->orWhere('paid', 'like', "%{$search}%")
-                      ->orWhere('dates', 'like', "%{$search}%")
-                      ->orWhereHas('tenant', function ($tenantQuery) use ($search) {
-                          $tenantQuery->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$search}%"])
-                                     ->orWhereHas('unit', function ($unitQuery) use ($search) {
-                                         $unitQuery->where('unit_name', 'like', "%{$search}%")
-                                                  ->orWhereHas('property', function ($propertyQuery) use ($search) {
-                                                      $propertyQuery->where('property_name', 'like', "%{$search}%")
-                                                                   ->orWhereHas('city', function ($cityQuery) use ($search) {
-                                                                       $cityQuery->where('city', 'like', "%{$search}%");
-                                                                   });
-                                                  });
-                                     });
-                      });
-            })
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->paginate($perPageValue)
+            ->withQueryString();
     }
 
     /**
-     * Filter payment plans by ID-based filters for city, property, unit, and tenant.
+     * Filter payment plans by NAME-based filters for city, property, unit, and tenant.
+     * Uses LIKE matching similar to Payments filters.
      */
-    public function filterPaymentPlansByIds($cityId = null, $propertyId = null, $unitId = null, $tenantId = null)
+    public function filterPaymentPlansByNames(?string $city = null, ?string $property = null, ?string $unit = null, ?string $tenant = null, $perPage = 15)
     {
         $query = PaymentPlan::with(['tenant.unit.property.city']);
 
-        // Apply tenant filter directly on payment_plans table
-        if (!empty($tenantId)) {
-            $query->where('tenant_id', $tenantId);
-        }
-
-        // Apply nested relationship filters
-        if (!empty($unitId)) {
-            $query->whereHas('tenant.unit', function ($q) use ($unitId) {
-                $q->where('id', $unitId);
+        if (!empty($tenant)) {
+            $query->whereHas('tenant', function ($q) use ($tenant) {
+                $q->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$tenant}%"]);
             });
         }
 
-        if (!empty($propertyId)) {
-            $query->whereHas('tenant.unit.property', function ($q) use ($propertyId) {
-                $q->where('id', $propertyId);
+        if (!empty($unit)) {
+            $query->whereHas('tenant.unit', function ($q) use ($unit) {
+                $q->where('unit_name', 'like', "%{$unit}%");
             });
         }
 
-        if (!empty($cityId)) {
-            $query->whereHas('tenant.unit.property.city', function ($q) use ($cityId) {
-                $q->where('id', $cityId);
+        if (!empty($property)) {
+            $query->whereHas('tenant.unit.property', function ($q) use ($property) {
+                $q->where('property_name', 'like', "%{$property}%");
             });
         }
 
-        return $query->orderBy('created_at', 'desc')->paginate(15);
+        if (!empty($city)) {
+            $query->whereHas('tenant.unit.property.city', function ($q) use ($city) {
+                $q->where('city', 'like', "%{$city}%");
+            });
+        }
+
+        $perPageValue = ($perPage === 'all')
+            ? (clone $query)->count()
+            : (int) $perPage;
+
+        return $query->orderBy('created_at', 'desc')
+            ->paginate($perPageValue)
+            ->withQueryString();
+    }
+
+    /**
+     * Get previous and next payment plan IDs relative to the current record,
+     * using the same NAME-based filters and ordering (created_at desc) as the index.
+     */
+    public function getAdjacentPaymentPlanIds(int $currentId, ?string $city = null, ?string $property = null, ?string $unit = null, ?string $tenant = null): array
+    {
+        $query = PaymentPlan::with(['tenant.unit.property.city']);
+
+        if (!empty($tenant)) {
+            $query->whereHas('tenant', function ($q) use ($tenant) {
+                $q->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$tenant}%"]);
+            });
+        }
+
+        if (!empty($unit)) {
+            $query->whereHas('tenant.unit', function ($q) use ($unit) {
+                $q->where('unit_name', 'like', "%{$unit}%");
+            });
+        }
+
+        if (!empty($property)) {
+            $query->whereHas('tenant.unit.property', function ($q) use ($property) {
+                $q->where('property_name', 'like', "%{$property}%");
+            });
+        }
+
+        if (!empty($city)) {
+            $query->whereHas('tenant.unit.property.city', function ($q) use ($city) {
+                $q->where('city', 'like', "%{$city}%");
+            });
+        }
+
+        // Order by created_at desc to match index page ordering
+        $ids = $query->orderBy('created_at', 'desc')->pluck('id')->values()->toArray();
+
+        $prevId = null;
+        $nextId = null;
+
+        $index = array_search($currentId, $ids, true);
+        if ($index !== false) {
+            if ($index > 0) {
+                $prevId = $ids[$index - 1];
+            }
+            if ($index < count($ids) - 1) {
+                $nextId = $ids[$index + 1];
+            }
+        }
+
+        return [
+            'prev' => $prevId,
+            'next' => $nextId,
+        ];
     }
 
     public function getPaymentPlan($id)
@@ -127,13 +167,14 @@ class PaymentPlanService
 
     public function getDropdownData()
     {
-        // Get cities
-        $cities = Cities::orderBy('city')->get();
+        // Get cities (deduplicated by name)
+        $cities = Cities::orderBy('city')->get()->unique('city')->values();
         
         // Get properties with city relationships
         $properties = PropertyInfoWithoutInsurance::with('city')
                      ->orderBy('property_name')
                      ->get();
+        $propertiesUniqueByName = $properties->unique('property_name')->values();
         
         // Get units with their relationships for dropdowns
         $units = Unit::with(['property.city'])
@@ -179,7 +220,7 @@ class PaymentPlanService
             })->values();
         });
 
-        // Get all units with their complete information for edit drawer
+        // Get all units with their complete information for edit drawer (dedup by unit_name)
         $allUnits = $units->map(function ($unit) {
             return [
                 'id' => $unit->id,
@@ -187,9 +228,9 @@ class PaymentPlanService
                 'property_name' => $unit->property ? $unit->property->property_name : null,
                 'city_name' => $unit->property && $unit->property->city ? $unit->property->city->city : null
             ];
-        });
+        })->unique('unit_name')->values();
 
-        // Format tenants data for frontend with ID-based mapping
+        // Format tenants data for frontend with ID-based mapping (dedup by full_name)
         $tenantsData = $tenants->map(function ($tenant) {
             return [
                 'id' => $tenant->id,
@@ -198,11 +239,11 @@ class PaymentPlanService
                 'property_name' => $tenant->unit && $tenant->unit->property ? $tenant->unit->property->property_name : null,
                 'city_name' => $tenant->unit && $tenant->unit->property && $tenant->unit->property->city ? $tenant->unit->property->city->city : null
             ];
-        });
+        })->unique('full_name')->values();
 
         return [
             'cities' => $cities,
-            'properties' => $properties->map(function ($property) {
+            'properties' => $propertiesUniqueByName->map(function ($property) {
                 return [
                     'id' => $property->id,
                     'property_name' => $property->property_name,

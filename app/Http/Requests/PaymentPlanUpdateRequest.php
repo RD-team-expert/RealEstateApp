@@ -25,7 +25,7 @@ class PaymentPlanUpdateRequest extends FormRequest
             ],
             'amount' => 'sometimes|required|numeric|min:0',
             'dates' => 'sometimes|required|date',
-            'paid' => 'sometimes|nullable|numeric|min:0|lte:amount',
+            'paid' => 'sometimes|nullable|numeric|min:0',
             'notes' => 'sometimes|nullable|string|max:1000'
         ];
     }
@@ -44,7 +44,6 @@ class PaymentPlanUpdateRequest extends FormRequest
             'dates.date' => 'The date must be a valid date.',
             'paid.numeric' => 'The paid amount must be a valid number.',
             'paid.min' => 'The paid amount must be at least 0.',
-            'paid.lte' => 'The paid amount cannot exceed the total amount.',
             'notes.max' => 'The notes field cannot exceed 1000 characters.'
         ];
     }
@@ -67,20 +66,13 @@ class PaymentPlanUpdateRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            // Additional validation for update requests
-            if ($this->filled('paid') && $this->filled('amount')) {
-                if ($this->paid > $this->amount) {
-                    $validator->errors()->add('paid', 'The paid amount cannot exceed the total amount.');
-                }
-            }
-            
             // If updating an existing record, check if amount is being reduced below paid amount
-            if ($this->filled('amount') && $this->route('payment_plan')) {
-                $paymentPlan = $this->route('payment_plan');
-                if ($this->amount < $paymentPlan->paid) {
-                    $validator->errors()->add('amount', 'The amount cannot be less than the already paid amount of $' . number_format($paymentPlan->paid, 2) . '.');
-                }
-            }
+            // if ($this->filled('amount') && $this->route('payment_plan')) {
+            //     $paymentPlan = $this->route('payment_plan');
+            //     if ($this->amount < $paymentPlan->paid) {
+            //         $validator->errors()->add('amount', 'The amount cannot be less than the already paid amount of $' . number_format($paymentPlan->paid, 2) . '.');
+            //     }
+            // }
         });
     }
 }

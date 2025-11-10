@@ -16,14 +16,16 @@ interface FiltersCardProps {
     properties: Array<{ id: number; property_name: string }>;
     allUnits: Array<{ id: number; unit_name: string }>;
     tenantsData: TenantData[];
+    initialFilters?: { city?: string | null; property?: string | null; unit?: string | null; tenant?: string | null };
+    perPage: number | string;
 }
 
-export default function FiltersCard({ cities, properties, allUnits, tenantsData }: FiltersCardProps) {
+export default function FiltersCard({ cities, properties, allUnits, tenantsData, initialFilters, perPage }: FiltersCardProps) {
     const [tempFilters, setTempFilters] = useState({
-        city: '',
-        property: '',
-        unit: '',
-        tenant: '',
+        city: initialFilters?.city ?? '',
+        property: initialFilters?.property ?? '',
+        unit: initialFilters?.unit ?? '',
+        tenant: initialFilters?.tenant ?? '',
     });
 
     const [, setFilters] = useState({
@@ -40,18 +42,14 @@ export default function FiltersCard({ cities, properties, allUnits, tenantsData 
     const handleSearchClick = () => {
         setFilters(tempFilters);
 
-        const selectedCity = cities.find(city => city.city === tempFilters.city);
-        const selectedProperty = properties.find(property => property.property_name === tempFilters.property);
-        const selectedUnit = allUnits.find(unit => unit.unit_name === tempFilters.unit);
-        const selectedTenant = tenantsData.find(tenant => tenant.full_name === tempFilters.tenant);
-
         router.get(
             route('payment-plans.index'),
             {
-                city_id: selectedCity?.id || null,
-                property_id: selectedProperty?.id || null,
-                unit_id: selectedUnit?.id || null,
-                tenant_id: selectedTenant?.id || null,
+                city: tempFilters.city || undefined,
+                property: tempFilters.property || undefined,
+                unit: tempFilters.unit || undefined,
+                tenant: tempFilters.tenant || undefined,
+                per_page: perPage,
             },
             { preserveState: true },
         );
@@ -71,7 +69,11 @@ export default function FiltersCard({ cities, properties, allUnits, tenantsData 
             tenant: '',
         });
 
-        router.get(route('payment-plans.index'), {}, { preserveState: false });
+        router.get(
+            route('payment-plans.index'),
+            { per_page: 15 },
+            { preserveState: false }
+        );
     };
 
     const filteredCities = cities.filter((city) =>

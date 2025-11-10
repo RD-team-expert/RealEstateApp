@@ -1,6 +1,10 @@
+import { forwardRef, useState } from 'react';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { forwardRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ChevronsUpDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Option {
     value: string;
@@ -26,7 +30,7 @@ const borderColorClasses = {
     orange: 'border-l-orange-500'
 };
 
-export const SelectionField = forwardRef<HTMLButtonElement, Props>(({
+export const SelectionField = forwardRef<HTMLButtonElement, Props>(({ 
     id,
     label,
     placeholder,
@@ -37,6 +41,9 @@ export const SelectionField = forwardRef<HTMLButtonElement, Props>(({
     borderColor,
     disabled = false
 }, ref) => {
+    const [open, setOpen] = useState(false);
+    const selectedLabel = options.find((o) => o.value === value)?.label || '';
+
     return (
         <div className={`rounded-lg border-l-4 ${borderColorClasses[borderColor]} p-4`}>
             <div className="mb-2">
@@ -44,22 +51,47 @@ export const SelectionField = forwardRef<HTMLButtonElement, Props>(({
                     {label} *
                 </Label>
             </div>
-            <Select
-                onValueChange={onChange}
-                value={value}
-                disabled={disabled}
-            >
-                <SelectTrigger ref={ref}>
-                    <SelectValue placeholder={placeholder} />
-                </SelectTrigger>
-                <SelectContent>
-                    {options.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        ref={ref}
+                        id={id}
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between"
+                        disabled={disabled}
+                    >
+                        {selectedLabel || placeholder}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                    <Command>
+                        <CommandInput placeholder={`Search ${label.toLowerCase()}...`} />
+                        <CommandEmpty>No option found.</CommandEmpty>
+                        <CommandList>
+                            <CommandGroup>
+                                {options.map((option) => (
+                                    <CommandItem
+                                        key={option.value}
+                                        value={option.label}
+                                        onSelect={() => {
+                                            onChange(option.value);
+                                            setOpen(false);
+                                        }}
+                                    >
+                                        <Check className={cn('mr-2 h-4 w-4', value === option.value ? 'opacity-100' : 'opacity-0')} />
+                                        {option.label}
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+
             {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
         </div>
     );

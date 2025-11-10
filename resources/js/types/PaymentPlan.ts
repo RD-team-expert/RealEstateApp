@@ -164,6 +164,12 @@ export interface PaymentPlanEditProps {
  */
 export interface PaymentPlanShowProps {
   paymentPlan: PaymentPlan;
+  prevId?: number | null;
+  nextId?: number | null;
+  filters?: { city?: string | null; property?: string | null; unit?: string | null; tenant?: string | null };
+  search?: string | null;
+  perPage?: number | string;
+  page?: number | null;
 }
 
 /**

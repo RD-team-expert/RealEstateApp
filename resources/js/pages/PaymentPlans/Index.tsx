@@ -17,6 +17,8 @@ interface TenantData {
 
 interface Props extends PaymentPlanIndexProps {
     search?: string | null;
+    filters?: { city?: string | null; property?: string | null; unit?: string | null; tenant?: string | null };
+    perPage?: number | string;
     cities: Array<{ id: number; city: string }>;
     properties: PropertyInfoWithoutInsurance[];
     propertiesByCityId: Record<number, PropertyInfoWithoutInsurance[]>;
@@ -35,6 +37,9 @@ export default function Index({
     tenantsByUnitId,
     allUnits,
     tenantsData,
+    filters,
+    perPage,
+    search,
 }: Props) {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [editDrawerOpen, setEditDrawerOpen] = useState(false);
@@ -47,7 +52,19 @@ export default function Index({
 
     const handleDelete = (paymentPlan: PaymentPlan) => {
         if (confirm('Are you sure you want to delete this payment plan?')) {
-            router.delete(`/payment-plans/${paymentPlan.id}`);
+            router.delete(`/payment-plans/${paymentPlan.id}`, {
+                preserveState: true,
+                preserveScroll: true,
+                data: {
+                    search: search ?? null,
+                    city: filters?.city ?? null,
+                    property: filters?.property ?? null,
+                    unit: filters?.unit ?? null,
+                    tenant: filters?.tenant ?? null,
+                    per_page: perPage ?? (paymentPlans?.per_page ?? 15),
+                    page: paymentPlans?.current_page ?? undefined,
+                },
+            });
         }
     };
 
@@ -59,9 +76,23 @@ export default function Index({
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
                     <PageHeader paymentPlans={paymentPlans} onAddClick={() => setDrawerOpen(true)} />
 
-                    <FiltersCard cities={cities} properties={properties} allUnits={allUnits} tenantsData={tenantsData} />
+                    <FiltersCard
+                        cities={cities}
+                        properties={properties}
+                        allUnits={allUnits}
+                        tenantsData={tenantsData}
+                        initialFilters={filters}
+                        perPage={perPage ?? (paymentPlans?.per_page ?? 15)}
+                    />
 
-                    <PaymentPlansTable paymentPlans={paymentPlans} onEdit={handleEdit} onDelete={handleDelete} />
+                    <PaymentPlansTable
+                        paymentPlans={paymentPlans}
+                        filters={filters}
+                        perPage={perPage ?? (paymentPlans?.per_page ?? 15)}
+                        search={search}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                    />
                 </div>
             </div>
 
@@ -74,13 +105,19 @@ export default function Index({
                 tenantsData={tenantsData}
                 open={drawerOpen}
                 onOpenChange={setDrawerOpen}
+                // Pass current context to preserve state after store/redirect
+                search={search}
+                filters={filters}
+                perPage={perPage ?? (paymentPlans?.per_page ?? 15)}
+                currentPage={paymentPlans?.current_page}
                 onSuccess={() => {
-                    router.reload();
+                    // No reload; rely on redirect + preserve state/scroll
                 }}
             />
 
             {selectedPaymentPlan && (
                 <PaymentPlanEditDrawer
+                    key={selectedPaymentPlan.id}
                     paymentPlan={selectedPaymentPlan}
                     cities={cities}
                     properties={properties}
@@ -91,8 +128,12 @@ export default function Index({
                     tenantsData={tenantsData}
                     open={editDrawerOpen}
                     onOpenChange={setEditDrawerOpen}
+                    // Pass current context to preserve state after update/redirect
+                    search={search}
+                    filters={filters}
+                    perPage={perPage ?? (paymentPlans?.per_page ?? 15)}
+                    currentPage={paymentPlans?.current_page}
                     onSuccess={() => {
-                        router.reload();
                         setSelectedPaymentPlan(null);
                     }}
                 />

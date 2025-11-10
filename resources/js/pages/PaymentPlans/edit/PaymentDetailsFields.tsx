@@ -12,6 +12,7 @@ interface Props {
     onDateChange: (date: string) => void;
     onAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onPaidChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    dateRef?: React.RefObject<HTMLButtonElement>;
 }
 
 export function PaymentDetailsFields({
@@ -22,7 +23,8 @@ export function PaymentDetailsFields({
     errors,
     onDateChange,
     onAmountChange,
-    onPaidChange
+    onPaidChange,
+    dateRef
 }: Props) {
     return (
         <>
@@ -30,6 +32,7 @@ export function PaymentDetailsFields({
                 dates={dates}
                 error={errors.dates}
                 onChange={onDateChange}
+                dateRef={dateRef}
             />
 
             <AmountField

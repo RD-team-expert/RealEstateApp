@@ -10,11 +10,15 @@ import StatusBadge from './StatusBadge';
 
 interface PaymentPlanTableRowProps {
     plan: PaymentPlan;
+    filters?: { city?: string | null; property?: string | null; unit?: string | null; tenant?: string | null };
+    perPage?: number | string;
+    currentPage?: number;
+    search?: string | null;
     onEdit: (plan: PaymentPlan) => void;
     onDelete: (plan: PaymentPlan) => void;
 }
 
-export default function PaymentPlanTableRow({ plan, onEdit, onDelete }: PaymentPlanTableRowProps) {
+export default function PaymentPlanTableRow({ plan, filters, perPage, currentPage, search, onEdit, onDelete }: PaymentPlanTableRowProps) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
     return (
@@ -59,7 +63,20 @@ export default function PaymentPlanTableRow({ plan, onEdit, onDelete }: PaymentP
                 <TableCell className="border border-border text-center">
                     <div className="flex gap-1">
                         {hasPermission('payment-plans.show') && (
-                            <Link href={route('payment-plans.show', plan.id)}>
+                            <Link
+                                href={route('payment-plans.show', plan.id)}
+                                data={{
+                                    search: search ?? null,
+                                    city: filters?.city ?? null,
+                                    property: filters?.property ?? null,
+                                    unit: filters?.unit ?? null,
+                                    tenant: filters?.tenant ?? null,
+                                    per_page: perPage ?? null,
+                                    page: currentPage ?? null,
+                                }}
+                                preserveState
+                                preserveScroll
+                            >
                                 <Button variant="outline" size="sm">
                                     <Eye className="h-4 w-4" />
                                 </Button>

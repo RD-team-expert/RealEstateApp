@@ -95,7 +95,9 @@ class PaymentPlan extends Model
     {
         $leftToPay = $this->left_to_pay;
 
-        if ($leftToPay == 0) {
+        if ($leftToPay < 0) {
+            return 'Over Paid';
+        } elseif ($leftToPay == 0) {
             return 'Paid';
         } elseif ($leftToPay == $this->amount) {
             return "Didn't Pay";

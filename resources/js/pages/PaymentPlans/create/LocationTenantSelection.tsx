@@ -1,5 +1,5 @@
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SelectionField } from '../edit/SelectionField';
 import { City } from '@/types/City';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import React from 'react';
@@ -111,27 +111,17 @@ interface CitySelectProps {
 
 function CitySelect({ cities, selectedCity, validationError, onCityChange, cityRef }: CitySelectProps) {
     return (
-        <div>
-            <Label htmlFor="city" className="text-sm font-medium mb-2 block">
-                City *
-            </Label>
-            <Select
-                onValueChange={onCityChange}
-                value={selectedCity?.toString() || ''}
-            >
-                <SelectTrigger ref={cityRef}>
-                    <SelectValue placeholder="Select city" />
-                </SelectTrigger>
-                <SelectContent>
-                    {cities.map((city) => (
-                        <SelectItem key={city.id} value={city.id.toString()}>
-                            {city.city}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
-        </div>
+        <SelectionField
+            id="city"
+            label="City"
+            placeholder="Select city"
+            value={selectedCity?.toString() || ''}
+            options={cities.map((city) => ({ value: city.id.toString(), label: city.city }))}
+            onChange={onCityChange}
+            error={validationError}
+            borderColor="blue"
+            ref={cityRef}
+        />
     );
 }
 
@@ -153,28 +143,18 @@ function PropertySelect({
     propertyRef 
 }: PropertySelectProps) {
     return (
-        <div>
-            <Label htmlFor="property" className="text-sm font-medium mb-2 block">
-                Property *
-            </Label>
-            <Select
-                onValueChange={onPropertyChange}
-                value={selectedProperty?.toString() || ''}
-                disabled={!selectedCity}
-            >
-                <SelectTrigger ref={propertyRef}>
-                    <SelectValue placeholder="Select property" />
-                </SelectTrigger>
-                <SelectContent>
-                    {availableProperties.map((property) => (
-                        <SelectItem key={property.id} value={property.id.toString()}>
-                            {property.property_name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
-        </div>
+        <SelectionField
+            id="property"
+            label="Property"
+            placeholder="Select property"
+            value={selectedProperty?.toString() || ''}
+            options={availableProperties.map((property) => ({ value: property.id.toString(), label: property.property_name }))}
+            onChange={onPropertyChange}
+            error={validationError}
+            borderColor="green"
+            disabled={!selectedCity}
+            ref={propertyRef}
+        />
     );
 }
 
@@ -196,28 +176,18 @@ function UnitSelect({
     unitRef 
 }: UnitSelectProps) {
     return (
-        <div>
-            <Label htmlFor="unit" className="text-sm font-medium mb-2 block">
-                Unit *
-            </Label>
-            <Select
-                onValueChange={onUnitChange}
-                value={selectedUnit?.toString() || ''}
-                disabled={!selectedProperty}
-            >
-                <SelectTrigger ref={unitRef}>
-                    <SelectValue placeholder="Select unit" />
-                </SelectTrigger>
-                <SelectContent>
-                    {availableUnits.map((unit) => (
-                        <SelectItem key={unit.id} value={unit.id.toString()}>
-                            {unit.unit_name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
-        </div>
+        <SelectionField
+            id="unit"
+            label="Unit"
+            placeholder="Select unit"
+            value={selectedUnit?.toString() || ''}
+            options={availableUnits.map((unit) => ({ value: unit.id.toString(), label: unit.unit_name }))}
+            onChange={onUnitChange}
+            error={validationError}
+            borderColor="purple"
+            disabled={!selectedProperty}
+            ref={unitRef}
+        />
     );
 }
 
@@ -241,28 +211,17 @@ function TenantSelect({
     tenantRef 
 }: TenantSelectProps) {
     return (
-        <div>
-            <Label htmlFor="tenant" className="text-sm font-medium mb-2 block">
-                Tenant *
-            </Label>
-            <Select
-                onValueChange={onTenantChange}
-                value={selectedTenant?.toString() || ''}
-                disabled={!selectedUnit}
-            >
-                <SelectTrigger ref={tenantRef}>
-                    <SelectValue placeholder="Select tenant" />
-                </SelectTrigger>
-                <SelectContent>
-                    {availableTenants.map((tenant) => (
-                        <SelectItem key={tenant.id} value={tenant.id.toString()}>
-                            {tenant.full_name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-            {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
-        </div>
+        <SelectionField
+            id="tenant"
+            label="Tenant"
+            placeholder="Select tenant"
+            value={selectedTenant?.toString() || ''}
+            options={availableTenants.map((tenant) => ({ value: tenant.id.toString(), label: tenant.full_name }))}
+            onChange={onTenantChange}
+            error={error || validationError}
+            borderColor="orange"
+            disabled={!selectedUnit}
+            ref={tenantRef}
+        />
     );
 }

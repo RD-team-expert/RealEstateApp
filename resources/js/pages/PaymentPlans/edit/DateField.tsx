@@ -10,9 +10,10 @@ interface Props {
     dates: string;
     error?: string;
     onChange: (date: string) => void;
+    dateRef?: React.RefObject<HTMLButtonElement>;
 }
 
-export function DateField({ dates, error, onChange }: Props) {
+export function DateField({ dates, error, onChange, dateRef }: Props) {
     const [calendarOpen, setCalendarOpen] = useState(false);
 
     // Helper function to safely parse and validate dates
@@ -56,6 +57,7 @@ export function DateField({ dates, error, onChange }: Props) {
             >
                 <PopoverTrigger asChild>
                     <Button
+                        ref={dateRef}
                         variant="outline"
                         className={`w-full justify-start text-left font-normal ${!dates && 'text-muted-foreground'}`}
                     >

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { City } from '@/types/City';
 import { useForm } from '@inertiajs/react';
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { OriginalPaymentInfo } from './edit/OriginalPaymentInfo';
 import { CascadingSelectionFields } from './edit/CascadingSelectionFields';
 import { PaymentDetailsFields } from './edit/PaymentDetailsFields';
@@ -53,6 +53,11 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    // Context for preserving filters and pagination after update
+    search?: string | null;
+    filters?: { city?: string | null; property?: string | null; unit?: string | null; tenant?: string | null };
+    perPage?: number | string;
+    currentPage?: number;
 }
 
 export default function PaymentPlanEditDrawer({ 
@@ -66,20 +71,45 @@ export default function PaymentPlanEditDrawer({
     paymentPlan, 
     open, 
     onOpenChange, 
-    onSuccess 
+    onSuccess,
+    search,
+    filters,
+    perPage,
+    currentPage
 }: Props) {
-    const [originalPaidAmount] = useState(paymentPlan.paid);
+    const [originalPaidAmount, setOriginalPaidAmount] = useState(paymentPlan.paid);
+    const [dateError, setDateError] = useState<string>('');
     
     // Refs for focusing on validation errors
     const cityRef = useRef<HTMLButtonElement>(null!);
     const propertyRef = useRef<HTMLButtonElement>(null!);
     const unitRef = useRef<HTMLButtonElement>(null!);
     const tenantRef = useRef<HTMLButtonElement>(null!);
+    const dateRef = useRef<HTMLButtonElement>(null!);
 
-    const { data, setData, put, processing, errors } = useForm<PaymentPlanFormData>({
+    // Normalize incoming date to 'yyyy-MM-dd' to avoid off-by-one issues
+    const normalizeDate = (dateString: string | null | undefined): string => {
+        if (!dateString) return '';
+        const str = String(dateString);
+        // If string already starts with YYYY-MM-DD, take the first 10 chars
+        const match = str.match(/^\d{4}-\d{2}-\d{2}/);
+        if (match) return match[0];
+        // Fallback: try Date parsing and format as YYYY-MM-DD without timezone shifts
+        try {
+            const d = new Date(str);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        } catch {
+            return '';
+        }
+    };
+
+    const { data, setData, put, processing, errors, transform } = useForm<PaymentPlanFormData>({
         tenant_id: paymentPlan.tenant_id,
         amount: paymentPlan.amount,
-        dates: paymentPlan.dates,
+        dates: normalizeDate(paymentPlan.dates),
         paid: paymentPlan.paid,
         notes: paymentPlan.notes || ''
     });
@@ -111,6 +141,19 @@ export default function PaymentPlanEditDrawer({
         setData
     });
 
+    // When switching to a different record, sync the form with that record
+    useEffect(() => {
+        setData({
+            tenant_id: paymentPlan.tenant_id,
+            amount: paymentPlan.amount,
+            dates: normalizeDate(paymentPlan.dates),
+            paid: paymentPlan.paid,
+            notes: paymentPlan.notes || ''
+        });
+        setOriginalPaidAmount(paymentPlan.paid);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [paymentPlan.id]);
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -121,6 +164,7 @@ export default function PaymentPlanEditDrawer({
             unit: '',
             tenant: ''
         });
+        setDateError('');
         
         let hasValidationErrors = false;
         
@@ -164,11 +208,36 @@ export default function PaymentPlanEditDrawer({
             hasValidationErrors = true;
         }
         
+        // Require payment date
+        if (!data.dates || !String(data.dates).trim()) {
+            setDateError('Please select a payment date.');
+            if (dateRef.current) {
+                dateRef.current.focus();
+                dateRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            hasValidationErrors = true;
+        }
+        
         if (hasValidationErrors) {
             return;
         }
 
+        // Merge context into payload to preserve state after redirect
+        const perPageNormalized = perPage;
+        transform((current) => ({
+            ...current,
+            search: search ?? null,
+            city: filters?.city ?? null,
+            property: filters?.property ?? null,
+            unit: filters?.unit ?? null,
+            tenant: filters?.tenant ?? null,
+            per_page: perPageNormalized ?? null,
+            page: currentPage ?? null,
+        }));
+
         put(route('payment-plans.update', paymentPlan.id), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 handleCancel();
                 onSuccess?.();
@@ -236,16 +305,20 @@ export default function PaymentPlanEditDrawer({
                                 tenantRef={tenantRef}
                             />
 
-                            <PaymentDetailsFields
-                                dates={data.dates}
-                                amount={data.amount}
-                                paid={data.paid}
-                                originalPaidAmount={originalPaidAmount}
-                                errors={errors}
-                                onDateChange={(date) => setData('dates', date)}
-                                onAmountChange={handleAmountChange}
-                                onPaidChange={handlePaidChange}
-                            />
+            <PaymentDetailsFields
+                dates={data.dates}
+                amount={data.amount}
+                paid={data.paid}
+                originalPaidAmount={originalPaidAmount}
+                errors={dateError ? { ...errors, dates: dateError } : errors}
+                onDateChange={(date) => {
+                    setData('dates', date);
+                    setDateError('');
+                }}
+                onAmountChange={handleAmountChange}
+                onPaidChange={handlePaidChange}
+                dateRef={dateRef}
+            />
 
                             <NotesField
                                 notes={data.notes}

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { usePermissions } from '@/hooks/usePermissions';
 import { Calendar, MapPin, User, Home, Clock, DollarSign, FileText } from 'lucide-react';
 
 const formatCurrency = (amount: number | null) => {
@@ -52,8 +51,7 @@ const InfoItem = ({ icon: Icon, label, value, className = "" }: {
   </div>
 );
 
-const Show: React.FC<PaymentPlanShowProps> = ({ paymentPlan }) => {
-  const {  hasAllPermissions } = usePermissions();
+const Show: React.FC<PaymentPlanShowProps> = ({ paymentPlan, prevId, nextId, filters, search, perPage, page }) => {
 
   return (
     <AppLayout>
@@ -72,12 +70,53 @@ const Show: React.FC<PaymentPlanShowProps> = ({ paymentPlan }) => {
                 </div>
               </div>
               <div className="flex gap-3">
-                {hasAllPermissions(['payment-plans.edit','payment-plans.update']) && (
-                  <Link href={route('payment-plans.edit', paymentPlan.id)}>
-                    <Button className="bg-blue-600 hover:bg-blue-700">Edit Payment Plan</Button>
-                  </Link>
-                )}
-                <Link href={route('payment-plans.index')}>
+                {/* Previous/Next navigation retaining index filters/search/pagination */}
+                <Link
+                  href={prevId ? route('payment-plans.show', prevId) : route('payment-plans.show', paymentPlan.id)}
+                  data={{
+                    search: search ?? null,
+                    city: filters?.city ?? null,
+                    property: filters?.property ?? null,
+                    unit: filters?.unit ?? null,
+                    tenant: filters?.tenant ?? null,
+                    per_page: perPage ?? null,
+                    page: page ?? null,
+                  }}
+                  preserveState
+                  preserveScroll
+                >
+                  <Button variant="outline" disabled={!prevId}>Previous</Button>
+                </Link>
+                <Link
+                  href={nextId ? route('payment-plans.show', nextId) : route('payment-plans.show', paymentPlan.id)}
+                  data={{
+                    search: search ?? null,
+                    city: filters?.city ?? null,
+                    property: filters?.property ?? null,
+                    unit: filters?.unit ?? null,
+                    tenant: filters?.tenant ?? null,
+                    per_page: perPage ?? null,
+                    page: page ?? null,
+                  }}
+                  preserveState
+                  preserveScroll
+                >
+                  <Button variant="outline" disabled={!nextId}>Next</Button>
+                </Link>
+                <Link
+                  href={route('payment-plans.index')}
+                  data={{
+                    search: search ?? null,
+                    city: filters?.city ?? null,
+                    property: filters?.property ?? null,
+                    unit: filters?.unit ?? null,
+                    tenant: filters?.tenant ?? null,
+                    per_page: perPage ?? null,
+                    page: page ?? null,
+                  }}
+                  preserveState
+                  preserveScroll
+                >
                   <Button variant="outline">Back to List</Button>
                 </Link>
               </div>
@@ -116,46 +155,7 @@ const Show: React.FC<PaymentPlanShowProps> = ({ paymentPlan }) => {
             </CardContent>
           </Card>
 
-          {/* Important Dates Section */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Calendar className="h-5 w-5" />
-                Important Dates
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-lg border border-indigo-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="h-4 w-4 text-indigo-600" />
-                    <p className="text-sm font-medium text-indigo-800">Payment Due Date</p>
-                  </div>
-                  <p className="text-lg font-bold text-indigo-900">
-                    {formatDate(paymentPlan.dates)}
-                  </p>
-                </div>
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="h-4 w-4 text-blue-600" />
-                    <p className="text-sm font-medium text-blue-800">Created</p>
-                  </div>
-                  <p className="text-lg font-bold text-blue-900">
-                    {formatDate(paymentPlan.created_at)}
-                  </p>
-                </div>
-                <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="h-4 w-4 text-green-600" />
-                    <p className="text-sm font-medium text-green-800">Last Updated</p>
-                  </div>
-                  <p className="text-lg font-bold text-green-900">
-                    {formatDate(paymentPlan.updated_at)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Important Dates section removed as requested; Due Date shown in Payment Details */}
 
           {/* Main Information Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

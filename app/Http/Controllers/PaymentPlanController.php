@@ -29,19 +29,19 @@ class PaymentPlanController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
-        // ID-based filters from request
-        $cityId = $request->get('city_id');
-        $propertyId = $request->get('property_id');
-        $unitId = $request->get('unit_id');
-        $tenantId = $request->get('tenant_id');
+        // Name-based filters from request
+        $city = $request->get('city');
+        $property = $request->get('property');
+        $unit = $request->get('unit');
+        $tenant = $request->get('tenant');
+        $perPageParam = $request->get('per_page', 15);
+        $perPage = is_numeric($perPageParam) ? (int) $perPageParam : ($perPageParam === 'all' ? 'all' : 15);
 
         // Decide which dataset to retrieve based on filters/search
-        if ($cityId || $propertyId || $unitId || $tenantId) {
-            $paymentPlans = $this->paymentPlanService->filterPaymentPlansByIds($cityId, $propertyId, $unitId, $tenantId);
-        } elseif ($search) {
-            $paymentPlans = $this->paymentPlanService->searchPaymentPlans($search);
+        if ($city || $property || $unit || $tenant) {
+            $paymentPlans = $this->paymentPlanService->filterPaymentPlansByNames($city, $property, $unit, $tenant, $perPage);
         } else {
-            $paymentPlans = $this->paymentPlanService->getAllPaymentPlans();
+            $paymentPlans = $this->paymentPlanService->getAllPaymentPlans($perPage);
         }
 
         // Transform the data to include the user-friendly names
@@ -70,26 +70,12 @@ class PaymentPlanController extends Controller
             'paymentPlans' => $paymentPlans,
             'search' => $search,
             'filters' => [
-                'city_id' => $cityId,
-                'property_id' => $propertyId,
-                'unit_id' => $unitId,
-                'tenant_id' => $tenantId,
+                'city' => $city,
+                'property' => $property,
+                'unit' => $unit,
+                'tenant' => $tenant,
             ],
-            'cities' => $dropdownData['cities'],
-            'properties' => $dropdownData['properties'],
-            'propertiesByCityId' => $dropdownData['propertiesByCityId'],
-            'unitsByPropertyId' => $dropdownData['unitsByPropertyId'],
-            'tenantsByUnitId' => $dropdownData['tenantsByUnitId'],
-            'allUnits' => $dropdownData['allUnits'],
-            'tenantsData' => $dropdownData['tenantsData'],
-        ]);
-    }
-
-    public function create()
-    {
-        $dropdownData = $this->paymentPlanService->getDropdownData();
-
-        return Inertia::render('PaymentPlans/Create', [
+            'perPage' => $perPageParam,
             'cities' => $dropdownData['cities'],
             'properties' => $dropdownData['properties'],
             'propertiesByCityId' => $dropdownData['propertiesByCityId'],
@@ -104,13 +90,36 @@ class PaymentPlanController extends Controller
     {
         $this->paymentPlanService->createPaymentPlan($request->validated());
 
-        return redirect()->route('payment-plans.index')
+        // Preserve filters, search, pagination and per-page after redirect
+        $queryParams = array_filter([
+            'search' => $request->input('search'),
+            'city' => $request->input('city'),
+            'property' => $request->input('property'),
+            'unit' => $request->input('unit'),
+            'tenant' => $request->input('tenant'),
+            'per_page' => $request->input('per_page'),
+            'page' => $request->input('page'),
+        ], fn($v) => !is_null($v) && $v !== '');
+
+        return redirect()->route('payment-plans.index', $queryParams)
             ->with('success', 'Payment plan created successfully.');
     }
 
     public function show($id)
     {
         $paymentPlan = $this->paymentPlanService->getPaymentPlan($id);
+
+        // Preserve filter/search/pagination context coming from index
+        $search = request()->get('search');
+        $city = request()->get('city');
+        $property = request()->get('property');
+        $unit = request()->get('unit');
+        $tenant = request()->get('tenant');
+        $perPageParam = request()->get('per_page', 15);
+        $pageParam = request()->get('page');
+
+        // Compute adjacent record IDs based on filters and index ordering
+        $adjacent = $this->paymentPlanService->getAdjacentPaymentPlanIds($paymentPlan->id, $city, $property, $unit, $tenant);
 
         // Transform the data to include user-friendly names
         $transformedPlan = [
@@ -131,42 +140,18 @@ class PaymentPlanController extends Controller
         ];
 
         return Inertia::render('PaymentPlans/Show', [
-            'paymentPlan' => $transformedPlan
-        ]);
-    }
-
-    public function edit($id)
-    {
-        $paymentPlan = $this->paymentPlanService->getPaymentPlan($id);
-        $dropdownData = $this->paymentPlanService->getDropdownData();
-
-        // Transform the data to include user-friendly names
-        $transformedPlan = [
-            'id' => $paymentPlan->id,
-            'tenant_id' => $paymentPlan->tenant_id,
-            'tenant' => $paymentPlan->tenant ? $paymentPlan->tenant->full_name : 'N/A',
-            'unit' => $paymentPlan->tenant && $paymentPlan->tenant->unit ? $paymentPlan->tenant->unit->unit_name : 'N/A',
-            'property' => $paymentPlan->tenant && $paymentPlan->tenant->unit && $paymentPlan->tenant->unit->property ? $paymentPlan->tenant->unit->property->property_name : 'N/A',
-            'city_name' => $paymentPlan->tenant && $paymentPlan->tenant->unit && $paymentPlan->tenant->unit->property && $paymentPlan->tenant->unit->property->city ? $paymentPlan->tenant->unit->property->city->city : 'N/A',
-            'amount' => $paymentPlan->amount,
-            'paid' => $paymentPlan->paid,
-            'left_to_pay' => $paymentPlan->left_to_pay,
-            'status' => $paymentPlan->status,
-            'dates' => $paymentPlan->dates,
-            'notes' => $paymentPlan->notes,
-            'created_at' => $paymentPlan->created_at,
-            'updated_at' => $paymentPlan->updated_at,
-        ];
-
-        return Inertia::render('PaymentPlans/Edit', [
             'paymentPlan' => $transformedPlan,
-            'cities' => $dropdownData['cities'],
-            'properties' => $dropdownData['properties'],
-            'propertiesByCityId' => $dropdownData['propertiesByCityId'],
-            'unitsByPropertyId' => $dropdownData['unitsByPropertyId'],
-            'tenantsByUnitId' => $dropdownData['tenantsByUnitId'],
-            'allUnits' => $dropdownData['allUnits'],
-            'tenantsData' => $dropdownData['tenantsData'],
+            'prevId' => $adjacent['prev'],
+            'nextId' => $adjacent['next'],
+            'filters' => [
+                'city' => $city,
+                'property' => $property,
+                'unit' => $unit,
+                'tenant' => $tenant,
+            ],
+            'search' => $search,
+            'perPage' => $perPageParam,
+            'page' => $pageParam,
         ]);
     }
 
@@ -174,15 +159,37 @@ class PaymentPlanController extends Controller
     {
         $this->paymentPlanService->updatePaymentPlan($payment_plan->id, $request->validated());
 
-        return redirect()->route('payment-plans.index')
+        // Preserve filters, search, pagination and per-page after redirect
+        $queryParams = array_filter([
+            'search' => $request->input('search'),
+            'city' => $request->input('city'),
+            'property' => $request->input('property'),
+            'unit' => $request->input('unit'),
+            'tenant' => $request->input('tenant'),
+            'per_page' => $request->input('per_page'),
+            'page' => $request->input('page'),
+        ], fn($v) => !is_null($v) && $v !== '');
+
+        return redirect()->route('payment-plans.index', $queryParams)
             ->with('success', 'Payment plan updated successfully.');
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $this->paymentPlanService->deletePaymentPlan($id);
 
-        return redirect()->route('payment-plans.index')
+        // Preserve filters, search, pagination and per-page after redirect
+        $queryParams = array_filter([
+            'search' => $request->input('search'),
+            'city' => $request->input('city'),
+            'property' => $request->input('property'),
+            'unit' => $request->input('unit'),
+            'tenant' => $request->input('tenant'),
+            'per_page' => $request->input('per_page'),
+            'page' => $request->input('page'),
+        ], fn($v) => !is_null($v) && $v !== '');
+
+        return redirect()->route('payment-plans.index', $queryParams)
             ->with('success', 'Payment plan deleted successfully.');
     }
 
