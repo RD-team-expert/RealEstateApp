@@ -2,12 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RotateCcw, Search } from 'lucide-react';
-import { City } from '@/types/City';
-import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
+// Using string arrays for city, property, and unit suggestions
 
 interface TenantFiltersProps {
-    cities: City[];
-    properties: PropertyInfoWithoutInsurance[];
+    cities: string[];
+    properties: string[];
     uniqueUnitNames: string[];
     onSearch: (filters: FilterState) => void;
     onClear: () => void;
@@ -59,13 +58,13 @@ export const TenantFilters: React.FC<TenantFiltersProps> = ({
         setFilters((prev) => ({ ...prev, [key]: value }));
     };
 
-    const handleCitySelect = (city: City) => {
-        handleFilterChange('city', city.city);
+    const handleCitySelect = (cityName: string) => {
+        handleFilterChange('city', cityName);
         setShowCityDropdown(false);
     };
 
-    const handlePropertySelect = (property: PropertyInfoWithoutInsurance) => {
-        handleFilterChange('property', property.property_name);
+    const handlePropertySelect = (propertyName: string) => {
+        handleFilterChange('property', propertyName);
         setShowPropertyDropdown(false);
     };
 
@@ -74,16 +73,16 @@ export const TenantFilters: React.FC<TenantFiltersProps> = ({
         setShowUnitDropdown(false);
     };
 
-    const filteredCities = cities.filter((city) => city.city.toLowerCase().includes(filters.city.toLowerCase()));
+    const filteredCities = cities.filter((cityName) => cityName.toLowerCase().includes(filters.city.toLowerCase()));
 
-    const filteredProperties = properties.filter((property) =>
-        property.property_name.toLowerCase().includes(filters.property.toLowerCase())
+    const filteredProperties = properties.filter((propertyName) =>
+        propertyName.toLowerCase().includes(filters.property.toLowerCase())
     );
 
     const filteredUnitNames = uniqueUnitNames.filter((unitName) => unitName.toLowerCase().includes(filters.unitName.toLowerCase()));
 
     return (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="relative z-20 grid grid-cols-1 gap-4 md:grid-cols-4">
             {/* City Filter */}
             <div className="relative" ref={cityDropdownRef}>
                 <Input
@@ -93,20 +92,20 @@ export const TenantFilters: React.FC<TenantFiltersProps> = ({
                     onChange={(e) => {
                         const value = e.target.value;
                         handleFilterChange('city', value);
-                        setShowCityDropdown(value.length > 0);
+                        setShowCityDropdown(true);
                     }}
-                    onFocus={() => setShowCityDropdown(filters.city.length > 0)}
+                    onFocus={() => setShowCityDropdown(true)}
                     className="text-input-foreground bg-input"
                 />
                 {showCityDropdown && filteredCities.length > 0 && (
                     <div className="absolute top-full left-0 right-0 z-50 mb-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg">
-                        {filteredCities.map((city) => (
+                        {filteredCities.map((cityName) => (
                             <div
-                                key={city.id}
+                                key={cityName}
                                 className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => handleCitySelect(city)}
+                                onClick={() => handleCitySelect(cityName)}
                             >
-                                {city.city}
+                                {cityName}
                             </div>
                         ))}
                     </div>
@@ -122,20 +121,20 @@ export const TenantFilters: React.FC<TenantFiltersProps> = ({
                     onChange={(e) => {
                         const value = e.target.value;
                         handleFilterChange('property', value);
-                        setShowPropertyDropdown(value.length > 0);
+                        setShowPropertyDropdown(true);
                     }}
-                    onFocus={() => setShowPropertyDropdown(filters.property.length > 0)}
+                    onFocus={() => setShowPropertyDropdown(true)}
                     className="text-input-foreground bg-input"
                 />
                 {showPropertyDropdown && filteredProperties.length > 0 && (
                     <div className="absolute top-full left-0 right-0 z-50 mb-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg">
-                        {filteredProperties.map((property) => (
+                        {filteredProperties.map((propertyName) => (
                             <div
-                                key={property.id}
+                                key={propertyName}
                                 className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => handlePropertySelect(property)}
+                                onClick={() => handlePropertySelect(propertyName)}
                             >
-                                {property.property_name}
+                                {propertyName}
                             </div>
                         ))}
                     </div>
@@ -151,9 +150,9 @@ export const TenantFilters: React.FC<TenantFiltersProps> = ({
                     onChange={(e) => {
                         const value = e.target.value;
                         handleFilterChange('unitName', value);
-                        setShowUnitDropdown(value.length > 0);
+                        setShowUnitDropdown(true);
                     }}
-                    onFocus={() => setShowUnitDropdown(filters.unitName.length > 0)}
+                    onFocus={() => setShowUnitDropdown(true)}
                     className="text-input-foreground bg-input"
                 />
                 {showUnitDropdown && filteredUnitNames.length > 0 && (

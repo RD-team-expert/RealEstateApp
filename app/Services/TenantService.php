@@ -4,26 +4,64 @@ namespace App\Services;
 
 use App\Models\Tenant;
 use App\Models\Unit;
+use App\Models\Cities;
+use App\Models\PropertyInfoWithoutInsurance;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class TenantService
 {
+    /**
+     * Base query with relationships and ordering.
+     */
+    public function buildTenantQuery(array $filters = [])
+    {
+        $query = Tenant::with(['unit', 'unit.property.city'])
+            // Exclude tenants whose related unit is archived by requiring an active unit
+            ->whereHas('unit');
+
+        // Apply city filter by joining with properties and cities
+        if (!empty($filters['city'])) {
+            $query->whereHas('unit.property.city', function ($cityQuery) use ($filters) {
+                $cityQuery->where('city', 'like', "%{$filters['city']}%");
+            });
+        }
+
+        // Apply property filter
+        if (!empty($filters['property'])) {
+            $query->whereHas('unit.property', function ($propertyQuery) use ($filters) {
+                $propertyQuery->where('property_name', 'like', "%{$filters['property']}%");
+            });
+        }
+
+        // Apply unit name filter
+        if (!empty($filters['unit_name'])) {
+            $query->whereHas('unit', function ($unitQuery) use ($filters) {
+                $unitQuery->where('unit_name', 'like', "%{$filters['unit_name']}%");
+            });
+        }
+
+        // Apply general search filter: only first_name and last_name
+        if (!empty($filters['search'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('first_name', 'like', "%{$filters['search']}%")
+                  ->orWhere('last_name', 'like', "%{$filters['search']}%");
+            });
+        }
+
+        // Consistent ordering: by unit_name then created_at desc
+        return $query
+            ->orderBy(Unit::select('unit_name')->whereColumn('units.id', 'tenants.unit_id'), 'asc')
+            ->orderBy('created_at', 'desc');
+    }
+
     public function getAllTenants(): \Illuminate\Database\Eloquent\Collection
     {
-        return Tenant::with(['unit' => function ($query) {
-                $query->withArchived();
-            }, 'unit.property.city'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        return $this->buildTenantQuery()->get();
     }
 
     public function getPaginatedTenants(int $perPage = 10): LengthAwarePaginator
     {
-        return Tenant::with(['unit' => function ($query) {
-                $query->withArchived();
-            }, 'unit.property.city'])
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+        return $this->buildTenantQuery()->paginate($perPage);
     }
 
     public function createTenant(array $data): Tenant
@@ -33,6 +71,30 @@ class TenantService
         
         // Update unit calculations after creating tenant
         Unit::updateApplicationCountForUnit($data['unit_id']);
+        
+        // After creating a tenant, update the associated unit:
+        // - Append tenant full name to `tenants` string (comma-separated)
+        // - Set `is_new_lease` to 'Yes'
+        // - If `vacant` was 'Yes', set it to null
+        $unit = Unit::withArchived()->find($data['unit_id'] ?? null);
+        if ($unit) {
+            $fullName = trim(($data['first_name'] ?? '') . ' ' . ($data['last_name'] ?? ''));
+            if ($fullName !== '') {
+                $existing = trim((string) $unit->tenants);
+                $unit->tenants = $existing !== ''
+                    ? $existing . ', ' . $fullName
+                    : $fullName;
+            }
+
+            $unit->is_new_lease = 'Yes';
+
+            if ($unit->vacant === 'Yes') {
+                $unit->vacant = 'No';
+            }
+
+            // Save quietly to avoid triggering calculateFields() which would override `vacant`
+            $unit->saveQuietly();
+        }
         
         return $tenant;
     }
@@ -88,68 +150,44 @@ class TenantService
             }, 'unit.property.city'])->find($id);
     }
 
-    public function searchTenants(string $search): \Illuminate\Database\Eloquent\Collection
-    {
-        return Tenant::with(['unit' => function ($query) {
-                $query->withArchived();
-            }, 'unit.property.city'])
-            ->where(function ($query) use ($search) {
-                $query->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhereHas('unit', function ($unitQuery) use ($search) {
-                        $unitQuery->withArchived()->where('unit_name', 'like', "%{$search}%")
-                            ->orWhereHas('property', function ($propertyQuery) use ($search) {
-                                $propertyQuery->where('property_name', 'like', "%{$search}%");
-                            });
-                    });
-            })
-            ->orderBy('created_at', 'desc')
-            ->get();
-    }
-
     public function filterTenants(array $filters): \Illuminate\Database\Eloquent\Collection
     {
-        $query = Tenant::with(['unit' => function ($query) {
-            $query->withArchived();
-        }, 'unit.property.city']);
+        return $this->buildTenantQuery($filters)->get();
+    }
 
-        // Apply city filter by joining with properties and cities
-        if (!empty($filters['city'])) {
-            $query->whereHas('unit.property.city', function ($cityQuery) use ($filters) {
-                $cityQuery->where('city', 'like', "%{$filters['city']}%");
-            });
-        }
+    /**
+     * Get paginated tenants with filters applied.
+     */
+    public function getTenantsPaginated(array $filters, int $perPage = 15): LengthAwarePaginator
+    {
+        return $this->buildTenantQuery($filters)->paginate($perPage);
+    }
 
-        // Apply property filter
-        if (!empty($filters['property'])) {
-            $query->whereHas('unit.property', function ($propertyQuery) use ($filters) {
-                $propertyQuery->where('property_name', 'like', "%{$filters['property']}%");
-            });
-        }
+    /**
+     * Get all city names (unique, sorted) for filters.
+     */
+    public function getAllCityNames(): array
+    {
+        return Cities::orderBy('city')->pluck('city')->toArray();
+    }
 
-        // Apply unit name filter
-        if (!empty($filters['unit_name'])) {
-            $query->whereHas('unit', function ($unitQuery) use ($filters) {
-                $unitQuery->withArchived()->where('unit_name', 'like', "%{$filters['unit_name']}%");
-            });
-        }
+    /**
+     * Get all property names (unique, sorted) for filters.
+     */
+    public function getAllPropertyNames(): array
+    {
+        return PropertyInfoWithoutInsurance::orderBy('property_name')->pluck('property_name')->toArray();
+    }
 
-        // Apply general search filter
-        if (!empty($filters['search'])) {
-            $query->where(function ($q) use ($filters) {
-                $q->where('first_name', 'like', "%{$filters['search']}%")
-                  ->orWhere('last_name', 'like', "%{$filters['search']}%")
-                  ->orWhere('street_address_line', 'like', "%{$filters['search']}%")
-                  ->orWhere('login_email', 'like', "%{$filters['search']}%")
-                  ->orWhereHas('unit', function ($unitQuery) use ($filters) {
-                      $unitQuery->withArchived()->where('unit_name', 'like', "%{$filters['search']}%")
-                          ->orWhereHas('property', function ($propertyQuery) use ($filters) {
-                              $propertyQuery->where('property_name', 'like', "%{$filters['search']}%");
-                          });
-                  });
-            });
-        }
-
-        return $query->orderBy('created_at', 'desc')->get();
+    /**
+     * Get all unit names (unique, sorted, including archived units) for filters.
+     */
+    public function getAllUnitNames(): array
+    {
+        return Unit::select('unit_name')
+            ->distinct()
+            ->orderBy('unit_name')
+            ->pluck('unit_name')
+            ->toArray();
     }
 }

@@ -1,1 +1,0 @@
-import{j as o}from"./app-B8ebXpyL.js";import{T as i}from"./textarea-CZFxMIAV.js";import"./app-DzAncQ8Z.js";import"./utils-CBfrqCZ4.js";function f({id:r,value:t,onChange:e,placeholder:a,minHeight:m="80px"}){return o.jsx(i,{id:r,value:t,onChange:e,placeholder:a,className:`min-h-[${m}]`})}export{f as default};

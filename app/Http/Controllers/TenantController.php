@@ -43,48 +43,95 @@ class TenantController extends Controller
             'unit_name' => $request->get('unit_name'),
         ];
 
-        // Check if any filters are applied
-        $hasFilters = array_filter($filters, function ($value) {
-            return !empty($value);
-        });
+        // Pagination parameters: perPage options 15 (default), 30, 50, or 'all'
+        $perPageParam = $request->get('perPage', 15);
+        $allowedPerPage = [15, 30, 50];
+        $isAll = ($perPageParam === 'all');
 
-        $tenants = $hasFilters
-            ? $this->tenantService->filterTenants($filters)
-            : $this->tenantService->getAllTenants();
+        // Build query with filters applied
+        $query = $this->tenantService->buildTenantQuery($filters);
+
+        if ($isAll) {
+            $tenants = $query->get();
+            $paginationMeta = null;
+        } else {
+            $perPage = in_array((int) $perPageParam, $allowedPerPage, true) ? (int) $perPageParam : 15;
+            $paginator = $query->paginate($perPage)->withQueryString();
+            // Transform using through and capture meta
+            $paginator = $paginator->through(function ($tenant) {
+                return [
+                    'id' => $tenant->id,
+                    'unit_id' => $tenant->unit_id,
+                    'first_name' => $tenant->first_name,
+                    'last_name' => $tenant->last_name,
+                    'street_address_line' => $tenant->street_address_line,
+                    'login_email' => $tenant->login_email,
+                    'alternate_email' => $tenant->alternate_email,
+                    'mobile' => $tenant->mobile,
+                    'emergency_phone' => $tenant->emergency_phone,
+                    'cash_or_check' => $tenant->cash_or_check,
+                    'has_insurance' => $tenant->has_insurance,
+                    'sensitive_communication' => $tenant->sensitive_communication,
+                    'has_assistance' => $tenant->has_assistance,
+                    'assistance_amount' => $tenant->assistance_amount,
+                    'assistance_company' => $tenant->assistance_company,
+                    'property_name' => $tenant->unit?->property?->property_name ?? 'N/A',
+                    'unit_number' => $tenant->unit?->unit_name ?? 'N/A',
+                    'city_name' => $tenant->unit?->property?->city?->city ?? 'N/A',
+                    'created_at' => $tenant->created_at,
+                    'updated_at' => $tenant->updated_at,
+                ];
+            });
+
+            $paginationMeta = [
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+            ];
+
+            // Set tenants to the transformed items for frontend simplicity
+            $tenants = collect($paginator->items());
+        }
 
         // Transform tenants to include readable names while keeping IDs
-        $transformedTenants = $tenants->map(function ($tenant) {
-            return [
-                'id' => $tenant->id,
-                'unit_id' => $tenant->unit_id,
-                'first_name' => $tenant->first_name,
-                'last_name' => $tenant->last_name,
-                'street_address_line' => $tenant->street_address_line,
-                'login_email' => $tenant->login_email,
-                'alternate_email' => $tenant->alternate_email,
-                'mobile' => $tenant->mobile,
-                'emergency_phone' => $tenant->emergency_phone,
-                'cash_or_check' => $tenant->cash_or_check,
-                'has_insurance' => $tenant->has_insurance,
-                'sensitive_communication' => $tenant->sensitive_communication,
-                'has_assistance' => $tenant->has_assistance,
-                'assistance_amount' => $tenant->assistance_amount,
-                'assistance_company' => $tenant->assistance_company,
-                // Add readable names for display
-                'property_name' => $tenant->unit?->property?->property_name ?? 'N/A',
-                'unit_number' => $tenant->unit?->unit_name ?? 'N/A',
-                'city_name' => $tenant->unit?->property?->city?->city ?? 'N/A',
-                'created_at' => $tenant->created_at,
-                'updated_at' => $tenant->updated_at,
-            ];
-        });
+        if ($isAll) {
+            $transformedTenants = $tenants->map(function ($tenant) {
+                return [
+                    'id' => $tenant->id,
+                    'unit_id' => $tenant->unit_id,
+                    'first_name' => $tenant->first_name,
+                    'last_name' => $tenant->last_name,
+                    'street_address_line' => $tenant->street_address_line,
+                    'login_email' => $tenant->login_email,
+                    'alternate_email' => $tenant->alternate_email,
+                    'mobile' => $tenant->mobile,
+                    'emergency_phone' => $tenant->emergency_phone,
+                    'cash_or_check' => $tenant->cash_or_check,
+                    'has_insurance' => $tenant->has_insurance,
+                    'sensitive_communication' => $tenant->sensitive_communication,
+                    'has_assistance' => $tenant->has_assistance,
+                    'assistance_amount' => $tenant->assistance_amount,
+                    'assistance_company' => $tenant->assistance_company,
+                    'property_name' => $tenant->unit?->property?->property_name ?? 'N/A',
+                    'unit_number' => $tenant->unit?->unit_name ?? 'N/A',
+                    'city_name' => $tenant->unit?->property?->city?->city ?? 'N/A',
+                    'created_at' => $tenant->created_at,
+                    'updated_at' => $tenant->updated_at,
+                ];
+            });
+        } else {
+            // Already transformed via through when paginated
+            $transformedTenants = collect($tenants);
+        }
 
-        // Get dropdown data for the create drawer
+        // Get dropdown data for the create/edit drawers (full models)
         $cities = Cities::all();
         $properties = PropertyInfoWithoutInsurance::with('city')->get();
 
         // Get units data for dropdowns - using the correct relationship
-        $units = Unit::withArchived()->with('property')->get();
+        // Exclude archived units from frontend dropdowns by using default scope
+        $units = Unit::with('property')->get();
 
         // Create arrays for dropdowns by property name
         $unitsByProperty = $units->groupBy(function ($unit) {
@@ -98,37 +145,23 @@ class TenantController extends Controller
             })->values();
         });
 
+        // Names-only lists for filters (unique, non-duplicated), similar to Payments
+        $allCities = $this->tenantService->getAllCityNames();
+        $allProperties = $this->tenantService->getAllPropertyNames();
+        $allUnitNames = $this->tenantService->getAllUnitNames();
+
         return Inertia::render('Tenants/Index', [
             'tenants' => $transformedTenants,
             'search' => $filters['search'],
             'cities' => $cities,
             'properties' => $properties,
             'unitsByProperty' => $unitsByProperty,
-        ]);
-    }
-
-    public function create(): InertiaResponse
-    {
-        // Get units data for dropdowns
-        $units = Unit::withArchived()->with('property')->get();
-
-        // Create arrays for dropdowns
-        $properties = $units->pluck('property.property_name')->filter()->unique()->values();
-        $unitsByProperty = $units->groupBy(function ($unit) {
-            return $unit->property ? $unit->property->property_name : 'Unknown Property';
-        })->map(function ($propertyUnits) {
-            return $propertyUnits->map(function ($unit) {
-                return [
-                    'id' => $unit->id,
-                    'unit_name' => $unit->unit_name
-                ];
-            })->values();
-        });
-
-        return Inertia::render('Tenants/Create', [
-            'units' => $units,
-            'properties' => $properties,
-            'unitsByProperty' => $unitsByProperty,
+            // Filters data (strings only, unique)
+            'allCities' => $allCities,
+            'allProperties' => $allProperties,
+            'allUnitNames' => $allUnitNames,
+            // Pagination meta for frontend controls (null when 'all')
+            'pagination' => $paginationMeta ?? null,
         ]);
     }
 
@@ -136,98 +169,47 @@ class TenantController extends Controller
     {
         $this->tenantService->createTenant($request->validated());
 
-        return redirect()
-            ->route('tenants.index')
-            ->with('success', 'Tenant created successfully.');
-    }
+        // Preserve filters and pagination by redirecting with the original query params
+        $redirectParams = [
+            'search' => $request->get('search'),
+            'city' => $request->get('city'),
+            'property' => $request->get('property'),
+            'unit_name' => $request->get('unit_name'),
+            'perPage' => $request->get('perPage'),
+            'page' => $request->get('page'),
+        ];
 
-    public function show(Tenant $tenant): InertiaResponse
-    {
-        $tenant->load(['unit' => function ($query) {
-            $query->withArchived();
-        }, 'unit.property.city']);
-
-        return Inertia::render('Tenants/Show', [
-            'tenant' => [
-                'id' => $tenant->id,
-                'unit_id' => $tenant->unit_id,
-                'first_name' => $tenant->first_name,
-                'last_name' => $tenant->last_name,
-                'street_address_line' => $tenant->street_address_line,
-                'login_email' => $tenant->login_email,
-                'alternate_email' => $tenant->alternate_email,
-                'mobile' => $tenant->mobile,
-                'emergency_phone' => $tenant->emergency_phone,
-                'cash_or_check' => $tenant->cash_or_check,
-                'has_insurance' => $tenant->has_insurance,
-                'sensitive_communication' => $tenant->sensitive_communication,
-                'has_assistance' => $tenant->has_assistance,
-                'assistance_amount' => $tenant->assistance_amount,
-                'assistance_company' => $tenant->assistance_company,
-                'property_name' => $tenant->unit?->property?->property_name ?? 'N/A',
-                'unit_number' => $tenant->unit?->unit_name ?? 'N/A',
-                'city_name' => $tenant->unit?->property?->city?->city ?? 'N/A',
-                'created_at' => $tenant->created_at,
-                'updated_at' => $tenant->updated_at,
-            ]
-        ]);
-    }
-
-    public function edit(Tenant $tenant): InertiaResponse
-    {
-        $tenant->load(['unit' => function ($query) {
-            $query->withArchived();
-        }, 'unit.property.city']);
-
-        // Get units data for dropdowns
-        $units = Unit::withArchived()->with('property')->get();
-
-        // Create arrays for dropdowns
-        $properties = $units->pluck('property.property_name')->filter()->unique()->values();
-        $unitsByProperty = $units->groupBy(function ($unit) {
-            return $unit->property ? $unit->property->property_name : 'Unknown Property';
-        })->map(function ($propertyUnits) {
-            return $propertyUnits->map(function ($unit) {
-                return [
-                    'id' => $unit->id,
-                    'unit_name' => $unit->unit_name
-                ];
-            })->values();
+        // Keep empty strings as valid values; only drop nulls
+        $redirectParams = array_filter($redirectParams, function ($value) {
+            return !is_null($value);
         });
 
-        return Inertia::render('Tenants/Edit', [
-            'tenant' => [
-                'id' => $tenant->id,
-                'unit_id' => $tenant->unit_id,
-                'first_name' => $tenant->first_name,
-                'last_name' => $tenant->last_name,
-                'street_address_line' => $tenant->street_address_line,
-                'login_email' => $tenant->login_email,
-                'alternate_email' => $tenant->alternate_email,
-                'mobile' => $tenant->mobile,
-                'emergency_phone' => $tenant->emergency_phone,
-                'cash_or_check' => $tenant->cash_or_check,
-                'has_insurance' => $tenant->has_insurance,
-                'sensitive_communication' => $tenant->sensitive_communication,
-                'has_assistance' => $tenant->has_assistance,
-                'assistance_amount' => $tenant->assistance_amount,
-                'assistance_company' => $tenant->assistance_company,
-                'property_name' => $tenant->unit?->property?->property_name ?? 'N/A',
-                'unit_number' => $tenant->unit?->unit_name ?? 'N/A',
-                'city_name' => $tenant->unit?->property?->city?->city ?? 'N/A',
-            ],
-            'units' => $units,
-            'properties' => $properties,
-            'unitsByProperty' => $unitsByProperty,
-        ]);
+        return redirect()
+            ->route('tenants.index', $redirectParams)
+            ->with('success', 'Tenant created successfully.');
     }
 
     public function update(UpdateTenantRequest $request, Tenant $tenant): RedirectResponse
     {
         $this->tenantService->updateTenant($tenant, $request->validated());
 
+        // Preserve filters and pagination by redirecting with the original query params
+        $redirectParams = [
+            'search' => $request->get('search'),
+            'city' => $request->get('city'),
+            'property' => $request->get('property'),
+            'unit_name' => $request->get('unit_name'),
+            'perPage' => $request->get('perPage'),
+            'page' => $request->get('page'),
+        ];
+
+        // Keep empty strings as valid values; only drop nulls
+        $redirectParams = array_filter($redirectParams, function ($value) {
+            return !is_null($value);
+        });
+
         return redirect()
-            ->route('tenants.index')
+            ->route('tenants.index', $redirectParams)
             ->with('success', 'Tenant updated successfully.');
     }
 
@@ -339,10 +321,28 @@ class TenantController extends Controller
         }
     }
 
-    public function archive(Tenant $tenant): RedirectResponse
+    public function archive(Request $request, Tenant $tenant): RedirectResponse
     {
         $this->tenantService->deleteTenant($tenant); // sets is_archived = true
-        return back()->with('success', 'Tenant archived successfully.');
+
+        // Preserve filters and pagination by redirecting with the original query params
+        $redirectParams = [
+            'search' => $request->get('search'),
+            'city' => $request->get('city'),
+            'property' => $request->get('property'),
+            'unit_name' => $request->get('unit_name'),
+            'perPage' => $request->get('perPage'),
+            'page' => $request->get('page'),
+        ];
+
+        // Keep empty strings as valid values; only drop nulls
+        $redirectParams = array_filter($redirectParams, function ($value) {
+            return !is_null($value);
+        });
+
+        return redirect()
+            ->route('tenants.index', $redirectParams)
+            ->with('success', 'Tenant archived successfully.');
     }
 
 

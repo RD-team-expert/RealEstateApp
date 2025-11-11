@@ -1,8 +1,18 @@
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { City } from '@/types/City';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 
 interface LocationSectionProps {
     cities: City[];
@@ -37,6 +47,25 @@ export default function LocationSection({
     unitValidationError,
     errors,
 }: LocationSectionProps) {
+    const [cityOpen, setCityOpen] = useState(false);
+    const [propertyOpen, setPropertyOpen] = useState(false);
+    const [unitOpen, setUnitOpen] = useState(false);
+
+    const selectedCityLabel = useMemo(() => {
+        const found = cities?.find((c) => c.id.toString() === selectedCityId);
+        return found ? found.city : '';
+    }, [cities, selectedCityId]);
+
+    const selectedPropertyLabel = useMemo(() => {
+        const found = availableProperties?.find((p) => p.property_name === selectedPropertyName);
+        return found ? found.property_name : '';
+    }, [availableProperties, selectedPropertyName]);
+
+    const selectedUnitLabel = useMemo(() => {
+        const found = availableUnits?.find((u) => u.id.toString() === unitId);
+        return found ? found.unit_name : '';
+    }, [availableUnits, unitId]);
+
     return (
         <>
             {/* City Selection */}
@@ -46,18 +75,44 @@ export default function LocationSection({
                         City *
                     </Label>
                 </div>
-                <Select onValueChange={onCityChange} value={selectedCityId}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {cities?.map((city) => (
-                            <SelectItem key={city.id} value={city.id.toString()}>
-                                {city.city}
-                            </SelectItem>
-                        )) || []}
-                    </SelectContent>
-                </Select>
+                <Popover open={cityOpen} onOpenChange={setCityOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            role="combobox"
+                            aria-expanded={cityOpen}
+                            variant="outline"
+                            className="w-full justify-between text-left font-normal"
+                        >
+                            {selectedCityLabel || 'Select city'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <Command>
+                            <CommandInput placeholder="Search city..." />
+                            <CommandList>
+                                <CommandEmpty>No city found.</CommandEmpty>
+                                <CommandGroup>
+                                    {cities?.map((city) => (
+                                        <CommandItem
+                                            key={city.id}
+                                            value={city.city}
+                                            onSelect={() => {
+                                                onCityChange(city.id.toString());
+                                                setCityOpen(false);
+                                            }}
+                                        >
+                                            <Check
+                                                className={`mr-2 h-4 w-4 ${selectedCityId === city.id.toString() ? 'opacity-100' : 'opacity-0'}`}
+                                            />
+                                            {city.city}
+                                        </CommandItem>
+                                    )) || []}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
             </div>
 
             {/* Property Information */}
@@ -67,23 +122,46 @@ export default function LocationSection({
                         Property Name *
                     </Label>
                 </div>
-                <Select 
-                    onValueChange={onPropertyChange} 
-                    value={selectedPropertyName}
-                    disabled={!selectedCityId}
-                >
-                    <SelectTrigger ref={propertyNameRef}>
-                        <SelectValue placeholder="Select property" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {availableProperties?.map((property) => (
-                            <SelectItem key={property.id} value={property.property_name}>
-                                {property.property_name}
-                            </SelectItem>
-                        )) || []}
-                    </SelectContent>
-                </Select>
-                
+                <Popover open={propertyOpen} onOpenChange={setPropertyOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            ref={propertyNameRef as React.RefObject<HTMLButtonElement>}
+                            role="combobox"
+                            aria-expanded={propertyOpen}
+                            variant="outline"
+                            className="w-full justify-between text-left font-normal"
+                            disabled={!selectedCityId}
+                        >
+                            {selectedPropertyLabel || 'Select property'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <Command>
+                            <CommandInput placeholder="Search property..." />
+                            <CommandList>
+                                <CommandEmpty>No property found.</CommandEmpty>
+                                <CommandGroup>
+                                    {availableProperties?.map((property) => (
+                                        <CommandItem
+                                            key={property.id}
+                                            value={property.property_name}
+                                            onSelect={() => {
+                                                onPropertyChange(property.property_name);
+                                                setPropertyOpen(false);
+                                            }}
+                                        >
+                                            <Check
+                                                className={`mr-2 h-4 w-4 ${selectedPropertyName === property.property_name ? 'opacity-100' : 'opacity-0'}`}
+                                            />
+                                            {property.property_name}
+                                        </CommandItem>
+                                    )) || []}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
                 {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
             </div>
 
@@ -94,22 +172,49 @@ export default function LocationSection({
                         Unit *
                     </Label>
                 </div>
-                <Select
-                    onValueChange={onUnitChange}
-                    value={unitId}
-                    disabled={!selectedPropertyName}
-                >
-                    <SelectTrigger ref={unitNumberRef}>
-                        <SelectValue placeholder="Select unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {availableUnits?.map((unit) => (
-                            <SelectItem key={unit.id} value={unit.id.toString()}>
-                                {unit.unit_name}
-                            </SelectItem>
-                        )) || []}
-                    </SelectContent>
-                </Select>
+                <Popover open={unitOpen} onOpenChange={setUnitOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            ref={unitNumberRef as React.RefObject<HTMLButtonElement>}
+                            role="combobox"
+                            aria-expanded={unitOpen}
+                            variant="outline"
+                            className="w-full justify-between text-left font-normal"
+                            disabled={!selectedPropertyName}
+                        >
+                            {selectedUnitLabel || 'Select unit'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <Command>
+                            <CommandInput placeholder="Search unit..." />
+                            <CommandList>
+                                <CommandEmpty>No unit found.</CommandEmpty>
+                                <CommandGroup>
+                                    {availableUnits?.map((unit) => {
+                                        const idStr = unit.id.toString();
+                                        return (
+                                            <CommandItem
+                                                key={unit.id}
+                                                value={unit.unit_name}
+                                                onSelect={() => {
+                                                    onUnitChange(idStr);
+                                                    setUnitOpen(false);
+                                                }}
+                                            >
+                                                <Check
+                                                    className={`mr-2 h-4 w-4 ${unitId === idStr ? 'opacity-100' : 'opacity-0'}`}
+                                                />
+                                                {unit.unit_name}
+                                            </CommandItem>
+                                        );
+                                    }) || []}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
                 {errors.unit_id && <p className="mt-1 text-sm text-red-600">{errors.unit_id}</p>}
                 {unitValidationError && <p className="mt-1 text-sm text-red-600">{unitValidationError}</p>}
             </div>

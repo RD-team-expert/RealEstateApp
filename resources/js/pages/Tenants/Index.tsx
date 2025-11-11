@@ -1,11 +1,11 @@
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { usePermissions } from '@/hooks/usePermissions';
 import AppLayout from '@/layouts/app-layout';
 import { City } from '@/types/City';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { Tenant } from '@/types/tenant';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import TenantCreateDrawer from './TenantCreateDrawer';
 import TenantEditDrawer from './TenantEditDrawer';
 import { FlashMessages } from './index/FlashMessages';
@@ -78,12 +78,23 @@ const exportToCSV = (data: Tenant[], filename: string = 'tenants.csv') => {
     URL.revokeObjectURL(url);
 };
 
+interface PaginationMeta {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+}
+
 interface Props {
     tenants: Tenant[];
     search?: string;
     cities: City[];
     properties: PropertyInfoWithoutInsurance[];
     unitsByProperty: Record<string, Array<{ id: number; unit_name: string }>>;
+    allCities: string[];
+    allProperties: string[];
+    allUnitNames: string[];
+    pagination?: PaginationMeta | null;
     importStats?: {
         total_processed: number;
         successful_imports: number;
@@ -92,7 +103,7 @@ interface Props {
     };
 }
 
-export default function Index({ tenants, search, cities, properties, unitsByProperty, importStats }: Props) {
+export default function Index({ tenants, search, cities, properties, unitsByProperty, allCities, allProperties, allUnitNames, importStats, pagination }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [isExporting, setIsExporting] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
@@ -109,7 +120,31 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
         skip_duplicates: false as boolean,
     });
 
+    // Pagination state
+    const [page, setPage] = useState<number>(pagination?.current_page ?? 1);
+    const [perPage, setPerPage] = useState<number | 'all'>(pagination ? pagination.per_page : 15);
+
+    // Track current filters to preserve across pagination changes
+    const [currentFilters, setCurrentFilters] = useState<FilterState>({
+        city: '',
+        property: '',
+        unitName: '',
+        search: search || '',
+    });
+
+    useEffect(() => {
+        // Sync pagination state when backend sends changes
+        if (pagination) {
+            setPage(pagination.current_page);
+            setPerPage(pagination.per_page);
+        } else {
+            setPerPage('all');
+            setPage(1);
+        }
+    }, [pagination]);
+
     const handleSearch = (filters: FilterState) => {
+        setCurrentFilters(filters);
         router.get(
             route('tenants.index'),
             {
@@ -117,13 +152,21 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
                 city: filters.city,
                 property: filters.property,
                 unit_name: filters.unitName,
+                perPage: perPage,
+                page: 1,
             },
             { preserveState: true }
         );
     };
 
     const handleClearFilters = () => {
-        router.get(route('tenants.index'), {}, { preserveState: false, replace: true });
+        setCurrentFilters({ city: '', property: '', unitName: '', search: '' });
+        setPage(1);
+        router.get(
+            route('tenants.index'),
+            { perPage: perPage, page: 1 },
+            { preserveState: false, replace: true }
+        );
     };
 
     const handleDelete = (tenant: Tenant) => {
@@ -134,8 +177,18 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
         ) {
             router.patch(
                 route('tenants.archive', tenant.id),
-                {},
                 {
+                    // Preserve current filters and pagination on server redirect
+                    search: currentFilters.search,
+                    city: currentFilters.city,
+                    property: currentFilters.property,
+                    unit_name: currentFilters.unitName,
+                    perPage: perPage,
+                    page: page,
+                },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
                     onSuccess: () => {
                         showNotification('success', 'Tenant archived successfully!');
                     },
@@ -208,7 +261,42 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
         [importForm, showNotification]
     );
 
-    const uniqueUnitNames = Array.from(new Set(tenants.map((tenant) => tenant.unit_number).filter(Boolean)));
+    // Use server-provided unique names for filters (strings only)
+    const uniqueUnitNames = allUnitNames || [];
+
+    const handlePageChange = (newPage: number) => {
+        setPage(newPage);
+        router.get(
+            route('tenants.index'),
+            {
+                search: currentFilters.search,
+                city: currentFilters.city,
+                property: currentFilters.property,
+                unit_name: currentFilters.unitName,
+                perPage: perPage,
+                page: newPage,
+            },
+            { preserveState: true }
+        );
+    };
+
+    const handlePerPageChange = (value: string) => {
+        const selected: number | 'all' = value === 'all' ? 'all' : parseInt(value, 10);
+        setPerPage(selected);
+        setPage(1);
+        router.get(
+            route('tenants.index'),
+            {
+                search: currentFilters.search,
+                city: currentFilters.city,
+                property: currentFilters.property,
+                unit_name: currentFilters.unitName,
+                perPage: selected,
+                page: 1,
+            },
+            { preserveState: true }
+        );
+    };
 
     return (
         <AppLayout>
@@ -224,6 +312,9 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
                 cities={cities}
                 properties={properties}
                 unitsByProperty={unitsByProperty}
+                currentFilters={currentFilters}
+                page={page}
+                perPage={perPage}
                 onSuccess={() => showNotification('success', 'Tenant created successfully!')}
             />
 
@@ -243,11 +334,12 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
                         canCreate={hasAllPermissions(['tenants.create', 'tenants.store'])}
                     />
 
-                    <Card className="bg-card text-card-foreground shadow-lg">
-                        <CardHeader>
+                    {/* Filters Card */}
+                    <Card className="bg-card text-card-foreground shadow-lg mb-6">
+                        <CardContent className="p-6 overflow-visible">
                             <TenantFilters
-                                cities={cities}
-                                properties={properties}
+                                cities={allCities}
+                                properties={allProperties}
                                 uniqueUnitNames={uniqueUnitNames}
                                 onSearch={handleSearch}
                                 onClear={handleClearFilters}
@@ -258,7 +350,11 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
                                     search: search || '',
                                 }}
                             />
-                        </CardHeader>
+                        </CardContent>
+                    </Card>
+
+                    {/* Table Card */}
+                    <Card className="bg-card text-card-foreground shadow-lg">
                         <CardContent className="p-6">
                             <TenantTable
                                 tenants={tenants}
@@ -274,10 +370,53 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
                                     <p className="text-sm">Try adjusting your search criteria.</p>
                                 </div>
                             )}
-                            <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
                                 <div className="text-sm text-muted-foreground">
-                                    Showing {tenants.length} tenant{tenants.length !== 1 ? 's' : ''}
-                                    {search && ` matching "${search}"`}
+                                    {pagination ? (
+                                        <>
+                                            Showing {tenants.length} of {pagination.total} tenant{pagination.total !== 1 ? 's' : ''}
+                                            {search && ` matching "${search}"`}
+                                        </>
+                                    ) : (
+                                        <>
+                                            Showing {tenants.length} tenant{tenants.length !== 1 ? 's' : ''} (all)
+                                            {search && ` matching "${search}"`}
+                                        </>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <label className="text-sm text-muted-foreground">Rows per page</label>
+                                    <select
+                                        className="rounded-md border bg-background px-2 py-1 text-sm"
+                                        value={perPage === 'all' ? 'all' : String(perPage)}
+                                        onChange={(e) => handlePerPageChange(e.target.value)}
+                                    >
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="50">50</option>
+                                        <option value="all">All</option>
+                                    </select>
+                                    {perPage !== 'all' && pagination && (
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                className="rounded-md border px-3 py-1 text-sm disabled:opacity-50"
+                                                onClick={() => handlePageChange(Math.max(1, page - 1))}
+                                                disabled={page <= 1}
+                                            >
+                                                Prev
+                                            </button>
+                                            <span className="text-sm text-muted-foreground">
+                                                Page {page} of {pagination.last_page}
+                                            </span>
+                                            <button
+                                                className="rounded-md border px-3 py-1 text-sm disabled:opacity-50"
+                                                onClick={() => handlePageChange(Math.min(pagination.last_page, page + 1))}
+                                                disabled={page >= pagination.last_page}
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </CardContent>
@@ -296,6 +435,9 @@ export default function Index({ tenants, search, cities, properties, unitsByProp
                     cities={cities}
                     properties={properties}
                     unitsByProperty={unitsByProperty}
+                    currentFilters={currentFilters}
+                    page={page}
+                    perPage={perPage}
                     onSuccess={handleEditSuccess}
                 />
             )}

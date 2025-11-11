@@ -19,6 +19,10 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    // Preserve state: current filters and pagination from Tenants/Index
+    currentFilters?: { city: string; property: string; unitName: string; search: string };
+    page?: number;
+    perPage?: number | 'all';
 }
 
 export default function TenantCreateDrawer({ 
@@ -27,7 +31,10 @@ export default function TenantCreateDrawer({
     unitsByProperty, 
     open, 
     onOpenChange, 
-    onSuccess 
+    onSuccess,
+    currentFilters,
+    page,
+    perPage,
 }: Props) {
     const propertyNameRef = useRef<HTMLButtonElement>(null!);
     const unitNumberRef = useRef<HTMLButtonElement>(null!);
@@ -41,7 +48,7 @@ export default function TenantCreateDrawer({
     const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
     const [selectedPropertyName, setSelectedPropertyName] = useState<string>('');
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, transform } = useForm({
         unit_id: '',
         first_name: '',
         last_name: '',
@@ -156,7 +163,20 @@ export default function TenantCreateDrawer({
             return;
         }
         
+        // Include filters & pagination in the payload via transform
+        transform((payload) => ({
+            ...payload,
+            search: currentFilters?.search ?? '',
+            city: currentFilters?.city ?? '',
+            property: currentFilters?.property ?? '',
+            unit_name: currentFilters?.unitName ?? '',
+            perPage: perPage ?? 15,
+            page: page ?? 1,
+        }));
+
         post(route('tenants.store'), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 resetFormState();
                 onOpenChange(false);

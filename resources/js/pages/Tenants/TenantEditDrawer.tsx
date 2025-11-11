@@ -19,6 +19,10 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    // Preserve state: current filters and pagination from Tenants/Index
+    currentFilters?: { city: string; property: string; unitName: string; search: string };
+    page?: number;
+    perPage?: number | 'all';
 }
 
 export default function TenantEditDrawer({ 
@@ -28,7 +32,10 @@ export default function TenantEditDrawer({
     unitsByProperty, 
     open, 
     onOpenChange, 
-    onSuccess 
+    onSuccess,
+    currentFilters,
+    page,
+    perPage,
 }: Props) {
     const propertyNameRef = useRef<HTMLButtonElement>(null!);
     const unitNumberRef = useRef<HTMLButtonElement>(null!);
@@ -38,7 +45,7 @@ export default function TenantEditDrawer({
     const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
     const [selectedPropertyName, setSelectedPropertyName] = useState<string>('');
 
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing, errors, transform } = useForm({
         unit_id: tenant.unit_id?.toString() ?? '',
         first_name: tenant.first_name ?? '',
         last_name: tenant.last_name ?? '',
@@ -151,7 +158,20 @@ export default function TenantEditDrawer({
             return;
         }
         
+        // Include filters & pagination in the payload via transform
+        transform((payload) => ({
+            ...payload,
+            search: currentFilters?.search ?? '',
+            city: currentFilters?.city ?? '',
+            property: currentFilters?.property ?? '',
+            unit_name: currentFilters?.unitName ?? '',
+            perPage: perPage ?? 15,
+            page: page ?? 1,
+        }));
+
         put(route('tenants.update', tenant.id), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 setValidationError('');
                 setUnitValidationError('');
