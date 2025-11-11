@@ -28,12 +28,14 @@ class StoreUnitRequest extends FormRequest
             'count_beds' => 'nullable|numeric|min:0|regex:/^\d+(\.\d{1})?$/',
             'count_baths' => 'nullable|numeric|min:0|regex:/^\d+(\.\d{1})?$/',
             'lease_status' => 'nullable|string|max:255',
+            'is_new_lease' => ['nullable', Rule::in(['Yes', 'No'])],
             'monthly_rent' => 'nullable|numeric|min:0',
             'recurring_transaction' => 'nullable|string|max:255',
             'utility_status' => 'nullable|string|max:255',
             'account_number' => 'nullable|string|max:255',
             'insurance' => ['nullable', Rule::in(['Yes', 'No'])],
-            'insurance_expiration_date' => 'nullable|date',
+            // Require expiration date only when insurance is Yes; allow null otherwise
+            'insurance_expiration_date' => 'nullable|date|required_if:insurance,Yes',
         ];
     }
 
@@ -50,6 +52,8 @@ class StoreUnitRequest extends FormRequest
             'count_baths.numeric' => 'Count baths must be a valid number.',
             'count_baths.regex' => 'Count baths must have at most 1 decimal place.',
             'monthly_rent.numeric' => 'Monthly rent must be a valid amount.',
+            'is_new_lease.in' => 'Is new lease must be Yes or No.',
+            'insurance_expiration_date.required_if' => 'Insurance expiration date is required when insurance is Yes.',
         ];
     }
 }

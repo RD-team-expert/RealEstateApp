@@ -34,19 +34,49 @@ class UnitController extends Controller
     public function index(Request $request): Response
     {
         $perPage = $request->get('per_page', 15);
-        $filters = $request->only(['city', 'property', 'unit_name', 'vacant', 'listed', 'insurance']);
+        $filters = $request->only(['city', 'property', 'unit_name', 'vacant', 'listed', 'insurance', 'is_new_lease']);
 
-        $units = $this->unitService->getAllPaginated($perPage, $filters);
+        // Normalize 'all' options from frontend selects to be treated as no filter
+        foreach (['vacant', 'listed', 'is_new_lease'] as $key) {
+            if (array_key_exists($key, $filters) && is_string($filters[$key]) && strtolower($filters[$key]) === 'all') {
+                unset($filters[$key]);
+            }
+        }
+        
+        $unitsResult = $this->unitService->getAllPaginated($perPage, $filters);
         $statistics = $this->unitService->getStatistics();
 
-        // Transform units data to include property and city names for frontend
-        $transformedUnits = $units->toArray();
-        $transformedUnits['data'] = array_map(function ($unit) {
-            return array_merge($unit, [
-                'city' => $unit['property']['city']['city'] ?? 'Unknown',
-                'property' => $unit['property']['property_name'] ?? 'Unknown'
-            ]);
-        }, $transformedUnits['data']);
+        // Transform units data and build a consistent response structure
+        if ($unitsResult instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            // Paginated
+            $transformedUnits = $unitsResult->toArray();
+            $transformedUnits['data'] = array_map(function ($unit) {
+                return array_merge($unit, [
+                    'city' => $unit['property']['city']['city'] ?? 'Unknown',
+                    'property' => $unit['property']['property_name'] ?? 'Unknown'
+                ]);
+            }, $transformedUnits['data']);
+        } else {
+            // 'All' (no pagination): build a pseudo-paginated structure for frontend consistency
+            $data = $unitsResult->map(function ($unit) {
+                return array_merge($unit->toArray(), [
+                    'city' => $unit->property->city->city ?? 'Unknown',
+                    'property' => $unit->property->property_name ?? 'Unknown'
+                ]);
+            })->toArray();
+
+            $count = $unitsResult->count();
+            $transformedUnits = [
+                'data' => $data,
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => is_string($perPage) ? $perPage : $count,
+                'total' => $count,
+                'from' => $count > 0 ? 1 : 0,
+                'to' => $count,
+                'links' => [],
+            ];
+        }
 
         // Get cities data for drawer component
         $cities = Cities::all();
@@ -57,20 +87,9 @@ class UnitController extends Controller
         return Inertia::render('Units/Index', [
             'units' => $transformedUnits,
             'statistics' => $statistics,
-            'filters' => $filters,
+            'filters' => array_merge($filters, ['per_page' => $perPage]),
             'cities' => $cities,
             'properties' => $properties,
-        ]);
-    }
-
-    public function create(): Response
-    {
-        $cities = Cities::all();
-        $properties = PropertyInfoWithoutInsurance::with('city')->get();
-        
-        return Inertia::render('Units/Create', [
-            'cities' => $cities,
-            'properties' => $properties
         ]);
     }
 
@@ -79,7 +98,21 @@ class UnitController extends Controller
         try {
             $this->unitService->create($request->validated());
 
-            return redirect()->route('units.index')
+            // Preserve filters and pagination by redirecting with query parameters
+            $redirect = $request->input('redirect', []);
+            $filters = (array)($redirect['filters'] ?? []);
+            $perPage = $redirect['per_page'] ?? null;
+            $page = $redirect['page'] ?? null;
+
+            // Build query while dropping null/empty values
+            $query = array_filter(array_merge($filters, [
+                'per_page' => $perPage,
+                'page' => $page,
+            ]), function ($value) {
+                return !is_null($value) && $value !== '';
+            });
+
+            return redirect()->route('units.index', $query)
                 ->with('success', 'Unit created successfully');
         } catch (\Exception $e) {
             return redirect()->back()
@@ -87,48 +120,27 @@ class UnitController extends Controller
                 ->withInput();
         }
     }
-
-    public function show(string $id): Response
-    {
-        $unit = $this->unitService->findById((int) $id);
-        
-        // Transform unit data to include property and city names
-        $transformedUnit = array_merge($unit->toArray(), [
-            'city' => $unit->property->city->city ?? 'Unknown',
-            'property' => $unit->property->property_name ?? 'Unknown'
-        ]);
-
-        return Inertia::render('Units/Show', [
-            'unit' => $transformedUnit,
-        ]);
-    }
-
-    public function edit(string $id): Response
-    {
-        $unit = $this->unitService->findById((int) $id);
-        $cities = Cities::all();
-        $properties = PropertyInfoWithoutInsurance::with('city')->get();
-        
-        // Transform unit data to include property and city names
-        $transformedUnit = array_merge($unit->toArray(), [
-            'city' => $unit->property->city->city ?? 'Unknown',
-            'property' => $unit->property->property_name ?? 'Unknown'
-        ]);
-        
-        return Inertia::render('Units/Edit', [
-            'unit' => $transformedUnit,
-            'cities' => $cities,
-            'properties' => $properties
-        ]);
-    }
-
+    
     public function update(UpdateUnitRequest $request, string $id): RedirectResponse
     {
         try {
             $unit = $this->unitService->findById((int) $id);
             $this->unitService->update($unit, $request->validated());
 
-            return redirect()->route('units.index')
+            // Preserve filters and pagination by redirecting with query parameters
+            $redirect = $request->input('redirect', []);
+            $filters = (array)($redirect['filters'] ?? []);
+            $perPage = $redirect['per_page'] ?? null;
+            $page = $redirect['page'] ?? null;
+
+            $query = array_filter(array_merge($filters, [
+                'per_page' => $perPage,
+                'page' => $page,
+            ]), function ($value) {
+                return !is_null($value) && $value !== '';
+            });
+
+            return redirect()->route('units.index', $query)
                 ->with('success', 'Unit updated successfully');
         } catch (\Exception $e) {
             return redirect()->back()
@@ -143,7 +155,20 @@ class UnitController extends Controller
             $unit = $this->unitService->findById((int) $id);
             $this->unitService->delete($unit);
 
-            return redirect()->route('units.index')
+            // Preserve filters and pagination by redirecting with query parameters
+            $redirect = request()->input('redirect', []);
+            $filters = (array)($redirect['filters'] ?? []);
+            $perPage = $redirect['per_page'] ?? null;
+            $page = $redirect['page'] ?? null;
+
+            $query = array_filter(array_merge($filters, [
+                'per_page' => $perPage,
+                'page' => $page,
+            ]), function ($value) {
+                return !is_null($value) && $value !== '';
+            });
+
+            return redirect()->route('units.index', $query)
                 ->with('success', 'Unit deleted successfully');
         } catch (\Exception $e) {
             return redirect()->back()

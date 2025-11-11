@@ -61,6 +61,7 @@ const UnitsTable: React.FC<UnitsTableProps> = ({ units, hasEditPermission, hasDe
                         <TableHead className="border border-border bg-muted text-muted-foreground">Beds</TableHead>
                         <TableHead className="border border-border bg-muted text-muted-foreground">Baths</TableHead>
                         <TableHead className="border border-border bg-muted text-muted-foreground">Lease Status</TableHead>
+                        <TableHead className="border border-border bg-muted text-muted-foreground">New Lease</TableHead>
                         <TableHead className="border border-border bg-muted text-muted-foreground">Monthly Rent</TableHead>
                         <TableHead className="border border-border bg-muted text-muted-foreground">
                             Recurring Transaction
@@ -106,6 +107,9 @@ const UnitsTable: React.FC<UnitsTableProps> = ({ units, hasEditPermission, hasDe
                             </TableCell>
                             <TableCell className="border border-border text-center text-foreground">
                                 {unit.lease_status || '-'}
+                            </TableCell>
+                            <TableCell className="border border-border text-center text-foreground">
+                                {unit.is_new_lease || '-'}
                             </TableCell>
                             <TableCell className="border border-border text-center text-foreground">
                                 <span className="font-medium">{unit.formatted_monthly_rent}</span>

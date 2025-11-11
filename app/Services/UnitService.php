@@ -9,7 +9,12 @@ use Illuminate\Database\Eloquent\Collection;
 
 class UnitService
 {
-    public function getAllPaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator
+    /**
+     * Get units with filters applied.
+     * If $perPage is 'all', returns a Collection without pagination.
+     * Otherwise returns a LengthAwarePaginator.
+     */
+    public function getAllPaginated($perPage = 15, array $filters = []): LengthAwarePaginator|Collection
     {
         $query = Unit::query()->with(['property.city']);
 
@@ -30,11 +35,11 @@ class UnitService
             $query->where('unit_name', 'like', '%' . $filters['unit_name'] . '%');
         }
 
-        if (!empty($filters['vacant'])) {
+        if (!empty($filters['vacant']) && strtolower((string) $filters['vacant']) !== 'all') {
             $query->where('vacant', $filters['vacant']);
         }
 
-        if (!empty($filters['listed'])) {
+        if (!empty($filters['listed']) && strtolower((string) $filters['listed']) !== 'all') {
             $query->where('listed', $filters['listed']);
         }
 
@@ -42,10 +47,22 @@ class UnitService
             $query->where('insurance', $filters['insurance']);
         }
 
-        return $query->orderBy('property_id')
-                    ->orderBy('unit_name')
-                    ->paginate($perPage)
-                    ->appends(request()->query());
+        if (!empty($filters['is_new_lease']) && strtolower((string) $filters['is_new_lease']) !== 'all') {
+            $query->where('is_new_lease', $filters['is_new_lease']);
+        }
+
+        $query = $query->orderBy('property_id')
+                       ->orderBy('unit_name');
+
+        // Handle 'all' perPage: return full collection without pagination
+        if (is_string($perPage) && strtolower($perPage) === 'all') {
+            return $query->get();
+        }
+
+        // Default: paginate
+        return $query
+            ->paginate((int) $perPage)
+            ->appends(request()->query());
     }
 
     public function create(array $data): Unit
@@ -122,7 +139,7 @@ class UnitService
     {
         $nullableFields = [
             'tenants', 'lease_start', 'lease_end', 'count_beds', 'count_baths',
-            'lease_status', 'monthly_rent', 'recurring_transaction', 'utility_status',
+            'lease_status', 'is_new_lease', 'monthly_rent', 'recurring_transaction', 'utility_status',
             'account_number', 'insurance', 'insurance_expiration_date'
         ];
 
@@ -130,6 +147,11 @@ class UnitService
             if (isset($data[$field]) && $data[$field] === '') {
                 $data[$field] = null;
             }
+        }
+
+        // If insurance is explicitly set to 'No', enforce expiration date as null
+        if (isset($data['insurance']) && $data['insurance'] === 'No') {
+            $data['insurance_expiration_date'] = null;
         }
 
         return $data;

@@ -3,6 +3,7 @@ import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { useForm } from '@inertiajs/react';
 import React, { useState, useRef, useEffect } from 'react';
+import { UnitFilters } from '@/types/unit';
 import CitySelection from './create/CitySelection';
 import PropertySelection from './create/PropertySelection';
 import UnitDetails from './create/UnitDetails';
@@ -13,6 +14,7 @@ import LeaseStatus from './create/LeaseStatus';
 import FinancialInformation from './create/FinancialInformation';
 import UtilityInformation from './create/UtilityInformation';
 import InsuranceInformation from './create/InsuranceInformation';
+import NewLease from './create/NewLease';
 
 interface Props {
     cities: Array<{ id: number; city: string }>;
@@ -20,9 +22,14 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    redirectState: {
+        filters: UnitFilters;
+        per_page: string;
+        page: number;
+    };
 }
 
-export default function UnitCreateDrawer({ cities, properties, open, onOpenChange, onSuccess }: Props) {
+export default function UnitCreateDrawer({ cities, properties, open, onOpenChange, onSuccess, redirectState }: Props) {
     const propertyRef = useRef<HTMLButtonElement>(null);
     const unitNameRef = useRef<HTMLInputElement>(null);
     const [validationError, setValidationError] = useState<string>('');
@@ -41,7 +48,7 @@ export default function UnitCreateDrawer({ cities, properties, open, onOpenChang
         setCalendarStates((prev) => ({ ...prev, [field]: open }));
     };
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, transform } = useForm({
         property_id: '',
         unit_name: '',
         tenants: '',
@@ -50,6 +57,7 @@ export default function UnitCreateDrawer({ cities, properties, open, onOpenChang
         count_beds: '',
         count_baths: '',
         lease_status: '',
+        is_new_lease: '',
         monthly_rent: '',
         recurring_transaction: '',
         utility_status: '',
@@ -92,6 +100,14 @@ export default function UnitCreateDrawer({ cities, properties, open, onOpenChang
         setUnitNameValidationError('');
     };
 
+    // Auto-clear insurance expiration date when insurance is 'No'
+    useEffect(() => {
+        if (data.insurance === 'No') {
+            setData('insurance_expiration_date', '');
+            setCalendarOpen('insurance_expiration_date', false);
+        }
+    }, [data.insurance]);
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -125,8 +141,25 @@ export default function UnitCreateDrawer({ cities, properties, open, onOpenChang
         if (hasValidationErrors) {
             return;
         }
-        
+
+        // Ensure insurance expiration date is null when insurance is 'No'
+        if (data.insurance === 'No' && data.insurance_expiration_date !== '') {
+            setData('insurance_expiration_date', '');
+        }
+
+        // Add redirect state into payload via transform to avoid typing issues
+        transform((payload: UnitFormData) => ({
+            ...payload,
+            redirect: {
+                filters: redirectState.filters,
+                per_page: redirectState.per_page,
+                page: redirectState.page,
+            },
+        }) as any);
+
         post(route('units.store'), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 reset();
                 setValidationError('');
@@ -221,6 +254,12 @@ export default function UnitCreateDrawer({ cities, properties, open, onOpenChang
                                 error={errors.lease_status}
                             />
 
+                            <NewLease
+                                isNewLease={data.is_new_lease}
+                                onIsNewLeaseChange={(value) => setData('is_new_lease', value)}
+                                error={errors.is_new_lease}
+                            />
+
                             <FinancialInformation
                                 monthlyRent={data.monthly_rent}
                                 recurringTransaction={data.recurring_transaction}
@@ -273,4 +312,21 @@ export default function UnitCreateDrawer({ cities, properties, open, onOpenChang
             </DrawerContent>
         </Drawer>
     );
+}
+interface UnitFormData {
+    property_id: string;
+    unit_name: string;
+    tenants: string;
+    lease_start: string;
+    lease_end: string;
+    count_beds: string;
+    count_baths: string;
+    lease_status: string;
+    is_new_lease: string;
+    monthly_rent: string;
+    recurring_transaction: string;
+    utility_status: string;
+    account_number: string;
+    insurance: string;
+    insurance_expiration_date: string;
 }

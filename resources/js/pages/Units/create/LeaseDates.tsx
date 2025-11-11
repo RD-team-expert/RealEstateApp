@@ -3,7 +3,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, parse } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, X } from 'lucide-react';
 
 interface Props {
     leaseStart: string;
@@ -46,12 +46,25 @@ export default function LeaseDates({
                     <PopoverTrigger asChild>
                         <Button
                             variant="outline"
-                            className={`w-full justify-start text-left font-normal ${!leaseStart && 'text-muted-foreground'}`}
+                            className={`relative w-full justify-start text-left font-normal pr-8 ${!leaseStart && 'text-muted-foreground'}`}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {leaseStart
                                 ? format(parse(leaseStart, 'yyyy-MM-dd', new Date()), 'PPP')
                                 : 'Pick a date'}
+                            <span
+                                className="absolute right-2 inline-flex h-4 w-4 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onLeaseStartChange('');
+                                    onCalendarOpenChange('lease_start', false);
+                                }}
+                                aria-label="Clear lease start date"
+                                title="Clear"
+                            >
+                                <X className="h-4 w-4" />
+                            </span>
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
@@ -85,12 +98,25 @@ export default function LeaseDates({
                     <PopoverTrigger asChild>
                         <Button
                             variant="outline"
-                            className={`w-full justify-start text-left font-normal ${!leaseEnd && 'text-muted-foreground'}`}
+                            className={`relative w-full justify-start text-left font-normal pr-8 ${!leaseEnd && 'text-muted-foreground'}`}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
                             {leaseEnd
                                 ? format(parse(leaseEnd, 'yyyy-MM-dd', new Date()), 'PPP')
                                 : 'Pick a date'}
+                            <span
+                                className="absolute right-2 inline-flex h-4 w-4 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onLeaseEndChange('');
+                                    onCalendarOpenChange('lease_end', false);
+                                }}
+                                aria-label="Clear lease end date"
+                                title="Clear"
+                            >
+                                <X className="h-4 w-4" />
+                            </span>
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>

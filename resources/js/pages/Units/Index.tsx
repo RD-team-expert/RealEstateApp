@@ -41,6 +41,7 @@ export default function Units({ units, filters, cities, properties, importStats 
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
     const [, setSearchFilters] = useState<UnitFilters>(filters);
     const [tempFilters, setTempFilters] = useState<UnitFilters>(filters);
+    const [perPage, setPerPage] = useState<string>(String((units as any)?.per_page ?? '15'));
     const [isExporting, setIsExporting] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
     const [showImportStats, setShowImportStats] = useState(!!importStats);
@@ -98,6 +99,9 @@ export default function Units({ units, filters, cities, properties, importStats 
             }
         });
 
+        // Include per_page selection in query
+        filterParams['per_page'] = String(perPage);
+
         router.get(route('units.index'), filterParams, {
             preserveState: true,
             preserveScroll: true,
@@ -113,17 +117,19 @@ export default function Units({ units, filters, cities, properties, importStats 
             vacant: '',
             listed: '',
             insurance: '',
+            is_new_lease: '',
         };
 
         setTempFilters(emptyFilters);
         setSearchFilters(emptyFilters);
         setCityInput('');
         setPropertyInput('');
+        setPerPage('15');
 
         // Navigate to the page without any filters
         router.get(
             route('units.index'),
-            {},
+            { per_page: '15' },
             {
                 preserveState: true,
                 preserveScroll: true,
@@ -133,7 +139,26 @@ export default function Units({ units, filters, cities, properties, importStats 
 
     const handleDelete = (unit: Unit) => {
         if (confirm('Are you sure you want to delete this unit?')) {
-            router.delete(route('units.destroy', unit.id));
+            // Flatten filters to a plain record for FormDataConvertible compatibility
+            const filterParams: Record<string, string> = {};
+            Object.entries(tempFilters).forEach(([key, val]) => {
+                if (val !== null && val !== undefined && val !== '') {
+                    filterParams[key] = String(val);
+                }
+            });
+
+            router.visit(route('units.destroy', unit.id), {
+                method: 'delete',
+                data: {
+                    redirect: {
+                        filters: filterParams,
+                        per_page: String(perPage),
+                        page: String((units as any)?.current_page ?? 1),
+                    },
+                },
+                preserveState: true,
+                preserveScroll: true,
+            });
         }
     };
 
@@ -148,8 +173,7 @@ export default function Units({ units, filters, cities, properties, importStats 
     };
 
     const handleCreateSuccess = () => {
-        // Refresh the page data after successful creation
-        router.reload({ only: ['units', 'statistics'] });
+        // Rely on server redirect preserving filters/pagination; no manual reload
     };
 
     const handleCSVExport = () => {
@@ -284,23 +308,65 @@ export default function Units({ units, filters, cities, properties, importStats 
                             )}
 
                             {/* Pagination */}
-                            <Pagination links={units.links} currentPage={units.current_page} lastPage={units.last_page} />
+                            <Pagination
+                                links={units.links}
+                                currentPage={units.current_page}
+                                lastPage={units.last_page}
+                                from={units.from}
+                                to={units.to}
+                                total={units.total}
+                                perPage={perPage}
+                                onPerPageChange={(value) => {
+                                    setPerPage(value);
 
-                            {/* Total count */}
-                            <div className="mt-4 text-center text-sm text-muted-foreground">
-                                Showing {units.from || 0} to {units.to || 0} of {units.total || 0} units
-                            </div>
+                                    const filterParams: Record<string, string> = {};
+                                    Object.entries(tempFilters).forEach(([key, val]) => {
+                                        if (val !== null && val !== undefined && val !== '') {
+                                            filterParams[key] = String(val);
+                                        }
+                                    });
+                                    filterParams['per_page'] = String(value);
+
+                                    router.get(route('units.index'), filterParams, {
+                                        preserveState: true,
+                                        preserveScroll: true,
+                                    });
+                                }}
+                            />
                         </CardContent>
                     </Card>
                 </div>
             </div>
 
             {/* Unit Create Drawer */}
-            <UnitCreateDrawer open={showCreateDrawer} onOpenChange={setShowCreateDrawer} cities={cities || []} properties={properties || []} onSuccess={handleCreateSuccess} />
+            <UnitCreateDrawer
+                open={showCreateDrawer}
+                onOpenChange={setShowCreateDrawer}
+                cities={cities || []}
+                properties={properties || []}
+                onSuccess={handleCreateSuccess}
+                redirectState={{
+                    filters: tempFilters,
+                    per_page: perPage,
+                    page: (units as any)?.current_page ?? 1,
+                }}
+            />
 
             {/* Unit Edit Drawer */}
             {selectedUnit && (
-                <UnitEditDrawer unit={selectedUnit} cities={cities || []} properties={properties || []} open={showEditDrawer} onOpenChange={setShowEditDrawer} onSuccess={handleEditSuccess} />
+                <UnitEditDrawer
+                    unit={selectedUnit}
+                    cities={cities || []}
+                    properties={properties || []}
+                    open={showEditDrawer}
+                    onOpenChange={setShowEditDrawer}
+                    onSuccess={handleEditSuccess}
+                    redirectState={{
+                        filters: tempFilters,
+                        per_page: perPage,
+                        page: (units as any)?.current_page ?? 1,
+                    }}
+                />
             )}
         </AppLayout>
     );

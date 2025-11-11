@@ -21,6 +21,7 @@ class Unit extends Model
         'count_beds',
         'count_baths',
         'lease_status',
+        'is_new_lease',
         'monthly_rent',
         'recurring_transaction',
         'utility_status',
@@ -56,6 +57,11 @@ class Unit extends Model
 
         static::saving(function ($unit) {
             $unit->calculateFields();
+
+            // Ensure insurance expiration is null when insurance is 'No'
+            if ($unit->insurance === 'No') {
+                $unit->insurance_expiration_date = null;
+            }
         });
     }
 
@@ -185,6 +191,7 @@ class Unit extends Model
             'count_beds' => 'nullable|numeric|min:0|max:99.9',
             'count_baths' => 'nullable|numeric|min:0|max:99.9',
             'lease_status' => 'nullable|string|max:255',
+            'is_new_lease' => 'nullable|in:Yes,No',
             'monthly_rent' => 'nullable|numeric|min:0|max:999999999999.99',
             'recurring_transaction' => 'nullable|string|max:255',
             'utility_status' => 'nullable|string|max:255',
@@ -208,6 +215,7 @@ class Unit extends Model
             'count_beds' => 'sometimes|nullable|numeric|min:0|max:99.9',
             'count_baths' => 'sometimes|nullable|numeric|min:0|max:99.9',
             'lease_status' => 'sometimes|nullable|string|max:255',
+            'is_new_lease' => 'sometimes|nullable|in:Yes,No',
             'monthly_rent' => 'sometimes|nullable|numeric|min:0|max:999999999999.99',
             'recurring_transaction' => 'sometimes|nullable|string|max:255',
             'utility_status' => 'sometimes|nullable|string|max:255',

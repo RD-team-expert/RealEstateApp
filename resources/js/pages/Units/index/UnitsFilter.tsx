@@ -1,6 +1,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { UnitFilters } from '@/types/unit';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { Search, X } from 'lucide-react';
@@ -37,7 +39,7 @@ const UnitsFilter: React.FC<UnitsFilterProps> = ({
     onClear,
 }) => {
     return (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-7">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-8">
             <CityAutocomplete
                 cities={cities}
                 value={cityInput}
@@ -52,33 +54,59 @@ const UnitsFilter: React.FC<UnitsFilterProps> = ({
                 onSelect={onPropertySelect}
             />
 
-            <Input
-                type="text"
-                placeholder="Unit Name"
-                value={filters.unit_name || ''}
-                onChange={(e) => onFilterChange('unit_name', e.target.value)}
-                className="text-input-foreground bg-input"
-            />
+            <div className="space-y-1">
+                <Label htmlFor="unit_name">Unit Name</Label>
+                <Input
+                    id="unit_name"
+                    type="text"
+                    placeholder="Search by unit name"
+                    value={filters.unit_name || ''}
+                    onChange={(e) => onFilterChange('unit_name', e.target.value)}
+                    className="text-input-foreground bg-input"
+                />
+            </div>
 
-            <select
-                value={filters.vacant || ''}
-                onChange={(e) => onFilterChange('vacant', e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-            >
-                <option value="">All Vacant Status</option>
-                <option value="Yes">Vacant</option>
-                <option value="No">Occupied</option>
-            </select>
+            <div className="space-y-1">
+                <Label>Vacant Status</Label>
+                <Select value={filters.vacant || ''} onValueChange={(val) => onFilterChange('vacant', val)}>
+                    <SelectTrigger className="h-9">
+                        <SelectValue placeholder="All Vacant Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Vacant Status</SelectItem>
+                        <SelectItem value="Yes">Vacant</SelectItem>
+                        <SelectItem value="No">Occupied</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
 
-            <select
-                value={filters.listed || ''}
-                onChange={(e) => onFilterChange('listed', e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-            >
-                <option value="">All Listed Status</option>
-                <option value="Yes">Listed</option>
-                <option value="No">Not Listed</option>
-            </select>
+            <div className="space-y-1">
+                <Label>Listed Status</Label>
+                <Select value={filters.listed || ''} onValueChange={(val) => onFilterChange('listed', val)}>
+                    <SelectTrigger className="h-9">
+                        <SelectValue placeholder="All Listed Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Listed Status</SelectItem>
+                        <SelectItem value="Yes">Listed</SelectItem>
+                        <SelectItem value="No">Not Listed</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div className="space-y-1">
+                <Label>New Lease</Label>
+                <Select value={filters.is_new_lease || ''} onValueChange={(val) => onFilterChange('is_new_lease', val)}>
+                    <SelectTrigger className="h-9">
+                        <SelectValue placeholder="All New Lease" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All New Lease</SelectItem>
+                        <SelectItem value="Yes">New Lease</SelectItem>
+                        <SelectItem value="No">Renewal/Existing</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
 
             <Button onClick={onSearch} variant="default" className="flex items-center">
                 <Search className="mr-2 h-4 w-4" />

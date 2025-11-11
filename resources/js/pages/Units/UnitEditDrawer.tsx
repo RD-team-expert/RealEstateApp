@@ -1,9 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-import { Unit } from '@/types/unit';
+import { Unit, UnitFilters } from '@/types/unit';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { useForm } from '@inertiajs/react';
-import { format, parse, isValid } from 'date-fns';
 import React, { useState, useRef, useEffect } from 'react';
 import CityPropertySelector from './edit/CityPropertySelector';
 import UnitDetailsFields from './edit/UnitDetailsFields';
@@ -11,6 +10,7 @@ import LeaseInformationFields from './edit/LeaseInformationFields';
 import FinancialFields from './edit/FinancialFields';
 import UtilitiesFields from './edit/UtilitiesFields';
 import InsuranceFields from './edit/InsuranceFields';
+import NewLease from './create/NewLease';
 import CalculatedValuesDisplay from './edit/CalculatedValuesDisplay';
 
 interface Props {
@@ -20,47 +20,28 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    redirectState: {
+        filters: UnitFilters;
+        per_page: string;
+        page: number;
+    };
 }
 
-// Safe date parsing function
-const parseDate = (dateString: string | null | undefined): Date | undefined => {
-    if (!dateString || dateString.trim() === '') {
-        return undefined;
-    }
-    
-    try {
-        const parsedDate = parse(dateString, 'yyyy-MM-dd', new Date());
-        if (isValid(parsedDate)) {
-            return parsedDate;
-        }
-        
-        const directDate = new Date(dateString);
-        if (isValid(directDate)) {
-            return directDate;
-        }
-        
-        return undefined;
-    } catch (error) {
-        console.warn('Date parsing error:', error);
-        return undefined;
-    }
-};
-
-// Safe date formatting function
+// Normalize any incoming date-like string to YYYY-MM-DD without timezone shifts
+// - If the value already looks like YYYY-MM-DD, return it
+// - If it includes time (e.g., ISO string), extract the date part only
 const formatDateForInput = (dateString: string | null | undefined): string => {
-    if (!dateString || dateString.trim() === '') {
-        return '';
-    }
-    
-    const parsedDate = parseDate(dateString);
-    if (parsedDate && isValid(parsedDate)) {
-        return format(parsedDate, 'yyyy-MM-dd');
-    }
-    
-    return '';
+    if (!dateString) return '';
+    const trimmed = dateString.trim();
+    if (trimmed === '') return '';
+
+    const m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})/.exec(trimmed);
+    if (!m) return '';
+    const [, y, mo, d] = m;
+    return `${y}-${mo}-${d}`;
 };
 
-export default function UnitEditDrawer({ unit, cities, properties, open, onOpenChange, onSuccess }: Props) {
+export default function UnitEditDrawer({ unit, cities, properties, open, onOpenChange, onSuccess, redirectState }: Props) {
     const propertyRef = useRef<HTMLButtonElement>(null!);
     const unitNameRef = useRef<HTMLInputElement>(null!);
     const [validationError, setValidationError] = useState<string>('');
@@ -79,7 +60,25 @@ export default function UnitEditDrawer({ unit, cities, properties, open, onOpenC
         setCalendarStates((prev) => ({ ...prev, [field]: open }));
     };
 
-    const { data, setData, put, processing, errors } = useForm({
+    interface UnitEditFormData {
+        property_id: string;
+        unit_name: string;
+        tenants: string;
+        lease_start: string;
+        lease_end: string;
+        count_beds: string;
+        count_baths: string;
+        lease_status: string;
+        is_new_lease: string;
+        monthly_rent: string;
+        recurring_transaction: string;
+        utility_status: string;
+        account_number: string;
+        insurance: string;
+        insurance_expiration_date: string;
+    }
+
+    const { data, setData, put, processing, errors, transform } = useForm({
         property_id: unit.property_id?.toString() || '',
         unit_name: unit.unit_name || '',
         tenants: unit.tenants || '',
@@ -88,6 +87,7 @@ export default function UnitEditDrawer({ unit, cities, properties, open, onOpenC
         count_beds: unit.count_beds?.toString() || '',
         count_baths: unit.count_baths?.toString() || '',
         lease_status: unit.lease_status || '',
+        is_new_lease: unit.is_new_lease || '',
         monthly_rent: unit.monthly_rent?.toString() || '',
         recurring_transaction: unit.recurring_transaction || '',
         utility_status: unit.utility_status || '',
@@ -134,6 +134,7 @@ export default function UnitEditDrawer({ unit, cities, properties, open, onOpenC
                 count_beds: unit.count_beds?.toString() || '',
                 count_baths: unit.count_baths?.toString() || '',
                 lease_status: unit.lease_status || '',
+                is_new_lease: unit.is_new_lease || '',
                 monthly_rent: unit.monthly_rent?.toString() || '',
                 recurring_transaction: unit.recurring_transaction || '',
                 utility_status: unit.utility_status || '',
@@ -159,6 +160,14 @@ export default function UnitEditDrawer({ unit, cities, properties, open, onOpenC
         setData('unit_name', e.target.value);
         setUnitNameValidationError('');
     };
+
+    // Auto-clear insurance expiration date when insurance is 'No'
+    useEffect(() => {
+        if (data.insurance === 'No') {
+            setData('insurance_expiration_date', '');
+            setCalendarOpen('insurance_expiration_date', false);
+        }
+    }, [data.insurance]);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -190,8 +199,25 @@ export default function UnitEditDrawer({ unit, cities, properties, open, onOpenC
         if (hasValidationErrors) {
             return;
         }
-        
+
+        // Ensure insurance expiration date is null when insurance is 'No'
+        if (data.insurance === 'No' && data.insurance_expiration_date !== '') {
+            setData('insurance_expiration_date', '');
+        }
+
+        // Include redirect state to preserve filters/pagination after update
+        transform((payload: UnitEditFormData) => ({
+            ...payload,
+            redirect: {
+                filters: redirectState.filters,
+                per_page: redirectState.per_page,
+                page: redirectState.page,
+            },
+        }) as any);
+
         put(route('units.update', unit.id), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 setValidationError('');
                 setPropertyValidationError('');
@@ -217,6 +243,7 @@ export default function UnitEditDrawer({ unit, cities, properties, open, onOpenC
             count_beds: unit.count_beds?.toString() || '',
             count_baths: unit.count_baths?.toString() || '',
             lease_status: unit.lease_status || '',
+            is_new_lease: unit.is_new_lease || '',
             monthly_rent: unit.monthly_rent?.toString() || '',
             recurring_transaction: unit.recurring_transaction || '',
             utility_status: unit.utility_status || '',
@@ -292,6 +319,12 @@ export default function UnitEditDrawer({ unit, cities, properties, open, onOpenC
                                 leaseStatus={data.lease_status}
                                 onLeaseStatusChange={(value) => setData('lease_status', value)}
                                 leaseStatusError={errors.lease_status}
+                            />
+
+                            <NewLease
+                                isNewLease={data.is_new_lease}
+                                onIsNewLeaseChange={(value) => setData('is_new_lease', value)}
+                                error={errors.is_new_lease}
                             />
 
                             <FinancialFields

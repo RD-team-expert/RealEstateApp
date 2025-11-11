@@ -60,7 +60,7 @@ export default function DatePickerField({
                 <PopoverTrigger asChild>
                     <Button
                         variant="outline"
-                        className={`w-full justify-start text-left font-normal ${!value && 'text-muted-foreground'}`}
+                        className={`relative w-full justify-start text-left font-normal ${!value && 'text-muted-foreground'}`}
                     >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {value && value.trim() !== ''
@@ -69,6 +69,21 @@ export default function DatePickerField({
                                 return parsedDate ? format(parsedDate, 'PPP') : 'Pick a date';
                             })()
                             : 'Pick a date'}
+                        {value && value.trim() !== '' && (
+                            <button
+                                type="button"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onChange('');
+                                    onOpenChange(false);
+                                }}
+                                aria-label="Clear date"
+                            >
+                                ×
+                            </button>
+                        )}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>

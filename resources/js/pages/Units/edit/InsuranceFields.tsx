@@ -46,15 +46,17 @@ export default function InsuranceFields({
             </FormSection>
 
             {/* Insurance Expiration Date */}
-            <DatePickerField
-                label="Insurance Expiration Date"
-                value={insuranceExpirationDate}
-                onChange={onInsuranceExpirationDateChange}
-                isOpen={insuranceExpirationOpen}
-                onOpenChange={onInsuranceExpirationOpenChange}
-                error={insuranceExpirationDateError}
-                borderColor="border-l-rose-500"
-            />
+            {insurance === 'Yes' && (
+                <DatePickerField
+                    label="Insurance Expiration Date"
+                    value={insuranceExpirationDate}
+                    onChange={onInsuranceExpirationDateChange}
+                    isOpen={insuranceExpirationOpen}
+                    onOpenChange={onInsuranceExpirationOpenChange}
+                    error={insuranceExpirationDateError}
+                    borderColor="border-l-rose-500"
+                />
+            )}
         </>
     );
 }

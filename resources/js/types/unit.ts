@@ -12,6 +12,7 @@ export interface Unit {
     count_beds: number | null;
     count_baths: number | null;
     lease_status: string | null;
+    is_new_lease: 'Yes' | 'No' | null;
     monthly_rent: number | null;
     recurring_transaction: string | null;
     utility_status: string | null;
@@ -63,6 +64,7 @@ export interface UnitFilters {
     vacant?: string;
     listed?: string;
     insurance?: string;
+    is_new_lease?: string;
 }
 
 export interface UnitStatistics {
@@ -78,7 +80,7 @@ export interface PaginatedUnits {
     data: Unit[];
     current_page: number;
     last_page: number;
-    per_page: number;
+    per_page: number | string;
     total: number;
     from: number;
     to: number;
