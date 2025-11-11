@@ -1,15 +1,13 @@
 // resources/js/Pages/Properties/create/PropertySelectionSection.tsx
+import { useState } from 'react';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Building2, AlertCircle } from 'lucide-react';
+import { Building2, AlertCircle, Check, ChevronsUpDown } from 'lucide-react';
 import { PropertyWithoutInsurance } from '@/types/property';
+import { cn } from '@/lib/utils';
 
 interface PropertySelectionSectionProps {
     propertyId: number;
@@ -33,6 +31,12 @@ export default function PropertySelectionSection({
     errors,
     validationError
 }: PropertySelectionSectionProps) {
+    const [open, setOpen] = useState(false);
+    const selectedPropertyName =
+        (propertyId && propertyId !== 0
+            ? filteredProperties.find((p) => p.id === propertyId)?.property_name
+            : '') || '';
+
     return (
         <div className="rounded-lg border-l-4 border-l-green-500 p-4">
             <div className="mb-2">
@@ -41,28 +45,55 @@ export default function PropertySelectionSection({
                     Select Property *
                 </Label>
             </div>
-            <Select 
-                value={propertyId && propertyId !== 0 ? propertyId.toString() : ''} 
-                onValueChange={onPropertyChange}
-                disabled={!selectedCityId}
-            >
-                <SelectTrigger className="w-full">
-                    <SelectValue 
-                        placeholder={
-                            !selectedCityId 
-                                ? "Select a city first..." 
-                                : "Choose a property..."
-                        } 
-                    />
-                </SelectTrigger>
-                <SelectContent>
-                    {filteredProperties.map((property) => (
-                        <SelectItem key={property.id} value={property.id.toString()}>
-                            {property.property_name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        id="property_select"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between"
+                        disabled={!selectedCityId}
+                    >
+                        {selectedCityId
+                            ? selectedPropertyName || 'Choose a property...'
+                            : 'Select a city first...'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                    <Command>
+                        <CommandInput placeholder="Search property..." />
+                        <CommandEmpty>No property found.</CommandEmpty>
+                        <CommandList>
+                            <CommandGroup>
+                                {filteredProperties.map((property) => {
+                                    const value = property.id.toString();
+                                    const isSelected = propertyId && propertyId !== 0 && value === propertyId.toString();
+                                    return (
+                                        <CommandItem
+                                            key={property.id}
+                                            value={value}
+                                            onSelect={(v) => {
+                                                onPropertyChange(v);
+                                                setOpen(false);
+                                            }}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    'mr-2 h-4 w-4',
+                                                    isSelected ? 'opacity-100' : 'opacity-0'
+                                                )}
+                                            />
+                                            {property.property_name}
+                                        </CommandItem>
+                                    );
+                                })}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
             
             {/* Show backend validation errors if any */}
             {errors.property_id && <p className="mt-1 text-sm text-red-600">{errors.property_id}</p>}

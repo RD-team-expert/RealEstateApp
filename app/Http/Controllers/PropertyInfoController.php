@@ -34,15 +34,9 @@ class PropertyInfoController extends Controller
      */
     public function index(Request $request): Response
     {
-        // Get per_page value from request (defaults to 15 if not provided by frontend)
-        $perPage = $request->get('per_page', 15);
-
-        // If per_page is very large (999999) or 'all', get all records without pagination
-        if ($perPage == 'all') {
-            $perPage = PHP_INT_MAX; // Maximum integer value
-        } else {
-            $perPage = (int) $perPage;
-        }
+        // Get per_page value from request (supports '15', '30', '50', 'all')
+        // Keep as string to allow service to resolve 'all' consistently like Payments
+        $perPageParam = $request->get('per_page', '15');
 
 
         // Extract filter parameters from request
@@ -52,7 +46,7 @@ class PropertyInfoController extends Controller
         $this->propertyInfoService->updateAllStatuses();
 
         // Get paginated properties with filters applied
-        $properties = $this->propertyInfoService->getAllPaginated($perPage, $filters);
+        $properties = $this->propertyInfoService->getAllPaginated($perPageParam, $filters);
 
         // Get statistics for dashboard display
         $statistics = $this->propertyInfoService->getStatistics();
@@ -66,7 +60,8 @@ class PropertyInfoController extends Controller
         return Inertia::render('Properties/Index', [
             'properties' => $properties,
             'statistics' => $statistics,
-            'filters' => $filters,
+            // Include per_page in filters to allow frontend to show the selected option ('all' etc.)
+            'filters' => array_merge($filters, ['per_page' => $perPageParam]),
             'cities' => $cities,
             'availableProperties' => $availableProperties,
         ]);
@@ -84,10 +79,8 @@ class PropertyInfoController extends Controller
         try {
             $this->propertyInfoService->create($request->validated());
 
-            // Redirect to index route with all query parameters preserved
-            // This maintains pagination (page number) and filters (property_name, insurance_company_name, etc.)
-            // The query parameters are automatically included from the current request
-            return redirect()->route('properties-info.index', $request->query())
+            // Redirect to index with preserved filters/pagination from namespaced POST keys
+            return redirect()->route('properties-info.index', $this->indexRedirectParams($request))
                 ->with('success', 'Property created successfully');
         } catch (\Exception $e) {
             // On error, redirect back to the same page with input preserved
@@ -139,10 +132,8 @@ class PropertyInfoController extends Controller
             $property = $this->propertyInfoService->findById($id);
             $this->propertyInfoService->update($property, $request->validated());
 
-            // Redirect to index route with all query parameters preserved
-            // The $request->query() method gets all query string parameters (page, per_page, filters)
-            // and passes them to the redirect URL, maintaining the user's context
-            return redirect()->route('properties-info.index', $request->query())
+            // Redirect to index with preserved filters/pagination from namespaced POST keys
+            return redirect()->route('properties-info.index', $this->indexRedirectParams($request))
                 ->with('success', 'Property updated successfully');
         } catch (\Exception $e) {
             // On error, redirect back with input and query parameters preserved
@@ -166,15 +157,51 @@ class PropertyInfoController extends Controller
             $property = $this->propertyInfoService->findById($id);
             $this->propertyInfoService->delete($property);
 
-            // Pull params from body or query (without _token/_method)
-            $keep = $request->except(['_token', '_method']);
-
+            // Redirect back to index with preserved filters/pagination
+            // Read namespaced DELETE params and normalize via indexRedirectParams
             return redirect()
-                ->route('properties-info.index', $keep)
+                ->route('properties-info.index', $this->indexRedirectParams($request))
                 ->with('success', 'Property deleted successfully');
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Failed to delete property: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Collect filters and pagination params to persist on redirects.
+     * Mirrors Payments controller behavior to avoid collisions during POST/PUT.
+     */
+    private function indexRedirectParams(Request $request): array
+    {
+        $params = [];
+
+        // For create/update (POST/PUT), read namespaced filter_* keys to avoid
+        // colliding with form fields.
+        if ($request->isMethod('post') || $request->isMethod('put') || $request->isMethod('delete')) {
+            $map = [
+                'filter_property_name' => 'property_name',
+                'filter_insurance_company_name' => 'insurance_company_name',
+                'filter_policy_number' => 'policy_number',
+                'filter_status' => 'status',
+                'filter_per_page' => 'per_page',
+                'filter_page' => 'page',
+            ];
+            foreach ($map as $from => $to) {
+                if ($request->has($from)) {
+                    $params[$to] = $request->input($from);
+                }
+            }
+        } else {
+            // For GET redirects, read normal keys
+            $keys = ['property_name', 'insurance_company_name', 'policy_number', 'status', 'per_page', 'page'];
+            foreach ($keys as $key) {
+                if ($request->has($key)) {
+                    $params[$key] = $request->input($key);
+                }
+            }
+        }
+
+        return $params;
     }
 }

@@ -1,13 +1,11 @@
 // resources/js/Pages/Properties/create/CitySelectionSection.tsx
+import { useState } from 'react';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { MapPin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { MapPin, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { City } from '@/types/City';
 
 interface CitySelectionSectionProps {
@@ -26,6 +24,11 @@ export default function CitySelectionSection({
     cities,
     onCityChange
 }: CitySelectionSectionProps) {
+    const [open, setOpen] = useState(false);
+
+    const selectedCityName =
+        cities.find((c) => c.id.toString() === selectedCityId)?.city || '';
+
     return (
         <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
             <div className="mb-2">
@@ -34,18 +37,52 @@ export default function CitySelectionSection({
                     Select City
                 </Label>
             </div>
-            <Select value={selectedCityId} onValueChange={onCityChange}>
-                <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Choose a city..." />
-                </SelectTrigger>
-                <SelectContent>
-                    {cities.map((city) => (
-                        <SelectItem key={city.id} value={city.id.toString()}>
-                            {city.city}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        id="city_select"
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between"
+                    >
+                        {selectedCityName || 'Choose a city...'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                    <Command>
+                        <CommandInput placeholder="Search city..." />
+                        <CommandEmpty>No city found.</CommandEmpty>
+                        <CommandList>
+                            <CommandGroup>
+                                {cities.map((city) => {
+                                    const value = city.id.toString();
+                                    const isSelected = selectedCityId === value;
+                                    return (
+                                        <CommandItem
+                                            key={city.id}
+                                            value={value}
+                                            onSelect={(v) => {
+                                                onCityChange(v);
+                                                setOpen(false);
+                                            }}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    'mr-2 h-4 w-4',
+                                                    isSelected ? 'opacity-100' : 'opacity-0'
+                                                )}
+                                            />
+                                            {city.city}
+                                        </CommandItem>
+                                    );
+                                })}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
         </div>
     );
 }

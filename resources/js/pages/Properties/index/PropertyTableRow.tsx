@@ -43,10 +43,25 @@ export default function PropertyTableRow({
         return diffDays;
     };
 
+    /**
+     * Truncate text and append dots after a max length
+     * Shows "N/A" when empty or undefined
+     */
+    const truncateText = (text?: string, max: number = 20): string => {
+        if (!text) return 'N/A';
+        const trimmed = text.trim();
+        if (trimmed.length === 0) return 'N/A';
+        return trimmed.length > max ? `${trimmed.slice(0, max)}...` : trimmed;
+    };
+
     return (
         <TableRow className="hover:bg-muted/50 border-border">
-            {/* Property Name - sticky column for horizontal scrolling */}
-            <TableCell className="font-medium text-center text-foreground border border-border bg-muted sticky left-0 z-10 min-w-[120px]">
+            {/* City - first sticky column */}
+            <TableCell className="text-center text-foreground border border-border bg-muted sticky left-0 z-20 min-w-[120px]">
+                {property.property?.city?.city || 'N/A'}
+            </TableCell>
+            {/* Property Name - second sticky column for horizontal scrolling */}
+            <TableCell className="font-medium text-center text-foreground border border-border bg-muted sticky left-[120px] z-10 min-w-[160px]">
                 {property.property?.property_name || 'N/A'}
             </TableCell>
             
@@ -78,6 +93,11 @@ export default function PropertyTableRow({
             {/* Days Left - colored badge based on urgency */}
             <TableCell className="text-center border border-border">
                 <PropertyDaysLeftBadge daysLeft={calculateDaysLeft(property.expiration_date)} />
+            </TableCell>
+            
+            {/* Notes - optional text */}
+            <TableCell className="text-left text-foreground border border-border max-w-[240px] break-words">
+                {truncateText(property.notes)}
             </TableCell>
             
             {/* Status - Active/Expired badge */}

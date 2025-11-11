@@ -21,7 +21,7 @@ interface PropertyCreateDrawerProps {
     // New props for preserving pagination and filters
     currentFilters: PropertyFiltersType;
     currentPage: number;
-    currentPerPage: number;
+    currentPerPage: number | 'all';
 }
 
 export default function PropertyCreateDrawer({ 
@@ -29,7 +29,6 @@ export default function PropertyCreateDrawer({
     onOpenChange, 
     cities = [],
     availableProperties = [],
-    onSuccess,
     currentFilters,
     currentPage,
     currentPerPage
@@ -51,7 +50,7 @@ export default function PropertyCreateDrawer({
         notes: '',
     };
 
-    const { data, setData, post, processing, errors, reset, clearErrors } = useForm(initialFormValues);
+    const { data, setData, post, processing, errors, reset, clearErrors, transform } = useForm(initialFormValues);
 
     /**
      * Filter properties by selected city
@@ -71,13 +70,9 @@ export default function PropertyCreateDrawer({
     }, [selectedCityId, availableProperties]);
 
     /**
-     * Reset form when drawer opens
+     * Preserve form state when drawer reopens unless user cancels or submits.
+     * Removing the auto-reset-on-open ensures filled data remains after closing.
      */
-    useEffect(() => {
-        if (open) {
-            resetForm();
-        }
-    }, [open]);
 
     /**
      * Function to reset all form state
@@ -148,31 +143,24 @@ export default function PropertyCreateDrawer({
     };
 
     /**
-     * Build the store URL with query parameters
-     * Appends pagination and filter parameters to the route URL
+     * Build namespaced filter & pagination params to include in POST body
+     * Mirrors the Payments flow to avoid collisions with form fields
      */
-    const buildStoreUrl = (): string => {
-        const params: string[] = [];
-        
-        // Add pagination info
-        if (currentPage && currentPage > 1) {
-            params.push(`page=${currentPage}`);
-        }
-        
-        if (currentPerPage) {
-            params.push(`per_page=${currentPerPage}`);
-        }
-        
-        // Add filters
-        Object.entries(currentFilters).forEach(([key, value]) => {
-            if (value !== null && value !== undefined && value !== '') {
-                params.push(`${key}=${encodeURIComponent(String(value))}`);
-            }
-        });
-        
-        // Build the complete URL with query parameters
-        const baseUrl = route('properties-info.store');
-        return params.length > 0 ? `${baseUrl}?${params.join('&')}` : baseUrl;
+    const buildNamespacedParams = (): Record<string, any> => {
+        const params: Record<string, any> = {};
+
+        // Pagination context
+        if (currentPerPage) params.filter_per_page = String(currentPerPage);
+        if (currentPage && currentPage > 0) params.filter_page = currentPage;
+
+        // Filters context
+        const { property_name, insurance_company_name, policy_number, status } = currentFilters || {};
+        if (property_name) params.filter_property_name = property_name;
+        if (insurance_company_name) params.filter_insurance_company_name = insurance_company_name;
+        if (policy_number) params.filter_policy_number = policy_number;
+        if (status) params.filter_status = status;
+
+        return params;
     };
 
     /**
@@ -189,16 +177,17 @@ export default function PropertyCreateDrawer({
             return;
         }
 
-        // Build store URL with query parameters
-        // Inertia will send the form data in the request body
-        // and the query parameters will be preserved in the URL
-        post(buildStoreUrl(), {
+        // Namespace filters/pagination into body to preserve context on redirect
+        transform((formData) => ({ ...formData, ...buildNamespacedParams() }));
+
+        post(route('properties-info.store'), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 resetForm();
                 onOpenChange(false);
-                if (onSuccess) {
-                    // onSuccess();
-                }
+                // Intentionally not calling onSuccess to avoid redundant reload;
+                // backend redirects with preserved context.
             },
             onError: () => {
                 // Errors from backend will be automatically handled

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar } from 'lucide-react';
+import { Calendar, X } from 'lucide-react';
 
 interface DateFieldsProps {
     effectiveDateValue: string;
@@ -35,12 +35,28 @@ export default function DateFields({
                         Effective Date (Optional)
                     </Label>
                 </div>
-                <Input
-                    id="effective_date"
-                    type="date"
-                    value={effectiveDateValue}
-                    onChange={onEffectiveDateChange}
-                />
+                <div className="relative group">
+                    <Input
+                        id="effective_date"
+                        type="date"
+                        value={effectiveDateValue}
+                        onChange={onEffectiveDateChange}
+                        className="pr-10"
+                    />
+                    <button
+                        type="button"
+                        title="Clear date"
+                        aria-label="Clear effective date"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-md p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        onClick={() =>
+                            onEffectiveDateChange({
+                                target: { value: '' }
+                            } as unknown as React.ChangeEvent<HTMLInputElement>)
+                        }
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
                 {/* Only show backend validation errors if any */}
                 {effectiveDateError && (
                     <p className="mt-1 text-sm text-red-600">{effectiveDateError}</p>
@@ -55,12 +71,28 @@ export default function DateFields({
                         Expiration Date (Optional)
                     </Label>
                 </div>
-                <Input
-                    id="expiration_date"
-                    type="date"
-                    value={expirationDateValue}
-                    onChange={onExpirationDateChange}
-                />
+                <div className="relative group">
+                    <Input
+                        id="expiration_date"
+                        type="date"
+                        value={expirationDateValue}
+                        onChange={onExpirationDateChange}
+                        className="pr-10"
+                    />
+                    <button
+                        type="button"
+                        title="Clear date"
+                        aria-label="Clear expiration date"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-md p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        onClick={() =>
+                            onExpirationDateChange({
+                                target: { value: '' }
+                            } as unknown as React.ChangeEvent<HTMLInputElement>)
+                        }
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
                 {/* Only show backend validation errors if any */}
                 {expirationDateError && (
                     <p className="mt-1 text-sm text-red-600">{expirationDateError}</p>

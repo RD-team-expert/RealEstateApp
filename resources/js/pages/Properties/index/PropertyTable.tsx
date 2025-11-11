@@ -39,7 +39,12 @@ export default function PropertyTable({
             <Table className="border-collapse border border-border rounded-md">
                 <TableHeader>
                     <TableRow className="border-border">
-                        <TableHead className="text-muted-foreground border border-border bg-muted sticky left-0 z-10 min-w-[120px]">
+                        {/* Sticky City column at the start */}
+                        <TableHead className="text-muted-foreground border border-border bg-muted sticky left-0 z-20 min-w-[120px]">
+                            City
+                        </TableHead>
+                        {/* Property Name becomes the second sticky column */}
+                        <TableHead className="text-muted-foreground border border-border bg-muted sticky left-[120px] z-10 min-w-[160px]">
                             Property Name
                         </TableHead>
                         <TableHead className="text-muted-foreground border border-border bg-muted">
@@ -59,6 +64,9 @@ export default function PropertyTable({
                         </TableHead>
                         <TableHead className="text-muted-foreground border border-border bg-muted">
                             Days Left
+                        </TableHead>
+                        <TableHead className="text-muted-foreground border border-border bg-muted">
+                            Notes
                         </TableHead>
                         <TableHead className="text-muted-foreground border border-border bg-muted">
                             Status

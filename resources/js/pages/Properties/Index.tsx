@@ -104,6 +104,9 @@ export default function Index({ properties, filters, cities = [], availablePrope
     // Get flash messages from Inertia
     const { flash } = usePage().props;
 
+    // Derive current per-page selection from filters (supports 'all'), fallback to paginator meta
+    const currentPerPageSelection: number | 'all' = ((filters as any)?.per_page ?? properties.per_page) as number | 'all';
+
 
     /**
      * Get current query parameters including page and per_page
@@ -118,8 +121,8 @@ export default function Index({ properties, filters, cities = [], availablePrope
         }
         
         // Add per_page if exists
-        if (properties.per_page) {
-            params.per_page = properties.per_page.toString();
+        if (currentPerPageSelection) {
+            params.per_page = currentPerPageSelection.toString();
         }
         
         // Add filters
@@ -129,6 +132,28 @@ export default function Index({ properties, filters, cities = [], availablePrope
             }
         });
         
+        return params;
+    };
+
+    /**
+     * Build namespaced params for non-GET actions (e.g., delete) so
+     * they don't collide with form fields. Mirrors create/edit behavior.
+     */
+    const buildNamespacedParams = (): Record<string, string> => {
+        const params: Record<string, string> = {};
+
+        // Filters
+        if (searchFilters.property_name) params['filter_property_name'] = String(searchFilters.property_name);
+        if (searchFilters.insurance_company_name) params['filter_insurance_company_name'] = String(searchFilters.insurance_company_name);
+        if (searchFilters.policy_number) params['filter_policy_number'] = String(searchFilters.policy_number);
+        if (typeof searchFilters.status !== 'undefined' && searchFilters.status !== null) {
+            params['filter_status'] = String(searchFilters.status);
+        }
+
+        // Pagination
+        if (currentPerPageSelection) params['filter_per_page'] = String(currentPerPageSelection);
+        if (properties.current_page && properties.current_page > 1) params['filter_page'] = String(properties.current_page);
+
         return params;
     };
 
@@ -158,8 +183,8 @@ export default function Index({ properties, filters, cities = [], availablePrope
         });
         
         // Add per_page if exists to maintain user's selection
-        if (properties.per_page) {
-            filterParams.per_page = properties.per_page.toString();
+        if (currentPerPageSelection) {
+            filterParams.per_page = currentPerPageSelection.toString();
         }
         
         // Reset to page 1 when searching with new filters
@@ -185,8 +210,8 @@ export default function Index({ properties, filters, cities = [], availablePrope
         
         // Only preserve per_page when clearing filters
         const params: Record<string, string> = {};
-        if (properties.per_page) {
-            params.per_page = properties.per_page.toString();
+        if (currentPerPageSelection) {
+            params.per_page = currentPerPageSelection.toString();
         }
         
         router.get(route('properties-info.index'), params, {
@@ -205,7 +230,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
             // Include current query params in the delete request
             // This preserves pagination and filters when redirecting back to index
             router.delete(route('properties-info.destroy', property.id), {
-                data: getCurrentQueryParams(),
+                data: buildNamespacedParams(),
                 preserveState: true,
                 preserveScroll: true,
             });
@@ -235,21 +260,6 @@ export default function Index({ properties, filters, cities = [], availablePrope
             setIsExporting(false);
         }
     };
-
-
-    /**
-     * Handle successful creation in drawer
-     * Reloads the page to show updated data while preserving state
-     */
-    const handleDrawerSuccess = () => {
-        setIsDrawerOpen(false);
-        // Reload is better than router.reload() here because it preserves query params
-        router.get(route('properties-info.index'), getCurrentQueryParams(), {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
-
 
     /**
      * Handle successful edit in drawer
@@ -360,7 +370,7 @@ export default function Index({ properties, filters, cities = [], availablePrope
                             {properties.data.length > 0 && (
                                 <PropertyPagination
                                     paginatedData={properties}
-                                    currentPerPage={properties.per_page || 15}
+                                    currentPerPage={currentPerPageSelection || 15}
                                     onPerPageChange={handlePerPageChange}
                                 />
                             )}
@@ -376,10 +386,9 @@ export default function Index({ properties, filters, cities = [], availablePrope
                 onOpenChange={setIsDrawerOpen}
                 cities={cities}
                 availableProperties={availableProperties}
-                onSuccess={handleDrawerSuccess}
                 currentFilters={searchFilters}
                 currentPage={properties.current_page || 1}
-                currentPerPage={properties.per_page || 15}
+                currentPerPage={currentPerPageSelection || 15}
             />
 
 
@@ -393,7 +402,8 @@ export default function Index({ properties, filters, cities = [], availablePrope
                     onSuccess={handleEditDrawerSuccess}
                     currentFilters={searchFilters}
                     currentPage={properties.current_page || 1}
-                    currentPerPage={properties.per_page || 15}
+                    currentPerPage={currentPerPageSelection || 15}
+                    cities={cities}
                 />
             )}
         </AppLayout>

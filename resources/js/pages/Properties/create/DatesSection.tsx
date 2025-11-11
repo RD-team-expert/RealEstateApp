@@ -2,7 +2,7 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Calendar } from 'lucide-react';
+import { Calendar, X } from 'lucide-react';
 
 interface DatesSectionProps {
     effectiveDate: string;
@@ -34,12 +34,28 @@ export default function DatesSection({
                         Effective Date (Optional)
                     </Label>
                 </div>
-                <Input
-                    id="effective_date"
-                    type="date"
-                    value={effectiveDate}
-                    onChange={onEffectiveDateChange}
-                />
+                <div className="relative group">
+                    <Input
+                        id="effective_date"
+                        type="date"
+                        value={effectiveDate}
+                        onChange={onEffectiveDateChange}
+                        className="pr-10"
+                    />
+                    <button
+                        type="button"
+                        title="Clear date"
+                        aria-label="Clear effective date"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-md p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        onClick={() =>
+                            onEffectiveDateChange({
+                                target: { value: '' }
+                            } as unknown as React.ChangeEvent<HTMLInputElement>)
+                        }
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
                 {/* Only show backend validation errors if any */}
                 {errors.effective_date && (
                     <p className="mt-1 text-sm text-red-600">{errors.effective_date}</p>
@@ -54,12 +70,28 @@ export default function DatesSection({
                         Expiration Date (Optional)
                     </Label>
                 </div>
-                <Input
-                    id="expiration_date"
-                    type="date"
-                    value={expirationDate}
-                    onChange={onExpirationDateChange}
-                />
+                <div className="relative group">
+                    <Input
+                        id="expiration_date"
+                        type="date"
+                        value={expirationDate}
+                        onChange={onExpirationDateChange}
+                        className="pr-10"
+                    />
+                    <button
+                        type="button"
+                        title="Clear date"
+                        aria-label="Clear expiration date"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-md p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        onClick={() =>
+                            onExpirationDateChange({
+                                target: { value: '' }
+                            } as unknown as React.ChangeEvent<HTMLInputElement>)
+                        }
+                    >
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
                 {/* Only show backend validation errors if any */}
                 {errors.expiration_date && (
                     <p className="mt-1 text-sm text-red-600">{errors.expiration_date}</p>

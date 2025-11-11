@@ -4,7 +4,9 @@ import { useForm } from '@inertiajs/react';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Property, PropertyWithoutInsurance, PropertyFilters as PropertyFiltersType } from '@/types/property';
-import PropertySelectField from './edit/PropertySelectField';
+import { City } from '@/types/City';
+import CitySelectionSection from './create/CitySelectionSection';
+import PropertySelectionSection from './create/PropertySelectionSection';
 import InsuranceCompanyField from './edit/InsuranceCompanyField';
 import AmountPolicyFields from './edit/AmountPolicyFields';
 import DateFields from './edit/DateFields';
@@ -19,7 +21,9 @@ interface PropertyEditDrawerProps {
     // New props for preserving pagination and filters
     currentFilters: PropertyFiltersType;
     currentPage: number;
-    currentPerPage: number;
+    currentPerPage: number | 'all';
+    // Cities to enable city selection like create drawer
+    cities: City[];
 }
 
 export default function PropertyEditDrawer({ 
@@ -30,12 +34,17 @@ export default function PropertyEditDrawer({
     onSuccess,
     currentFilters,
     currentPage,
-    currentPerPage
+    currentPerPage,
+    cities = []
 }: PropertyEditDrawerProps) {
     // Only validation error for required field (property_id)
     const [propertyIdValidationError, setPropertyIdValidationError] = useState<string>('');
 
-    const { data, setData, put, processing, errors, clearErrors } = useForm({
+    // City selection state (behaves like create drawer)
+    const [selectedCityId, setSelectedCityId] = useState<string>('');
+    const [filteredProperties, setFilteredProperties] = useState<PropertyWithoutInsurance[]>([]);
+
+    const { data, setData, put, processing, errors, clearErrors, transform } = useForm({
         property_id: property.property_id || 0,
         insurance_company_name: property.insurance_company_name || '',
         amount: property.amount ? property.amount.toString() : '',
@@ -60,17 +69,50 @@ export default function PropertyEditDrawer({
                 notes: property.notes || '',
             });
             setPropertyIdValidationError('');
+
+            // Initialize city selection based on the current property's city
+            const currentProperty = property.property;
+            const initialCityId = currentProperty?.city_id ? currentProperty.city_id.toString() : '';
+            setSelectedCityId(initialCityId);
         }
     }, [property]);
 
     /**
-     * Handle property ID change
-     * Clear validation error when user interacts with field
+     * Filter properties by selected city and include current property if missing
+     * Mirrors create drawer behavior but ensures the current property is selectable
      */
-    const handlePropertyIdChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setData('property_id', parseInt(e.target.value));
-        setPropertyIdValidationError('');
-    };
+    useEffect(() => {
+        if (selectedCityId) {
+            const cityIdNum = parseInt(selectedCityId);
+            let filtered = availableProperties.filter(p => p.city_id === cityIdNum);
+
+            // Ensure the currently selected property is included even if not in availableProperties
+            const currentProperty = property?.property;
+            if (currentProperty && currentProperty.city_id === cityIdNum) {
+                const exists = filtered.some(p => p.id === currentProperty.id);
+                if (!exists) {
+                    filtered = [
+                        {
+                            id: currentProperty.id,
+                            city_id: currentProperty.city_id ?? null,
+                            property_name: currentProperty.property_name,
+                            is_archived: currentProperty.is_archived,
+                            created_at: currentProperty.created_at,
+                            updated_at: currentProperty.updated_at,
+                            city: currentProperty.city,
+                        },
+                        ...filtered,
+                    ];
+                }
+            }
+            setFilteredProperties(filtered);
+        } else {
+            setFilteredProperties([]);
+        }
+        // Do not auto-reset here; handleCityChange controls property_id reset
+    }, [selectedCityId, availableProperties, property]);
+
+    // Property ID change handled inline via PropertySelectionSection
 
     /**
      * Handle insurance company name change
@@ -121,31 +163,35 @@ export default function PropertyEditDrawer({
     };
 
     /**
-     * Build the update URL with query parameters
-     * Appends pagination and filter parameters to the route URL
+     * Handle city change (like create drawer)
+     * Updates selected city, resets property selection, and clears errors
      */
-    const buildUpdateUrl = (): string => {
-        const params: string[] = [];
-        
-        // Add pagination info
-        if (currentPage && currentPage > 1) {
-            params.push(`page=${currentPage}`);
-        }
-        
-        if (currentPerPage) {
-            params.push(`per_page=${currentPerPage}`);
-        }
-        
-        // Add filters
-        Object.entries(currentFilters).forEach(([key, value]) => {
-            if (value !== null && value !== undefined && value !== '') {
-                params.push(`${key}=${encodeURIComponent(String(value))}`);
-            }
-        });
-        
-        // Build the complete URL with query parameters
-        const baseUrl = route('properties-info.update', property.id);
-        return params.length > 0 ? `${baseUrl}?${params.join('&')}` : baseUrl;
+    const handleCityChange = (value: string) => {
+        setSelectedCityId(value);
+        setData('property_id', 0);
+        clearErrors();
+        setPropertyIdValidationError('');
+    };
+
+    /**
+     * Build namespaced filter & pagination params to include in PUT body
+     * Mirrors the Payments flow to avoid collisions with form fields
+     */
+    const buildNamespacedParams = (): Record<string, any> => {
+        const params: Record<string, any> = {};
+
+        // Pagination context
+        if (currentPerPage) params.filter_per_page = String(currentPerPage);
+        if (currentPage && currentPage > 0) params.filter_page = currentPage;
+
+        // Filters context
+        const { property_name, insurance_company_name, policy_number, status } = currentFilters || {};
+        if (property_name) params.filter_property_name = property_name;
+        if (insurance_company_name) params.filter_insurance_company_name = insurance_company_name;
+        if (policy_number) params.filter_policy_number = policy_number;
+        if (status) params.filter_status = status;
+
+        return params;
     };
 
     /**
@@ -162,10 +208,12 @@ export default function PropertyEditDrawer({
             return;
         }
 
-        // Build update URL with query parameters
-        const updateUrl = buildUpdateUrl();
-        
-        put(updateUrl, {
+        // Namespace filters/pagination into body to preserve context on redirect
+        transform((formData) => ({ ...formData, ...buildNamespacedParams() }));
+
+        put(route('properties-info.update', property.id), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 setPropertyIdValidationError('');
                 onOpenChange(false);
@@ -206,12 +254,23 @@ export default function PropertyEditDrawer({
                 <div className="flex h-full flex-col">
                     <div className="flex-1 overflow-auto p-6">
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Property selection - REQUIRED */}
-                            <PropertySelectField
-                                value={data.property_id}
-                                onChange={handlePropertyIdChange}
-                                availableProperties={availableProperties}
-                                error={errors.property_id}
+                            {/* City selection - used to filter properties (same as create) */}
+                            <CitySelectionSection
+                                selectedCityId={selectedCityId}
+                                cities={cities}
+                                onCityChange={handleCityChange}
+                            />
+
+                            {/* Property selection - REQUIRED (same as create) */}
+                            <PropertySelectionSection
+                                propertyId={data.property_id}
+                                selectedCityId={selectedCityId}
+                                filteredProperties={filteredProperties}
+                                onPropertyChange={(value) => {
+                                    setData('property_id', parseInt(value));
+                                    setPropertyIdValidationError('');
+                                }}
+                                errors={errors}
                                 validationError={propertyIdValidationError}
                             />
 

@@ -20,7 +20,7 @@ import { PaginatedProperties } from '@/types/property';
 
 interface PropertyPaginationProps {
     paginatedData: PaginatedProperties;
-    currentPerPage: number;
+    currentPerPage: number | 'all';
     onPerPageChange: (perPage: number | 'all') => void;
 }
 

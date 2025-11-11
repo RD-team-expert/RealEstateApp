@@ -18,10 +18,10 @@ class PropertyInfoService
      * @param array $filters Array of filter criteria (property_name, insurance_company_name, policy_number, status)
      * @return LengthAwarePaginator Paginated results with metadata (current_page, last_page, total, etc.)
      */
-    public function getAllPaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator
+    public function getAllPaginated(int|string $perPage = 15, array $filters = []): LengthAwarePaginator
     {
-        // Start query with eager loading of the property relationship to avoid N+1 queries
-        $query = PropertyInfo::with('property');
+        // Start query with eager loading of the property and its city to avoid N+1 queries
+        $query = PropertyInfo::with(['property.city']);
 
         // Apply property name filter through the relationship
         if (!empty($filters['property_name'])) {
@@ -45,9 +45,12 @@ class PropertyInfoService
             $query->where('status', $filters['status']);
         }
 
+        // Resolve per-page: if 'all', paginate with total count so all appear in one page
+        $resolvedPerPage = ($perPage === 'all') ? max(1, $query->count()) : (int) $perPage;
+
         // Order by expiration date and paginate
         // The paginate() method automatically handles page parameter from the request
-        return $query->orderBy('expiration_date', 'asc')->paginate($perPage);
+        return $query->orderBy('expiration_date', 'asc')->paginate($resolvedPerPage);
     }
 
     /**
@@ -73,7 +76,7 @@ class PropertyInfoService
      */
     public function findById(int $id): PropertyInfo
     {
-        return PropertyInfo::with('property')->findOrFail($id);
+        return PropertyInfo::with(['property.city'])->findOrFail($id);
     }
 
     /**
