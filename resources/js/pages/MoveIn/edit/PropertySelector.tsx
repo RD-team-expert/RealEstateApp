@@ -1,6 +1,17 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
-import React from 'react';
 import FormSection from './FormSection';
 
 interface PropertySelectorProps {
@@ -22,6 +33,8 @@ export default function PropertySelector({
     selectedCityId,
     error 
 }: PropertySelectorProps) {
+    const [open, setOpen] = useState(false);
+    const selectedProperty = properties.find((p) => p.id.toString() === selectedPropertyId);
     return (
         <FormSection 
             label="Property" 
@@ -29,22 +42,49 @@ export default function PropertySelector({
             error={error}
             required
         >
-            <Select 
-                onValueChange={onPropertyChange} 
-                value={selectedPropertyId} 
-                disabled={disabled}
-            >
-                <SelectTrigger ref={propertyRef}>
-                    <SelectValue placeholder={selectedCityId ? 'Select property' : 'Select city first'} />
-                </SelectTrigger>
-                <SelectContent>
-                    {properties.map((property) => (
-                        <SelectItem key={property.id} value={property.id.toString()}>
-                            {property.property_name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        ref={propertyRef}
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between"
+                        disabled={disabled}
+                    >
+                        {selectedProperty?.property_name || (selectedCityId ? 'Select property' : 'Select city first')}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <Command>
+                        <CommandInput placeholder="Search property..." />
+                        <CommandEmpty>No property found.</CommandEmpty>
+                        <CommandList>
+                            <CommandGroup>
+                                {properties.map((property) => (
+                                    <CommandItem
+                                        key={property.id}
+                                        value={property.property_name}
+                                        onSelect={() => {
+                                            onPropertyChange(property.id.toString());
+                                            setOpen(false);
+                                        }}
+                                    >
+                                        <Check
+                                            className={cn(
+                                                'mr-2 h-4 w-4',
+                                                selectedPropertyId === property.id.toString() ? 'opacity-100' : 'opacity-0'
+                                            )}
+                                        />
+                                        {property.property_name}
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
         </FormSection>
     );
 }

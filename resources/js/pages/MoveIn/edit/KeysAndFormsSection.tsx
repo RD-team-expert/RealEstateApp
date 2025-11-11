@@ -73,23 +73,26 @@ export default function KeysAndFormsSection({
             >
                 <RadioGroupField
                     value={filledMoveInForm}
-                    onChange={onFilledMoveInFormChange}
+                    onChange={(value) => {
+                        onFilledMoveInFormChange(value);
+                    }}
                     name="filled_move_in_form"
                 />
             </FormSection>
-
-            <FormSection 
-                label="Date of Move-In Form Filled" 
-                borderColor="border-l-yellow-500" 
-                error={formFilledDateError}
-            >
-                <DatePickerField
-                    value={dateOfMoveInFormFilled}
-                    onChange={onDateOfMoveInFormFilledChange}
-                    isOpen={formFilledCalendarOpen}
-                    onOpenChange={onFormFilledCalendarOpenChange}
-                />
-            </FormSection>
+            {filledMoveInForm === 'Yes' && (
+                <FormSection 
+                    label="Date of Move-In Form Filled" 
+                    borderColor="border-l-yellow-500" 
+                    error={formFilledDateError}
+                >
+                    <DatePickerField
+                        value={dateOfMoveInFormFilled}
+                        onChange={onDateOfMoveInFormFilledChange}
+                        isOpen={formFilledCalendarOpen}
+                        onOpenChange={onFormFilledCalendarOpenChange}
+                    />
+                </FormSection>
+            )}
         </>
     );
 }

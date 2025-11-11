@@ -4,6 +4,8 @@ export interface MoveIn {
     unit_name: string;
     city_name: string;
     property_name: string;
+    tenant_name: string | null;
+    last_notice_sent: string | null;  // ISO string date
     signed_lease: 'Yes' | 'No' | null;
     lease_signing_date: string | null;  // ISO string date
     move_in_date: string | null;  // ISO string date

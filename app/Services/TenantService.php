@@ -90,6 +90,9 @@ class TenantService
 
             if ($unit->vacant === 'Yes') {
                 $unit->vacant = 'No';
+                if ($unit->listed === 'Yes') {
+                    $unit->listed = 'No';
+                }
             }
 
             // Save quietly to avoid triggering calculateFields() which would override `vacant`

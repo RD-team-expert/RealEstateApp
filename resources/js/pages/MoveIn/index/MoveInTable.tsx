@@ -34,6 +34,9 @@ export default function MoveInTable({
                             Unit Name
                         </TableHead>
                         <TableHead className="border border-border bg-muted text-muted-foreground">
+                            Tenant Name
+                        </TableHead>
+                        <TableHead className="border border-border bg-muted text-muted-foreground">
                             Signed Lease
                         </TableHead>
                         <TableHead className="border border-border bg-muted text-muted-foreground">
@@ -65,6 +68,9 @@ export default function MoveInTable({
                         </TableHead>
                         <TableHead className="border border-border bg-muted text-muted-foreground">
                             Date of Insurance expiration
+                        </TableHead>
+                        <TableHead className="border border-border bg-muted text-muted-foreground">
+                            Last Notice Sent
                         </TableHead>
                         {showActions && (
                             <TableHead className="border border-border bg-muted text-muted-foreground">

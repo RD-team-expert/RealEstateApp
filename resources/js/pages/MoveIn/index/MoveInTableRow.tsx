@@ -58,6 +58,9 @@ export default function MoveInTableRow({
             <TableCell className="sticky left-[270px] z-10 border border-border bg-muted text-center font-medium text-foreground">
                 {moveIn.unit_name}
             </TableCell>
+            <TableCell className="border border-border text-center text-foreground">
+                {moveIn.tenant_name || 'N/A'}
+            </TableCell>
             <TableCell className="border border-border text-center">
                 {getYesNoBadge(moveIn.signed_lease)}
             </TableCell>
@@ -90,6 +93,9 @@ export default function MoveInTableRow({
             </TableCell>
             <TableCell className="border border-border text-center text-foreground">
                 {formatDateUTC(moveIn.date_of_insurance_expiration)}
+            </TableCell>
+            <TableCell className="border border-border text-center text-foreground">
+                {formatDateUTC(moveIn.last_notice_sent)}
             </TableCell>
             {(canEdit || canDelete) && (
                 <TableCell className="border border-border text-center">

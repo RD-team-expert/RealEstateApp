@@ -51,6 +51,7 @@ const exportToCSV = (data: MoveIn[], filename: string = 'move-ins.csv') => {
             'City',
             'Property Name',
             'Unit Name',
+            'Tenant Name',
             'Signed Lease',
             'Lease Signing Date',
             'Move-In Date',
@@ -62,6 +63,7 @@ const exportToCSV = (data: MoveIn[], filename: string = 'move-ins.csv') => {
             'Date of move in form filled in',
             'Submitted Insurance',
             'Date of Insurance expiration',
+            'Last Notice Sent',
         ];
 
         const csvData = [
@@ -74,6 +76,7 @@ const exportToCSV = (data: MoveIn[], filename: string = 'move-ins.csv') => {
                             `"${formatString(moveIn.city_name)}"`,
                             `"${formatString(moveIn.property_name)}"`,
                             `"${formatString(moveIn.unit_name)}"`,
+                            `"${formatString(moveIn.tenant_name)}"`,
                             `"${formatString(moveIn.signed_lease)}"`,
                             `"${formatDate(moveIn.lease_signing_date)}"`,
                             `"${formatDate(moveIn.move_in_date)}"`,
@@ -85,6 +88,7 @@ const exportToCSV = (data: MoveIn[], filename: string = 'move-ins.csv') => {
                             `"${formatDate(moveIn.date_of_move_in_form_filled)}"`,
                             `"${formatString(moveIn.submitted_insurance)}"`,
                             `"${formatDate(moveIn.date_of_insurance_expiration)}"`,
+                            `"${formatDate(moveIn.last_notice_sent)}"`,
                         ].join(',');
                     } catch (rowError) {
                         console.error('Error processing move-in row:', moveIn, rowError);
@@ -120,11 +124,12 @@ interface Props {
         links: any[];
         meta: any;
     };
-    search: string | null;
     filters: {
-        search?: string;
         city?: string;
         property?: string;
+        unit?: string;
+        perPage?: string;
+        page?: number;
     };
     units: Unit[];
     cities: City[];
@@ -134,7 +139,6 @@ interface Props {
 
 export default function Index({
     moveIns,
-    search,
     filters,
     units,
     cities,
@@ -150,27 +154,36 @@ export default function Index({
     const [currentFilters, setCurrentFilters] = useState({
         city: filters?.city || '',
         property: filters?.property || '',
-        search: filters?.search || search || '',
+        unit: filters?.unit || '',
     });
+
+    // Pagination state
+    const [currentPerPage, setCurrentPerPage] = useState<string>(filters?.perPage || '15');
+    const [currentPage, setCurrentPage] = useState<number>(filters?.page || 1);
 
     // Update filters when props change
     useEffect(() => {
         setCurrentFilters({
             city: filters?.city || '',
             property: filters?.property || '',
-            search: filters?.search || search || '',
+            unit: filters?.unit || '',
         });
-    }, [filters, search]);
+        setCurrentPerPage(filters?.perPage || '15');
+        setCurrentPage(filters?.page || 1);
+    }, [filters]);
 
     const { hasPermission, hasAnyPermission } = usePermissions();
 
-    const handleSearch = (newFilters: { city: string; property: string; search: string }) => {
+    const handleSearch = (newFilters: { city: string; property: string; unit: string }) => {
         setCurrentFilters(newFilters);
         const params: any = {};
 
-        if (newFilters.search?.trim()) params.search = newFilters.search.trim();
         if (newFilters.city?.trim()) params.city = newFilters.city.trim();
         if (newFilters.property?.trim()) params.property = newFilters.property.trim();
+        if (newFilters.unit?.trim()) params.unit = newFilters.unit.trim();
+        // Keep pagination selection, reset page to 1
+        params.perPage = currentPerPage;
+        params.page = 1;
 
         router.get(route('move-in.index'), params, {
             preserveState: true,
@@ -182,11 +195,44 @@ export default function Index({
         const clearedFilters = {
             city: '',
             property: '',
-            search: '',
+            unit: '',
         };
         setCurrentFilters(clearedFilters);
 
-        router.get(route('move-in.index'), {}, {
+        const params: any = { perPage: currentPerPage, page: 1 };
+
+        router.get(route('move-in.index'), params, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const handlePerPageChange = (newPerPage: string) => {
+        setCurrentPerPage(newPerPage);
+        // Reset to first page on perPage change
+        const params: any = {};
+        if (currentFilters.city?.trim()) params.city = currentFilters.city.trim();
+        if (currentFilters.property?.trim()) params.property = currentFilters.property.trim();
+        if (currentFilters.unit?.trim()) params.unit = currentFilters.unit.trim();
+        params.perPage = newPerPage;
+        params.page = 1;
+
+        router.get(route('move-in.index'), params, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+        const params: any = {};
+        if (currentFilters.city?.trim()) params.city = currentFilters.city.trim();
+        if (currentFilters.property?.trim()) params.property = currentFilters.property.trim();
+        if (currentFilters.unit?.trim()) params.unit = currentFilters.unit.trim();
+        params.perPage = currentPerPage;
+        params.page = newPage;
+
+        router.get(route('move-in.index'), params, {
             preserveState: true,
             preserveScroll: true,
         });
@@ -194,7 +240,20 @@ export default function Index({
 
     const handleDelete = (moveIn: MoveIn) => {
         if (confirm('Are you sure you want to delete this move-in record?')) {
-            router.delete(route('move-in.destroy', moveIn.id));
+            const params: Record<string, string> = {};
+            if (currentFilters.city?.trim()) params.city = currentFilters.city.trim();
+            if (currentFilters.property?.trim()) params.property = currentFilters.property.trim();
+            if (currentFilters.unit?.trim()) params.unit = currentFilters.unit.trim();
+            params.perPage = currentPerPage;
+            params.page = String(currentPage);
+
+            const baseUrl = route('move-in.destroy', moveIn.id);
+            const urlWithQuery = `${baseUrl}?${new URLSearchParams(params).toString()}`;
+
+            router.delete(urlWithQuery, {
+                preserveState: true,
+                preserveScroll: true,
+            });
         }
     };
 
@@ -234,7 +293,7 @@ export default function Index({
         setIsEditDrawerOpen(true);
     };
 
-    const hasActiveFilters = currentFilters.search || currentFilters.city || currentFilters.property;
+    const hasActiveFilters = currentFilters.city || currentFilters.property || currentFilters.unit;
 
     return (
         <AppLayout>
@@ -251,7 +310,8 @@ export default function Index({
                         onCreateClick={() => setIsDrawerOpen(true)}
                     />
 
-                    <Card className="bg-card text-card-foreground shadow-lg">
+                    {/* Filters Card */}
+                    <Card className="bg-card text-card-foreground shadow-lg mb-6">
                         <MoveInFilters
                             cities={cities}
                             properties={properties}
@@ -259,8 +319,12 @@ export default function Index({
                             onSearch={handleSearch}
                             onClear={handleClearFilters}
                             hasActiveFilters={!!hasActiveFilters}
+                            units={units}
                         />
+                    </Card>
 
+                    {/* Table Card */}
+                    <Card className="bg-card text-card-foreground shadow-lg">
                         <CardContent>
                             <MoveInTable
                                 moveIns={moveIns.data}
@@ -275,6 +339,48 @@ export default function Index({
                                 onEdit={handleEdit}
                                 onDelete={handleDelete}
                             />
+
+                            {/* Table Footer Pagination Controls */}
+                            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm">Rows per page:</span>
+                                    <select
+                                        className="border rounded px-2 py-1 bg-background text-foreground"
+                                        value={currentPerPage}
+                                        onChange={(e) => handlePerPageChange(e.target.value)}
+                                    >
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="50">50</option>
+                                        <option value="all">All</option>
+                                    </select>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    {currentPerPage !== 'all' && moveIns?.meta ? (
+                                        <>
+                                            <span className="text-sm">
+                                                Page {moveIns.meta?.current_page ?? 1} of {moveIns.meta?.last_page ?? 1}
+                                            </span>
+                                            <button
+                                                className="px-3 py-1 border rounded disabled:opacity-50"
+                                                disabled={(moveIns.meta?.current_page ?? 1) <= 1}
+                                                onClick={() => handlePageChange((moveIns.meta?.current_page ?? 1) - 1)}
+                                            >
+                                                Previous
+                                            </button>
+                                            <button
+                                                className="px-3 py-1 border rounded disabled:opacity-50"
+                                                disabled={(moveIns.meta?.current_page ?? 1) >= (moveIns.meta?.last_page ?? 1)}
+                                                onClick={() => handlePageChange((moveIns.meta?.current_page ?? 1) + 1)}
+                                            >
+                                                Next
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <span className="text-sm">Showing all {moveIns?.data?.length ?? 0} records</span>
+                                    )}
+                                </div>
+                            </div>
 
                             {moveIns.data.length === 0 && (
                                 <EmptyState hasActiveFilters={!!hasActiveFilters} />
@@ -302,6 +408,9 @@ export default function Index({
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
                 onSuccess={handleDrawerSuccess}
+                currentFilters={currentFilters}
+                currentPerPage={currentPerPage}
+                currentPage={currentPage}
             />
 
             {/* Move-In Edit Drawer */}
@@ -315,6 +424,9 @@ export default function Index({
                     open={isEditDrawerOpen}
                     onOpenChange={setIsEditDrawerOpen}
                     onSuccess={handleEditDrawerSuccess}
+                    currentFilters={currentFilters}
+                    currentPerPage={currentPerPage}
+                    currentPage={currentPage}
                 />
             )}
         </AppLayout>

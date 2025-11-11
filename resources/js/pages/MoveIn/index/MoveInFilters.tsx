@@ -6,15 +6,23 @@ import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsuran
 import { Search, X } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 
+interface UnitData {
+    id: number;
+    unit_name: string;
+    property_name: string;
+    city_name: string;
+}
+
 interface MoveInFiltersProps {
     cities: City[];
     properties: PropertyInfoWithoutInsurance[];
+    units: UnitData[];
     initialFilters: {
         city: string;
         property: string;
-        search: string;
+        unit: string;
     };
-    onSearch: (filters: { city: string; property: string; search: string }) => void;
+    onSearch: (filters: { city: string; property: string; unit: string }) => void;
     onClear: () => void;
     hasActiveFilters: boolean;
 }
@@ -22,6 +30,7 @@ interface MoveInFiltersProps {
 export default function MoveInFilters({
     cities,
     properties,
+    units,
     initialFilters,
     onSearch,
     onClear,
@@ -30,19 +39,26 @@ export default function MoveInFilters({
     const [tempFilters, setTempFilters] = useState(initialFilters);
     const [showCityDropdown, setShowCityDropdown] = useState(false);
     const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
+    const [showUnitDropdown, setShowUnitDropdown] = useState(false);
 
     const cityInputRef = useRef<HTMLInputElement>(null);
     const propertyInputRef = useRef<HTMLInputElement>(null);
+    const unitInputRef = useRef<HTMLInputElement>(null);
 
     // Filter cities based on input
-    const filteredCities = cities.filter((city) =>
-        city.city.toLowerCase().includes(tempFilters.city.toLowerCase())
-    );
+    const filteredCities = cities
+        .map((city) => city.city)
+        .filter((name, index, self) => self.indexOf(name) === index)
+        .filter((name) => name.toLowerCase().includes(tempFilters.city.toLowerCase()));
 
     // Filter properties based on input
-    const filteredProperties = properties.filter((property) =>
-        property.property_name.toLowerCase().includes(tempFilters.property.toLowerCase())
-    );
+    const filteredProperties = properties
+        .map((property) => property.property_name)
+        .filter((name, index, self) => self.indexOf(name) === index)
+        .filter((name) => name.toLowerCase().includes(tempFilters.property.toLowerCase()));
+
+    const filteredUnits = Array.from(new Set(units.map((u) => u.unit_name)))
+        .filter((name) => name.toLowerCase().includes(tempFilters.unit.toLowerCase()));
 
     const handleTempFilterChange = (key: string, value: string) => {
         setTempFilters((prev) => ({ ...prev, [key]: value }));
@@ -50,7 +66,8 @@ export default function MoveInFilters({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSearch(tempFilters);
+        const { city, property, unit } = tempFilters;
+        onSearch({ city, property, unit });
     };
 
     return (
@@ -67,24 +84,24 @@ export default function MoveInFilters({
                             onChange={(e) => {
                                 const value = e.target.value;
                                 handleTempFilterChange('city', value);
-                                setShowCityDropdown(value.length > 0);
+                                setShowCityDropdown(true);
                             }}
-                            onFocus={() => setShowCityDropdown(tempFilters.city.length > 0)}
+                            onFocus={() => setShowCityDropdown(true)}
                             onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
                             className="text-input-foreground bg-input"
                         />
                         {showCityDropdown && filteredCities.length > 0 && (
                             <div className="absolute top-full right-0 left-0 z-50 mb-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg">
-                                {filteredCities.map((city) => (
+                                {filteredCities.map((cityName) => (
                                     <div
-                                        key={city.id}
+                                        key={cityName}
                                         className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
                                         onClick={() => {
-                                            handleTempFilterChange('city', city.city);
+                                            handleTempFilterChange('city', cityName);
                                             setShowCityDropdown(false);
                                         }}
                                     >
-                                        {city.city}
+                                        {cityName}
                                     </div>
                                 ))}
                             </div>
@@ -101,39 +118,65 @@ export default function MoveInFilters({
                             onChange={(e) => {
                                 const value = e.target.value;
                                 handleTempFilterChange('property', value);
-                                setShowPropertyDropdown(value.length > 0);
+                                setShowPropertyDropdown(true);
                             }}
-                            onFocus={() => setShowPropertyDropdown(tempFilters.property.length > 0)}
+                            onFocus={() => setShowPropertyDropdown(true)}
                             onBlur={() => setTimeout(() => setShowPropertyDropdown(false), 200)}
                             className="text-input-foreground bg-input"
                         />
                         {showPropertyDropdown && filteredProperties.length > 0 && (
                             <div className="absolute top-full right-0 left-0 z-50 mb-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg">
-                                {filteredProperties.map((property) => (
+                                {filteredProperties.map((propertyName) => (
                                     <div
-                                        key={property.id}
+                                        key={propertyName}
                                         className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
                                         onClick={() => {
-                                            handleTempFilterChange('property', property.property_name);
+                                            handleTempFilterChange('property', propertyName);
                                             setShowPropertyDropdown(false);
                                         }}
                                     >
-                                        {property.property_name}
+                                        {propertyName}
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
 
-                    {/* Search Filter */}
-                    <div className="flex gap-2 md:col-span-2">
+                    {/* Unit Filter */}
+                    <div className="relative">
                         <Input
+                            ref={unitInputRef}
                             type="text"
-                            placeholder="Search by unit name..."
-                            value={tempFilters.search}
-                            onChange={(e) => handleTempFilterChange('search', e.target.value)}
-                            className="text-input-foreground flex-1 bg-input"
+                            placeholder="Filter by unit..."
+                            value={tempFilters.unit}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                handleTempFilterChange('unit', value);
+                                setShowUnitDropdown(true);
+                            }}
+                            onFocus={() => setShowUnitDropdown(true)}
+                            onBlur={() => setTimeout(() => setShowUnitDropdown(false), 200)}
+                            className="text-input-foreground bg-input"
                         />
+                        {showUnitDropdown && filteredUnits.length > 0 && (
+                            <div className="absolute top-full right-0 left-0 z-50 mb-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg">
+                                {filteredUnits.map((unitName) => (
+                                    <div
+                                        key={unitName}
+                                        className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                        onClick={() => {
+                                            handleTempFilterChange('unit', unitName);
+                                            setShowUnitDropdown(false);
+                                        }}
+                                    >
+                                        {unitName}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    {/* Submit Filters */}
+                    <div className="flex gap-2 md:col-span-2">
                         <Button type="submit" size="sm">
                             <Search className="h-4 w-4" />
                         </Button>
@@ -144,7 +187,15 @@ export default function MoveInFilters({
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={onClear}
+                            onClick={() => {
+                                // Immediately clear local inputs
+                                setTempFilters({ city: '', property: '', unit: '' });
+                                setShowCityDropdown(false);
+                                setShowPropertyDropdown(false);
+                                setShowUnitDropdown(false);
+                                // Trigger parent clear to reload results
+                                onClear();
+                            }}
                             size="sm"
                             className="flex items-center"
                             disabled={!hasActiveFilters}

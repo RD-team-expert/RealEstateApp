@@ -3,12 +3,15 @@ import { Button } from '@/components/ui/button';
 import { City } from '@/types/City';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { useForm } from '@inertiajs/react';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { CityPropertyUnitSelector } from './create/CityPropertyUnitSelector';
 import { LeaseInformationFields } from './create/LeaseInformationFields';
 import { PaymentInformationFields } from './create/PaymentInformationFields';
 import { KeysAndFormsFields } from './create/KeysAndFormsFields';
 import { InsuranceInformationFields } from './create/InsuranceInformationFields';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { DatePickerField as CreateDatePickerField } from './create/DatePickerField';
 
 interface Unit {
     id: number;
@@ -30,6 +33,9 @@ type MoveInFormData = {
     date_of_move_in_form_filled: string;
     submitted_insurance: 'Yes' | 'No' | '';
     date_of_insurance_expiration: string;
+    first_name: string;
+    last_name: string;
+    last_notice_sent: string;
 };
 
 interface Props {
@@ -40,9 +46,15 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    // Preserve filters and pagination context from Index
+    currentFilters: { city: string; property: string; unit: string };
+    currentPerPage: string;
+    currentPage: number;
 }
 
-export default function MoveInCreateDrawer({ cities, properties, unitsByProperty, open, onOpenChange, onSuccess }: Props) {
+export default function MoveInCreateDrawer({ cities, properties, unitsByProperty, open, onOpenChange, onSuccess, currentFilters, currentPerPage, currentPage }: Props) {
+    const DRAFT_STORAGE_KEY = 'moveInCreateDraft';
+    const SKIP_RESTORE_KEY = 'moveInCreateDraftSkipRestore';
     const unitRef = useRef<HTMLButtonElement>(null!);
     const cityRef = useRef<HTMLButtonElement>(null!);
     const propertyRef = useRef<HTMLButtonElement>(null!);
@@ -67,6 +79,9 @@ export default function MoveInCreateDrawer({ cities, properties, unitsByProperty
         date_of_move_in_form_filled: '',
         submitted_insurance: 'No',
         date_of_insurance_expiration: '',
+        first_name: '',
+        last_name: '',
+        last_notice_sent: '',
     });
 
     const resetFormState = () => {
@@ -155,8 +170,21 @@ export default function MoveInCreateDrawer({ cities, properties, unitsByProperty
             return;
         }
 
-        post(route('move-in.store'), {
+        post(route('move-in.store', {
+            city: currentFilters.city?.trim() || undefined,
+            property: currentFilters.property?.trim() || undefined,
+            unit: currentFilters.unit?.trim() || undefined,
+            perPage: currentPerPage,
+            page: currentPage,
+        }), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
+                // Clear saved draft after successful creation and skip next restore
+                try {
+                    localStorage.removeItem(DRAFT_STORAGE_KEY);
+                    localStorage.setItem(SKIP_RESTORE_KEY, 'true');
+                } catch {}
                 resetFormState();
                 onOpenChange(false);
                 onSuccess?.();
@@ -165,9 +193,70 @@ export default function MoveInCreateDrawer({ cities, properties, unitsByProperty
     };
 
     const handleCancel = () => {
+        // Clear saved draft explicitly when cancelling and skip next restore
+        try {
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
+            localStorage.setItem(SKIP_RESTORE_KEY, 'true');
+        } catch {}
         resetFormState();
         onOpenChange(false);
     };
+
+    // Restore saved state on mount (keep data when drawer is closed, unless cancelled)
+    useEffect(() => {
+        try {
+            const skip = localStorage.getItem(SKIP_RESTORE_KEY) === 'true';
+            if (skip) {
+                localStorage.removeItem(SKIP_RESTORE_KEY);
+                return; // do not restore after cancel or successful creation
+            }
+            const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+            if (saved) {
+                const parsed: {
+                    data: MoveInFormData;
+                    selectedCityId: string;
+                    selectedPropertyId: string;
+                } = JSON.parse(saved);
+
+                // Restore form data
+                setData((prev) => ({ ...prev, ...parsed.data }));
+
+                // Restore city and property selections
+                const cityId = parsed.selectedCityId || '';
+                const propertyId = parsed.selectedPropertyId || '';
+                setSelectedCityId(cityId);
+                setSelectedPropertyId(propertyId);
+
+                // Recompute available properties based on city
+                if (cityId) {
+                    const filteredProperties = properties.filter(
+                        (property) => property.city_id?.toString() === cityId
+                    );
+                    setAvailableProperties(filteredProperties);
+                }
+
+                // Recompute available units based on property
+                if (propertyId && unitsByProperty && unitsByProperty[propertyId]) {
+                    setAvailableUnits(unitsByProperty[propertyId]);
+                }
+            }
+        } catch {}
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Persist form and selection state locally whenever it changes
+    useEffect(() => {
+        try {
+            if (open) {
+                const payload = {
+                    data,
+                    selectedCityId,
+                    selectedPropertyId,
+                };
+                localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload));
+            }
+        } catch {}
+    }, [open, data, selectedCityId, selectedPropertyId]);
 
     return (
         <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
@@ -219,7 +308,12 @@ export default function MoveInCreateDrawer({ cities, properties, unitsByProperty
                                 dateOfMoveInFormFilled={data.date_of_move_in_form_filled}
                                 onHandledKeysChange={(value) => setData('handled_keys', value)}
                                 onMoveInFormSentDateChange={(value) => setData('move_in_form_sent_date', value)}
-                                onFilledMoveInFormChange={(value) => setData('filled_move_in_form', value)}
+                                onFilledMoveInFormChange={(value) => {
+                                    setData('filled_move_in_form', value);
+                                    if (value !== 'Yes') {
+                                        setData('date_of_move_in_form_filled', '');
+                                    }
+                                }}
                                 onDateOfMoveInFormFilledChange={(value) => setData('date_of_move_in_form_filled', value)}
                                 errors={errors}
                             />
@@ -227,9 +321,59 @@ export default function MoveInCreateDrawer({ cities, properties, unitsByProperty
                             <InsuranceInformationFields
                                 submittedInsurance={data.submitted_insurance}
                                 dateOfInsuranceExpiration={data.date_of_insurance_expiration}
-                                onSubmittedInsuranceChange={(value) => setData('submitted_insurance', value)}
+                                onSubmittedInsuranceChange={(value) => {
+                                    setData('submitted_insurance', value);
+                                    if (value !== 'Yes') {
+                                        setData('date_of_insurance_expiration', '');
+                                    }
+                                }}
                                 onDateOfInsuranceExpirationChange={(value) => setData('date_of_insurance_expiration', value)}
                                 errors={errors}
+                            />
+
+                            {/* Tenant & Notice Information */}
+                            <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
+                                <div className="mb-2">
+                                    <Label htmlFor="first_name" className="text-base font-semibold">
+                                        First Name
+                                    </Label>
+                                </div>
+                                <Input
+                                    id="first_name"
+                                    name="first_name"
+                                    value={data.first_name}
+                                    onChange={(e) => setData('first_name', e.target.value)}
+                                    placeholder="Enter first name"
+                                />
+                                {errors.first_name && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.first_name}</p>
+                                )}
+                            </div>
+
+                            <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
+                                <div className="mb-2">
+                                    <Label htmlFor="last_name" className="text-base font-semibold">
+                                        Last Name
+                                    </Label>
+                                </div>
+                                <Input
+                                    id="last_name"
+                                    name="last_name"
+                                    value={data.last_name}
+                                    onChange={(e) => setData('last_name', e.target.value)}
+                                    placeholder="Enter last name"
+                                />
+                                {errors.last_name && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.last_name}</p>
+                                )}
+                            </div>
+
+                            <CreateDatePickerField
+                                label="Last Notice Sent"
+                                value={data.last_notice_sent}
+                                onChange={(value) => setData('last_notice_sent', value ?? '')}
+                                error={errors.last_notice_sent}
+                                borderColor="border-l-blue-500"
                             />
                         </form>
                     </div>

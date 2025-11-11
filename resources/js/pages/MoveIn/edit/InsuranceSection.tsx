@@ -36,19 +36,20 @@ export default function InsuranceSection({
                     name="submitted_insurance"
                 />
             </FormSection>
-
-            <FormSection 
-                label="Date of Insurance Expiration" 
-                borderColor="border-l-violet-500" 
-                error={dateError}
-            >
-                <DatePickerField
-                    value={dateOfInsuranceExpiration}
-                    onChange={onDateOfInsuranceExpirationChange}
-                    isOpen={isCalendarOpen}
-                    onOpenChange={onCalendarOpenChange}
-                />
-            </FormSection>
+            {submittedInsurance === 'Yes' && (
+                <FormSection 
+                    label="Date of Insurance Expiration" 
+                    borderColor="border-l-violet-500" 
+                    error={dateError}
+                >
+                    <DatePickerField
+                        value={dateOfInsuranceExpiration}
+                        onChange={onDateOfInsuranceExpirationChange}
+                        isOpen={isCalendarOpen}
+                        onOpenChange={onCalendarOpenChange}
+                    />
+                </FormSection>
+            )}
         </>
     );
 }

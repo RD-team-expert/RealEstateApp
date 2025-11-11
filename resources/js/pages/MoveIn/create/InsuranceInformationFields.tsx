@@ -36,14 +36,15 @@ export function InsuranceInformationFields({
                 />
                 {errors.submitted_insurance && <p className="mt-1 text-sm text-red-600">{errors.submitted_insurance}</p>}
             </div>
-
-            <DatePickerField
-                label="Date of Insurance Expiration"
-                value={dateOfInsuranceExpiration}
-                onChange={onDateOfInsuranceExpirationChange}
-                error={errors.date_of_insurance_expiration}
-                borderColor="border-l-violet-500"
-            />
+            {submittedInsurance === 'Yes' && (
+                <DatePickerField
+                    label="Date of Insurance Expiration"
+                    value={dateOfInsuranceExpiration}
+                    onChange={onDateOfInsuranceExpirationChange}
+                    error={errors.date_of_insurance_expiration}
+                    borderColor="border-l-violet-500"
+                />
+            )}
         </>
     );
 }

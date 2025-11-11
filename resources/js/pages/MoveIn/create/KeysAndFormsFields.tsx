@@ -70,14 +70,15 @@ export function KeysAndFormsFields({
                 />
                 {errors.filled_move_in_form && <p className="mt-1 text-sm text-red-600">{errors.filled_move_in_form}</p>}
             </div>
-
-            <DatePickerField
-                label="Date of Move-In Form Filled"
-                value={dateOfMoveInFormFilled}
-                onChange={onDateOfMoveInFormFilledChange}
-                error={errors.date_of_move_in_form_filled}
-                borderColor="border-l-yellow-500"
-            />
+            {filledMoveInForm === 'Yes' && (
+                <DatePickerField
+                    label="Date of Move-In Form Filled"
+                    value={dateOfMoveInFormFilled}
+                    onChange={onDateOfMoveInFormFilledChange}
+                    error={errors.date_of_move_in_form_filled}
+                    borderColor="border-l-yellow-500"
+                />
+            )}
         </>
     );
 }

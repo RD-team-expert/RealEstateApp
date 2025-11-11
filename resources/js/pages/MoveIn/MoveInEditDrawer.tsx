@@ -3,6 +3,9 @@ import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
 import { City } from '@/types/City';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
 import { useForm } from '@inertiajs/react';
+import { Input } from '@/components/ui/input';
+import FormSection from './edit/FormSection';
+import DatePickerField from './edit/DatePickerField';
 import React, { useEffect, useRef, useState } from 'react';
 import CitySelector from './edit/CitySelector';
 import PropertySelector from './edit/PropertySelector';
@@ -28,6 +31,7 @@ interface MoveIn {
     unit_name: string;
     city_name: string;
     property_name: string;
+    tenant_name?: string | null;
     signed_lease: 'Yes' | 'No' | null;
     lease_signing_date: string | null;
     move_in_date: string | null;
@@ -39,6 +43,7 @@ interface MoveIn {
     date_of_move_in_form_filled: string | null;
     submitted_insurance: 'Yes' | 'No' | null;
     date_of_insurance_expiration: string | null;
+    last_notice_sent?: string | null;
     is_archived: boolean;
     created_at: string;
     updated_at: string;
@@ -55,9 +60,12 @@ type MoveInFormData = {
     handled_keys: 'Yes' | 'No' | '';
     move_in_form_sent_date: string;
     filled_move_in_form: 'Yes' | 'No' | '';
-    date_of_move_in_form_filled: string;
+    date_of_move_in_form_filled: string | null;
     submitted_insurance: 'Yes' | 'No' | '';
-    date_of_insurance_expiration: string;
+    date_of_insurance_expiration: string | null;
+    first_name: string;
+    last_name: string;
+    last_notice_sent: string;
 };
 
 interface Props {
@@ -69,6 +77,10 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    // Preserve filters and pagination context
+    currentFilters: { city: string; property: string; unit: string };
+    currentPerPage: string;
+    currentPage: number;
 }
 
 export default function MoveInEditDrawer({ 
@@ -79,7 +91,10 @@ export default function MoveInEditDrawer({
     unitsByProperty, 
     open, 
     onOpenChange, 
-    onSuccess 
+    onSuccess,
+    currentFilters,
+    currentPerPage,
+    currentPage,
 }: Props) {
     const unitRef = useRef<HTMLButtonElement>(null!);
     const cityRef = useRef<HTMLButtonElement>(null!);
@@ -99,6 +114,7 @@ export default function MoveInEditDrawer({
         move_in_form_sent_date: false,
         date_of_move_in_form_filled: false,
         date_of_insurance_expiration: false,
+        last_notice_sent: false,
     });
 
     const setCalendarOpen = (field: keyof typeof calendarStates, open: boolean) => {
@@ -123,20 +139,89 @@ export default function MoveInEditDrawer({
 
     const { cityId: initialCityId, propertyId: initialPropertyId } = findCityAndProperty();
 
+    const normalizeDateString = (date: string | null | undefined): string => {
+        if (!date) return '';
+        const match = String(date).match(/^(\d{4}-\d{2}-\d{2})/);
+        if (match) return match[1];
+        try {
+            const d = new Date(date);
+            if (!isNaN(d.getTime())) {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+        } catch {}
+        return '';
+    };
+
+    const normalizeDateOrNull = (date: string | null | undefined): string | null => {
+        const val = normalizeDateString(date);
+        return val || null;
+    };
+
+    const splitTenantName = (name: string | null | undefined): { first: string; last: string } => {
+        if (!name) return { first: '', last: '' };
+        const trimmed = name.trim();
+        if (!trimmed) return { first: '', last: '' };
+        const spaceIndex = trimmed.indexOf(' ');
+        if (spaceIndex === -1) return { first: trimmed, last: '' };
+        return {
+            first: trimmed.slice(0, spaceIndex),
+            last: trimmed.slice(spaceIndex + 1),
+        };
+    };
+
     const { data, setData, put, processing, errors } = useForm<MoveInFormData>({
         unit_id: moveIn.unit_id ?? '',
         signed_lease: moveIn.signed_lease ?? 'No',
-        lease_signing_date: moveIn.lease_signing_date ?? '',
-        move_in_date: moveIn.move_in_date ?? '',
+        lease_signing_date: normalizeDateString(moveIn.lease_signing_date),
+        move_in_date: normalizeDateString(moveIn.move_in_date),
         paid_security_deposit_first_month_rent: moveIn.paid_security_deposit_first_month_rent ?? 'No',
-        scheduled_paid_time: moveIn.scheduled_paid_time ?? '',
+        scheduled_paid_time: normalizeDateString(moveIn.scheduled_paid_time),
         handled_keys: moveIn.handled_keys ?? 'No',
-        move_in_form_sent_date: moveIn.move_in_form_sent_date ?? '',
+        move_in_form_sent_date: normalizeDateString(moveIn.move_in_form_sent_date),
         filled_move_in_form: moveIn.filled_move_in_form ?? 'No',
-        date_of_move_in_form_filled: moveIn.date_of_move_in_form_filled ?? '',
+        date_of_move_in_form_filled: normalizeDateOrNull(moveIn.date_of_move_in_form_filled),
         submitted_insurance: moveIn.submitted_insurance ?? 'No',
-        date_of_insurance_expiration: moveIn.date_of_insurance_expiration ?? '',
+        date_of_insurance_expiration: normalizeDateOrNull(moveIn.date_of_insurance_expiration),
+        first_name: splitTenantName(moveIn.tenant_name).first,
+        last_name: splitTenantName(moveIn.tenant_name).last,
+        last_notice_sent: normalizeDateString(moveIn.last_notice_sent),
     });
+
+    // Reinitialize form when switching to a different record to avoid stale data
+    useEffect(() => {
+        setData({
+            unit_id: moveIn.unit_id ?? '',
+            signed_lease: moveIn.signed_lease ?? 'No',
+            lease_signing_date: normalizeDateString(moveIn.lease_signing_date),
+            move_in_date: normalizeDateString(moveIn.move_in_date),
+            paid_security_deposit_first_month_rent: moveIn.paid_security_deposit_first_month_rent ?? 'No',
+            scheduled_paid_time: normalizeDateString(moveIn.scheduled_paid_time),
+            handled_keys: moveIn.handled_keys ?? 'No',
+            move_in_form_sent_date: normalizeDateString(moveIn.move_in_form_sent_date),
+            filled_move_in_form: moveIn.filled_move_in_form ?? 'No',
+            date_of_move_in_form_filled: normalizeDateOrNull(moveIn.date_of_move_in_form_filled),
+            submitted_insurance: moveIn.submitted_insurance ?? 'No',
+            date_of_insurance_expiration: normalizeDateOrNull(moveIn.date_of_insurance_expiration),
+            first_name: splitTenantName(moveIn.tenant_name).first,
+            last_name: splitTenantName(moveIn.tenant_name).last,
+            last_notice_sent: normalizeDateString(moveIn.last_notice_sent),
+        });
+        setSelectedCityId(initialCityId);
+        setSelectedPropertyId(initialPropertyId);
+        resetFormState();
+        setCalendarStates({
+            lease_signing_date: false,
+            move_in_date: false,
+            scheduled_paid_time: false,
+            move_in_form_sent_date: false,
+            date_of_move_in_form_filled: false,
+            date_of_insurance_expiration: false,
+            last_notice_sent: false,
+        });
+    }, [moveIn.id]);
 
     // Initialize state variables
     useEffect(() => {
@@ -243,7 +328,20 @@ export default function MoveInEditDrawer({
             return;
         }
 
-        put(route('move-in.update', moveIn.id), {
+        // Build update URL with query params to preserve filters/pagination
+        const queryParams: Record<string, string> = {};
+        if (currentFilters.city?.trim()) queryParams.city = currentFilters.city.trim();
+        if (currentFilters.property?.trim()) queryParams.property = currentFilters.property.trim();
+        if (currentFilters.unit?.trim()) queryParams.unit = currentFilters.unit.trim();
+        queryParams.perPage = currentPerPage;
+        queryParams.page = String(currentPage);
+
+        const baseUrl = route('move-in.update', moveIn.id);
+        const urlWithQuery = `${baseUrl}?${new URLSearchParams(queryParams).toString()}`;
+
+        put(urlWithQuery, {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 resetFormState();
                 onOpenChange(false);
@@ -257,16 +355,19 @@ export default function MoveInEditDrawer({
         setData({
             unit_id: moveIn.unit_id ?? '',
             signed_lease: moveIn.signed_lease ?? 'No',
-            lease_signing_date: moveIn.lease_signing_date ?? '',
-            move_in_date: moveIn.move_in_date ?? '',
+            lease_signing_date: normalizeDateString(moveIn.lease_signing_date),
+            move_in_date: normalizeDateString(moveIn.move_in_date),
             paid_security_deposit_first_month_rent: moveIn.paid_security_deposit_first_month_rent ?? 'No',
-            scheduled_paid_time: moveIn.scheduled_paid_time ?? '',
+            scheduled_paid_time: normalizeDateString(moveIn.scheduled_paid_time),
             handled_keys: moveIn.handled_keys ?? 'No',
-            move_in_form_sent_date: moveIn.move_in_form_sent_date ?? '',
+            move_in_form_sent_date: normalizeDateString(moveIn.move_in_form_sent_date),
             filled_move_in_form: moveIn.filled_move_in_form ?? 'No',
-            date_of_move_in_form_filled: moveIn.date_of_move_in_form_filled ?? '',
+            date_of_move_in_form_filled: normalizeDateOrNull(moveIn.date_of_move_in_form_filled),
             submitted_insurance: moveIn.submitted_insurance ?? 'No',
-            date_of_insurance_expiration: moveIn.date_of_insurance_expiration ?? '',
+            date_of_insurance_expiration: normalizeDateOrNull(moveIn.date_of_insurance_expiration),
+            first_name: splitTenantName(moveIn.tenant_name).first,
+            last_name: splitTenantName(moveIn.tenant_name).last,
+            last_notice_sent: normalizeDateString(moveIn.last_notice_sent),
         });
         setSelectedCityId(initialCityId);
         setSelectedPropertyId(initialPropertyId);
@@ -345,8 +446,13 @@ export default function MoveInEditDrawer({
                                 moveInFormSentDate={data.move_in_form_sent_date}
                                 onMoveInFormSentDateChange={(date) => setData('move_in_form_sent_date', date)}
                                 filledMoveInForm={data.filled_move_in_form}
-                                onFilledMoveInFormChange={(value) => setData('filled_move_in_form', value)}
-                                dateOfMoveInFormFilled={data.date_of_move_in_form_filled}
+                                onFilledMoveInFormChange={(value) => {
+                                    setData('filled_move_in_form', value);
+                                    if (value !== 'Yes') {
+                                        setData('date_of_move_in_form_filled', null);
+                                    }
+                                }}
+                                dateOfMoveInFormFilled={data.date_of_move_in_form_filled ?? ''}
                                 onDateOfMoveInFormFilledChange={(date) => setData('date_of_move_in_form_filled', date)}
                                 formSentCalendarOpen={calendarStates.move_in_form_sent_date}
                                 onFormSentCalendarOpenChange={(open) => setCalendarOpen('move_in_form_sent_date', open)}
@@ -360,14 +466,49 @@ export default function MoveInEditDrawer({
 
                             <InsuranceSection
                                 submittedInsurance={data.submitted_insurance}
-                                onSubmittedInsuranceChange={(value) => setData('submitted_insurance', value)}
-                                dateOfInsuranceExpiration={data.date_of_insurance_expiration}
+                                onSubmittedInsuranceChange={(value) => {
+                                    setData('submitted_insurance', value);
+                                    if (value !== 'Yes') {
+                                        setData('date_of_insurance_expiration', null);
+                                    }
+                                }}
+                                dateOfInsuranceExpiration={data.date_of_insurance_expiration ?? ''}
                                 onDateOfInsuranceExpirationChange={(date) => setData('date_of_insurance_expiration', date)}
                                 isCalendarOpen={calendarStates.date_of_insurance_expiration}
                                 onCalendarOpenChange={(open) => setCalendarOpen('date_of_insurance_expiration', open)}
                                 submittedError={errors.submitted_insurance}
                                 dateError={errors.date_of_insurance_expiration}
                             />
+
+                            {/* Tenant & Notice Information */}
+                            <FormSection label="First Name" borderColor="border-l-blue-500" error={errors.first_name}>
+                                <Input
+                                    id="first_name"
+                                    name="first_name"
+                                    value={data.first_name}
+                                    onChange={(e) => setData('first_name', e.target.value)}
+                                    placeholder="Enter first name"
+                                />
+                            </FormSection>
+
+                            <FormSection label="Last Name" borderColor="border-l-blue-500" error={errors.last_name}>
+                                <Input
+                                    id="last_name"
+                                    name="last_name"
+                                    value={data.last_name}
+                                    onChange={(e) => setData('last_name', e.target.value)}
+                                    placeholder="Enter last name"
+                                />
+                            </FormSection>
+
+                            <FormSection label="Last Notice Sent" borderColor="border-l-blue-500" error={errors.last_notice_sent}>
+                                <DatePickerField
+                                    value={data.last_notice_sent}
+                                    onChange={(date) => setData('last_notice_sent', date?? '')}
+                                    isOpen={calendarStates.last_notice_sent}
+                                    onOpenChange={(open) => setCalendarOpen('last_notice_sent', open)}
+                                />
+                            </FormSection>
                         </form>
                     </div>
 

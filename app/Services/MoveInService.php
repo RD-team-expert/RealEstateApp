@@ -6,37 +6,28 @@ use App\Models\MoveIn;
 use App\Models\Unit;
 use App\Models\Cities;
 use App\Models\PropertyInfoWithoutInsurance;
+use App\Services\TenantService;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class MoveInService
 {
-    public function getAllMoveIns(int $perPage = 15): LengthAwarePaginator
+    public function __construct(
+        protected TenantService $tenantService
+    ) {}
+    public function getAllMoveIns(string|int $perPage = 15): LengthAwarePaginator
     {
-        return MoveIn::with(['unit.property.city'])
+        $query = MoveIn::with(['unit.property.city'])
                      ->orderBy('move_in_date', 'desc')
-                     ->orderBy('created_at', 'desc')
-                     ->paginate($perPage);
+                     ->orderBy('created_at', 'desc');
+
+        $perPageValue = ($perPage === 'all') ? $query->count() : (int) $perPage;
+
+        return $query->paginate($perPageValue);
     }
 
-    public function searchMoveIns($filters, int $perPage = 15): LengthAwarePaginator
+    public function searchMoveIns(array $filters, string|int $perPage = 15): LengthAwarePaginator
     {
         $query = MoveIn::with(['unit.property.city']);
-
-        // Handle search parameter (general search)
-        if (!empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->whereHas('unit', function ($unitQuery) use ($search) {
-                    $unitQuery->where('unit_name', 'like', "%{$search}%")
-                             ->orWhereHas('property', function ($propertyQuery) use ($search) {
-                                 $propertyQuery->where('property_name', 'like', "%{$search}%")
-                                              ->orWhereHas('city', function ($cityQuery) use ($search) {
-                                                  $cityQuery->where('city', 'like', "%{$search}%");
-                                              });
-                             });
-                });
-            });
-        }
 
         // Handle city filter - convert city name to ID
         if (!empty($filters['city'])) {
@@ -72,19 +63,93 @@ class MoveInService
             }
         }
 
-        return $query->orderBy('move_in_date', 'desc')
-                     ->orderBy('created_at', 'desc')
-                     ->paginate($perPage);
+        // Handle unit filter - filter by unit name
+        if (!empty($filters['unit'])) {
+            $unitName = $filters['unit'];
+            $query->whereHas('unit', function ($unitQuery) use ($unitName) {
+                $unitQuery->where('unit_name', 'like', "%{$unitName}%");
+            });
+        }
+
+        $query = $query->orderBy('move_in_date', 'desc')
+                       ->orderBy('created_at', 'desc');
+
+        $perPageValue = ($perPage === 'all') ? $query->count() : (int) $perPage;
+
+        return $query->paginate($perPageValue);
     }
 
     public function createMoveIn(array $data): MoveIn
     {
-        return MoveIn::create($data);
+        // Normalize dependent dates based on flags
+        if (($data['submitted_insurance'] ?? null) === 'No') {
+            $data['date_of_insurance_expiration'] = null;
+        }
+        if (($data['filled_move_in_form'] ?? null) === 'No') {
+            $data['date_of_move_in_form_filled'] = null;
+        }
+
+        // Build tenant_name from provided names (frontend sends 'first_name' and 'last_name'; support 'second_name' for compatibility)
+        $firstName = trim((string)($data['first_name'] ?? ''));
+        $lastNameFromLast = trim((string)($data['last_name'] ?? ''));
+        $lastName = $lastNameFromLast !== ''
+            ? $lastNameFromLast
+            : trim((string)($data['second_name'] ?? ''));
+
+        $fullTenantName = trim($firstName . ' ' . $lastName);
+        if ($fullTenantName !== '') {
+            $data['tenant_name'] = $fullTenantName;
+        }
+
+        // Create move-in record
+        $moveIn = MoveIn::create($data);
+
+        // If names + unit_id are provided, create a Tenant (updates unit via TenantService)
+        if ($firstName !== '' && $lastName !== '' && !empty($data['unit_id'])) {
+            $this->tenantService->createTenant([
+                'unit_id' => $data['unit_id'],
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+            ]);
+        }
+
+        return $moveIn;
     }
 
     public function updateMoveIn(MoveIn $moveIn, array $data): bool
     {
-        return $moveIn->update($data);
+        // Normalize dependent dates based on flags
+        if (($data['submitted_insurance'] ?? null) === 'No') {
+            $data['date_of_insurance_expiration'] = null;
+        }
+        if (($data['filled_move_in_form'] ?? null) === 'No') {
+            $data['date_of_move_in_form_filled'] = null;
+        }
+
+        // Build tenant_name from provided names (frontend sends 'first_name' and 'last_name'; support 'second_name' for compatibility)
+        $firstName = trim((string)($data['first_name'] ?? ''));
+        $lastNameFromLast = trim((string)($data['last_name'] ?? ''));
+        $lastName = $lastNameFromLast !== ''
+            ? $lastNameFromLast
+            : trim((string)($data['second_name'] ?? ''));
+
+        $fullTenantName = trim($firstName . ' ' . $lastName);
+        if ($fullTenantName !== '') {
+            $data['tenant_name'] = $fullTenantName;
+        }
+
+        $updated = $moveIn->update($data);
+
+        // Optionally create Tenant on update if names provided (to append/update unit tenants list)
+        if ($firstName !== '' && $lastName !== '' && !empty($data['unit_id'])) {
+            $this->tenantService->createTenant([
+                'unit_id' => $data['unit_id'],
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+            ]);
+        }
+
+        return $updated;
     }
 
     public function deleteMoveIn(MoveIn $moveIn): bool
@@ -115,13 +180,15 @@ class MoveInService
 
     public function getDropdownData(): array
     {
-        // Get cities
-        $cities = Cities::orderBy('city')->get();
+        // Get cities (non-archived via model scope) and deduplicate by name
+        $cities = Cities::orderBy('city')->get()->unique('city')->values();
         
-        // Get properties with city relationships
+        // Get properties with city relationships (non-archived via model scope) and deduplicate by name
         $properties = PropertyInfoWithoutInsurance::with('city')
                                                  ->orderBy('property_name')
-                                                 ->get();
+                                                 ->get()
+                                                 ->unique('property_name')
+                                                 ->values();
         
         // Get units data for dropdowns with relationships
         $units = Unit::with(['property.city'])
