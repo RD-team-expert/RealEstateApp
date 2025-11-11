@@ -1,0 +1,1 @@
+import{j as e}from"./app-ouZqxB1_.js";import"./app-CsCti_B1.js";function s({meta:t}){return e.jsx("div",{className:"mt-6 flex items-center justify-between border-t border-border pt-4",children:e.jsxs("div",{className:"text-sm text-muted-foreground",children:["Showing ",t.from||0," to ",t.to||0," of ",t.total||0," results"]})})}export{s as default};

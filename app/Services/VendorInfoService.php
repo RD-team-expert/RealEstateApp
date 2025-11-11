@@ -11,7 +11,7 @@ use Illuminate\Support\Collection as SupportCollection;
 
 class VendorInfoService
 {
-    public function getAllPaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator
+    public function getAllPaginated(int|string $perPage = 15, array $filters = []): LengthAwarePaginator
     {
         $query = VendorInfo::with('city');
 
@@ -40,7 +40,21 @@ class VendorInfoService
             $query->whereJsonContains('email', $filters['email']);
         }
 
-        return $query->orderBy('city_id', 'asc')->orderBy('vendor_name', 'asc')->paginate($perPage);
+        // Handle per-page option, including 'all' which should return all records
+        $perPageRaw = $perPage;
+        if (is_string($perPage) && strtolower($perPage) === 'all') {
+            $count = (clone $query)->count();
+            // Ensure at least 1 to avoid paginate(0)
+            $perPage = $count > 0 ? $count : 1;
+        }
+
+        $paginator = $query
+            ->orderBy('city_id', 'asc')
+            ->orderBy('vendor_name', 'asc')
+            ->paginate($perPage)
+            ->appends(array_merge($filters, ['per_page' => $perPageRaw]));
+
+        return $paginator;
     }
 
     public function create(array $data): VendorInfo

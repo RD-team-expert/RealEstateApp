@@ -73,6 +73,9 @@ export default function Index({ vendors, filters, cities }: Props) {
         vendor_name: filters.vendor_name || '',
     });
 
+    // Per-page state (supports '15', '30', '50', 'all') and initialize from server filters
+    const [perPage, setPerPage] = useState<string>((filters as any)?.per_page?.toString?.() ?? '15');
+
     // Dropdown states
     const [showCityDropdown, setShowCityDropdown] = useState(false);
 
@@ -92,7 +95,7 @@ export default function Index({ vendors, filters, cities }: Props) {
     };
 
     const handleSearchClick = () => {
-        const newFilters = { ...tempFilters };
+        const newFilters = { ...tempFilters, per_page: perPage };
         setSearchFilters(newFilters);
         router.get(route('vendors.index'), newFilters, {
             preserveState: true,
@@ -106,16 +109,22 @@ export default function Index({ vendors, filters, cities }: Props) {
             vendor_name: '',
         };
         setTempFilters(clearedFilters);
-        setSearchFilters(clearedFilters);
+        setSearchFilters(clearedFilters as unknown as VendorFilters);
         setShowCityDropdown(false);
-        router.get(
-            route('vendors.index'),
-            {},
-            {
-                preserveState: true,
-                preserveScroll: true,
-            },
-        );
+        router.get(route('vendors.index'), { per_page: perPage }, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const handlePerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+        setPerPage(value);
+        const query = { ...tempFilters, per_page: value };
+        router.get(route('vendors.index'), query, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     const handleExport = () => {
@@ -137,9 +146,46 @@ export default function Index({ vendors, filters, cities }: Props) {
     };
 
     const handleDelete = (vendor: VendorInfo) => {
-        if (confirm('Are you sure you want to delete this vendor?')) {
-            router.delete(route('vendors.destroy', vendor.id));
-        }
+        if (!confirm('Are you sure you want to delete this vendor?')) return;
+
+        // Collect current filters/pagination from URL and send with DELETE
+        const getRedirectQuery = (): Record<string, string> => {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const keys = ['city', 'city_id', 'vendor_name', 'number', 'email', 'per_page', 'page'];
+                const out: Record<string, string> = {};
+                keys.forEach((k) => {
+                    const v = params.get(k);
+                    if (v !== null) out[k] = v;
+                });
+                return out;
+            } catch {
+                return {};
+            }
+        };
+
+        const query = getRedirectQuery();
+        const payload: Record<string, string> = {};
+        const map: Array<[string, string]> = [
+            ['city', 'filter_city'],
+            ['city_id', 'filter_city_id'],
+            ['vendor_name', 'filter_vendor_name'],
+            ['number', 'filter_number'],
+            ['email', 'filter_email'],
+            ['per_page', 'filter_per_page'],
+            ['page', 'filter_page'],
+        ];
+        map.forEach(([from, to]) => {
+            if (query[from] !== undefined) {
+                payload[to] = query[from];
+            }
+        });
+
+        router.delete(route('vendors.destroy', vendor.id), {
+            preserveScroll: true,
+            preserveState: true,
+            data: payload,
+        });
     };
 
     const handleDrawerSuccess = () => {
@@ -193,7 +239,23 @@ export default function Index({ vendors, filters, cities }: Props) {
                                 onDeleteVendor={handleDelete}
                             />
 
-                            <VendorPagination links={vendors.links} />
+                            {/* Table footer: per-page selector and pagination controls */}
+                            <div className="mt-4 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-muted-foreground">Rows per page</span>
+                                    <select
+                                        value={perPage}
+                                        onChange={handlePerPageChange}
+                                        className="rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm focus:outline-none"
+                                    >
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="50">50</option>
+                                        <option value="all">All</option>
+                                    </select>
+                                </div>
+                                <VendorPagination links={vendors.links} />
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

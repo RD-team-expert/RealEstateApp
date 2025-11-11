@@ -24,7 +24,7 @@ export default function VendorEditDrawer({ vendor, cities, open, onOpenChange, o
     const [vendorNameValidationError, setVendorNameValidationError] = useState<string>('');
     const [, setSelectedCityName] = useState<string>('');
 
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing, errors, transform } = useForm({
         city_id: vendor?.city_id?.toString() || '',
         vendor_name: vendor?.vendor_name || '',
         number: (vendor?.number || []) as string[],
@@ -124,8 +124,47 @@ export default function VendorEditDrawer({ vendor, cities, open, onOpenChange, o
         if (hasValidationErrors) {
             return;
         }
-        
+
+        // Helper to read current filters/pagination from the URL query
+        const getRedirectQuery = (): Record<string, string> => {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const keys = ['city', 'city_id', 'vendor_name', 'number', 'email', 'per_page', 'page'];
+                const out: Record<string, string> = {};
+                keys.forEach((k) => {
+                    const v = params.get(k);
+                    if (v !== null) out[k] = v;
+                });
+                return out;
+            } catch {
+                return {};
+            }
+        };
+
+        // Attach filter/pagination params to the request payload for redirect preservation
+        transform((payload: typeof data) => {
+            const query = getRedirectQuery();
+            const extra: Record<string, unknown> = {};
+            const map: Array<[string, string]> = [
+                ['city', 'filter_city'],
+                ['city_id', 'filter_city_id'],
+                ['vendor_name', 'filter_vendor_name'],
+                ['number', 'filter_number'],
+                ['email', 'filter_email'],
+                ['per_page', 'filter_per_page'],
+                ['page', 'filter_page'],
+            ];
+            map.forEach(([from, to]) => {
+                if (query[from] !== undefined) {
+                    extra[to] = query[from];
+                }
+            });
+            return { ...payload, ...extra };
+        });
+
         put(route('vendors.update', vendor.id), {
+            preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
                 setValidationError('');
                 setVendorNameValidationError('');

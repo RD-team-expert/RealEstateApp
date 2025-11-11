@@ -18,26 +18,26 @@ export default function VendorTable({
     onDeleteVendor,
 }: VendorTableProps) {
     return (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <Table className="min-w-full">
+        <div className="relative overflow-x-auto">
+            <Table className="border-collapse rounded-md border border-border">
                 <TableHeader>
-                    <TableRow className="border-b border-gray-200 bg-gray-50">
-                        <TableHead className="sticky left-0 z-10 border-r border-gray-200 bg-gray-50 px-4 py-3 text-center font-semibold text-gray-900">
+                    <TableRow className="border-border">
+                        <TableHead className="sticky left-0 z-10 min-w-[120px] border border-border bg-muted text-muted-foreground text-center">
                             City
                         </TableHead>
-                        <TableHead className="sticky left-[120px] z-10 border-r border-gray-200 bg-gray-50 px-4 py-3 text-center font-semibold text-gray-900">
+                        <TableHead className="sticky left-[120px] z-10 min-w-[120px] border border-border bg-muted text-muted-foreground text-center">
                             Vendor Name
                         </TableHead>
-                        <TableHead className="border-r border-gray-200 px-4 py-3 text-center font-semibold text-gray-900">
+                        <TableHead className="border border-border bg-muted text-muted-foreground text-center">
                             Phone Number
                         </TableHead>
-                        <TableHead className="border-r border-gray-200 px-4 py-3 text-center font-semibold text-gray-900">
+                        <TableHead className="border border-border bg-muted text-muted-foreground text-center">
                             Email
                         </TableHead>
-                        <TableHead className="border-r border-gray-200 px-4 py-3 text-center font-semibold text-gray-900">
+                        <TableHead className="border border-border bg-muted text-muted-foreground text-center">
                             Service Type
                         </TableHead>
-                        <TableHead className="px-4 py-3 text-center font-semibold text-gray-900">Actions</TableHead>
+                        <TableHead className="border border-border bg-muted text-muted-foreground text-center">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -54,7 +54,7 @@ export default function VendorTable({
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={6} className="py-8 text-center text-gray-500">
+                            <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                                 No vendors found
                             </TableCell>
                         </TableRow>

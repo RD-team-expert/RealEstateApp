@@ -29,7 +29,9 @@ class VendorInfoController extends Controller
     public function index(Request $request): Response
     {
         $perPage = $request->get('per_page', 15);
-        $filters = $request->only(['city', 'city_id', 'vendor_name', 'number', 'email']);
+        $filters = $request->only(['city', 'city_id', 'vendor_name', 'number', 'email', 'per_page']);
+        // Ensure filters always contain per_page for UI state
+        $filters['per_page'] = $perPage;
 
         $vendors = $this->vendorInfoService->getAllPaginated($perPage, $filters);
         // $statistics = $this->vendorInfoService->getStatistics();
@@ -43,20 +45,13 @@ class VendorInfoController extends Controller
         ]);
     }
 
-    public function create(): Response
-    {
-        $cities = Cities::orderBy('city', 'asc')->get(['id', 'city']);
-        return Inertia::render('Vendors/Create', [
-            'cities' => $cities
-        ]);
-    }
-
     public function store(StoreVendorInfoRequest $request): RedirectResponse
     {
         try {
             $this->vendorInfoService->create($request->validated());
 
-            return redirect()->route('vendors.index')
+            // Redirect to index with preserved filters/pagination from namespaced POST keys
+            return redirect()->route('vendors.index', $this->indexRedirectParams($request))
                 ->with('success', 'Vendor created successfully');
         } catch (\Exception $e) {
             return redirect()->back()
@@ -65,32 +60,13 @@ class VendorInfoController extends Controller
         }
     }
 
-    public function show(string $id): Response
-    {
-        $vendor = $this->vendorInfoService->findById((int) $id);
-
-        return Inertia::render('Vendors/Show', [
-            'vendor' => $vendor,
-        ]);
-    }
-
-    public function edit(string $id): Response
-    {
-        $vendor = $this->vendorInfoService->findById((int) $id);
-        $cities = Cities::orderBy('city', 'asc')->get(['id', 'city']);
-        return Inertia::render('Vendors/Edit', [
-            'vendor' => $vendor,
-            'cities' => $cities
-        ]);
-    }
-
     public function update(UpdateVendorInfoRequest $request, string $id): RedirectResponse
     {
         try {
             $vendor = $this->vendorInfoService->findById((int) $id);
             $this->vendorInfoService->update($vendor, $request->validated());
 
-            return redirect()->route('vendors.index')
+            return redirect()->route('vendors.index', $this->indexRedirectParams($request))
                 ->with('success', 'Vendor updated successfully');
         } catch (\Exception $e) {
             return redirect()->back()
@@ -105,7 +81,7 @@ class VendorInfoController extends Controller
             $vendor = $this->vendorInfoService->findById((int) $id);
             $this->vendorInfoService->delete($vendor);
 
-            return redirect()->route('vendors.index')
+            return redirect()->route('vendors.index', $this->indexRedirectParams(request()))
                 ->with('success', 'Vendor deleted successfully');
         } catch (\Exception $e) {
             return redirect()->back()
@@ -143,5 +119,40 @@ class VendorInfoController extends Controller
             'vendors' => $vendors,
             'city' => $city->city,
         ]);
+    }
+
+    /**
+     * Collect filters and pagination params to persist on redirects.
+     * Use namespaced keys during POST/PUT to avoid colliding with form fields.
+     */
+    private function indexRedirectParams(Request $request): array
+    {
+        $params = [];
+
+        if ($request->isMethod('post') || $request->isMethod('put') || $request->isMethod('delete')) {
+            $map = [
+                'filter_city' => 'city',
+                'filter_city_id' => 'city_id',
+                'filter_vendor_name' => 'vendor_name',
+                'filter_number' => 'number',
+                'filter_email' => 'email',
+                'filter_per_page' => 'per_page',
+                'filter_page' => 'page',
+            ];
+            foreach ($map as $from => $to) {
+                if ($request->has($from)) {
+                    $params[$to] = $request->input($from);
+                }
+            }
+        } else {
+            $keys = ['city', 'city_id', 'vendor_name', 'number', 'email', 'per_page', 'page'];
+            foreach ($keys as $key) {
+                if ($request->has($key)) {
+                    $params[$key] = $request->input($key);
+                }
+            }
+        }
+
+        return $params;
     }
 }

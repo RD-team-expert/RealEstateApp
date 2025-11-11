@@ -22,7 +22,7 @@ export default function VendorCreateDrawer({ cities, open, onOpenChange, onSucce
     const [vendorNameValidationError, setVendorNameValidationError] = useState<string>('');
     const [, setSelectedCityName] = useState<string>('');
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors, reset, transform } = useForm({
         city_id: '',
         vendor_name: '',
         number: [] as string[],
@@ -105,7 +105,46 @@ export default function VendorCreateDrawer({ cities, open, onOpenChange, onSucce
             return;
         }
         
+        // Helper to read current filters/pagination from the URL query
+        const getRedirectQuery = (): Record<string, string> => {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const keys = ['city', 'city_id', 'vendor_name', 'number', 'email', 'per_page', 'page'];
+                const out: Record<string, string> = {};
+                keys.forEach((k) => {
+                    const v = params.get(k);
+                    if (v !== null) out[k] = v;
+                });
+                return out;
+            } catch {
+                return {};
+            }
+        };
+
+        // Use form.transform to attach filter/pagination params
+        transform((payload: typeof data) => {
+            const query = getRedirectQuery();
+            const extra: Record<string, unknown> = {};
+            const map: Array<[string, string]> = [
+                ['city', 'filter_city'],
+                ['city_id', 'filter_city_id'],
+                ['vendor_name', 'filter_vendor_name'],
+                ['number', 'filter_number'],
+                ['email', 'filter_email'],
+                ['per_page', 'filter_per_page'],
+                ['page', 'filter_page'],
+            ];
+            map.forEach(([from, to]) => {
+                if (query[from] !== undefined) {
+                    extra[to] = query[from];
+                }
+            });
+            return { ...payload, ...extra };
+        });
+
         post(route('vendors.store'), {
+            preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
                 reset();
                 setSelectedCityName('');
