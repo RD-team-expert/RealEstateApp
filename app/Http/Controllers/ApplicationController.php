@@ -33,7 +33,12 @@ class ApplicationController extends Controller
     public function index(Request $request): Response
     {
         $perPage = $request->get('per_page', 15);
-        $filters = $request->only(['city', 'property', 'name', 'co_signer', 'unit', 'status', 'applicant_applied_from', 'stage_in_progress', 'date_from', 'date_to']);
+        $filters = $request->only(['city', 'property', 'name', 'co_signer', 'unit', 'status', 'applicant_applied_from', 'stage_in_progress', 'date_from', 'date_to', 'per_page', 'page']);
+        $filters['city'] = $request->input('filter_city', $filters['city'] ?? '');
+        $filters['property'] = $request->input('filter_property', $filters['property'] ?? '');
+        $filters['unit'] = $request->input('filter_unit', $filters['unit'] ?? '');
+        $filters['name'] = $request->input('filter_name', $filters['name'] ?? '');
+        $filters['applicant_applied_from'] = $request->input('filter_applicant_applied_from', $filters['applicant_applied_from'] ?? '');
 
         $applications = $this->applicationService->getAllPaginated($perPage, $filters);
         $statistics = $this->applicationService->getStatistics();
@@ -50,7 +55,7 @@ class ApplicationController extends Controller
             return $application;
         });
 
-        // Get hierarchical data for dropdowns
+        // Get hierarchical data for create/edit selectors
         $cities = Cities::orderBy('city')->get();
         $properties = PropertyInfoWithoutInsurance::with('city')->orderBy('property_name')->get();
         $units = Unit::with(['property.city'])->orderBy('unit_name')->get();
@@ -83,13 +88,23 @@ class ApplicationController extends Controller
             })->values();
         });
 
+        // Build distinct names arrays for filters (only names, no duplication, not archived)
+        $filterCities = $this->applicationService->getFilterCityNames();
+        $filterProperties = $this->applicationService->getFilterPropertyNames();
+        $filterUnits = $this->applicationService->getFilterUnitNames();
+
         return Inertia::render('Applications/Index', [
             'applications' => $applications,
             'statistics' => $statistics,
             'filters' => $filters,
+            // Hierarchical data for create/edit drawers
             'cities' => $citiesData,
             'properties' => $propertiesData,
             'units' => $unitsData,
+            // Flat names arrays for filter dropdowns
+            'filterCities' => $filterCities,
+            'filterProperties' => $filterProperties,
+            'filterUnits' => $filterUnits,
         ]);
     }
 
@@ -101,7 +116,17 @@ class ApplicationController extends Controller
             $data['attachments'] = $request->file('attachments', []); // ✅ always an array
             $this->applicationService->create($data);
 
-            return redirect()->route('applications.index')
+            $preserve = [
+                'city' => $request->input('filter_city'),
+                'property' => $request->input('filter_property'),
+                'unit' => $request->input('filter_unit'),
+                'name' => $request->input('filter_name'),
+                'applicant_applied_from' => $request->input('filter_applicant_applied_from'),
+                'per_page' => $request->input('per_page', 15),
+                'page' => $request->input('page', 1),
+            ];
+
+            return redirect()->route('applications.index', $preserve)
                 ->with('success', 'Application created successfully');
         } catch (\Exception $e) {
             return redirect()->back()
@@ -110,7 +135,7 @@ class ApplicationController extends Controller
         }
     }
 
-    public function show(string $id): Response
+    public function show(Request $request, string $id): Response
     {
         $application = $this->applicationService->findById((int) $id);
 
@@ -122,8 +147,27 @@ class ApplicationController extends Controller
         // Format attachments for display
         $application->attachments = $this->formatAttachments($application);
 
+        // Read filters from request to compute navigation and preserve context
+        $filters = $request->only([
+            'city',
+            'property',
+            'unit',
+            'name',
+            'co_signer',
+            'status',
+            'applicant_applied_from',
+            'stage_in_progress',
+            'date_from',
+            'date_to',
+        ]);
+
+        $adjacent = $this->applicationService->getAdjacentApplicationIds($filters, (int) $id);
+
         return Inertia::render('Applications/Show', [
             'application' => $application,
+            'filters' => $filters,
+            'prevId' => $adjacent['prev_id'],
+            'nextId' => $adjacent['next_id'],
         ]);
     }
 
@@ -137,7 +181,17 @@ class ApplicationController extends Controller
             $data['attachments'] = $request->file('attachments', []); // ✅
             $this->applicationService->update($application, $data);
 
-            return redirect()->route('applications.index')
+            $preserve = [
+                'city' => $request->input('filter_city'),
+                'property' => $request->input('filter_property'),
+                'unit' => $request->input('filter_unit'),
+                'name' => $request->input('filter_name'),
+                'applicant_applied_from' => $request->input('filter_applicant_applied_from'),
+                'per_page' => $request->input('per_page', 15),
+                'page' => $request->input('page', 1),
+            ];
+
+            return redirect()->route('applications.index', $preserve)
                 ->with('success', 'Application updated successfully');
         } catch (\Exception $e) {
             return redirect()->back()
@@ -155,7 +209,17 @@ class ApplicationController extends Controller
             // Service will handle file cleanup
             $this->applicationService->delete($application);
 
-            return redirect()->route('applications.index')
+            $preserve = [
+                'city' => request()->input('filter_city'),
+                'property' => request()->input('filter_property'),
+                'unit' => request()->input('filter_unit'),
+                'name' => request()->input('filter_name'),
+                'applicant_applied_from' => request()->input('filter_applicant_applied_from'),
+                'per_page' => request()->input('per_page', 15),
+                'page' => request()->input('page', 1),
+            ];
+
+            return redirect()->route('applications.index', $preserve)
                 ->with('success', 'Application archived successfully');
         } catch (\Exception $e) {
             return redirect()->back()

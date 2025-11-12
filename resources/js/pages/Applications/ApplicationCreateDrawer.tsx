@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
 import { useForm } from '@inertiajs/react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, {  useRef, useState } from 'react';
 import { CityPropertyUnitSelector } from './create/CityPropertyUnitSelector';
 import { ApplicantInformationSection } from './create/ApplicantInformationSection';
 import { StatusAndDateSection } from './create/StatusAndDateSection';
@@ -27,9 +27,18 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    currentFilters: {
+        city: string;
+        property: string;
+        unit: string;
+        name: string;
+        applicant_applied_from: string;
+    };
+    perPage: string;
+    page: number;
 }
 
-export default function ApplicationCreateDrawer({ cities, properties, units, open, onOpenChange, onSuccess }: Props) {
+export default function ApplicationCreateDrawer({ cities, properties, units, open, onOpenChange, onSuccess, currentFilters, perPage, page }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null!);
 
     const [validationErrors, setValidationErrors] = useState<{
@@ -45,11 +54,11 @@ export default function ApplicationCreateDrawer({ cities, properties, units, ope
     const [availableProperties, setAvailableProperties] = useState<PropertyData[]>([]);
     const [availableUnits, setAvailableUnits] = useState<UnitData[]>([]);
 
-    const { data, setData, post, processing, errors, reset, clearErrors } = useForm<ApplicationFormData>({
+    const { data, setData, post, processing, errors, reset, clearErrors, transform } = useForm<ApplicationFormData>({
         unit_id: null,
         name: '',
         co_signer: '',
-        status: 'New',
+        status: '',
         applicant_applied_from: '',
         date: '',
         stage_in_progress: '',
@@ -57,21 +66,31 @@ export default function ApplicationCreateDrawer({ cities, properties, units, ope
         attachments: [],
     });
 
-    // Reset form when drawer closes
-    useEffect(() => {
-        if (!open) {
-            reset();
-            clearErrors();
-            setValidationErrors({});
-            setSelectedCityId(null);
-            setSelectedPropertyId(null);
-            setAvailableProperties([]);
-            setAvailableUnits([]);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
-            }
+    const clearForm = () => {
+        reset();
+        clearErrors();
+        setValidationErrors({});
+        setSelectedCityId(null);
+        setSelectedPropertyId(null);
+        setAvailableProperties([]);
+        setAvailableUnits([]);
+        setData({
+            unit_id: null,
+            name: '',
+            co_signer: '',
+            status: '',
+            applicant_applied_from: '',
+            date: '',
+            stage_in_progress: '',
+            notes: '',
+            attachments: [],
+        });
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
-    }, [open]);
+    };
+
+    // Keep form state when drawer is closed normally; explicit actions handle clearing
 
     const handleCityChange = (cityId: string) => {
         const selectedId = parseInt(cityId);
@@ -163,25 +182,29 @@ export default function ApplicationCreateDrawer({ cities, properties, units, ope
             return;
         }
 
+        transform((payload) => ({
+            ...payload,
+            filter_city: currentFilters.city || '',
+            filter_property: currentFilters.property || '',
+            filter_unit: currentFilters.unit || '',
+            filter_name: currentFilters.name || '',
+            filter_applicant_applied_from: currentFilters.applicant_applied_from || '',
+            per_page: perPage,
+            page,
+        }));
         post(route('applications.store'), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
-                handleCancel();
+                clearForm();
+                onOpenChange(false);
                 onSuccess?.();
             },
         });
     };
 
     const handleCancel = () => {
-        reset();
-        clearErrors();
-        setValidationErrors({});
-        setSelectedCityId(null);
-        setSelectedPropertyId(null);
-        setAvailableProperties([]);
-        setAvailableUnits([]);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
+        clearForm();
         onOpenChange(false);
     };
 

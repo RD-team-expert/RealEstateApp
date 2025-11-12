@@ -12,9 +12,23 @@ import { Calendar, MapPin, User, Home, FileText, Download, ClipboardList, Clock 
 
 interface Props {
     application: Application;
+    filters?: {
+        city?: string;
+        property?: string;
+        unit?: string;
+        name?: string;
+        co_signer?: string;
+        status?: string;
+        applicant_applied_from?: string;
+        stage_in_progress?: string;
+        date_from?: string;
+        date_to?: string;
+    };
+    prevId?: number | null;
+    nextId?: number | null;
 }
 
-export default function Show({ application }: Props) {
+export default function Show({ application, filters, prevId, nextId }: Props) {
     // const { hasAllPermissions } = usePermissions();
 
     const formatDate = (date: string | null) => {
@@ -56,6 +70,23 @@ export default function Show({ application }: Props) {
         </div>
     );
 
+    const buildShowRoute = (id: number) => {
+        const params: Record<string, any> = { application: id };
+        if (filters) {
+            if (filters.city) params.city = filters.city;
+            if (filters.property) params.property = filters.property;
+            if (filters.unit) params.unit = filters.unit;
+            if (filters.name) params.name = filters.name;
+            if (filters.co_signer) params.co_signer = filters.co_signer;
+            if (filters.status) params.status = filters.status;
+            if (filters.applicant_applied_from) params.applicant_applied_from = filters.applicant_applied_from;
+            if (filters.stage_in_progress) params.stage_in_progress = filters.stage_in_progress;
+            if (filters.date_from) params.date_from = filters.date_from;
+            if (filters.date_to) params.date_to = filters.date_to;
+        }
+        return route('applications.show', params);
+    };
+
     return (
         <AppLayout>
             <Head title={`Application Details #${application.id}`} />
@@ -78,9 +109,37 @@ export default function Show({ application }: Props) {
                                         <Button className="bg-blue-600 hover:bg-blue-700">Edit Record</Button>
                                     </Link>
                                 )} */}
-                                <Link href={route('applications.index')}>
+                                <Link href={route('applications.index', filters || {})}>
                                     <Button variant="outline">Back to List</Button>
                                 </Link>
+                                <div className="flex gap-2">
+                                    <Button
+                                        asChild
+                                        variant="outline"
+                                        disabled={!prevId}
+                                    >
+                                        {prevId ? (
+                                            <Link href={buildShowRoute(prevId)}>
+                                                Previous
+                                            </Link>
+                                        ) : (
+                                            <span>Previous</span>
+                                        )}
+                                    </Button>
+                                    <Button
+                                        asChild
+                                        variant="outline"
+                                        disabled={!nextId}
+                                    >
+                                        {nextId ? (
+                                            <Link href={buildShowRoute(nextId)}>
+                                                Next
+                                            </Link>
+                                        ) : (
+                                            <span>Next</span>
+                                        )}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { RadioGroup } from '@/components/ui/radioGroup';
 import { format, parse } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
@@ -41,7 +41,7 @@ export function StatusAndDateSection({
                     </Label>
                 </div>
                 <RadioGroup
-                    value={status}
+                    value={status || undefined}
                     onValueChange={onStatusChange}
                     name="status"
                     options={[
@@ -63,30 +63,50 @@ export function StatusAndDateSection({
                         Date
                     </Label>
                 </div>
-                <Popover open={calendarOpen} onOpenChange={setCalendarOpen} modal={false}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            className={`w-full justify-start text-left font-normal ${!date && 'text-muted-foreground'}`}
-                        >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {date ? format(parse(date, 'yyyy-MM-dd', new Date()), 'PPP') : 'Pick a date'}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                        <Calendar
-                            mode="single"
-                            selected={date ? parse(date, 'yyyy-MM-dd', new Date()) : undefined}
-                            onSelect={(selectedDate) => {
-                                if (selectedDate) {
-                                    onDateChange(format(selectedDate, 'yyyy-MM-dd'));
-                                    setCalendarOpen(false);
-                                }
+                <div className="relative">
+                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen} modal={false}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className={`w-full justify-start text-left font-normal pr-8 ${!date && 'text-muted-foreground'}`}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {date ? format(parse(date, 'yyyy-MM-dd', new Date()), 'PPP') : 'Pick a date'}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+                            <Calendar
+                                mode="single"
+                                selected={date ? parse(date, 'yyyy-MM-dd', new Date()) : undefined}
+                                onSelect={(selectedDate) => {
+                                    if (selectedDate) {
+                                        onDateChange(format(selectedDate, 'yyyy-MM-dd'));
+                                        setCalendarOpen(false);
+                                    }
+                                }}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                    {date && (
+                        <button
+                            type="button"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 hover:bg-muted"
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                             }}
-                            initialFocus
-                        />
-                    </PopoverContent>
-                </Popover>
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDateChange('');
+                                setCalendarOpen(false);
+                            }}
+                            aria-label="Clear date"
+                        >
+                            <X className="h-4 w-4 text-muted-foreground" />
+                        </button>
+                    )}
+                </div>
                 {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date}</p>}
             </div>
         </>

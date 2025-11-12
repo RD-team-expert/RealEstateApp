@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
 import { Application, CityData, PropertyData, UnitData } from '@/types/application';
 import { useForm } from '@inertiajs/react';
-import { format } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
 import React, { useEffect, useState } from 'react';
 import { ApplicantInformationFields } from './edit/ApplicantInformationFields';
 import { AttachmentField } from './edit/AttachmentField';
@@ -32,9 +32,18 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    currentFilters?: {
+        city: string;
+        property: string;
+        unit: string;
+        name: string;
+        applicant_applied_from: string;
+    };
+    perPage?: string;
+    page?: number;
 }
 
-export default function ApplicationEditDrawer({ application, cities, properties, units, open, onOpenChange, onSuccess }: Props) {
+export default function ApplicationEditDrawer({ application, cities, properties, units, open, onOpenChange, onSuccess, currentFilters, perPage = '15', page = 1 }: Props) {
     const [validationErrors, setValidationErrors] = useState<{
         city?: string;
         property?: string;
@@ -50,17 +59,26 @@ export default function ApplicationEditDrawer({ application, cities, properties,
     const [removedAttachmentIndices, setRemovedAttachmentIndices] = useState<number[]>([]);
     const [newAttachments, setNewAttachments] = useState<File[]>([]);
 
-    // Safe date formatting function
     const formatDateForInput = (dateString: string | null | undefined): string => {
-        if (!dateString || dateString.trim() === '') {
-            return '';
-        }
+        if (!dateString) return '';
+        const raw = dateString.trim();
+        if (!raw || raw === '0000-00-00') return '';
 
         try {
-            const parsedDate = new Date(dateString);
-            if (parsedDate && !isNaN(parsedDate.getTime())) {
-                return format(parsedDate, 'yyyy-MM-dd');
+            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+            if (m) {
+                const [, y, mo, d] = m;
+                const localDate = new Date(Number(y), Number(mo) - 1, Number(d));
+                if (isValid(localDate)) {
+                    return format(localDate, 'yyyy-MM-dd');
+                }
             }
+
+            const parsed = parse(raw, 'yyyy-MM-dd', new Date(2000, 0, 1));
+            if (isValid(parsed)) {
+                return format(parsed, 'yyyy-MM-dd');
+            }
+
             return '';
         } catch (error) {
             console.warn('Date parsing error:', error);
@@ -265,12 +283,21 @@ export default function ApplicationEditDrawer({ application, cities, properties,
 
         transform((payload) => ({
             ...payload,
-            _method: 'put', // method spoofing
+            _method: 'put',
+            filter_city: currentFilters?.city || '',
+            filter_property: currentFilters?.property || '',
+            filter_unit: currentFilters?.unit || '',
+            filter_name: currentFilters?.name || '',
+            filter_applicant_applied_from: currentFilters?.applicant_applied_from || '',
+            per_page: perPage,
+            page,
         }));
 
         // Use put method for UPDATE request
         post(route('applications.update', application.id), {
-            forceFormData: true, // REQUIRED for files
+            forceFormData: true,
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 setValidationErrors({});
                 setNewAttachments([]);

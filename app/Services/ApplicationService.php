@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 
 class ApplicationService
 {
-    public function getAllPaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator
+    public function getAllPaginated(int|string $perPage = 15, array $filters = []): LengthAwarePaginator
     {
         $query = Application::with(['unit.property.city'])
             ->whereHas('unit', function ($unitQuery) {
@@ -70,7 +70,25 @@ class ApplicationService
             $query->where('date', '<=', $filters['date_to']);
         }
 
-        return $query->orderBy('date', 'desc')->paginate($perPage);
+        if ($perPage === 'all') {
+            $items = $query->orderBy('date', 'desc')->get();
+            $paginator = new LengthAwarePaginator(
+                $items,
+                $items->count(),
+                $items->count(),
+                1,
+                [
+                    'path' => request()->url(),
+                    'pageName' => 'page',
+                ]
+            );
+            $paginator->appends(array_merge($filters, ['per_page' => 'all']));
+            return $paginator;
+        }
+
+        $paginator = $query->orderBy('date', 'desc')->paginate((int) $perPage);
+        $paginator->appends(array_merge($filters, ['per_page' => $perPage]));
+        return $paginator;
     }
 
     public function create(array $data): Application
@@ -236,6 +254,42 @@ class ApplicationService
             ->get();
     }
 
+    /**
+     * Get distinct, non-archived city names for filters
+     */
+    public function getFilterCityNames(): array
+    {
+        return Cities::select('city')
+            ->distinct()
+            ->orderBy('city')
+            ->pluck('city')
+            ->toArray();
+    }
+
+    /**
+     * Get distinct, non-archived property names for filters
+     */
+    public function getFilterPropertyNames(): array
+    {
+        return PropertyInfoWithoutInsurance::select('property_name')
+            ->distinct()
+            ->orderBy('property_name')
+            ->pluck('property_name')
+            ->toArray();
+    }
+
+    /**
+     * Get distinct, non-archived unit names for filters
+     */
+    public function getFilterUnitNames(): array
+    {
+        return Unit::select('unit_name')
+            ->distinct()
+            ->orderBy('unit_name')
+            ->pluck('unit_name')
+            ->toArray();
+    }
+
     private function handleFileUploads(array $files): array
     {
         $names = [];
@@ -309,5 +363,96 @@ class ApplicationService
         }
 
         return $data;
+    }
+
+    /**
+     * Get ordered application IDs matching filters (used for prev/next navigation)
+     */
+    public function getFilteredOrderedApplicationIds(array $filters = []): array
+    {
+        $query = Application::with(['unit.property.city'])
+            ->whereHas('unit', function ($unitQuery) {
+                $unitQuery->where('is_archived', false);
+            });
+
+        if (!empty($filters['city'])) {
+            $query->whereHas('unit.property.city', function ($cityQuery) use ($filters) {
+                $cityQuery->where('city', 'like', '%' . $filters['city'] . '%');
+            });
+        }
+
+        if (!empty($filters['property'])) {
+            $query->whereHas('unit.property', function ($propertyQuery) use ($filters) {
+                $propertyQuery->where('property_name', 'like', '%' . $filters['property'] . '%');
+            });
+        }
+
+        if (!empty($filters['unit'])) {
+            $query->whereHas('unit', function ($unitQuery) use ($filters) {
+                $unitQuery->where('unit_name', 'like', '%' . $filters['unit'] . '%');
+            });
+        }
+
+        if (!empty($filters['name'])) {
+            $query->where('name', 'like', '%' . $filters['name'] . '%');
+        }
+
+        if (!empty($filters['co_signer'])) {
+            $query->where('co_signer', 'like', '%' . $filters['co_signer'] . '%');
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['applicant_applied_from'])) {
+            $query->where('applicant_applied_from', $filters['applicant_applied_from']);
+        }
+
+        if (!empty($filters['stage_in_progress'])) {
+            $query->where('stage_in_progress', $filters['stage_in_progress']);
+        }
+
+        if (!empty($filters['date_from'])) {
+            $query->where('date', '>=', $filters['date_from']);
+        }
+
+        if (!empty($filters['date_to'])) {
+            $query->where('date', '<=', $filters['date_to']);
+        }
+
+        return $query
+            ->orderBy('date', 'desc')
+            ->orderBy('id', 'desc')
+            ->pluck('id')
+            ->toArray();
+    }
+
+    /**
+     * Compute previous and next application IDs within the filtered ordering.
+     */
+    public function getAdjacentApplicationIds(array $filters, int $currentId): array
+    {
+        $ids = $this->getFilteredOrderedApplicationIds($filters);
+
+        $prevId = null;
+        $nextId = null;
+
+        if (!empty($ids)) {
+            $index = array_search($currentId, $ids, true);
+            if ($index !== false) {
+                if ($index > 0) {
+                    $prevId = $ids[$index - 1];
+                }
+                if ($index < (count($ids) - 1)) {
+                    $nextId = $ids[$index + 1];
+                }
+            }
+        }
+
+        return [
+            'prev_id' => $prevId,
+            'next_id' => $nextId,
+        ];
     }
 }

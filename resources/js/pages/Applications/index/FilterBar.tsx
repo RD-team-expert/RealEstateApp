@@ -33,9 +33,16 @@ interface FilterBarProps {
         applicant_applied_from: string;
     }) => void;
     onClear: () => void;
+    initialFilters?: {
+        city: string;
+        property: string;
+        unit: string;
+        name: string;
+        applicant_applied_from: string;
+    };
 }
 
-export default function FilterBar({ cities, properties, units, onSearch, onClear }: FilterBarProps) {
+export default function FilterBar({ cities, properties, units, onSearch, onClear, initialFilters }: FilterBarProps) {
     const [tempFilters, setTempFilters] = useState({
         city: '',
         property: '',
@@ -43,6 +50,18 @@ export default function FilterBar({ cities, properties, units, onSearch, onClear
         name: '',
         applicant_applied_from: '',
     });
+
+    useEffect(() => {
+        if (initialFilters) {
+            setTempFilters({
+                city: initialFilters.city || '',
+                property: initialFilters.property || '',
+                unit: initialFilters.unit || '',
+                name: initialFilters.name || '',
+                applicant_applied_from: initialFilters.applicant_applied_from || '',
+            });
+        }
+    }, [initialFilters]);
 
     const [showCityDropdown, setShowCityDropdown] = useState(false);
     const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);

@@ -14,6 +14,13 @@ interface ApplicationsTableRowProps {
     hasViewPermission: boolean;
     hasEditPermission: boolean;
     hasDeletePermission: boolean;
+    filters?: {
+        city: string;
+        property: string;
+        unit: string;
+        name: string;
+        applicant_applied_from: string;
+    };
 }
 
 const formatDateOnly = (value?: string | null, fallback = '-'): string => {
@@ -39,6 +46,7 @@ export default function ApplicationsTableRow({
     hasViewPermission,
     hasEditPermission,
     hasDeletePermission,
+    filters,
 }: ApplicationsTableRowProps) {
     const attachmentCount = application.attachments?.length || 0;
 
@@ -88,7 +96,16 @@ export default function ApplicationsTableRow({
                 <TableCell className="border border-border text-center">
                     <div className="flex gap-1">
                         {hasViewPermission && (
-                            <Link href={route('applications.show', application.id)}>
+                            <Link
+                                href={route('applications.show', {
+                                    application: application.id,
+                                    city: filters?.city || '',
+                                    property: filters?.property || '',
+                                    unit: filters?.unit || '',
+                                    name: filters?.name || '',
+                                    applicant_applied_from: filters?.applicant_applied_from || '',
+                                })}
+                            >
                                 <Button variant="outline" size="sm">
                                     <Eye className="h-4 w-4" />
                                 </Button>

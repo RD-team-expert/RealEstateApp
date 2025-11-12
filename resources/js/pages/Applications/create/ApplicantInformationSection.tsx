@@ -74,7 +74,7 @@ export function ApplicantInformationSection({
                         Applied From
                     </Label>
                 </div>
-                <Select onValueChange={onApplicantAppliedFromChange} value={applicantAppliedFrom}>
+                <Select onValueChange={onApplicantAppliedFromChange} value={applicantAppliedFrom || undefined}>
                     <SelectTrigger>
                         <SelectValue placeholder="Select where applicant applied from" />
                     </SelectTrigger>

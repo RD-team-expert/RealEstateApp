@@ -5,7 +5,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Application, ApplicationFilters, PaginatedApplications , Attachment } from '@/types/application';
 import { PageProps } from '@/types/auth';
 import { Head, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ApplicationCreateDrawer from './ApplicationCreateDrawer';
 import ApplicationEditDrawer from './ApplicationEditDrawer';
 import ApplicationsTable from './index/ApplicationsTable';
@@ -38,6 +38,9 @@ interface Props extends PageProps {
     cities: CityData[];
     properties: Record<string, PropertyData[]>;
     units: Record<string, UnitData[]>;
+    filterCities: string[];
+    filterProperties: string[];
+    filterUnits: string[];
 }
 
 // CSV Export utility function
@@ -124,7 +127,7 @@ const exportToCSV = (data: Application[], filename: string = 'applications.csv')
     }
 };
 
-export default function Index({ applications, cities, properties, units }: Props) {
+export default function Index({ applications, filters, cities, properties, units, filterCities, filterProperties, filterUnits }: Props) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
@@ -140,9 +143,23 @@ export default function Index({ applications, cities, properties, units }: Props
         applicant_applied_from: '',
     });
 
+    const initialPerPage = (filters as any)?.per_page ? String((filters as any).per_page) : String(applications?.per_page ?? 15);
+    const [perPage, setPerPage] = useState<string>(initialPerPage === String(applications?.total ?? '') ? 'all' : initialPerPage);
+
+    useEffect(() => {
+        const f = filters || ({} as any);
+        setSearchFilters({
+            city: (f.city as string) || '',
+            property: (f.property as string) || '',
+            unit: (f.unit as string) || '',
+            name: (f.name as string) || '',
+            applicant_applied_from: (f.applicant_applied_from as string) || '',
+        });
+    }, [filters]);
+
     const handleSearch = (filters: { city: string; property: string; unit: string; name: string; applicant_applied_from: string }) => {
         setSearchFilters(filters);
-        router.get(route('applications.index'), filters, {
+        router.get(route('applications.index'), { ...filters, per_page: perPage, page: 1 }, {
             preserveState: true,
             preserveScroll: true,
         });
@@ -157,12 +174,25 @@ export default function Index({ applications, cities, properties, units }: Props
             applicant_applied_from: '',
         };
         setSearchFilters(cleared);
-        router.get(route('applications.index'), {}, { preserveState: false });
+        setPerPage('15');
+        router.get(route('applications.index'), { per_page: '15', page: 1 }, { preserveState: false });
     };
 
     const handleDelete = (application: Application) => {
         if (confirm('Are you sure you want to delete this application?')) {
-            router.delete(route('applications.destroy', application.id));
+            router.delete(route('applications.destroy', application.id), {
+                data: {
+                    filter_city: searchFilters.city || '',
+                    filter_property: searchFilters.property || '',
+                    filter_unit: searchFilters.unit || '',
+                    filter_name: searchFilters.name || '',
+                    filter_applicant_applied_from: searchFilters.applicant_applied_from || '',
+                    per_page: perPage,
+                    page: applications.current_page,
+                },
+                preserveState: true,
+                preserveScroll: true,
+            });
         }
     };
 
@@ -187,17 +217,10 @@ export default function Index({ applications, cities, properties, units }: Props
     };
 
     const handleDrawerSuccess = () => {
-        router.get(route('applications.index'), searchFilters, {
-            preserveState: true,
-            preserveScroll: true,
-        });
+        setIsDrawerOpen(false);
     };
 
     const handleEditDrawerSuccess = () => {
-        router.get(route('applications.index'), searchFilters, {
-            preserveState: true,
-            preserveScroll: true,
-        });
         setIsEditDrawerOpen(false);
         setSelectedApplication(null);
     };
@@ -205,6 +228,15 @@ export default function Index({ applications, cities, properties, units }: Props
     const handleEditClick = (application: Application) => {
         setSelectedApplication(application);
         setIsEditDrawerOpen(true);
+    };
+
+    // Prepare filter dropdown data (only names, no duplication)
+    const citiesForFilters: CityData[] = (filterCities || []).map((name, idx) => ({ id: idx + 1, name }));
+    const propertiesForFilters: Record<string, PropertyData[]> = {
+        '0': (filterProperties || []).map((name, idx) => ({ id: idx + 1, name, city_id: 0 })),
+    };
+    const unitsForFilters: Record<string, UnitData[]> = {
+        '0': (filterUnits || []).map((name, idx) => ({ id: idx + 1, name, property_id: 0 })),
     };
 
     const hasCreatePermission = hasAllPermissions(['applications.create', 'applications.store']);
@@ -236,33 +268,48 @@ export default function Index({ applications, cities, properties, units }: Props
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
                             <FilterBar
-                                cities={cities}
-                                properties={properties}
-                                units={units}
+                                cities={citiesForFilters}
+                                properties={propertiesForFilters}
+                                units={unitsForFilters}
+                                initialFilters={searchFilters}
                                 onSearch={handleSearch}
                                 onClear={handleClearFilters}
                             />
                         </CardHeader>
 
-                        <CardContent>
-                            {applications.data.length > 0 ? (
-                                <>
-                                    <ApplicationsTable
-                                        applications={applications.data}
-                                        onEdit={handleEditClick}
-                                        onDelete={handleDelete}
-                                        hasViewPermission={hasViewPermission}
-                                        hasEditPermission={hasEditPermission}
-                                        hasDeletePermission={hasDeletePermission}
-                                        hasAnyActionPermission={hasAnyActionPermission}
-                                    />
-                                    <Pagination links={applications.links} lastPage={applications.last_page} />
-                                </>
-                            ) : (
-                                <EmptyState />
-                            )}
-                        </CardContent>
-                    </Card>
+                <CardContent>
+                    {applications.data.length > 0 ? (
+                        <>
+                            <ApplicationsTable
+                                applications={applications.data}
+                                onEdit={handleEditClick}
+                                onDelete={handleDelete}
+                                hasViewPermission={hasViewPermission}
+                                hasEditPermission={hasEditPermission}
+                                hasDeletePermission={hasDeletePermission}
+                                hasAnyActionPermission={hasAnyActionPermission}
+                                filters={searchFilters}
+                            />
+                            <Pagination
+                                links={applications.links}
+                                meta={{
+                                    current_page: applications.current_page,
+                                    last_page: applications.last_page,
+                                    per_page: applications.per_page,
+                                    total: applications.total,
+                                    from: applications.from,
+                                    to: applications.to,
+                                }}
+                                filters={searchFilters}
+                                perPage={perPage}
+                                onPerPageChange={setPerPage}
+                            />
+                        </>
+                    ) : (
+                        <EmptyState />
+                    )}
+                </CardContent>
+            </Card>
                 </div>
             </div>
 
@@ -273,6 +320,9 @@ export default function Index({ applications, cities, properties, units }: Props
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
                 onSuccess={handleDrawerSuccess}
+                currentFilters={searchFilters}
+                perPage={perPage}
+                page={applications.current_page}
             />
 
             {selectedApplication && (
@@ -284,6 +334,9 @@ export default function Index({ applications, cities, properties, units }: Props
                     open={isEditDrawerOpen}
                     onOpenChange={setIsEditDrawerOpen}
                     onSuccess={handleEditDrawerSuccess}
+                    currentFilters={searchFilters}
+                    perPage={perPage}
+                    page={applications.current_page}
                 />
             )}
         </AppLayout>

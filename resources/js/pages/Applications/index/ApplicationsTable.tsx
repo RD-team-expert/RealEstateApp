@@ -11,6 +11,13 @@ interface ApplicationsTableProps {
     hasEditPermission: boolean;
     hasDeletePermission: boolean;
     hasAnyActionPermission: boolean;
+    filters?: {
+        city: string;
+        property: string;
+        unit: string;
+        name: string;
+        applicant_applied_from: string;
+    };
 }
 
 export default function ApplicationsTable({
@@ -21,6 +28,7 @@ export default function ApplicationsTable({
     hasEditPermission,
     hasDeletePermission,
     hasAnyActionPermission,
+    filters,
 }: ApplicationsTableProps) {
     return (
         <div className="relative overflow-x-auto">
@@ -59,6 +67,7 @@ export default function ApplicationsTable({
                             hasViewPermission={hasViewPermission}
                             hasEditPermission={hasEditPermission}
                             hasDeletePermission={hasDeletePermission}
+                            filters={filters}
                         />
                     ))}
                 </TableBody>
