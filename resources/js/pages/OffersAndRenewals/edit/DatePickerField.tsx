@@ -7,14 +7,16 @@ import { CalendarIcon, X } from 'lucide-react';
 
 interface DatePickerFieldProps {
   label: string;
-  value: string;
-  onChange: (value: string) => void;
+  value: string | null;
+  onChange: (value: string | null) => void;
   error?: string;
   validationError?: string;
   required?: boolean;
   borderColor: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  allowClear?: boolean;
+  clearToNull?: boolean;
 }
 
 export default function DatePickerField({ 
@@ -26,7 +28,9 @@ export default function DatePickerField({
   required = false,
   borderColor,
   isOpen,
-  onOpenChange
+  onOpenChange,
+  allowClear = true,
+  clearToNull = true
 }: DatePickerFieldProps) {
   const parseDate = (dateString: string | null | undefined): Date | undefined => {
     if (!dateString || dateString.trim() === '') {
@@ -73,14 +77,14 @@ export default function DatePickerField({
                 : 'Pick a date'}
             </Button>
           </PopoverTrigger>
-          {value && value.trim() !== '' && (
+          {allowClear && value && value.trim() !== '' && (
             <Button
               variant="ghost"
               size="sm"
               className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100"
               onClick={(e) => {
                 e.stopPropagation();
-                onChange('');
+                onChange(clearToNull ? null : '');
                 onOpenChange(false);
               }}
             >

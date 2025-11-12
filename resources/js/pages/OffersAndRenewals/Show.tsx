@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 // import { usePermissions } from '@/hooks/usePermissions';
 import AppLayout from '@/layouts/app-layout';
-import { OfferRenewal, OfferRenewalShowProps } from '@/types/OfferRenewal';
+import {  OfferRenewalShowProps } from '@/types/OfferRenewal';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { AlertTriangle, Calendar, CheckCircle, Clock, FileText, Home, Key, MapPin, User, XCircle } from 'lucide-react';
 import React from 'react';
 
 const Show: React.FC<OfferRenewalShowProps> = () => {
-    const { offer } = usePage().props as unknown as { offer: OfferRenewal };
+    const { offer, prevId, nextId, city_name, property_name, unit_name, tenant_name, perPage, page } = usePage().props as any;
 
     // const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
@@ -242,6 +242,44 @@ const Show: React.FC<OfferRenewalShowProps> = () => {
                                 </div>
                             </div>
                             <div className="flex gap-3">
+                                <div className="flex gap-2">
+                                    {prevId && Number(prevId) !== Number(safeOffer.id) ? (
+                                        <Link
+                                            href={`/offers_and_renewals/${prevId}?${new URLSearchParams({
+                                                city_name: city_name || '',
+                                                property_name: property_name || '',
+                                                unit_name: unit_name || '',
+                                                tenant_name: tenant_name || '',
+                                                per_page: String(perPage || ''),
+                                                page: String(page || ''),
+                                            }).toString()}`}
+                                        >
+                                            <Button variant="outline">Previous</Button>
+                                        </Link>
+                                    ) : (
+                                        <Button variant="outline" disabled>
+                                            Previous
+                                        </Button>
+                                    )}
+                                    {nextId && Number(nextId) !== Number(safeOffer.id) ? (
+                                        <Link
+                                            href={`/offers_and_renewals/${nextId}?${new URLSearchParams({
+                                                city_name: city_name || '',
+                                                property_name: property_name || '',
+                                                unit_name: unit_name || '',
+                                                tenant_name: tenant_name || '',
+                                                per_page: String(perPage || ''),
+                                                page: String(page || ''),
+                                            }).toString()}`}
+                                        >
+                                            <Button variant="outline">Next</Button>
+                                        </Link>
+                                    ) : (
+                                        <Button variant="outline" disabled>
+                                            Next
+                                        </Button>
+                                    )}
+                                </div>
                                 {/* {hasAllPermissions(['offers-and-renewals.edit','offers-and-renewals.update']) && (
                                     <Link href={`/offers_and_renewals/${safeOffer.id}/edit`}>
                                         <Button className="bg-blue-600 hover:bg-blue-700">
@@ -249,7 +287,16 @@ const Show: React.FC<OfferRenewalShowProps> = () => {
                                         </Button>
                                     </Link>
                                 )} */}
-                                <Link href="/offers_and_renewals">
+                                <Link
+                                    href={`/offers_and_renewals?${new URLSearchParams({
+                                        city_name: city_name || '',
+                                        property_name: property_name || '',
+                                        unit_name: unit_name || '',
+                                        tenant_name: tenant_name || '',
+                                        per_page: String(perPage || ''),
+                                        page: String(page || ''),
+                                    }).toString()}`}
+                                >
                                     <Button variant="outline">Back to List</Button>
                                 </Link>
                             </div>

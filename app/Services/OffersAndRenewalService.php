@@ -52,7 +52,17 @@ class OffersAndRenewalService
     public function createOffer(array $data): OffersAndRenewal
     {
         // Remove display-only fields that shouldn't be stored
-        unset($data['city_name'], $data['property'], $data['unit'], $data['tenant']);
+        unset(
+            $data['city_name'],
+            $data['property'],
+            $data['unit'],
+            $data['tenant'],
+            $data['property_name'],
+            $data['unit_name'],
+            $data['tenant_name'],
+            $data['per_page'],
+            $data['page']
+        );
 
         $offer = OffersAndRenewal::create($data);
         $offer->calculateExpiry();
@@ -63,7 +73,17 @@ class OffersAndRenewalService
     public function updateOffer(OffersAndRenewal $offer, array $data): OffersAndRenewal
     {
         // Remove display-only fields that shouldn't be stored
-        unset($data['city_name'], $data['property'], $data['unit'], $data['tenant']);
+        unset(
+            $data['city_name'],
+            $data['property'],
+            $data['unit'],
+            $data['tenant'],
+            $data['property_name'],
+            $data['unit_name'],
+            $data['tenant_name'],
+            $data['per_page'],
+            $data['page']
+        );
 
         $offer->fill($data);
         $offer->calculateExpiry();
@@ -99,15 +119,12 @@ class OffersAndRenewalService
 
     public function getDropdownData(): array
     {
-        // Get cities
         $cities = Cities::orderBy('city')->get();
 
-        // Get properties with city relationships
         $properties = PropertyInfoWithoutInsurance::with('city')
             ->orderBy('property_name')
             ->get();
 
-        // Get units with their relationships for dropdowns
         $units = Unit::with(['property.city'])
             ->orderBy('unit_name')
             ->get();
@@ -131,7 +148,6 @@ class OffersAndRenewalService
             })->values();
         });
 
-        // Get tenants with their relationships
         $tenants = Tenant::with(['unit.property.city'])
             ->orderBy('first_name')
             ->orderBy('last_name')
@@ -169,8 +185,14 @@ class OffersAndRenewalService
             ];
         });
 
-        // Create hierarchical data structure
         $hierarchicalData = $this->buildHierarchicalData($cities, $properties, $units, $tenants);
+
+        $filterCityNames = $cities->pluck('city')->unique()->sort()->values();
+        $filterPropertyNames = $properties->pluck('property_name')->unique()->sort()->values();
+        $filterUnitNames = $units->pluck('unit_name')->unique()->sort()->values();
+        $filterTenantNames = $tenants->map(function ($tenant) {
+            return $tenant->full_name;
+        })->unique()->sort()->values();
 
         return [
             'cities' => $cities,
@@ -180,7 +202,11 @@ class OffersAndRenewalService
             'tenantsByUnitId' => $tenantsByUnitId,
             'allUnits' => $allUnits,
             'tenantsData' => $tenantsData,
-            'hierarchicalData' => $hierarchicalData
+            'hierarchicalData' => $hierarchicalData,
+            'filterCityNames' => $filterCityNames,
+            'filterPropertyNames' => $filterPropertyNames,
+            'filterUnitNames' => $filterUnitNames,
+            'filterTenantNames' => $filterTenantNames,
         ];
     }
 
@@ -320,6 +346,147 @@ class OffersAndRenewalService
             ->get();
 
         return $this->calculateExpiryForCollection($offers);
+    }
+
+    public function getOffers(array $filters = [], array $nameFilters = [], $perPage = 15, $page = 1)
+    {
+        $query = OffersAndRenewal::with(['tenant.unit.property.city']);
+
+        $hasNameFilters = !empty(array_filter($nameFilters));
+        $hasIdFilters = !empty(array_filter($filters));
+
+        if ($hasNameFilters) {
+            if (!empty($nameFilters['city_name'])) {
+                $query->whereHas('tenant.unit.property.city', function ($cityQuery) use ($nameFilters) {
+                    $cityQuery->where('city', 'like', '%' . $nameFilters['city_name'] . '%');
+                });
+            }
+            if (!empty($nameFilters['property_name'])) {
+                $query->whereHas('tenant.unit.property', function ($propertyQuery) use ($nameFilters) {
+                    $propertyQuery->where('property_name', 'like', '%' . $nameFilters['property_name'] . '%');
+                });
+            }
+            if (!empty($nameFilters['unit_name'])) {
+                $query->whereHas('tenant.unit', function ($unitQuery) use ($nameFilters) {
+                    $unitQuery->where('unit_name', 'like', '%' . $nameFilters['unit_name'] . '%');
+                });
+            }
+            if (!empty($nameFilters['tenant_name'])) {
+                $query->whereHas('tenant', function ($tenantQuery) use ($nameFilters) {
+                    $tenantQuery->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $nameFilters['tenant_name'] . '%']);
+                });
+            }
+        } elseif ($hasIdFilters) {
+            if (!empty($filters['unit_id'])) {
+                $query->whereHas('tenant', function ($tenantQuery) use ($filters) {
+                    $tenantQuery->where('unit_id', $filters['unit_id']);
+                });
+            }
+            if (!empty($filters['tenant_id'])) {
+                $query->where('tenant_id', $filters['tenant_id']);
+            }
+            if (!empty($filters['city_id'])) {
+                $query->whereHas('tenant.unit.property', function ($propertyQuery) use ($filters) {
+                    $propertyQuery->where('city_id', $filters['city_id']);
+                });
+            }
+            if (!empty($filters['property_id'])) {
+                $query->whereHas('tenant.unit', function ($unitQuery) use ($filters) {
+                    $unitQuery->where('property_id', $filters['property_id']);
+                });
+            }
+        }
+
+        $query->orderBy('date_sent_offer', 'desc')
+            ->orderBy('created_at', 'desc');
+
+        $per = is_string($perPage) ? strtolower($perPage) : $perPage;
+        if ($per === 'all') {
+            $offers = $query->get();
+        } else {
+            $offers = $query->paginate((int) $per, ['*'], 'page', (int) $page);
+        }
+
+        return $this->calculateExpiryForCollection($offers);
+    }
+
+    private function buildQueryForFilters(array $filters = [], array $nameFilters = [])
+    {
+        $query = OffersAndRenewal::with(['tenant.unit.property.city']);
+
+        $hasNameFilters = !empty(array_filter($nameFilters));
+        $hasIdFilters = !empty(array_filter($filters));
+
+        if ($hasNameFilters) {
+            if (!empty($nameFilters['city_name'])) {
+                $query->whereHas('tenant.unit.property.city', function ($cityQuery) use ($nameFilters) {
+                    $cityQuery->where('city', 'like', '%' . $nameFilters['city_name'] . '%');
+                });
+            }
+            if (!empty($nameFilters['property_name'])) {
+                $query->whereHas('tenant.unit.property', function ($propertyQuery) use ($nameFilters) {
+                    $propertyQuery->where('property_name', 'like', '%' . $nameFilters['property_name'] . '%');
+                });
+            }
+            if (!empty($nameFilters['unit_name'])) {
+                $query->whereHas('tenant.unit', function ($unitQuery) use ($nameFilters) {
+                    $unitQuery->where('unit_name', 'like', '%' . $nameFilters['unit_name'] . '%');
+                });
+            }
+            if (!empty($nameFilters['tenant_name'])) {
+                $query->whereHas('tenant', function ($tenantQuery) use ($nameFilters) {
+                    $tenantQuery->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $nameFilters['tenant_name'] . '%']);
+                });
+            }
+        } elseif ($hasIdFilters) {
+            if (!empty($filters['unit_id'])) {
+                $query->whereHas('tenant', function ($tenantQuery) use ($filters) {
+                    $tenantQuery->where('unit_id', $filters['unit_id']);
+                });
+            }
+            if (!empty($filters['tenant_id'])) {
+                $query->where('tenant_id', $filters['tenant_id']);
+            }
+            if (!empty($filters['city_id'])) {
+                $query->whereHas('tenant.unit.property', function ($propertyQuery) use ($filters) {
+                    $propertyQuery->where('city_id', $filters['city_id']);
+                });
+            }
+            if (!empty($filters['property_id'])) {
+                $query->whereHas('tenant.unit', function ($unitQuery) use ($filters) {
+                    $unitQuery->where('property_id', $filters['property_id']);
+                });
+            }
+        }
+
+        $query->orderBy('date_sent_offer', 'desc')
+            ->orderBy('created_at', 'desc');
+
+        return $query;
+    }
+
+    public function getNeighborOfferIds(array $filters, array $nameFilters, int $currentId): array
+    {
+        $ids = $this->buildQueryForFilters($filters, $nameFilters)
+            ->pluck('id')
+            ->toArray();
+
+        $prevId = null;
+        $nextId = null;
+        $index = array_search($currentId, $ids, true);
+        if ($index !== false) {
+            if ($index > 0) {
+                $prevId = $ids[$index - 1];
+            }
+            if ($index < count($ids) - 1) {
+                $nextId = $ids[$index + 1];
+            }
+        }
+
+        return [
+            'prevId' => $prevId,
+            'nextId' => $nextId,
+        ];
     }
 
     /**

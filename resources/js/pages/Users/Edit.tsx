@@ -64,7 +64,7 @@ export default function Edit({ user, roles, permissions, userRoles, userPermissi
 
     // Smart permission handler - handles create/store and edit/update pairing
     const handleSmartPermissionChange = (resourceName: string, action: string, checked: boolean) => {
-        let permissionsToToggle = [`${resourceName}.${action}`];
+        const permissionsToToggle = [`${resourceName}.${action}`];
 
         // Smart pairing logic
         if (action === 'create') {

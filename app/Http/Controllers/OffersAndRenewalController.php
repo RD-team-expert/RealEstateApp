@@ -31,7 +31,6 @@ class OffersAndRenewalController extends Controller
 
     public function index(Request $request)
     {
-        // Get filters from request - now supporting both ID-based and name-based filtering
         $filters = [
             'unit_id' => $request->get('unit_id'),
             'tenant_id' => $request->get('tenant_id'),
@@ -39,7 +38,6 @@ class OffersAndRenewalController extends Controller
             'property_id' => $request->get('property_id'),
         ];
 
-        // Get name-based filters
         $nameFilters = [
             'city_name' => $request->get('city_name'),
             'property_name' => $request->get('property_name'),
@@ -47,56 +45,81 @@ class OffersAndRenewalController extends Controller
             'tenant_name' => $request->get('tenant_name'),
         ];
 
-        // Use filtered search if any filters are provided
-        $hasIdFilters = array_filter($filters);
-        $hasNameFilters = array_filter($nameFilters);
-        
-        if ($hasNameFilters) {
-            // Use name-based filtering
-            $offers = $this->service->searchOffersWithNameFilters($nameFilters);
-        } elseif ($hasIdFilters) {
-            // Use ID-based filtering (legacy support)
-            $offers = $this->service->searchOffersWithFilters($filters);
-        } else {
-            // No filters, get all offers
-            $offers = $this->service->getAllOffers();
-        }
+        $perPage = $request->get('per_page', 15);
+        $page = (int) $request->get('page', 1);
+
+        $offers = $this->service->getOffers($filters, $nameFilters, $perPage, $page);
 
         // Transform offers data to include relationship data as direct properties
-        $offers->transform(function ($offer) {
-            return [
-                'id' => $offer->id,
-                'tenant_id' => $offer->tenant_id,
-                'city_name' => $offer->tenant && $offer->tenant->unit && $offer->tenant->unit->property && $offer->tenant->unit->property->city 
-                    ? $offer->tenant->unit->property->city->city : null,
-                'property' => $offer->tenant && $offer->tenant->unit && $offer->tenant->unit->property 
-                    ? $offer->tenant->unit->property->property_name : null,
-                'unit' => $offer->tenant && $offer->tenant->unit ? $offer->tenant->unit->unit_name : null,
-                'tenant' => $offer->tenant ? $offer->tenant->full_name : null,
-                'date_sent_offer' => $offer->date_sent_offer,
-                'date_offer_expires' => $offer->date_offer_expires,
-                'status' => $offer->status,
-                'date_of_acceptance' => $offer->date_of_acceptance,
-                'last_notice_sent' => $offer->last_notice_sent,
-                'notice_kind' => $offer->notice_kind,
-                'lease_sent' => $offer->lease_sent,
-                'date_sent_lease' => $offer->date_sent_lease,
-                'lease_expires' => $offer->lease_expires,
-                'lease_signed' => $offer->lease_signed,
-                'date_signed' => $offer->date_signed,
-                'last_notice_sent_2' => $offer->last_notice_sent_2,
-                'notice_kind_2' => $offer->notice_kind_2,
-                'notes' => $offer->notes,
-                'how_many_days_left' => $offer->how_many_days_left,
-                'expired' => $offer->expired,
-                'other_tenants' => $offer->other_tenants,
-                'date_of_decline' => $offer->date_of_decline,
-                'is_archived' => $offer->is_archived,
-                'created_at' => $offer->created_at,
-                'updated_at' => $offer->updated_at,
-            ];
-        });
-
+        if ($offers instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            $offers->getCollection()->transform(function ($offer) {
+                return [
+                    'id' => $offer->id,
+                    'tenant_id' => $offer->tenant_id,
+                    'city_name' => $offer->tenant && $offer->tenant->unit && $offer->tenant->unit->property && $offer->tenant->unit->property->city
+                        ? $offer->tenant->unit->property->city->city : null,
+                    'property' => $offer->tenant && $offer->tenant->unit && $offer->tenant->unit->property
+                        ? $offer->tenant->unit->property->property_name : null,
+                    'unit' => $offer->tenant && $offer->tenant->unit ? $offer->tenant->unit->unit_name : null,
+                    'tenant' => $offer->tenant ? $offer->tenant->full_name : null,
+                    'date_sent_offer' => $offer->date_sent_offer,
+                    'date_offer_expires' => $offer->date_offer_expires,
+                    'status' => $offer->status,
+                    'date_of_acceptance' => $offer->date_of_acceptance,
+                    'last_notice_sent' => $offer->last_notice_sent,
+                    'notice_kind' => $offer->notice_kind,
+                    'lease_sent' => $offer->lease_sent,
+                    'date_sent_lease' => $offer->date_sent_lease,
+                    'lease_expires' => $offer->lease_expires,
+                    'lease_signed' => $offer->lease_signed,
+                    'date_signed' => $offer->date_signed,
+                    'last_notice_sent_2' => $offer->last_notice_sent_2,
+                    'notice_kind_2' => $offer->notice_kind_2,
+                    'notes' => $offer->notes,
+                    'how_many_days_left' => $offer->how_many_days_left,
+                    'expired' => $offer->expired,
+                    'other_tenants' => $offer->other_tenants,
+                    'date_of_decline' => $offer->date_of_decline,
+                    'is_archived' => $offer->is_archived,
+                    'created_at' => $offer->created_at,
+                    'updated_at' => $offer->updated_at,
+                ];
+            });
+        } else {
+            $offers->transform(function ($offer) {
+                return [
+                    'id' => $offer->id,
+                    'tenant_id' => $offer->tenant_id,
+                    'city_name' => $offer->tenant && $offer->tenant->unit && $offer->tenant->unit->property && $offer->tenant->unit->property->city
+                        ? $offer->tenant->unit->property->city->city : null,
+                    'property' => $offer->tenant && $offer->tenant->unit && $offer->tenant->unit->property
+                        ? $offer->tenant->unit->property->property_name : null,
+                    'unit' => $offer->tenant && $offer->tenant->unit ? $offer->tenant->unit->unit_name : null,
+                    'tenant' => $offer->tenant ? $offer->tenant->full_name : null,
+                    'date_sent_offer' => $offer->date_sent_offer,
+                    'date_offer_expires' => $offer->date_offer_expires,
+                    'status' => $offer->status,
+                    'date_of_acceptance' => $offer->date_of_acceptance,
+                    'last_notice_sent' => $offer->last_notice_sent,
+                    'notice_kind' => $offer->notice_kind,
+                    'lease_sent' => $offer->lease_sent,
+                    'date_sent_lease' => $offer->date_sent_lease,
+                    'lease_expires' => $offer->lease_expires,
+                    'lease_signed' => $offer->lease_signed,
+                    'date_signed' => $offer->date_signed,
+                    'last_notice_sent_2' => $offer->last_notice_sent_2,
+                    'notice_kind_2' => $offer->notice_kind_2,
+                    'notes' => $offer->notes,
+                    'how_many_days_left' => $offer->how_many_days_left,
+                    'expired' => $offer->expired,
+                    'other_tenants' => $offer->other_tenants,
+                    'date_of_decline' => $offer->date_of_decline,
+                    'is_archived' => $offer->is_archived,
+                    'created_at' => $offer->created_at,
+                    'updated_at' => $offer->updated_at,
+                ];
+            });
+        }
         // Get dropdown data for the create/edit drawers
         $dropdownData = $this->service->getDropdownData();
 
@@ -104,50 +127,66 @@ class OffersAndRenewalController extends Controller
             'offers' => $offers,
             'unit_id' => $filters['unit_id'],
             'tenant_id' => $filters['tenant_id'],
-            'cities' => $dropdownData['cities'],
-            'properties' => $dropdownData['properties'],
-            'propertiesByCityId' => $dropdownData['propertiesByCityId'],
-            'unitsByPropertyId' => $dropdownData['unitsByPropertyId'],
-            'tenantsByUnitId' => $dropdownData['tenantsByUnitId'],
-            'allUnits' => $dropdownData['allUnits'],
-            'tenantsData' => $dropdownData['tenantsData'],
-        ]);
-    }
-
-    public function create()
-    {
-        $dropdownData = $this->service->getDropdownData();
-        
-        return Inertia::render('OffersAndRenewals/Create', [
+            'city_name' => $nameFilters['city_name'],
+            'property_name' => $nameFilters['property_name'],
+            'unit_name' => $nameFilters['unit_name'],
+            'tenant_name' => $nameFilters['tenant_name'],
             'hierarchicalData' => $dropdownData['hierarchicalData'],
-            'cities' => $dropdownData['cities'],
-            'properties' => $dropdownData['properties'],
-            'propertiesByCityId' => $dropdownData['propertiesByCityId'],
-            'unitsByPropertyId' => $dropdownData['unitsByPropertyId'],
-            'tenantsByUnitId' => $dropdownData['tenantsByUnitId'],
-            'allUnits' => $dropdownData['allUnits'],
-            'tenantsData' => $dropdownData['tenantsData'],
+            'filterCityNames' => $dropdownData['filterCityNames'],
+            'filterPropertyNames' => $dropdownData['filterPropertyNames'],
+            'filterUnitNames' => $dropdownData['filterUnitNames'],
+            'filterTenantNames' => $dropdownData['filterTenantNames'],
+            'perPage' => $perPage,
+            'page' => $page,
         ]);
     }
 
     public function store(OffersAndRenewalRequest $request)
     {
         $offer = $this->service->createOffer($request->validatedWithTenantId());
-        return redirect()->route('offers_and_renewals.index')->with('success', 'Offer created successfully.');
+
+        $redirectParams = array_filter([
+            'city_name' => $request->input('city_name'),
+            'property_name' => $request->input('property_name'),
+            'unit_name' => $request->input('unit_name'),
+            'tenant_name' => $request->input('tenant_name'),
+            'per_page' => $request->input('per_page'),
+            'page' => $request->input('page'),
+        ], function ($v) {
+            return $v !== null && $v !== '';
+        });
+
+        return redirect()->route('offers_and_renewals.index', $redirectParams)
+            ->with('success', 'Offer created successfully.');
     }
 
     public function show(OffersAndRenewal $offers_and_renewal)
     {
-        // Load the offer with relationships
+        $filters = [
+            'unit_id' => request()->get('unit_id'),
+            'tenant_id' => request()->get('tenant_id'),
+            'city_id' => request()->get('city_id'),
+            'property_id' => request()->get('property_id'),
+        ];
+
+        $nameFilters = [
+            'city_name' => request()->get('city_name'),
+            'property_name' => request()->get('property_name'),
+            'unit_name' => request()->get('unit_name'),
+            'tenant_name' => request()->get('tenant_name'),
+        ];
+
+        $perPage = request()->get('per_page');
+        $page = request()->get('page');
+
         $offerWithRelations = $this->service->getOfferWithRelations($offers_and_renewal->id);
 
-        // Transform the data to include relationship properties
         $transformedOffer = [
             'id' => $offerWithRelations->id,
             'tenant_id' => $offerWithRelations->tenant_id,
-            'city_name' => $offerWithRelations->tenant && $offerWithRelations->tenant->unit && $offerWithRelations->tenant->unit->property && $offerWithRelations->tenant->unit->property->city 
+            'city_name' => $offerWithRelations->tenant && $offerWithRelations->tenant->unit && $offerWithRelations->tenant->unit->property && $offerWithRelations->tenant->unit->property->city
                 ? $offerWithRelations->tenant->unit->property->city->city : null,
-            'property' => $offerWithRelations->tenant && $offerWithRelations->tenant->unit && $offerWithRelations->tenant->unit->property 
+            'property' => $offerWithRelations->tenant && $offerWithRelations->tenant->unit && $offerWithRelations->tenant->unit->property
                 ? $offerWithRelations->tenant->unit->property->property_name : null,
             'unit' => $offerWithRelations->tenant && $offerWithRelations->tenant->unit ? $offerWithRelations->tenant->unit->unit_name : null,
             'tenant' => $offerWithRelations->tenant ? $offerWithRelations->tenant->full_name : null,
@@ -174,69 +213,57 @@ class OffersAndRenewalController extends Controller
             'updated_at' => $offerWithRelations->updated_at,
         ];
 
+        $neighbors = $this->service->getNeighborOfferIds($filters, $nameFilters, $offers_and_renewal->id);
+
         return Inertia::render('OffersAndRenewals/Show', [
-            'offer' => $transformedOffer
-        ]);
-    }
-
-    public function edit(OffersAndRenewal $offers_and_renewal)
-    {
-        $dropdownData = $this->service->getDropdownData();
-
-        // Load the offer with relationships
-        $offerWithRelations = $this->service->getOfferWithRelations($offers_and_renewal->id);
-
-        // Transform the data for editing
-        $transformedOffer = [
-            'id' => $offerWithRelations->id,
-            'tenant_id' => $offerWithRelations->tenant_id,
-            'city_name' => $offerWithRelations->tenant && $offerWithRelations->tenant->unit && $offerWithRelations->tenant->unit->property && $offerWithRelations->tenant->unit->property->city 
-                ? $offerWithRelations->tenant->unit->property->city->city : null,
-            'property' => $offerWithRelations->tenant && $offerWithRelations->tenant->unit && $offerWithRelations->tenant->unit->property 
-                ? $offerWithRelations->tenant->unit->property->property_name : null,
-            'unit' => $offerWithRelations->tenant && $offerWithRelations->tenant->unit ? $offerWithRelations->tenant->unit->unit_name : null,
-            'tenant' => $offerWithRelations->tenant ? $offerWithRelations->tenant->full_name : null,
-            'date_sent_offer' => $offerWithRelations->date_sent_offer,
-            'date_offer_expires' => $offerWithRelations->date_offer_expires,
-            'status' => $offerWithRelations->status,
-            'date_of_acceptance' => $offerWithRelations->date_of_acceptance,
-            'last_notice_sent' => $offerWithRelations->last_notice_sent,
-            'notice_kind' => $offerWithRelations->notice_kind,
-            'lease_sent' => $offerWithRelations->lease_sent,
-            'date_sent_lease' => $offerWithRelations->date_sent_lease,
-            'lease_expires' => $offerWithRelations->lease_expires,
-            'lease_signed' => $offerWithRelations->lease_signed,
-            'date_signed' => $offerWithRelations->date_signed,
-            'last_notice_sent_2' => $offerWithRelations->last_notice_sent_2,
-            'notice_kind_2' => $offerWithRelations->notice_kind_2,
-            'notes' => $offerWithRelations->notes,
-            'how_many_days_left' => $offerWithRelations->how_many_days_left,
-            'expired' => $offerWithRelations->expired,
-        ];
-        
-        return Inertia::render('OffersAndRenewals/Edit', [
             'offer' => $transformedOffer,
-            'hierarchicalData' => $dropdownData['hierarchicalData'],
-            'cities' => $dropdownData['cities'],
-            'properties' => $dropdownData['properties'],
-            'propertiesByCityId' => $dropdownData['propertiesByCityId'],
-            'unitsByPropertyId' => $dropdownData['unitsByPropertyId'],
-            'tenantsByUnitId' => $dropdownData['tenantsByUnitId'],
-            'allUnits' => $dropdownData['allUnits'],
-            'tenantsData' => $dropdownData['tenantsData'],
+            'prevId' => $neighbors['prevId'],
+            'nextId' => $neighbors['nextId'],
+            'city_name' => $nameFilters['city_name'],
+            'property_name' => $nameFilters['property_name'],
+            'unit_name' => $nameFilters['unit_name'],
+            'tenant_name' => $nameFilters['tenant_name'],
+            'perPage' => $perPage,
+            'page' => $page,
         ]);
     }
 
     public function update(OffersAndRenewalRequest $request, OffersAndRenewal $offers_and_renewal)
     {
         $offer = $this->service->updateOffer($offers_and_renewal, $request->validatedWithTenantId());
-        return redirect()->route('offers_and_renewals.index')->with('success', 'Offer updated successfully.');
+
+        $redirectParams = array_filter([
+            'city_name' => $request->input('city_name'),
+            'property_name' => $request->input('property_name'),
+            'unit_name' => $request->input('unit_name'),
+            'tenant_name' => $request->input('tenant_name'),
+            'per_page' => $request->input('per_page'),
+            'page' => $request->input('page'),
+        ], function ($v) {
+            return $v !== null && $v !== '';
+        });
+
+        return redirect()->route('offers_and_renewals.index', $redirectParams)
+            ->with('success', 'Offer updated successfully.');
     }
 
     public function destroy(OffersAndRenewal $offers_and_renewal)
     {
         $this->service->deleteOffer($offers_and_renewal);
-        return redirect()->route('offers_and_renewals.index')->with('success', 'Offer archived successfully.');
+
+        $redirectParams = array_filter([
+            'city_name' => request()->input('city_name'),
+            'property_name' => request()->input('property_name'),
+            'unit_name' => request()->input('unit_name'),
+            'tenant_name' => request()->input('tenant_name'),
+            'per_page' => request()->input('per_page'),
+            'page' => request()->input('page'),
+        ], function ($v) {
+            return $v !== null && $v !== '';
+        });
+
+        return redirect()->route('offers_and_renewals.index', $redirectParams)
+            ->with('success', 'Offer archived successfully.');
     }
 
     /**

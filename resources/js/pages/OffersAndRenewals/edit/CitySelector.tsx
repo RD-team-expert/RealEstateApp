@@ -1,6 +1,10 @@
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ChevronsUpDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import React, { useMemo, useState } from 'react';
 
 interface City {
   id: number;
@@ -24,6 +28,11 @@ export default function CitySelector({
   validationError, 
   cityRef 
 }: CitySelectorProps) {
+  const [open, setOpen] = useState(false);
+  const selectedLabel = useMemo(() => {
+    const found = cities.find((c) => c.id.toString() === value);
+    return found ? found.name : '';
+  }, [cities, value]);
   return (
     <div className="rounded-lg border-l-4 border-l-indigo-500 p-4">
       <div className="mb-2">
@@ -31,18 +40,47 @@ export default function CitySelector({
           City *
         </Label>
       </div>
-      <Select onValueChange={onChange} value={value}>
-        <SelectTrigger ref={cityRef}>
-          <SelectValue placeholder="Select city" />
-        </SelectTrigger>
-        <SelectContent>
-          {cities.map((city) => (
-            <SelectItem key={city.id} value={city.id.toString()}>
-              {city.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            ref={cityRef}
+            role="combobox"
+            aria-expanded={open}
+            variant="outline"
+            className="w-full justify-between text-left font-normal"
+          >
+            {selectedLabel || 'Select city'}
+            <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Search city..." />
+            <CommandList>
+              <CommandEmpty>No city found.</CommandEmpty>
+              <CommandGroup>
+                {cities.map((city) => {
+                  const idStr = city.id.toString();
+                  const isSelected = value === idStr;
+                  return (
+                    <CommandItem
+                      key={city.id}
+                      value={city.name}
+                      onSelect={() => {
+                        onChange(idStr);
+                        setOpen(false);
+                      }}
+                    >
+                      <Check className={cn('mr-2 h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')} />
+                      {city.name}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
       {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
     </div>

@@ -4,22 +4,15 @@ import { Input } from '@/components/ui/input';
 import { Search, X, ChevronDown } from 'lucide-react';
 
 interface FilterBarProps {
-  cities: any[];
-  properties: any[];
-  propertiesByCityId: Record<number, any[]>;
-  unitsByPropertyId: Record<number, Array<{ id: number; unit_name: string }>>;
-  tenantsByUnitId: Record<number, Array<{ id: number; full_name: string; tenant_id: number }>>;
-  allUnits: Array<{ id: number; unit_name: string; city_name: string; property_name: string }>;
-  tenantsData: Array<{ id: number; full_name: string; unit_name: string; property_name: string; city_name: string }>;
+  cities: string[];
+  properties: string[];
+  units: string[];
+  tenants: string[];
   tempFilters: {
     city: string;
     property: string;
     unit: string;
     tenant: string;
-    selectedCityId: number | null;
-    selectedPropertyId: number | null;
-    selectedUnitId: number | null;
-    selectedTenantId: number | null;
   };
   onTempFiltersChange: (filters: any) => void;
   onSearch: () => void;
@@ -29,11 +22,8 @@ interface FilterBarProps {
 export const FilterBar: React.FC<FilterBarProps> = ({
   cities,
   properties,
-  propertiesByCityId,
-  unitsByPropertyId,
-  tenantsByUnitId,
-  allUnits,
-  tenantsData,
+  units,
+  tenants,
   tempFilters,
   onTempFiltersChange,
   onSearch,
@@ -93,17 +83,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleCitySelect = (city: any) => {
+  const handleCitySelect = (city: string) => {
     onTempFiltersChange({ 
       ...tempFilters, 
-      city: city.city,
-      selectedCityId: city.id,
-      property: '',
-      selectedPropertyId: null,
-      unit: '',
-      selectedUnitId: null,
-      tenant: '',
-      selectedTenantId: null
+      city,
     });
     setShowCityDropdown(false);
   };
@@ -113,13 +96,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     onTempFiltersChange({ 
       ...tempFilters, 
       city: value,
-      selectedCityId: null,
-      property: '',
-      selectedPropertyId: null,
-      unit: '',
-      selectedUnitId: null,
-      tenant: '',
-      selectedTenantId: null
     });
     setShowCityDropdown(value.length > 0);
   };
@@ -129,24 +105,14 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     onTempFiltersChange({ 
       ...tempFilters, 
       property: value,
-      selectedPropertyId: null,
-      unit: '',
-      selectedUnitId: null,
-      tenant: '',
-      selectedTenantId: null
     });
     setShowPropertyDropdown(value.length > 0);
   };
 
-  const handlePropertySelect = (property: any) => {
+  const handlePropertySelect = (property: string) => {
     onTempFiltersChange({ 
       ...tempFilters, 
-      property: property.property_name,
-      selectedPropertyId: property.id,
-      unit: '',
-      selectedUnitId: null,
-      tenant: '',
-      selectedTenantId: null
+      property,
     });
     setShowPropertyDropdown(false);
   };
@@ -156,20 +122,14 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     onTempFiltersChange({ 
       ...tempFilters, 
       unit: value,
-      selectedUnitId: null,
-      tenant: '',
-      selectedTenantId: null
     });
     setShowUnitDropdown(value.length > 0);
   };
 
-  const handleUnitSelect = (unit: any) => {
+  const handleUnitSelect = (unit: string) => {
     onTempFiltersChange({ 
       ...tempFilters, 
-      unit: unit.unit_name,
-      selectedUnitId: unit.id,
-      tenant: '',
-      selectedTenantId: null
+      unit,
     });
     setShowUnitDropdown(false);
   };
@@ -179,47 +139,33 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     onTempFiltersChange({ 
       ...tempFilters, 
       tenant: value,
-      selectedTenantId: null
     });
     setShowTenantDropdown(value.length > 0);
   };
 
-  const handleTenantSelect = (tenant: any) => {
+  const handleTenantSelect = (tenant: string) => {
     onTempFiltersChange({ 
       ...tempFilters, 
-      tenant: tenant.full_name,
-      selectedTenantId: tenant.id
+      tenant,
     });
     setShowTenantDropdown(false);
   };
 
   const filteredCities = cities.filter((city) => 
-    city?.city?.toLowerCase().includes(tempFilters.city.toLowerCase())
+    city?.toLowerCase().includes(tempFilters.city.toLowerCase())
   );
 
-  const filteredProperties = tempFilters.selectedCityId 
-    ? (propertiesByCityId[tempFilters.selectedCityId] || []).filter((property) => 
-        property?.property_name?.toLowerCase().includes(tempFilters.property.toLowerCase())
-      )
-    : properties.filter((property) => 
-        property?.property_name?.toLowerCase().includes(tempFilters.property.toLowerCase())
-      );
+  const filteredProperties = properties.filter((property) => 
+    property?.toLowerCase().includes(tempFilters.property.toLowerCase())
+  );
 
-  const filteredUnits = tempFilters.selectedPropertyId 
-    ? (unitsByPropertyId[tempFilters.selectedPropertyId] || []).filter(unit =>
-        unit?.unit_name?.toLowerCase().includes(tempFilters.unit.toLowerCase())
-      )
-    : allUnits.filter(unit =>
-        unit?.unit_name?.toLowerCase().includes(tempFilters.unit.toLowerCase())
-      );
+  const filteredUnits = units.filter(unit =>
+    unit?.toLowerCase().includes(tempFilters.unit.toLowerCase())
+  );
 
-  const filteredTenants = tempFilters.selectedUnitId 
-    ? (tenantsByUnitId[tempFilters.selectedUnitId] || []).filter(tenant =>
-        tenant?.full_name?.toLowerCase().includes(tempFilters.tenant.toLowerCase())
-      )
-    : tenantsData.filter(tenant =>
-        tenant?.full_name?.toLowerCase().includes(tempFilters.tenant.toLowerCase())
-      );
+  const filteredTenants = tenants.filter(tenant =>
+    tenant?.toLowerCase().includes(tempFilters.tenant.toLowerCase())
+  );
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
@@ -241,13 +187,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             ref={cityDropdownRef}
             className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
           >
-            {filteredCities.map((city) => (
+            {filteredCities.map((city, idx) => (
               <div
-                key={city.id}
+                key={idx}
                 className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
                 onClick={() => handleCitySelect(city)}
               >
-                {city.city}
+                {city}
               </div>
             ))}
           </div>
@@ -272,13 +218,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             ref={propertyDropdownRef}
             className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
           >
-            {filteredProperties.map((property) => (
+            {filteredProperties.map((property, idx) => (
               <div
-                key={property.id}
+                key={idx}
                 className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
                 onClick={() => handlePropertySelect(property)}
               >
-                {property.property_name}
+                {property}
               </div>
             ))}
           </div>
@@ -303,13 +249,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             ref={unitDropdownRef}
             className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
           >
-            {filteredUnits.map((unit) => (
+            {filteredUnits.map((unit, idx) => (
               <div
-                key={unit.id}
+                key={idx}
                 className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
                 onClick={() => handleUnitSelect(unit)}
               >
-                {unit.unit_name}
+                {unit}
               </div>
             ))}
           </div>
@@ -334,13 +280,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             ref={tenantDropdownRef}
             className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
           >
-            {filteredTenants.map((tenant) => (
+            {filteredTenants.map((tenant, idx) => (
               <div
-                key={tenant.id}
+                key={idx}
                 className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
                 onClick={() => handleTenantSelect(tenant)}
               >
-                {tenant.full_name}
+                {tenant}
               </div>
             ))}
           </div>

@@ -2,9 +2,9 @@ import DatePickerField from './DatePickerField';
 import RadioGroupField from './RadioGroupField';
 
 interface OfferInformationSectionProps {
-    dateSentOffer: string;
+    dateSentOffer: string | null;
     status: string;
-    onDateSentOfferChange: (date: string) => void;
+    onDateSentOfferChange: (date: string | null) => void;
     onStatusChange: (value: string) => void;
     errors: {
         date_sent_offer?: string;
@@ -38,6 +38,7 @@ export default function OfferInformationSection({
                 onOpenChange={onCalendarOpenChange}
                 borderColor="border-l-orange-500"
                 required
+                allowClear={false}
             />
 
             <RadioGroupField

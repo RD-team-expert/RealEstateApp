@@ -2,11 +2,11 @@ import DatePickerField from './DatePickerField';
 import RadioGroupField from './RadioGroupField';
 
 interface AcceptanceSectionProps {
-    dateOfAcceptance: string;
-    lastNoticeSent: string;
+    dateOfAcceptance: string | null;
+    lastNoticeSent: string | null;
     noticeKind: string;
-    onDateOfAcceptanceChange: (date: string) => void;
-    onLastNoticeSentChange: (date: string) => void;
+    onDateOfAcceptanceChange: (date: string | null) => void;
+    onLastNoticeSentChange: (date: string | null) => void;
     onNoticeKindChange: (value: string) => void;
     errors: {
         date_of_acceptance?: string;

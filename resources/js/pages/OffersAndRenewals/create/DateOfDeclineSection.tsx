@@ -1,8 +1,8 @@
 import DatePickerField from './DatePickerField';
 
 interface DateOfDeclineSectionProps {
-    dateOfDecline: string;
-    onDateOfDeclineChange: (date: string) => void;
+    dateOfDecline: string | null;
+    onDateOfDeclineChange: (date: string | null) => void;
     errors: {
         date_of_decline?: string;
     };

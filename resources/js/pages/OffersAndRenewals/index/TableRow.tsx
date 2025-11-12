@@ -46,6 +46,9 @@ interface OffersTableRowProps {
         canEdit: boolean;
         canDelete: boolean;
     };
+    currentFilters: { city: string; property: string; unit: string; tenant: string };
+    perPage: string | number;
+    page: number;
 }
 
 const formatDateOnly = (value?: string | null, fallback = '-'): string => {
@@ -118,7 +121,7 @@ const getDaysLeftBadge = (days: string | number | null) => {
     }
 };
 
-export const OffersTableRow: React.FC<OffersTableRowProps> = ({ offer, activeTab, onEdit, onDelete, permissions }) => {
+export const OffersTableRow: React.FC<OffersTableRowProps> = ({ offer, activeTab, onEdit, onDelete, permissions, currentFilters, perPage, page }) => {
     return (
         <TableRow className="border-border hover:bg-muted/50">
             <TableCell className="sticky left-0 z-10 border border-border bg-muted text-center font-medium text-foreground">
@@ -187,7 +190,16 @@ export const OffersTableRow: React.FC<OffersTableRowProps> = ({ offer, activeTab
                 <TableCell className="border border-border text-center">
                     <div className="flex gap-1">
                         {permissions.canView && (
-                            <Link href={`/offers_and_renewals/${offer.id}`}>
+                            <Link
+                                href={`/offers_and_renewals/${offer.id}?${new URLSearchParams({
+                                    city_name: currentFilters.city || '',
+                                    property_name: currentFilters.property || '',
+                                    unit_name: currentFilters.unit || '',
+                                    tenant_name: currentFilters.tenant || '',
+                                    per_page: String(perPage || ''),
+                                    page: String(page || ''),
+                                }).toString()}`}
+                            >
                                 <Button variant="outline" size="sm">
                                     <Eye className="h-4 w-4" />
                                 </Button>

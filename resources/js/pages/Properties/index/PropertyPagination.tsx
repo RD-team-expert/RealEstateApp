@@ -66,8 +66,8 @@ export default function PropertyPagination({
             pages.push(1);
             
             // Calculate range around current page
-            let startPage = Math.max(2, current_page - 1);
-            let endPage = Math.min(last_page - 1, current_page + 1);
+            const startPage = Math.max(2, current_page - 1);
+            const endPage = Math.min(last_page - 1, current_page + 1);
             
             // Add ellipsis after first page if needed
             if (startPage > 2) {

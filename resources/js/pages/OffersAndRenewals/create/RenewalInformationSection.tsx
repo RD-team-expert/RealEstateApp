@@ -2,9 +2,9 @@ import DatePickerField from './DatePickerField';
 import RadioGroupField from './RadioGroupField';
 
 interface RenewalInformationSectionProps {
-    lastNoticeSent2: string;
+    lastNoticeSent2: string | null;
     noticeKind2: string;
-    onLastNoticeSent2Change: (date: string) => void;
+    onLastNoticeSent2Change: (date: string | null) => void;
     onNoticeKind2Change: (value: string) => void;
     errors: {
         last_notice_sent_2?: string;

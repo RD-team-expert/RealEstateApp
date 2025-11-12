@@ -3,13 +3,13 @@ import RadioGroupField from './RadioGroupField';
 
 interface LeaseInformationSectionProps {
     leaseSent: string;
-    dateSentLease: string;
+    dateSentLease: string | null;
     leaseSigned: string;
-    dateSigned: string;
+    dateSigned: string | null;
     onLeaseSentChange: (value: string) => void;
-    onDateSentLeaseChange: (date: string) => void;
+    onDateSentLeaseChange: (date: string | null) => void;
     onLeaseSignedChange: (value: string) => void;
-    onDateSignedChange: (date: string) => void;
+    onDateSignedChange: (date: string | null) => void;
     errors: {
         lease_sent?: string;
         date_sent_lease?: string;

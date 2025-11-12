@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import { format, parse, isValid } from 'date-fns';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import CitySelector from './edit/CitySelector';
@@ -64,6 +64,9 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  currentFilters: { city: string; property: string; unit: string; tenant: string };
+  perPage: string | number;
+  page: number;
 }
 
 /**
@@ -78,7 +81,7 @@ const toDateOnlyString = (raw?: string | null): string => {
   return isValid(d) ? format(d, 'yyyy-MM-dd') : '';
 };
 
-export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, open, onOpenChange, onSuccess }: Props) {
+export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, open, onOpenChange, onSuccess, currentFilters, perPage, page }: Props) {
   const cityRef = useRef<HTMLButtonElement>(null);
   const propertyRef = useRef<HTMLButtonElement>(null);
   const unitRef = useRef<HTMLButtonElement>(null);
@@ -130,7 +133,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, o
 
   const initialSelections = findInitialSelections();
 
-  const { data, setData, put, processing, errors } = useForm({
+  const { data, setData, processing, errors } = useForm({
     tenant_id: offer.tenant_id?.toString() || '',
     city_id: initialSelections.cityId,
     property_id: initialSelections.propertyId,
@@ -237,13 +240,13 @@ export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, o
     setData('other_tenants', value);
   };
 
-  const handleDateSentOfferChange = (date: string) => {
-    setData('date_sent_offer', date);
+  const handleDateSentOfferChange = (date: string | null) => {
+    setData('date_sent_offer', date || '');
     setValidationErrors((prev) => ({ ...prev, date_sent_offer: undefined }));
   };
 
-  const handleDateOfDeclineChange = (date: string) => {
-    setData('date_of_decline', date);
+  const handleDateOfDeclineChange = (date: string | null) => {
+    setData('date_of_decline', date || '');
   };
 
   const submit = (e: React.FormEvent) => {
@@ -295,7 +298,19 @@ export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, o
       return;
     }
 
-    put(`/offers_and_renewals/${offer.id}`, {
+    const submitWithContext = {
+      ...data,
+      city_name: currentFilters.city || '',
+      property_name: currentFilters.property || '',
+      unit_name: currentFilters.unit || '',
+      tenant_name: currentFilters.tenant || '',
+      per_page: String(perPage),
+      page: page,
+    };
+
+    router.put(route('offers_and_renewals.update', offer.id), submitWithContext, {
+      preserveScroll: true,
+      preserveState: true,
       onSuccess: () => {
         setValidationErrors({});
         onOpenChange(false);
@@ -390,6 +405,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, o
                 borderColor="border-l-orange-500"
                 isOpen={calendarStates.date_sent_offer}
                 onOpenChange={(open) => setCalendarOpen('date_sent_offer', open)}
+                allowClear={false}
               />
 
               <RadioGroupField
@@ -420,7 +436,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, o
                   <DatePickerField
                     label="Date of Acceptance"
                     value={data.date_of_acceptance}
-                    onChange={(value) => setData('date_of_acceptance', value)}
+                    onChange={(value) => setData('date_of_acceptance', value || '')}
                     error={errors.date_of_acceptance}
                     borderColor="border-l-teal-500"
                     isOpen={calendarStates.date_of_acceptance}
@@ -430,7 +446,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, o
                   <DatePickerField
                     label="Offer Last Notice Sent"
                     value={data.last_notice_sent}
-                    onChange={(value) => setData('last_notice_sent', value)}
+                    onChange={(value) => setData('last_notice_sent', value || '')}
                     error={errors.last_notice_sent}
                     borderColor="border-l-indigo-500"
                     isOpen={calendarStates.last_notice_sent}
@@ -468,7 +484,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, o
                   <DatePickerField
                     label="Date Sent Lease"
                     value={data.date_sent_lease}
-                    onChange={(value) => setData('date_sent_lease', value)}
+                    onChange={(value) => setData('date_sent_lease', value || '' )}
                     error={errors.date_sent_lease}
                     borderColor="border-l-yellow-500"
                     isOpen={calendarStates.date_sent_lease}
@@ -491,7 +507,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, o
                   <DatePickerField
                     label="Date Signed"
                     value={data.date_signed}
-                    onChange={(value) => setData('date_signed', value)}
+                    onChange={(value) => setData('date_signed', value || '')}
                     error={errors.date_signed}
                     borderColor="border-l-violet-500"
                     isOpen={calendarStates.date_signed}
@@ -502,7 +518,7 @@ export default function OffersAndRenewalsEditDrawer({ offer, hierarchicalData, o
                   <DatePickerField
                     label="Renewal Last Notice Sent"
                     value={data.last_notice_sent_2}
-                    onChange={(value) => setData('last_notice_sent_2', value)}
+                    onChange={(value) => setData('last_notice_sent_2', value || '')}
                     error={errors.last_notice_sent_2}
                     borderColor="border-l-rose-500"
                     isOpen={calendarStates.last_notice_sent_2}

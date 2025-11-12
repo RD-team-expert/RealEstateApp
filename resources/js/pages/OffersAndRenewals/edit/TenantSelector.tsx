@@ -1,6 +1,10 @@
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
+import { ChevronsUpDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import React, { useState, useMemo } from 'react';
 
 interface Tenant {
@@ -38,6 +42,11 @@ export default function TenantSelector({
 }: TenantSelectorProps) {
   const [showOtherTenantsDropdown, setShowOtherTenantsDropdown] = useState(false);
   const [filteredTenants, setFilteredTenants] = useState(tenants);
+  const [open, setOpen] = useState(false);
+  const selectedLabel = useMemo(() => {
+    const found = tenants.find((t) => t.id.toString() === value);
+    return found ? found.name : '';
+  }, [tenants, value]);
 
   // Update filtered tenants when tenants change
   useMemo(() => {
@@ -74,28 +83,48 @@ export default function TenantSelector({
           Tenant *
         </Label>
       </div>
-      <Select 
-        onValueChange={onChange} 
-        value={value}
-        disabled={disabled || !unitSelected || tenants.length === 0}
-      >
-        <SelectTrigger ref={tenantRef}>
-          <SelectValue placeholder={
-            !unitSelected 
-              ? "Select unit first" 
-              : tenants.length === 0 
-                ? "No tenants available"
-                : "Select tenant"
-          } />
-        </SelectTrigger>
-        <SelectContent>
-          {tenants.map((tenant) => (
-            <SelectItem key={tenant.id} value={tenant.id.toString()}>
-              {tenant.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            ref={tenantRef}
+            role="combobox"
+            aria-expanded={open}
+            variant="outline"
+            className="w-full justify-between text-left font-normal"
+            disabled={disabled || !unitSelected || tenants.length === 0}
+          >
+            {selectedLabel || (!unitSelected ? 'Select unit first' : tenants.length === 0 ? 'No tenants available' : 'Select tenant')}
+            <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Search tenant..." />
+            <CommandList>
+              <CommandEmpty>No tenant found.</CommandEmpty>
+              <CommandGroup>
+                {tenants.map((tenant) => {
+                  const idStr = tenant.id.toString();
+                  const isSelected = value === idStr;
+                  return (
+                    <CommandItem
+                      key={tenant.id}
+                      value={tenant.name}
+                      onSelect={() => {
+                        onChange(idStr);
+                        setOpen(false);
+                      }}
+                    >
+                      <Check className={cn('mr-2 h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')} />
+                      {tenant.name}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
       {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}
       

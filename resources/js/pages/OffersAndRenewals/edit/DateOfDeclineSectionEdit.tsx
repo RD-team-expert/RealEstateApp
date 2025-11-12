@@ -1,8 +1,8 @@
 import DatePickerField from './DatePickerField';
 
 interface DateOfDeclineSectionEditProps {
-    value: string;
-    onChange: (date: string) => void;
+    value: string | null;
+    onChange: (date: string | null) => void;
     error?: string;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;

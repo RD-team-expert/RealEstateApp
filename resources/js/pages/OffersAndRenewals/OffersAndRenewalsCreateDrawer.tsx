@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerFooter } from '@/components/ui/drawer';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import React, { useState, useRef } from 'react';
 import CascadingSelectors from './create/CascadingSelectors';
 import OfferInformationSection from './create/OfferInformationSection';
@@ -37,9 +37,12 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    currentFilters: { city: string; property: string; unit: string; tenant: string };
+    perPage: string | number;
+    page: number;
 }
 
-export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, onOpenChange, onSuccess }: Props) {
+export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, onOpenChange, onSuccess, currentFilters, perPage, page }: Props) {
     const cityRef = useRef<HTMLButtonElement>(null);
     const propertyRef = useRef<HTMLButtonElement>(null);
     const unitRef = useRef<HTMLButtonElement>(null);
@@ -67,7 +70,7 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
         setCalendarStates((prev) => ({ ...prev, [field]: open }));
     };
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, processing, errors, reset } = useForm({
         tenant_id: '',
         city_id: '',
         property_id: '',
@@ -86,6 +89,12 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
         notice_kind_2: '',
         notes: '',
         date_of_decline: '',
+        city_name: '',
+        property_name: '',
+        unit_name: '',
+        tenant_name: '',
+        per_page: '',
+        page: 1,
     });
 
     const handleCityChange = (cityId: string) => {
@@ -127,13 +136,13 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
         setData('other_tenants', value);
     };
 
-    const handleDateSentOfferChange = (date: string) => {
-        setData('date_sent_offer', date);
+    const handleDateSentOfferChange = (date: string | null) => {
+        setData('date_sent_offer', date || '');
         setValidationErrors(prev => ({ ...prev, date_sent_offer: undefined }));
     };
 
-    const handleDateOfDeclineChange = (date: string) => {
-        setData('date_of_decline', date);
+    const handleDateOfDeclineChange = (date: string | null) => {
+        setData('date_of_decline', date || '');
     };
 
     const submit = (e: React.FormEvent) => {
@@ -185,7 +194,19 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
             return;
         }
 
-        post(route('offers_and_renewals.store'), {
+        const submitWithContext = {
+            ...data,
+            city_name: currentFilters.city || '',
+            property_name: currentFilters.property || '',
+            unit_name: currentFilters.unit || '',
+            tenant_name: currentFilters.tenant || '',
+            per_page: String(perPage),
+            page: page,
+        };
+
+        router.post(route('offers_and_renewals.store'), submitWithContext, {
+            preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
                 reset();
                 setValidationErrors({});
@@ -252,8 +273,8 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
                                         dateOfAcceptance={data.date_of_acceptance}
                                         lastNoticeSent={data.last_notice_sent}
                                         noticeKind={data.notice_kind}
-                                        onDateOfAcceptanceChange={(date) => setData('date_of_acceptance', date)}
-                                        onLastNoticeSentChange={(date) => setData('last_notice_sent', date)}
+                                        onDateOfAcceptanceChange={(date) => setData('date_of_acceptance', date || '')}
+                                        onLastNoticeSentChange={(date) => setData('last_notice_sent', date || '')}
                                         onNoticeKindChange={(value) => setData('notice_kind', value)}
                                         errors={errors}
                                         calendarStates={{
@@ -269,9 +290,9 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
                                         leaseSigned={data.lease_signed}
                                         dateSigned={data.date_signed}
                                         onLeaseSentChange={(value) => setData('lease_sent', value)}
-                                        onDateSentLeaseChange={(date) => setData('date_sent_lease', date)}
+                                        onDateSentLeaseChange={(date) => setData('date_sent_lease', date || '')}
                                         onLeaseSignedChange={(value) => setData('lease_signed', value)}
-                                        onDateSignedChange={(date) => setData('date_signed', date)}
+                                        onDateSignedChange={(date) => setData('date_signed', date || '')}
                                         errors={errors}
                                         calendarStates={{
                                             date_sent_lease: calendarStates.date_sent_lease,
@@ -283,7 +304,7 @@ export default function OffersAndRenewalsCreateDrawer({ hierarchicalData, open, 
                                     <RenewalInformationSection
                                         lastNoticeSent2={data.last_notice_sent_2}
                                         noticeKind2={data.notice_kind_2}
-                                        onLastNoticeSent2Change={(date) => setData('last_notice_sent_2', date)}
+                                        onLastNoticeSent2Change={(date) => setData('last_notice_sent_2', date || '')}
                                         onNoticeKind2Change={(value) => setData('notice_kind_2', value)}
                                         errors={errors}
                                         calendarOpen={calendarStates.last_notice_sent_2}
