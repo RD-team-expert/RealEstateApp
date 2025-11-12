@@ -11,6 +11,83 @@ use Illuminate\Database\Eloquent\Collection;
 
 class VendorTaskTrackerService
 {
+    public function getTasks(array $filters)
+    {
+        $query = VendorTaskTracker::with(['vendor.city', 'unit.property.city']);
+
+        if (!empty($filters['status'])) {
+            if ($filters['status'] === 'exclude_completed') {
+                $query->where(function ($q) {
+                    $q->where('status', '!=', 'Completed')
+                      ->orWhereNull('status')
+                      ->orWhere('status', '');
+                });
+            } elseif ($filters['status'] !== 'all') {
+                $query->where('status', $filters['status']);
+            }
+        } else {
+            $query->where(function ($q) {
+                $q->where('status', '!=', 'Completed')
+                  ->orWhereNull('status')
+                  ->orWhere('status', '');
+            });
+        }
+
+        if (!empty($filters['city'])) {
+            $query->whereHas('unit.property.city', function ($q) use ($filters) {
+                $q->where('city', 'like', "%{$filters['city']}%");
+            });
+        }
+
+        if (!empty($filters['property'])) {
+            $query->whereHas('unit.property', function ($q) use ($filters) {
+                $q->where('property_name', 'like', "%{$filters['property']}%");
+            });
+        }
+
+        if (!empty($filters['unit_name'])) {
+            $query->whereHas('unit', function ($q) use ($filters) {
+                $q->where('unit_name', 'like', "%{$filters['unit_name']}%");
+            });
+        }
+
+        if (!empty($filters['vendor_name'])) {
+            $query->whereHas('vendor', function ($q) use ($filters) {
+                $q->where('vendor_name', 'like', "%{$filters['vendor_name']}%");
+            });
+        }
+
+        if (!empty($filters['search'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->whereHas('unit.property.city', function ($subQ) use ($filters) {
+                    $subQ->where('city', 'like', "%{$filters['search']}%");
+                })
+                ->orWhereHas('unit.property', function ($subQ) use ($filters) {
+                    $subQ->where('property_name', 'like', "%{$filters['search']}%");
+                })
+                ->orWhereHas('vendor', function ($subQ) use ($filters) {
+                    $subQ->where('vendor_name', 'like', "%{$filters['search']}%");
+                })
+                ->orWhereHas('unit', function ($subQ) use ($filters) {
+                    $subQ->where('unit_name', 'like', "%{$filters['search']}%");
+                })
+                ->orWhere('assigned_tasks', 'like', "%{$filters['search']}%")
+                ->orWhere('status', 'like', "%{$filters['search']}%")
+                ->orWhere('notes', 'like', "%{$filters['search']}%");
+            });
+        }
+
+        $query->orderBy('task_submission_date', 'desc')
+              ->orderBy('created_at', 'desc');
+
+        $perPage = $filters['per_page'] ?? 15;
+        if (is_string($perPage) && strtolower($perPage) === 'all') {
+            return $query->get();
+        }
+
+        $perPageInt = is_numeric($perPage) ? (int) $perPage : 15;
+        return $query->paginate($perPageInt)->withQueryString();
+    }
     public function getAllTasks(): Collection
     {
         return VendorTaskTracker::with(['vendor.city', 'unit.property'])
@@ -22,7 +99,11 @@ class VendorTaskTrackerService
     public function getAllTasksExcludingCompleted(): Collection
     {
         return VendorTaskTracker::with(['vendor.city', 'unit.property'])
-                               ->where('status', '!=', 'Completed')
+                               ->where(function ($q) {
+                                   $q->where('status', '!=', 'Completed')
+                                     ->orWhereNull('status')
+                                     ->orWhere('status', '');
+                               })
                                ->orderBy('task_submission_date', 'desc')
                                ->orderBy('created_at', 'desc')
                                ->get();
@@ -162,7 +243,9 @@ class VendorTaskTrackerService
         $units = Unit::with(['property.city'])
             ->select('id', 'unit_name', 'property_id')
             ->orderBy('unit_name')
-            ->get();
+            ->get()
+            ->unique('unit_name')
+            ->values();
 
         // Get vendors with city information
         $vendors = VendorInfo::with('city')
@@ -342,5 +425,108 @@ class VendorTaskTrackerService
                 ];
             })
             ->toArray();
+    }
+
+    public function getAdjacentTaskIds(array $filters, int $currentTaskId): array
+    {
+        $baseQuery = VendorTaskTracker::with(['vendor.city', 'unit.property.city']);
+
+        if (!empty($filters['status'])) {
+            if ($filters['status'] === 'exclude_completed') {
+                $baseQuery->where(function ($q) {
+                    $q->where('status', '!=', 'Completed')
+                      ->orWhereNull('status')
+                      ->orWhere('status', '');
+                });
+            } elseif ($filters['status'] !== 'all') {
+                $baseQuery->where('status', $filters['status']);
+            }
+        } else {
+            $baseQuery->where(function ($q) {
+                $q->where('status', '!=', 'Completed')
+                  ->orWhereNull('status')
+                  ->orWhere('status', '');
+            });
+        }
+
+        if (!empty($filters['city'])) {
+            $baseQuery->whereHas('unit.property.city', function ($q) use ($filters) {
+                $q->where('city', 'like', "%{$filters['city']}%");
+            });
+        }
+
+        if (!empty($filters['property'])) {
+            $baseQuery->whereHas('unit.property', function ($q) use ($filters) {
+                $q->where('property_name', 'like', "%{$filters['property']}%");
+            });
+        }
+
+        if (!empty($filters['unit_name'])) {
+            $baseQuery->whereHas('unit', function ($q) use ($filters) {
+                $q->where('unit_name', 'like', "%{$filters['unit_name']}%");
+            });
+        }
+
+        if (!empty($filters['vendor_name'])) {
+            $baseQuery->whereHas('vendor', function ($q) use ($filters) {
+                $q->where('vendor_name', 'like', "%{$filters['vendor_name']}%");
+            });
+        }
+
+        if (!empty($filters['search'])) {
+            $baseQuery->where(function ($q) use ($filters) {
+                $q->whereHas('unit.property.city', function ($subQ) use ($filters) {
+                    $subQ->where('city', 'like', "%{$filters['search']}%");
+                })
+                ->orWhereHas('unit.property', function ($subQ) use ($filters) {
+                    $subQ->where('property_name', 'like', "%{$filters['search']}%");
+                })
+                ->orWhereHas('vendor', function ($subQ) use ($filters) {
+                    $subQ->where('vendor_name', 'like', "%{$filters['search']}%");
+                })
+                ->orWhereHas('unit', function ($subQ) use ($filters) {
+                    $subQ->where('unit_name', 'like', "%{$filters['search']}%");
+                })
+                ->orWhere('assigned_tasks', 'like', "%{$filters['search']}%")
+                ->orWhere('status', 'like', "%{$filters['search']}%")
+                ->orWhere('notes', 'like', "%{$filters['search']}%");
+            });
+        }
+
+        $current = VendorTaskTracker::find($currentTaskId);
+        if (!$current) {
+            return ['prev_id' => null, 'next_id' => null];
+        }
+
+        $prevQuery = clone $baseQuery;
+        $prevId = $prevQuery
+            ->where(function ($q) use ($current) {
+                $q->where('task_submission_date', '>', $current->task_submission_date)
+                  ->orWhere(function ($q2) use ($current) {
+                      $q2->where('task_submission_date', '=', $current->task_submission_date)
+                         ->where('created_at', '>', $current->created_at);
+                  });
+            })
+            ->orderBy('task_submission_date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->value('id');
+
+        $nextQuery = clone $baseQuery;
+        $nextId = $nextQuery
+            ->where(function ($q) use ($current) {
+                $q->where('task_submission_date', '<', $current->task_submission_date)
+                  ->orWhere(function ($q2) use ($current) {
+                      $q2->where('task_submission_date', '=', $current->task_submission_date)
+                         ->where('created_at', '<', $current->created_at);
+                  });
+            })
+            ->orderBy('task_submission_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->value('id');
+
+        return [
+            'prev_id' => $prevId ?: null,
+            'next_id' => $nextId ?: null,
+        ];
     }
 }

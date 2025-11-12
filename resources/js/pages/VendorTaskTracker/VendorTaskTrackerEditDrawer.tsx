@@ -46,6 +46,16 @@ interface Props {
     propertiesByCity: Record<string, PropertyOption[]>;
     unitsByProperty: Record<string, Record<string, UnitOption[]>>;
     vendorsByCity: Record<string, VendorOption[]>;
+    filters: {
+        search?: string;
+        city?: string;
+        property?: string;
+        unit_name?: string;
+        vendor_name?: string;
+        status?: string;
+        per_page?: string;
+        page?: number;
+    };
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
@@ -59,6 +69,7 @@ export default function VendorTaskTrackerEditDrawer({
     unitsByCity, 
     propertiesByCity,
     unitsByProperty,
+    filters,
     open, 
     onOpenChange, 
     onSuccess 
@@ -106,7 +117,7 @@ export default function VendorTaskTrackerEditDrawer({
         return unit ? unit.id.toString() : '';
     };
 
-    const { data, setData, put, processing, errors } = useForm<VendorTaskTrackerFormData>({
+    const { data, setData, put, processing, errors, transform } = useForm<VendorTaskTrackerFormData>({
         vendor_id: findVendorIdByName(task.vendor_name || ''),
         unit_id: findUnitIdByName(task.unit_name || ''),
         task_submission_date: task.task_submission_date ?? '',
@@ -117,6 +128,26 @@ export default function VendorTaskTrackerEditDrawer({
         status: task.status ?? '',
         urgent: task.urgent ?? 'No',
     });
+
+    // Keep form and selection state in sync when a different task record is loaded
+    useEffect(() => {
+        setData({
+            vendor_id: findVendorIdByName(task.vendor_name || ''),
+            unit_id: findUnitIdByName(task.unit_name || ''),
+            task_submission_date: task.task_submission_date ?? '',
+            assigned_tasks: task.assigned_tasks ?? '',
+            any_scheduled_visits: task.any_scheduled_visits ?? '',
+            notes: task.notes ?? '',
+            task_ending_date: task.task_ending_date ?? '',
+            status: task.status ?? '',
+            urgent: task.urgent ?? 'No',
+        });
+
+        setSelectedCity(task.city || '');
+        setSelectedProperty(task.property_name || '');
+        setSelectedUnit(task.unit_name || '');
+        setSelectedVendor(task.vendor_name || '');
+    }, [task]);
 
     // Initialize available options when component mounts or task changes
     useEffect(() => {
@@ -278,8 +309,16 @@ export default function VendorTaskTrackerEditDrawer({
         if (hasValidationErrors) {
             return;
         }
-        
+        transform((current) => ({
+            ...current,
+            redirect_filters: {
+                ...filters,
+            },
+        }));
+
         put(route('vendor-task-tracker.update', task.id), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 setValidationError('');
                 setUnitValidationError('');
@@ -387,6 +426,7 @@ export default function VendorTaskTrackerEditDrawer({
                                 error={errors.any_scheduled_visits}
                                 calendarOpen={calendarStates.any_scheduled_visits}
                                 onCalendarOpenChange={(open) => setCalendarOpen('any_scheduled_visits', open)}
+                                allowClear
                             />
 
                             <DatePickerField
@@ -397,6 +437,7 @@ export default function VendorTaskTrackerEditDrawer({
                                 error={errors.task_ending_date}
                                 calendarOpen={calendarStates.task_ending_date}
                                 onCalendarOpenChange={(open) => setCalendarOpen('task_ending_date', open)}
+                                allowClear
                             />
 
                             <TextAreaField

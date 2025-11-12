@@ -48,6 +48,16 @@ interface Props {
     propertiesByCity: Record<string, PropertyOption[]>;
     unitsByProperty: Record<string, Record<string, UnitOption[]>>;
     vendorsByCity: Record<string, VendorOption[]>;
+    filters: {
+        search?: string;
+        city?: string;
+        property?: string;
+        unit_name?: string;
+        vendor_name?: string;
+        status?: string;
+        per_page?: string;
+        page?: number;
+    };
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
@@ -58,6 +68,7 @@ export default function VendorTaskTrackerCreateDrawer({
     vendors,
     propertiesByCity,
     unitsByProperty,
+    filters,
     open, 
     onOpenChange, 
     onSuccess 
@@ -87,7 +98,7 @@ export default function VendorTaskTrackerCreateDrawer({
         setCalendarStates((prev) => ({ ...prev, [field]: open }));
     };
 
-    const { data, setData, post, processing, errors, reset } = useForm<VendorTaskTrackerFormData>({
+    const { data, setData, post, processing, errors, reset, transform } = useForm<VendorTaskTrackerFormData>({
         vendor_id: '',
         unit_id: '',
         task_submission_date: '',
@@ -228,7 +239,16 @@ export default function VendorTaskTrackerCreateDrawer({
             return;
         }
         
+        transform((current) => ({
+            ...current,
+            redirect_filters: {
+                ...filters,
+            },
+        }));
+
         post(route('vendor-task-tracker.store'), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 reset();
                 setSelectedCity('');
@@ -243,6 +263,11 @@ export default function VendorTaskTrackerCreateDrawer({
                 setAvailableUnits([]);
                 setAvailableProperties([]);
                 setAvailableVendors([]);
+                setCalendarStates({
+                    task_submission_date: false,
+                    any_scheduled_visits: false,
+                    task_ending_date: false,
+                });
                 onOpenChange(false);
                 onSuccess?.();
             },
@@ -263,6 +288,11 @@ export default function VendorTaskTrackerCreateDrawer({
         setAvailableUnits([]);
         setAvailableProperties([]);
         setAvailableVendors([]);
+        setCalendarStates({
+            task_submission_date: false,
+            any_scheduled_visits: false,
+            task_ending_date: false,
+        });
         onOpenChange(false);
     };
 

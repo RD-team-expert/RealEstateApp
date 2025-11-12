@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, parse, isValid } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, X } from 'lucide-react';
 import React from 'react';
 import FormSection from './FormSection';
 
@@ -17,6 +17,7 @@ interface DatePickerFieldProps {
     validationError?: string;
     calendarOpen: boolean;
     onCalendarOpenChange: (open: boolean) => void;
+    allowClear?: boolean;
 }
 
 // Helper function to safely parse dates
@@ -76,6 +77,7 @@ export default function DatePickerField({
     validationError,
     calendarOpen,
     onCalendarOpenChange,
+    allowClear = false,
 }: DatePickerFieldProps) {
     return (
         <FormSection
@@ -98,6 +100,20 @@ export default function DatePickerField({
                     >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {safeFormatDate(value)}
+                        {allowClear && !!value && (
+                            <span
+                                className="ml-auto inline-flex items-center rounded p-1 hover:bg-muted"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onChange('');
+                                    onCalendarOpenChange(false);
+                                }}
+                                aria-label="Clear date"
+                                role="button"
+                            >
+                                <X className="h-3.5 w-3.5 opacity-70 hover:opacity-100" />
+                            </span>
+                        )}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>

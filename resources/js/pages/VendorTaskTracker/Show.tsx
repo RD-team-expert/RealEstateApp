@@ -12,9 +12,21 @@ import { Calendar, MapPin, User, Home, Clock, Wrench, FileText, AlertTriangle, B
 
 interface Props {
     task: VendorTaskTracker;
+    filters: {
+        search?: string;
+        city?: string;
+        property?: string;
+        unit_name?: string;
+        vendor_name?: string;
+        status?: string;
+        per_page?: string;
+        page?: number;
+    };
+    prevId?: number | null;
+    nextId?: number | null;
 }
 
-export default function Show({ task }: Props) {
+export default function Show({ task, filters, prevId, nextId }: Props) {
     // const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
     const getUrgentBadge = (urgent: 'Yes' | 'No') => {
@@ -76,6 +88,17 @@ export default function Show({ task }: Props) {
         </div>
     );
 
+    const buildQuery = (obj: Record<string, any>) => {
+        const params: Record<string, string> = {};
+        Object.entries(obj).forEach(([k, v]) => {
+            if (v !== null && v !== undefined && v !== '') params[k] = String(v);
+        });
+        const qs = new URLSearchParams(params).toString();
+        return qs ? `?${qs}` : '';
+    };
+
+    const qs = buildQuery(filters || {});
+
     return (
         <AppLayout>
             <Head title={`Vendor Task Details #${task.id}`} />
@@ -100,7 +123,25 @@ export default function Show({ task }: Props) {
                                         </Button>
                                     </Link>
                                 )} */}
-                                <Link href={route('vendor-task-tracker.index')}>
+                                {prevId ? (
+                                    <Link href={route('vendor-task-tracker.show', prevId) + qs}>
+                                        <Button variant="outline">Previous</Button>
+                                    </Link>
+                                ) : (
+                                    <Button variant="outline" disabled>
+                                        Previous
+                                    </Button>
+                                )}
+                                {nextId ? (
+                                    <Link href={route('vendor-task-tracker.show', nextId) + qs}>
+                                        <Button variant="outline">Next</Button>
+                                    </Link>
+                                ) : (
+                                    <Button variant="outline" disabled>
+                                        Next
+                                    </Button>
+                                )}
+                                <Link href={route('vendor-task-tracker.index') + qs}>
                                     <Button variant="outline">Back to List</Button>
                                 </Link>
                             </div>

@@ -16,6 +16,16 @@ interface TaskTableRowProps {
         canDelete: boolean;
         hasAnyPermission: boolean;
     };
+    filters?: {
+        search?: string;
+        city?: string;
+        property?: string;
+        unit_name?: string;
+        vendor_name?: string;
+        status?: string;
+        per_page?: string;
+        page?: number;
+    };
 }
 
 export default function TaskTableRow({
@@ -24,6 +34,7 @@ export default function TaskTableRow({
     onEdit,
     onDelete,
     permissions,
+    filters,
 }: TaskTableRowProps) {
     const getUrgentBadge = (urgent: 'Yes' | 'No') => {
         return <Badge variant={urgent === 'Yes' ? 'destructive' : 'secondary'}>{urgent}</Badge>;
@@ -82,7 +93,14 @@ export default function TaskTableRow({
                 <TableCell className="border border-border text-center">
                     <div className="flex gap-1">
                         {permissions.canView && (
-                            <Link href={route('vendor-task-tracker.show', task.id)}>
+                            <Link href={route('vendor-task-tracker.show', task.id) + (() => {
+                                const params: Record<string, string> = {};
+                                Object.entries(filters || {}).forEach(([k, v]) => {
+                                    if (v !== null && v !== undefined && v !== '') params[k] = String(v);
+                                });
+                                const qs = new URLSearchParams(params).toString();
+                                return qs ? `?${qs}` : '';
+                            })()}>
                                 <Button variant="outline" size="sm">
                                     <Eye className="h-4 w-4" />
                                 </Button>

@@ -13,6 +13,16 @@ interface TaskTableProps {
         canDelete: boolean;
         hasAnyPermission: boolean;
     };
+    filters?: {
+        search?: string;
+        city?: string;
+        property?: string;
+        unit_name?: string;
+        vendor_name?: string;
+        status?: string;
+        per_page?: string;
+        page?: number;
+    };
 }
 
 export default function TaskTable({
@@ -21,6 +31,7 @@ export default function TaskTable({
     onEdit,
     onDelete,
     permissions,
+    filters,
 }: TaskTableProps) {
     return (
         <div className="relative overflow-x-auto">
@@ -70,6 +81,7 @@ export default function TaskTable({
                             onEdit={onEdit}
                             onDelete={onDelete}
                             permissions={permissions}
+                            filters={filters}
                         />
                     ))}
                 </TableBody>

@@ -20,6 +20,13 @@ interface VendorOption {
     city?: string;
 }
 
+interface UnitOption {
+    id: number;
+    unit_name: string;
+    property_name?: string;
+    city?: string;
+}
+
 interface FilterBarProps {
     filters: {
         search?: string;
@@ -31,6 +38,7 @@ interface FilterBarProps {
     };
     cities: CityOption[];
     properties: PropertyOption[];
+    units: UnitOption[];
     vendors: VendorOption[];
     onSearch: (filters: any) => void;
     onClear: () => void;
@@ -48,6 +56,7 @@ export default function FilterBar({
     filters,
     cities,
     properties,
+    units,
     vendors,
     onSearch,
     onClear,
@@ -66,6 +75,12 @@ export default function FilterBar({
     const [showPropertyDropdown, setShowPropertyDropdown] = useState(false);
     const propertyInputRef = useRef<HTMLInputElement>(null);
     const propertyDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Unit autocomplete states
+    const [unitInput, setUnitInput] = useState(filters.unit_name || '');
+    const [showUnitDropdown, setShowUnitDropdown] = useState(false);
+    const unitInputRef = useRef<HTMLInputElement>(null);
+    const unitDropdownRef = useRef<HTMLDivElement>(null);
 
     // Vendor autocomplete states
     const [vendorInput, setVendorInput] = useState(filters.vendor_name || '');
@@ -102,6 +117,9 @@ export default function FilterBar({
             vendor.vendor_name.toLowerCase().includes(vendorInput.toLowerCase())
         ) || [];
 
+    const filteredUnits =
+        units?.filter((unit) => unit.unit_name.toLowerCase().includes(unitInput.toLowerCase())) || [];
+
     // Handle clicks outside dropdowns
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -120,6 +138,14 @@ export default function FilterBar({
                 !propertyInputRef.current.contains(event.target as Node)
             ) {
                 setShowPropertyDropdown(false);
+            }
+            if (
+                unitDropdownRef.current &&
+                !unitDropdownRef.current.contains(event.target as Node) &&
+                unitInputRef.current &&
+                !unitInputRef.current.contains(event.target as Node)
+            ) {
+                setShowUnitDropdown(false);
             }
             if (
                 vendorDropdownRef.current &&
@@ -164,6 +190,19 @@ export default function FilterBar({
         setShowPropertyDropdown(false);
     };
 
+    const handleUnitInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setUnitInput(value);
+        handleTempFilterChange('unit_name', value);
+        setShowUnitDropdown(value.length > 0);
+    };
+
+    const handleUnitSelect = (unit: UnitOption) => {
+        setUnitInput(unit.unit_name);
+        handleTempFilterChange('unit_name', unit.unit_name);
+        setShowUnitDropdown(false);
+    };
+
     const handleVendorInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setVendorInput(value);
@@ -191,10 +230,12 @@ export default function FilterBar({
         setTempFilters({});
         setCityInput('');
         setPropertyInput('');
+        setUnitInput('');
         setVendorInput('');
         setStatusInput('exclude_completed');
         setShowCityDropdown(false);
         setShowPropertyDropdown(false);
+        setShowUnitDropdown(false);
         setShowVendorDropdown(false);
         onClear();
     };
@@ -257,25 +298,42 @@ export default function FilterBar({
                                 onClick={() => handlePropertySelect(property)}
                             >
                                 {property.property_name}
-                                {property.city && (
-                                    <span className="ml-2 text-xs text-muted-foreground">
-                                        ({property.city})
-                                    </span>
-                                )}
                             </div>
                         ))}
                     </div>
                 )}
             </div>
 
-            {/* Unit Name Filter */}
-            <Input
-                type="text"
-                placeholder="Filter by Unit"
-                value={tempFilters.unit_name || ''}
-                onChange={(e) => handleTempFilterChange('unit_name', e.target.value)}
-                className="text-input-foreground bg-input"
-            />
+            {/* Unit Filter with Autocomplete */}
+            <div className="relative">
+                <Input
+                    ref={unitInputRef}
+                    type="text"
+                    placeholder="Filter by Unit"
+                    value={unitInput}
+                    onChange={handleUnitInputChange}
+                    onFocus={() => setShowUnitDropdown(true)}
+                    className="text-input-foreground bg-input pr-8"
+                />
+                <ChevronDown className="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                {showUnitDropdown && filteredUnits.length > 0 && (
+                    <div
+                        ref={unitDropdownRef}
+                        className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
+                    >
+                        {filteredUnits.map((unit) => (
+                            <div
+                                key={unit.id}
+                                className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => handleUnitSelect(unit)}
+                            >
+                                {unit.unit_name}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
 
             {/* Vendor Filter with Autocomplete */}
             <div className="relative">

@@ -1,7 +1,10 @@
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { ChevronDown } from 'lucide-react';
-import React, { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import React, {  useMemo, useState } from 'react';
 
 interface VendorOption {
     id: number;
@@ -28,76 +31,11 @@ export default function VendorSection({
     errors,
     validationError
 }: VendorSectionProps) {
-    const [vendorInput, setVendorInput] = useState('');
-    const [showVendorDropdown, setShowVendorDropdown] = useState(false);
-    const [filteredVendors, setFilteredVendors] = useState<VendorOption[]>([]);
-    const vendorInputRef = useRef<HTMLInputElement>(null);
-    const vendorDropdownRef = useRef<HTMLDivElement>(null);
-
-    // Update input when vendorId changes (for form reset)
-    useEffect(() => {
-        if (vendorId) {
-            const selectedVendor = availableVendors.find(vendor => vendor.id.toString() === vendorId);
-            if (selectedVendor) {
-                setVendorInput(selectedVendor.vendor_name);
-            }
-        } else {
-            setVendorInput('');
-        }
-    }, [vendorId, availableVendors]);
-
-    // Filter vendors based on input
-    useEffect(() => {
-        if (!availableVendors) {
-            setFilteredVendors([]);
-            return;
-        }
-
-        if (vendorInput.trim() === '') {
-            setFilteredVendors(availableVendors);
-        } else {
-            const filtered = availableVendors.filter((vendor) =>
-                vendor.vendor_name.toLowerCase().includes(vendorInput.toLowerCase())
-            );
-            setFilteredVendors(filtered);
-        }
-    }, [vendorInput, availableVendors]);
-
-    // Handle clicks outside dropdown
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                vendorDropdownRef.current &&
-                !vendorDropdownRef.current.contains(event.target as Node) &&
-                vendorInputRef.current &&
-                !vendorInputRef.current.contains(event.target as Node)
-            ) {
-                setShowVendorDropdown(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const handleVendorSelect = (vendor: VendorOption) => {
-        setVendorInput(vendor.vendor_name);
-        onVendorChange(vendor.id.toString());
-        setShowVendorDropdown(false);
-    };
-
-    const handleVendorInputChange = (value: string) => {
-        setVendorInput(value);
-        setShowVendorDropdown(true);
-        
-        // If input doesn't match any vendor exactly, clear the selection
-        const exactMatch = availableVendors.find(vendor => 
-            vendor.vendor_name.toLowerCase() === value.toLowerCase()
-        );
-        if (!exactMatch && vendorId) {
-            onVendorChange('');
-        }
-    };
+    const [open, setOpen] = useState(false);
+    const selectedVendor = useMemo(
+        () => availableVendors?.find((v) => v.id.toString() === vendorId),
+        [availableVendors, vendorId]
+    );
 
     return (
         <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
@@ -106,55 +44,52 @@ export default function VendorSection({
                     Vendor Name *
                 </Label>
             </div>
-            <div className="relative">
-                <Input
-                    ref={vendorInputRef}
-                    type="text"
-                    placeholder={selectedCity ? "Type to search vendors..." : "Select a city first"}
-                    value={vendorInput}
-                    onChange={(e) => handleVendorInputChange(e.target.value)}
-                    onFocus={() => selectedCity && setShowVendorDropdown(true)}
-                    disabled={!selectedCity}
-                    className="text-input-foreground bg-input pr-8"
-                />
-                <ChevronDown className="absolute top-1/2 right-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-
-                {showVendorDropdown && filteredVendors.length > 0 && selectedCity && (
-                    <div
-                        ref={vendorDropdownRef}
-                        className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        ref={vendorRef}
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between"
+                        disabled={!selectedCity}
                     >
-                        {filteredVendors.map((vendor) => (
-                            <div
-                                key={vendor.id}
-                                className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => handleVendorSelect(vendor)}
-                            >
-                                {vendor.vendor_name}
-                                {vendor.city && (
-                                    <span className="ml-2 text-xs text-muted-foreground">
-                                        ({vendor.city})
-                                    </span>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {showVendorDropdown && filteredVendors.length === 0 && vendorInput.trim() !== '' && selectedCity && (
-                    <div
-                        ref={vendorDropdownRef}
-                        className="absolute top-full right-0 left-0 z-50 mt-1 rounded-md border border-input bg-popover shadow-lg"
-                    >
-                        <div className="px-3 py-2 text-sm text-muted-foreground">
-                            No vendors found matching "{vendorInput}"
-                        </div>
-                    </div>
-                )}
-            </div>
-            
-            {/* Hidden button for ref compatibility */}
-            <button ref={vendorRef} type="button" className="hidden" />
+                        {selectedVendor?.vendor_name || (selectedCity ? 'Select vendor' : 'Select a city first')}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                    <Command>
+                        <CommandInput placeholder="Search vendors..." />
+                        <CommandEmpty>No vendors found.</CommandEmpty>
+                        <CommandList>
+                            <CommandGroup>
+                                {availableVendors?.map((vendor) => (
+                                    <CommandItem
+                                        key={vendor.id}
+                                        value={vendor.vendor_name}
+                                        onSelect={() => {
+                                            onVendorChange(vendor.id.toString());
+                                            setOpen(false);
+                                        }}
+                                    >
+                                        <Check
+                                            className={cn(
+                                                'mr-2 h-4 w-4',
+                                                vendorId === vendor.id.toString() ? 'opacity-100' : 'opacity-0'
+                                            )}
+                                        />
+                                        {vendor.vendor_name}
+                                        {vendor.city && (
+                                            <span className="ml-2 text-xs text-muted-foreground">({vendor.city})</span>
+                                        )}
+                                    </CommandItem>
+                                )) || []}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
             
             {errors.vendor_id && <p className="mt-1 text-sm text-red-600">{errors.vendor_id}</p>}
             {validationError && <p className="mt-1 text-sm text-red-600">{validationError}</p>}

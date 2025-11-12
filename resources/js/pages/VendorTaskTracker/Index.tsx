@@ -123,6 +123,8 @@ interface Props {
         unit_name?: string;
         vendor_name?: string;
         status?: string;
+        per_page?: string;
+        page?: number;
     };
     cities: CityOption[];
     properties: PropertyOption[];
@@ -155,34 +157,10 @@ export default function Index({
     const [selectedTask, setSelectedTask] = useState<VendorTaskTracker | null>(null);
 
     const handleDrawerSuccess = () => {
-        // Preserve current filters when redirecting after create
-        const currentFilters: Record<string, string> = {};
-        Object.entries(filters).forEach(([key, value]) => {
-            if (value !== null && value !== undefined && value !== '') {
-                currentFilters[key] = String(value);
-            }
-        });
-
-        router.get(route('vendor-task-tracker.index'), currentFilters, {
-            preserveState: false,
-            preserveScroll: true,
-        });
         setIsDrawerOpen(false);
     };
 
     const handleEditDrawerSuccess = () => {
-        // Preserve current filters when redirecting after edit
-        const currentFilters: Record<string, string> = {};
-        Object.entries(filters).forEach(([key, value]) => {
-            if (value !== null && value !== undefined && value !== '') {
-                currentFilters[key] = String(value);
-            }
-        });
-
-        router.get(route('vendor-task-tracker.index'), currentFilters, {
-            preserveState: false,
-            preserveScroll: true,
-        });
         setIsEditDrawerOpen(false);
         setSelectedTask(null);
     };
@@ -194,7 +172,6 @@ export default function Index({
 
     const handleDelete = (task: VendorTaskTracker) => {
         if (confirm('Are you sure you want to archive this task?')) {
-            // Preserve current filters when redirecting after delete
             const currentFilters: Record<string, string> = {};
             Object.entries(filters).forEach(([key, value]) => {
                 if (value !== null && value !== undefined && value !== '') {
@@ -203,12 +180,9 @@ export default function Index({
             });
 
             router.delete(route('vendor-task-tracker.destroy', task.id), {
-                onSuccess: () => {
-                    router.get(route('vendor-task-tracker.index'), currentFilters, {
-                        preserveState: false,
-                        preserveScroll: true,
-                    });
-                }
+                data: { redirect_filters: currentFilters },
+                preserveState: true,
+                preserveScroll: true,
             });
         }
     };
@@ -238,6 +212,10 @@ export default function Index({
                 filterParams[key] = String(value);
             }
         });
+        if (filters.per_page && filters.per_page !== '') {
+            filterParams['per_page'] = String(filters.per_page);
+        }
+        filterParams['page'] = '1';
 
         router.get(route('vendor-task-tracker.index'), filterParams, {
             preserveState: true,
@@ -246,14 +224,15 @@ export default function Index({
     };
 
     const handleClearFilters = () => {
-        router.get(
-            route('vendor-task-tracker.index'),
-            {},
-            {
-                preserveState: true,
-                preserveScroll: true,
-            }
-        );
+        const params: Record<string, string> = {};
+        if (filters.per_page && filters.per_page !== '') {
+            params['per_page'] = String(filters.per_page);
+        }
+        params['page'] = '1';
+        router.get(route('vendor-task-tracker.index'), params, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     const permissions = {
@@ -291,28 +270,106 @@ export default function Index({
                                 filters={filters}
                                 cities={cities}
                                 properties={properties}
+                                units={units}
                                 vendors={vendors}
                                 onSearch={handleSearch}
                                 onClear={handleClearFilters}
                             />
                         </CardHeader>
 
-                        <CardContent>
-                            {tasks.data.length > 0 ? (
-                                <>
-                                    <TaskTable
-                                        tasks={tasks.data}
-                                        formatDateOnly={formatDateOnly}
-                                        onEdit={handleEditTask}
-                                        onDelete={handleDelete}
-                                        permissions={permissions}
-                                    />
-                                    <PaginationInfo meta={tasks.meta} />
-                                </>
-                            ) : (
-                                <EmptyState />
-                            )}
-                        </CardContent>
+                    <CardContent>
+                        {tasks.data.length > 0 ? (
+                            <>
+                                <TaskTable
+                                    tasks={tasks.data}
+                                    formatDateOnly={formatDateOnly}
+                                    onEdit={handleEditTask}
+                                    onDelete={handleDelete}
+                                    permissions={permissions}
+                                    filters={filters}
+                                />
+                                <PaginationInfo meta={tasks.meta} />
+                                <div className="mt-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm">Per page:</span>
+                                        <select
+                                            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                                            value={filters.per_page ?? '15'}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                const params: Record<string, string> = {};
+                                                Object.entries(filters).forEach(([key, value]) => {
+                                                    if (value !== null && value !== undefined && value !== '') {
+                                                        params[key] = String(value);
+                                                    }
+                                                });
+                                                params['per_page'] = value;
+                                                params['page'] = '1';
+                                                router.get(route('vendor-task-tracker.index'), params, {
+                                                    preserveState: true,
+                                                    preserveScroll: true,
+                                                });
+                                            }}
+                                        >
+                                            <option value="15">15</option>
+                                            <option value="30">30</option>
+                                            <option value="50">50</option>
+                                            <option value="all">All</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            className="inline-flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50"
+                                            disabled={(filters.per_page ?? '15') === 'all' || (tasks.meta?.current_page ?? 1) <= 1}
+                                            onClick={() => {
+                                                const current = Number(tasks.meta?.current_page ?? 1);
+                                                const target = current - 1;
+                                                const params: Record<string, string> = {};
+                                                Object.entries(filters).forEach(([key, value]) => {
+                                                    if (value !== null && value !== undefined && value !== '') {
+                                                        params[key] = String(value);
+                                                    }
+                                                });
+                                                params['page'] = String(target);
+                                                router.get(route('vendor-task-tracker.index'), params, {
+                                                    preserveState: true,
+                                                    preserveScroll: true,
+                                                });
+                                            }}
+                                        >
+                                            Previous
+                                        </button>
+                                        <span className="text-sm">
+                                            Page {tasks.meta?.current_page ?? 1} of {tasks.meta?.last_page ?? 1}
+                                        </span>
+                                        <button
+                                            className="inline-flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50"
+                                            disabled={(filters.per_page ?? '15') === 'all' || (tasks.meta?.current_page ?? 1) >= (tasks.meta?.last_page ?? 1)}
+                                            onClick={() => {
+                                                const current = Number(tasks.meta?.current_page ?? 1);
+                                                const target = current + 1;
+                                                const params: Record<string, string> = {};
+                                                Object.entries(filters).forEach(([key, value]) => {
+                                                    if (value !== null && value !== undefined && value !== '') {
+                                                        params[key] = String(value);
+                                                    }
+                                                });
+                                                params['page'] = String(target);
+                                                router.get(route('vendor-task-tracker.index'), params, {
+                                                    preserveState: true,
+                                                    preserveScroll: true,
+                                                });
+                                            }}
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <EmptyState />
+                        )}
+                    </CardContent>
                     </Card>
                 </div>
             </div>
@@ -327,6 +384,7 @@ export default function Index({
                 propertiesByCity={propertiesByCity}
                 unitsByProperty={unitsByProperty}
                 vendorsByCity={vendorsByCity}
+                filters={filters}
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
                 onSuccess={handleDrawerSuccess}
@@ -344,6 +402,7 @@ export default function Index({
                     propertiesByCity={propertiesByCity}
                     unitsByProperty={unitsByProperty}
                     vendorsByCity={vendorsByCity}
+                    filters={filters}
                     open={isEditDrawerOpen}
                     onOpenChange={setIsEditDrawerOpen}
                     onSuccess={handleEditDrawerSuccess}

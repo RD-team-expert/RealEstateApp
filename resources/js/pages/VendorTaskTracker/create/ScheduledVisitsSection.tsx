@@ -3,7 +3,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format, parse } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, X } from 'lucide-react';
 
 interface ScheduledVisitsSectionProps {
     scheduledVisits: string;
@@ -42,6 +42,20 @@ export default function ScheduledVisitsSection({
                         {scheduledVisits
                             ? format(parse(scheduledVisits, 'yyyy-MM-dd', new Date()), 'PPP')
                             : 'Pick a date'}
+                        {!!scheduledVisits && (
+                            <span
+                                className="ml-auto inline-flex items-center rounded p-1 hover:bg-muted"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDateChange('');
+                                    onCalendarOpenChange(false);
+                                }}
+                                aria-label="Clear date"
+                                role="button"
+                            >
+                                <X className="h-3.5 w-3.5 opacity-70 hover:opacity-100" />
+                            </span>
+                        )}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="z-[60] w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
