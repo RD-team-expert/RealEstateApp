@@ -19,6 +19,13 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    redirectContext?: {
+        city?: string | null;
+        property?: string | null;
+        unit?: string | null;
+        page?: string | number | null;
+        perPage?: string | null;
+    };
 }
 
 export default function MoveOutCreateDrawer({ 
@@ -27,7 +34,8 @@ export default function MoveOutCreateDrawer({
     unitsByPropertyId,
     open, 
     onOpenChange, 
-    onSuccess 
+    onSuccess,
+    redirectContext
 }: Props) {
     const cityRef = useRef<HTMLButtonElement>(null);
     const propertyRef = useRef<HTMLButtonElement>(null);
@@ -52,7 +60,7 @@ export default function MoveOutCreateDrawer({
         date_utility_put_under_our_name: false,
     });
 
-    const { data, setData, post, processing, errors, reset } = useForm<MoveOutFormData>({
+    const { data, setData, post, processing, errors, reset, transform } = useForm<MoveOutFormData>({
         unit_id: null,
         tenants: '',
         move_out_date: '',
@@ -62,11 +70,13 @@ export default function MoveOutCreateDrawer({
         utilities_under_our_name: '',
         date_utility_put_under_our_name: '',
         walkthrough: '',
+        all_the_devices_are_off: '',
         repairs: '',
         send_back_security_deposit: '',
         notes: '',
         cleaning: '',
         list_the_unit: '',
+        renter: '',
         move_out_form: '',
         utility_type: '',
     });
@@ -160,7 +170,21 @@ export default function MoveOutCreateDrawer({
             return;
         }
 
+        transform((form) => ({
+            ...form,
+            move_out_date: form.move_out_date?.trim() ? form.move_out_date : null,
+            date_lease_ending_on_buildium: form.date_lease_ending_on_buildium?.trim() ? form.date_lease_ending_on_buildium : null,
+            date_utility_put_under_our_name: form.date_utility_put_under_our_name?.trim() ? form.date_utility_put_under_our_name : null,
+            redirect_city: redirectContext?.city ?? null,
+            redirect_property: redirectContext?.property ?? null,
+            redirect_unit: redirectContext?.unit ?? null,
+            redirect_page: redirectContext?.page ?? null,
+            redirect_perPage: redirectContext?.perPage ?? null,
+        }));
+
         post(route('move-out.store'), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 handleCancel();
                 onSuccess?.();

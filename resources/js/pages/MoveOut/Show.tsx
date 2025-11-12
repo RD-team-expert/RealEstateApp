@@ -12,9 +12,13 @@ import { Calendar, MapPin, User, Home, Clock, Key, Wrench, FileText, AlertTriang
 
 interface Props {
     moveOut: MoveOut;
+    filters?: { city?: string | null; property?: string | null; unit?: string | null };
+    prevId?: number | null;
+    nextId?: number | null;
+    perPage?: string;
 }
 
-export default function Show({ moveOut }: Props) {
+export default function Show({ moveOut, filters, prevId, nextId, perPage }: Props) {
     // const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
     const getYesNoBadge = (value: 'Yes' | 'No' | null) => {
@@ -77,6 +81,9 @@ export default function Show({ moveOut }: Props) {
         </div>
     );
 
+    const isPrevDisabled = !prevId || prevId === moveOut.id;
+    const isNextDisabled = !nextId || nextId === moveOut.id;
+
     return (
         <AppLayout>
             <Head title={`Move-Out Details #${moveOut.id}`} />
@@ -101,9 +108,48 @@ export default function Show({ moveOut }: Props) {
                                         </Button>
                                     </Link>
                                 )} */}
-                                <Link href={route('move-out.index')}>
+                                <Link href={route('move-out.index')} data={{
+                                    city: filters?.city ?? undefined,
+                                    property: filters?.property ?? undefined,
+                                    unit: filters?.unit ?? undefined,
+                                    perPage: perPage ?? undefined,
+                                }}>
                                     <Button variant="outline">Back to List</Button>
                                 </Link>
+                                <div className="flex gap-2">
+                                    {isPrevDisabled ? (
+                                        <Button variant="outline" disabled>Previous</Button>
+                                    ) : (
+                                        <Link
+                                            href={route('move-out.show', prevId!)}
+                                            data={{
+                                                city: filters?.city ?? undefined,
+                                                property: filters?.property ?? undefined,
+                                                unit: filters?.unit ?? undefined,
+                                                perPage: perPage ?? undefined,
+                                            }}
+                                            preserveScroll
+                                        >
+                                            <Button variant="outline">Previous</Button>
+                                        </Link>
+                                    )}
+                                    {isNextDisabled ? (
+                                        <Button variant="outline" disabled>Next</Button>
+                                    ) : (
+                                        <Link
+                                            href={route('move-out.show', nextId!)}
+                                            data={{
+                                                city: filters?.city ?? undefined,
+                                                property: filters?.property ?? undefined,
+                                                unit: filters?.unit ?? undefined,
+                                                perPage: perPage ?? undefined,
+                                            }}
+                                            preserveScroll
+                                        >
+                                            <Button variant="outline">Next</Button>
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -208,6 +254,11 @@ export default function Show({ moveOut }: Props) {
                                         label="List the Unit"
                                         value={moveOut.list_the_unit || 'N/A'}
                                     />
+                                    <InfoItem
+                                        icon={User}
+                                        label="Renter"
+                                        value={getYesNoBadge(moveOut.renter as 'Yes' | 'No' | null)}
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
@@ -241,6 +292,11 @@ export default function Show({ moveOut }: Props) {
                                         icon={FileText}
                                         label="Move-Out Form"
                                         value={getFormBadge(moveOut.move_out_form)}
+                                    />
+                                    <InfoItem
+                                        icon={FileText}
+                                        label="All The Devices Are Off"
+                                        value={getYesNoBadge(moveOut.all_the_devices_are_off as 'Yes' | 'No' | null)}
                                     />
                                     <InfoItem
                                         icon={FileText}

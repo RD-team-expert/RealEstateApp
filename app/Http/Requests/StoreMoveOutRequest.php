@@ -27,11 +27,13 @@ class StoreMoveOutRequest extends FormRequest
             'utilities_under_our_name' => ['nullable', Rule::in(['Yes', 'No'])],
             'date_utility_put_under_our_name' => ['nullable', 'date'],
             'walkthrough' => ['nullable', 'string'],
+            'all_the_devices_are_off' => ['nullable', Rule::in(['Yes', 'No'])],
             'repairs' => ['nullable', 'string'],
             'send_back_security_deposit' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
             'cleaning' => ['nullable', Rule::in(['cleaned', 'uncleaned'])],
             'list_the_unit' => ['nullable', 'string', 'max:255'],
+            'renter' => ['nullable', Rule::in(['Yes', 'No'])],
             'move_out_form' => ['nullable', Rule::in(['filled', 'not filled'])],
             'tenants' => ['nullable', 'string', 'max:255'],
             'utility_type' => ['nullable', 'string'],
@@ -47,8 +49,10 @@ class StoreMoveOutRequest extends FormRequest
             'date_lease_ending_on_buildium.date' => 'The lease ending date must be a valid date.',
             'date_utility_put_under_our_name.date' => 'The utility date must be a valid date.',
             'utilities_under_our_name.in' => 'The utilities under our name field must be either Yes or No.',
+            'all_the_devices_are_off.in' => 'The all the devices are off field must be either Yes or No.',
             'cleaning.in' => 'The cleaning field must be either cleaned or uncleaned.',
             'move_out_form.in' => 'The move out form field must be either filled or not filled.',
+            'renter.in' => 'The renter field must be either Yes or No.',
         ];
     }
 

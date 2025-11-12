@@ -4,14 +4,15 @@ import { ChevronDown, Search, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
 interface MoveOutFiltersProps {
-    cities: any[];
-    properties: any[];
-    allUnits: Array<{ id: number; unit_name: string; city_name: string; property_name: string }>;
-    onSearch: (filters: { city_id: number | null; property_id: number | null; unit_id: number | null }) => void;
+    cities: string[];
+    properties: string[];
+    allUnits: string[];
+    onSearch: (filters: { city_id: string | null; property_id: string | null; unit_id: string | null }) => void;
     onClear: () => void;
+    initialFilters?: { city?: string; property?: string; unit?: string };
 }
 
-export default function MoveOutFilters({ cities, properties, allUnits, onSearch, onClear }: MoveOutFiltersProps) {
+export default function MoveOutFilters({ cities, properties, allUnits, onSearch, onClear, initialFilters }: MoveOutFiltersProps) {
     const [tempFilters, setTempFilters] = useState({
         city: '',
         property: '',
@@ -30,6 +31,14 @@ export default function MoveOutFilters({ cities, properties, allUnits, onSearch,
     const unitInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
+        if (initialFilters) {
+            setTempFilters({
+                city: initialFilters.city ?? '',
+                property: initialFilters.property ?? '',
+                unit: initialFilters.unit ?? '',
+            });
+        }
+
         const handleClickOutside = (event: MouseEvent) => {
             if (
                 cityDropdownRef.current &&
@@ -59,14 +68,14 @@ export default function MoveOutFilters({ cities, properties, allUnits, onSearch,
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [initialFilters]);
 
     const handleTempFilterChange = (key: string, value: string) => {
         setTempFilters((prev) => ({ ...prev, [key]: value }));
     };
 
-    const handleCitySelect = (city: any) => {
-        handleTempFilterChange('city', city.city);
+    const handleCitySelect = (cityName: string) => {
+        handleTempFilterChange('city', cityName);
         setShowCityDropdown(false);
     };
 
@@ -82,8 +91,8 @@ export default function MoveOutFilters({ cities, properties, allUnits, onSearch,
         setShowPropertyDropdown(value.length > 0);
     };
 
-    const handlePropertySelect = (property: any) => {
-        handleTempFilterChange('property', property.property_name);
+    const handlePropertySelect = (propertyName: string) => {
+        handleTempFilterChange('property', propertyName);
         setShowPropertyDropdown(false);
     };
 
@@ -93,20 +102,16 @@ export default function MoveOutFilters({ cities, properties, allUnits, onSearch,
         setShowUnitDropdown(value.length > 0);
     };
 
-    const handleUnitSelect = (unit: any) => {
-        handleTempFilterChange('unit', unit.unit_name);
+    const handleUnitSelect = (unitName: string) => {
+        handleTempFilterChange('unit', unitName);
         setShowUnitDropdown(false);
     };
 
     const handleSearchClick = () => {
-        const selectedCity = cities.find(city => city.city === tempFilters.city);
-        const selectedProperty = properties.find(property => property.property_name === tempFilters.property);
-        const selectedUnit = allUnits.find(unit => unit.unit_name === tempFilters.unit);
-        
         onSearch({
-            city_id: selectedCity?.id || null,
-            property_id: selectedProperty?.id || null,
-            unit_id: selectedUnit?.id || null,
+            city_id: tempFilters.city || null,
+            property_id: tempFilters.property || null,
+            unit_id: tempFilters.unit || null,
         });
     };
 
@@ -119,16 +124,16 @@ export default function MoveOutFilters({ cities, properties, allUnits, onSearch,
         onClear();
     };
 
-    const filteredCities = cities.filter((city) => 
-        city.city.toLowerCase().includes(tempFilters.city.toLowerCase())
+    const filteredCities = cities.filter((cityName) => 
+        cityName.toLowerCase().includes(tempFilters.city.toLowerCase())
     );
 
-    const filteredProperties = properties.filter((property) => 
-        property.property_name.toLowerCase().includes(tempFilters.property.toLowerCase())
+    const filteredProperties = properties.filter((propertyName) => 
+        propertyName.toLowerCase().includes(tempFilters.property.toLowerCase())
     );
 
-    const filteredUnits = allUnits.filter(unit =>
-        unit.unit_name.toLowerCase().includes(tempFilters.unit.toLowerCase())
+    const filteredUnits = allUnits.filter((unitName) =>
+        unitName.toLowerCase().includes(tempFilters.unit.toLowerCase())
     );
 
     return (
@@ -151,13 +156,13 @@ export default function MoveOutFilters({ cities, properties, allUnits, onSearch,
                         ref={cityDropdownRef}
                         className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
                     >
-                        {filteredCities.map((city) => (
+                        {filteredCities.map((name) => (
                             <div
-                                key={city.id}
+                                key={name}
                                 className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => handleCitySelect(city)}
+                                onClick={() => handleCitySelect(name)}
                             >
-                                {city.city}
+                                {name}
                             </div>
                         ))}
                     </div>
@@ -182,13 +187,13 @@ export default function MoveOutFilters({ cities, properties, allUnits, onSearch,
                         ref={propertyDropdownRef}
                         className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
                     >
-                        {filteredProperties.map((property) => (
+                        {filteredProperties.map((name) => (
                             <div
-                                key={property.id}
+                                key={name}
                                 className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => handlePropertySelect(property)}
+                                onClick={() => handlePropertySelect(name)}
                             >
-                                {property.property_name}
+                                {name}
                             </div>
                         ))}
                     </div>
@@ -213,13 +218,13 @@ export default function MoveOutFilters({ cities, properties, allUnits, onSearch,
                         ref={unitDropdownRef}
                         className="absolute top-full right-0 left-0 z-50 mt-1 max-h-60 overflow-auto rounded-md border border-input bg-popover shadow-lg"
                     >
-                        {filteredUnits.map((unit) => (
+                        {filteredUnits.map((name) => (
                             <div
-                                key={unit.id}
+                                key={name}
                                 className="cursor-pointer px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => handleUnitSelect(unit)}
+                                onClick={() => handleUnitSelect(name)}
                             >
-                                {unit.unit_name}
+                                {name}
                             </div>
                         ))}
                     </div>

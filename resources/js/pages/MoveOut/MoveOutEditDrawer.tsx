@@ -20,6 +20,13 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    redirectContext?: {
+        city?: string | null;
+        property?: string | null;
+        unit?: string | null;
+        page?: string | number | null;
+        perPage?: string | null;
+    };
 }
 
 export default function MoveOutEditDrawer({ 
@@ -31,7 +38,8 @@ export default function MoveOutEditDrawer({
     moveOut,
     open, 
     onOpenChange, 
-    onSuccess 
+    onSuccess,
+    redirectContext
 }: Props) {
     const cityRef = useRef<HTMLButtonElement>(null!);
     const propertyRef = useRef<HTMLButtonElement>(null!);
@@ -50,7 +58,7 @@ export default function MoveOutEditDrawer({
     const [availableProperties, setAvailableProperties] = useState<PropertyInfoWithoutInsurance[]>([]);
     const [availableUnits, setAvailableUnits] = useState<Array<{ id: number; unit_name: string }>>([]);
 
-    const { data, setData, put, processing, errors } = useForm<MoveOutFormData>({
+    const { data, setData, put, processing, errors, transform } = useForm<MoveOutFormData>({
         unit_id: moveOut.unit_id || null,
         tenants: moveOut.tenants || '',
         move_out_date: moveOut.move_out_date || '',
@@ -60,11 +68,13 @@ export default function MoveOutEditDrawer({
         utilities_under_our_name: moveOut.utilities_under_our_name || '',
         date_utility_put_under_our_name: moveOut.date_utility_put_under_our_name || '',
         walkthrough: moveOut.walkthrough || '',
+        all_the_devices_are_off: moveOut.all_the_devices_are_off || '',
         repairs: moveOut.repairs || '',
         send_back_security_deposit: moveOut.send_back_security_deposit || '',
         notes: moveOut.notes || '',
         cleaning: moveOut.cleaning || '',
         list_the_unit: moveOut.list_the_unit || '',
+        renter: moveOut.renter || '',
         move_out_form: moveOut.move_out_form || '',
         utility_type: moveOut.utility_type || '',
     });
@@ -179,7 +189,21 @@ export default function MoveOutEditDrawer({
             return;
         }
 
+        transform((form) => ({
+            ...form,
+            move_out_date: form.move_out_date?.trim() ? form.move_out_date : null,
+            date_lease_ending_on_buildium: form.date_lease_ending_on_buildium?.trim() ? form.date_lease_ending_on_buildium : null,
+            date_utility_put_under_our_name: form.date_utility_put_under_our_name?.trim() ? form.date_utility_put_under_our_name : null,
+            redirect_city: redirectContext?.city ?? null,
+            redirect_property: redirectContext?.property ?? null,
+            redirect_unit: redirectContext?.unit ?? null,
+            redirect_page: redirectContext?.page ?? null,
+            redirect_perPage: redirectContext?.perPage ?? null,
+        }));
+
         put(route('move-out.update', moveOut.id), {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 handleCancel();
                 onSuccess?.();
@@ -198,11 +222,13 @@ export default function MoveOutEditDrawer({
             utilities_under_our_name: moveOut.utilities_under_our_name || '',
             date_utility_put_under_our_name: moveOut.date_utility_put_under_our_name || '',
             walkthrough: moveOut.walkthrough || '',
+            all_the_devices_are_off: moveOut.all_the_devices_are_off || '',
             repairs: moveOut.repairs || '',
             send_back_security_deposit: moveOut.send_back_security_deposit || '',
             notes: moveOut.notes || '',
             cleaning: moveOut.cleaning || '',
             list_the_unit: moveOut.list_the_unit || '',
+            renter: moveOut.renter || '',
             move_out_form: moveOut.move_out_form || '',
             utility_type: moveOut.utility_type || '',
         });

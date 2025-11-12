@@ -1,9 +1,13 @@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ChevronsUpDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { City } from '@/types/City';
 import { PropertyInfoWithoutInsurance } from '@/types/PropertyInfoWithoutInsurance';
-import React from 'react';
+import React, { useState } from 'react';
 
 interface LocationSelectionFieldsProps {
     cities: City[];
@@ -46,79 +50,167 @@ export function LocationSelectionFields({
     tenantsError,
     onTenantsChange
 }: LocationSelectionFieldsProps) {
+    const [openCity, setOpenCity] = useState(false);
+    const [openProperty, setOpenProperty] = useState(false);
+    const [openUnit, setOpenUnit] = useState(false);
     return (
         <>
-            {/* City Selection */}
             <div className="rounded-lg border-l-4 border-l-blue-500 p-4">
                 <div className="mb-2">
                     <Label htmlFor="city_name" className="text-base font-semibold">
                         City *
                     </Label>
                 </div>
-                <Select onValueChange={onCityChange} value={selectedCity?.toString() || ''}>
-                    <SelectTrigger ref={cityRef}>
-                        <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {cities?.map((city) => (
-                            <SelectItem key={city.id} value={city.id.toString()}>
-                                {city.city}
-                            </SelectItem>
-                        )) || []}
-                    </SelectContent>
-                </Select>
+                <Popover open={openCity} onOpenChange={setOpenCity}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            ref={cityRef}
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openCity}
+                            className="w-full justify-between"
+                        >
+                            {selectedCity ? cities.find((c) => c.id === selectedCity)?.city : 'Select city'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                        <Command>
+                            <CommandInput placeholder="Search city..." />
+                            <CommandEmpty>No city found.</CommandEmpty>
+                            <CommandList>
+                                <CommandGroup>
+                                    {(cities || []).map((city) => (
+                                        <CommandItem
+                                            key={city.id}
+                                            value={city.city}
+                                            onSelect={() => {
+                                                onCityChange(city.id.toString());
+                                                setOpenCity(false);
+                                            }}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    'mr-2 h-4 w-4',
+                                                    selectedCity === city.id ? 'opacity-100' : 'opacity-0'
+                                                )}
+                                            />
+                                            {city.city}
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
                 {validationErrors.city && <p className="mt-1 text-sm text-red-600">{validationErrors.city}</p>}
             </div>
 
-            {/* Property Selection */}
             <div className="rounded-lg border-l-4 border-l-green-500 p-4">
                 <div className="mb-2">
                     <Label htmlFor="property_name" className="text-base font-semibold">
                         Property Name *
                     </Label>
                 </div>
-                <Select
-                    onValueChange={onPropertyChange}
-                    value={selectedProperty?.toString() || ''}
-                    disabled={!selectedCity}
-                >
-                    <SelectTrigger ref={propertyRef}>
-                        <SelectValue placeholder="Select property" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {availableProperties?.map((property) => (
-                            <SelectItem key={property.id} value={property.id.toString()}>
-                                {property.property_name}
-                            </SelectItem>
-                        )) || []}
-                    </SelectContent>
-                </Select>
+                <Popover open={openProperty} onOpenChange={setOpenProperty}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            ref={propertyRef}
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openProperty}
+                            className="w-full justify-between"
+                            disabled={!selectedCity}
+                        >
+                            {selectedProperty
+                                ? availableProperties.find((p) => p.id === selectedProperty)?.property_name
+                                : 'Select property'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                        <Command>
+                            <CommandInput placeholder="Search property..." />
+                            <CommandEmpty>No property found.</CommandEmpty>
+                            <CommandList>
+                                <CommandGroup>
+                                    {(availableProperties || []).map((property) => (
+                                        <CommandItem
+                                            key={property.id}
+                                            value={property.property_name}
+                                            onSelect={() => {
+                                                onPropertyChange(property.id.toString());
+                                                setOpenProperty(false);
+                                            }}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    'mr-2 h-4 w-4',
+                                                    selectedProperty === property.id ? 'opacity-100' : 'opacity-0'
+                                                )}
+                                            />
+                                            {property.property_name}
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
                 {validationErrors.property && <p className="mt-1 text-sm text-red-600">{validationErrors.property}</p>}
             </div>
 
-            {/* Unit Selection */}
             <div className="rounded-lg border-l-4 border-l-purple-500 p-4">
                 <div className="mb-2">
                     <Label htmlFor="units_name" className="text-base font-semibold">
                         Unit Name *
                     </Label>
                 </div>
-                <Select
-                    onValueChange={onUnitChange}
-                    value={selectedUnit?.toString() || ''}
-                    disabled={!selectedProperty}
-                >
-                    <SelectTrigger ref={unitRef}>
-                        <SelectValue placeholder="Select unit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {availableUnits?.map((unit) => (
-                            <SelectItem key={unit.id} value={unit.id.toString()}>
-                                {unit.unit_name}
-                            </SelectItem>
-                        )) || []}
-                    </SelectContent>
-                </Select>
+                <Popover open={openUnit} onOpenChange={setOpenUnit}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            ref={unitRef}
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={openUnit}
+                            className="w-full justify-between"
+                            disabled={!selectedProperty}
+                        >
+                            {selectedUnit
+                                ? availableUnits.find((u) => u.id === selectedUnit)?.unit_name
+                                : 'Select unit'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                        <Command>
+                            <CommandInput placeholder="Search unit..." />
+                            <CommandEmpty>No unit found.</CommandEmpty>
+                            <CommandList>
+                                <CommandGroup>
+                                    {(availableUnits || []).map((unit) => (
+                                        <CommandItem
+                                            key={unit.id}
+                                            value={unit.unit_name}
+                                            onSelect={() => {
+                                                onUnitChange(unit.id.toString());
+                                                setOpenUnit(false);
+                                            }}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    'mr-2 h-4 w-4',
+                                                    selectedUnit === unit.id ? 'opacity-100' : 'opacity-0'
+                                                )}
+                                            />
+                                            {unit.unit_name}
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
                 {validationErrors.unit && <p className="mt-1 text-sm text-red-600">{validationErrors.unit}</p>}
             </div>
 

@@ -50,11 +50,13 @@ const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
             'Utilities Under Our Name',
             'Date Utility Put Under Our Name',
             'Walkthrough',
+            'All The Devices Are Off',
             'Repairs',
             'Send Back Security Deposit',
             'Notes',
             'Cleaning',
             'List the Unit',
+            'Renter',
             'Move Out Form',
             'Utility Type',
         ];
@@ -77,11 +79,13 @@ const exportToCSV = (data: MoveOut[], filename: string = 'move-outs.csv') => {
                             `"${formatString(moveOut.utilities_under_our_name)}"`,
                             `"${formatDateOnly(moveOut.date_utility_put_under_our_name, '')}"`,
                             `"${formatString(moveOut.walkthrough)}"`,
+                            `"${formatString(moveOut.all_the_devices_are_off)}"`,
                             `"${formatString(moveOut.repairs)}"`,
                             `"${formatString(moveOut.send_back_security_deposit)}"`,
                             `"${formatString(moveOut.notes)}"`,
                             `"${formatString(moveOut.cleaning)}"`,
                             `"${formatString(moveOut.list_the_unit)}"`,
+                            `"${formatString(moveOut.renter)}"`,
                             `"${formatString(moveOut.move_out_form)}"`,
                             `"${formatString(moveOut.utility_type)}"`,
                         ].join(',');
@@ -119,34 +123,75 @@ interface Props {
         links: any[];
         meta: any;
     };
-    unit_id: string | null;
+    unit?: string | null;
     cities: any[];
     properties: any[];
     propertiesByCityId: Record<number, any[]>;
     unitsByPropertyId: Record<number, Array<{ id: number; unit_name: string }>>;
     allUnits: Array<{ id: number; unit_name: string; city_name: string; property_name: string }>;
+    filterCities: string[];
+    filterProperties: string[];
+    filterUnits: string[];
+    perPage?: string;
 }
 
-export default function Index({ moveOuts, cities, properties, propertiesByCityId, unitsByPropertyId, allUnits }: Props) {
+export default function Index({ moveOuts, cities, properties, propertiesByCityId, unitsByPropertyId, allUnits, filterCities, filterProperties, filterUnits, perPage: perPageProp }: Props) {
     const [isExporting, setIsExporting] = useState(false);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [selectedMoveOut, setSelectedMoveOut] = useState<MoveOut | null>(null);
+    const [perPage, setPerPage] = useState<string>(perPageProp ?? '15');
 
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
-    const handleSearch = (filters: { city_id: number | null; property_id: number | null; unit_id: number | null }) => {
-        router.get(route('move-out.index'), filters, { preserveState: true });
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+    const currentFilters = {
+        city: params.get('city') || undefined,
+        property: params.get('property') || undefined,
+        unit: params.get('unit') || undefined,
+    };
+    const currentPage = moveOuts?.meta?.current_page ?? 1;
+
+    const handleSearch = (filters: { city_id: string | null; property_id: string | null; unit_id: string | null }) => {
+        router.get(route('move-out.index'), {
+            city: filters.city_id,
+            property: filters.property_id,
+            unit: filters.unit_id,
+            perPage,
+        }, { preserveState: true, preserveScroll: true });
     };
 
     const handleClearFilters = () => {
-        router.get(route('move-out.index'), {}, { preserveState: false });
+        router.get(route('move-out.index'), { perPage }, { preserveState: false, preserveScroll: true });
     };
 
     const handleDelete = (moveOut: MoveOut) => {
         if (confirm('Are you sure you want to delete this move-out record?')) {
-            router.delete(route('move-out.destroy', moveOut.id));
+            router.delete(route('move-out.destroy', moveOut.id), {
+                data: {
+                    redirect_city: currentFilters.city ?? null,
+                    redirect_property: currentFilters.property ?? null,
+                    redirect_unit: currentFilters.unit ?? null,
+                    redirect_page: String(currentPage),
+                    redirect_perPage: perPage,
+                },
+                preserveState: true,
+                preserveScroll: true,
+            });
         }
+    };
+     const handlePerPageChange = (value: string) => {
+        setPerPage(value);
+        const params = new URLSearchParams(window.location.search);
+        const city = params.get('city');
+        const property = params.get('property');
+        const unit = params.get('unit');
+        router.get(route('move-out.index'), {
+            city: city || undefined,
+            property: property || undefined,
+            unit: unit || undefined,
+            perPage: value,
+        }, { preserveState: true, preserveScroll: true });
     };
 
     const handleCSVExport = () => {
@@ -198,9 +243,14 @@ export default function Index({ moveOuts, cities, properties, propertiesByCityId
                     <Card className="bg-card text-card-foreground shadow-lg">
                         <CardHeader>
                             <MoveOutFilters
-                                cities={cities}
-                                properties={properties}
-                                allUnits={allUnits}
+                                cities={filterCities}
+                                properties={filterProperties}
+                                allUnits={filterUnits}
+                                initialFilters={{
+                                    city: currentFilters.city ?? '',
+                                    property: currentFilters.property ?? '',
+                                    unit: currentFilters.unit ?? '',
+                                }}
                                 onSearch={handleSearch}
                                 onClear={handleClearFilters}
                             />
@@ -217,8 +267,45 @@ export default function Index({ moveOuts, cities, properties, propertiesByCityId
                                         hasAllPermissions={hasAllPermissions}
                                         onEdit={handleEditClick}
                                         onDelete={handleDelete}
+                                        filters={{
+                                            city: currentFilters.city ?? undefined,
+                                            property: currentFilters.property ?? undefined,
+                                            unit: currentFilters.unit ?? undefined,
+                                            perPage,
+                                        }}
                                     />
-                                    {moveOuts.meta && <MoveOutPagination meta={moveOuts.meta} />}
+                                    {moveOuts.meta && (
+                                        <MoveOutPagination
+                                            meta={moveOuts.meta}
+                                            perPage={perPage}
+                                            onPageChange={(page) => {
+                                                const params = new URLSearchParams(window.location.search);
+                                                const city = params.get('city');
+                                                const property = params.get('property');
+                                                const unit = params.get('unit');
+                                                router.get(route('move-out.index'), {
+                                                    city: city || undefined,
+                                                    property: property || undefined,
+                                                    unit: unit || undefined,
+                                                    page,
+                                                    perPage,
+                                                }, { preserveState: true, preserveScroll: true });
+                                            }}
+                                        />
+                                    )}
+                                    <div className="mt-4 flex items-center justify-end gap-2">
+                                        <span className="text-sm text-muted-foreground">Rows per page</span>
+                                        <select
+                                            value={perPage}
+                                            onChange={(e) => handlePerPageChange(e.target.value)}
+                                            className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                                        >
+                                            <option value="15">15</option>
+                                            <option value="30">30</option>
+                                            <option value="50">50</option>
+                                            <option value="all">All</option>
+                                        </select>
+                                    </div>
                                 </>
                             ) : (
                                 <MoveOutEmptyState />
@@ -237,11 +324,18 @@ export default function Index({ moveOuts, cities, properties, propertiesByCityId
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
                 onSuccess={handleDrawerSuccess}
+                redirectContext={{
+                    city: currentFilters.city ?? null,
+                    property: currentFilters.property ?? null,
+                    unit: currentFilters.unit ?? null,
+                    page: String(currentPage),
+                    perPage,
+                }}
             />
 
             {selectedMoveOut && (
   <MoveOutEditDrawer
-    key={selectedMoveOut.id}            // ← force remount when id changes
+    key={selectedMoveOut.id}
     cities={cities}
     properties={properties}
     propertiesByCityId={propertiesByCityId}
@@ -256,9 +350,17 @@ export default function Index({ moveOuts, cities, properties, propertiesByCityId
     open={isEditDrawerOpen}
     onOpenChange={setIsEditDrawerOpen}
     onSuccess={handleEditDrawerSuccess}
+    redirectContext={{
+      city: currentFilters.city ?? null,
+      property: currentFilters.property ?? null,
+      unit: currentFilters.unit ?? null,
+      page: String(currentPage),
+      perPage,
+    }}
   />
 )}
 
         </AppLayout>
     );
 }
+   

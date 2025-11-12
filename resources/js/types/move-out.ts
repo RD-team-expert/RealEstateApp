@@ -14,11 +14,13 @@ export interface MoveOut {
     utilities_under_our_name: 'Yes' | 'No' | null;
     date_utility_put_under_our_name: string | null;  // ISO string date
     walkthrough: string | null;
+    all_the_devices_are_off: 'Yes' | 'No' | null;
     repairs: string | null;
     send_back_security_deposit: string | null;
     notes: string | null;
     cleaning: 'cleaned' | 'uncleaned' | null;
     list_the_unit: string | null;
+    renter: 'Yes' | 'No' | null;
     move_out_form: 'filled' | 'not filled' | null;
     utility_type: string | null;
     created_at: string;
@@ -36,11 +38,13 @@ export type MoveOutFormData = {
     utilities_under_our_name: 'Yes' | 'No' | '';
     date_utility_put_under_our_name: string;
     walkthrough: string;
+    all_the_devices_are_off: 'Yes' | 'No' | '';
     repairs: string;
     send_back_security_deposit: string;
     notes: string;
     cleaning: 'cleaned' | 'uncleaned' | '';
     list_the_unit: string;
+    renter: 'Yes' | 'No' | '';
     move_out_form: 'filled' | 'not filled' | '';
     utility_type: string;
 } & Record<string, any>;

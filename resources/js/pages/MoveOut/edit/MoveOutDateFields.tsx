@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { MoveOutFormData } from '@/types/move-out';
 import { format, parse, isValid } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, X } from 'lucide-react';
 import  { useState } from 'react';
 
 interface MoveOutDateFieldsProps {
@@ -69,30 +69,44 @@ export function MoveOutDateFields({ data, errors, onDataChange }: MoveOutDateFie
                         Move Out Date
                     </Label>
                 </div>
-                <Popover open={calendarStates.move_out_date} onOpenChange={() => handleCalendarToggle('move_out_date')}>
-                    <PopoverTrigger asChild>
+                <div className="relative">
+                    <Popover open={calendarStates.move_out_date} onOpenChange={() => handleCalendarToggle('move_out_date')}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal"
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {data.move_out_date && data.move_out_date.trim() !== ''
+                                    ? (() => {
+                                        const parsedDate = parseDate(data.move_out_date);
+                                        return parsedDate ? format(parsedDate, 'PPP') : 'Pick a date';
+                                    })()
+                                    : 'Pick a date'}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={parseDate(data.move_out_date)}
+                                onSelect={(date) => handleDateSelect(date, 'move_out_date')}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                    {data.move_out_date && data.move_out_date.trim() !== '' && (
                         <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Clear date"
+                            onClick={() => onDataChange('move_out_date', '')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2"
                         >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {data.move_out_date && data.move_out_date.trim() !== ''
-                                ? (() => {
-                                    const parsedDate = parseDate(data.move_out_date);
-                                    return parsedDate ? format(parsedDate, 'PPP') : 'Pick a date';
-                                })()
-                                : 'Pick a date'}
+                            <X className="h-4 w-4" />
                         </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={parseDate(data.move_out_date)}
-                            onSelect={(date) => handleDateSelect(date, 'move_out_date')}
-                            initialFocus
-                        />
-                    </PopoverContent>
-                </Popover>
+                    )}
+                </div>
                 {errors.move_out_date && <p className="mt-1 text-sm text-red-600">{errors.move_out_date}</p>}
             </div>
 
@@ -103,66 +117,48 @@ export function MoveOutDateFields({ data, errors, onDataChange }: MoveOutDateFie
                         Date Lease Ending on Buildium
                     </Label>
                 </div>
-                <Popover open={calendarStates.date_lease_ending_on_buildium} onOpenChange={() => handleCalendarToggle('date_lease_ending_on_buildium')}>
-                    <PopoverTrigger asChild>
+                <div className="relative">
+                    <Popover open={calendarStates.date_lease_ending_on_buildium} onOpenChange={() => handleCalendarToggle('date_lease_ending_on_buildium')}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal"
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {data.date_lease_ending_on_buildium && data.date_lease_ending_on_buildium.trim() !== ''
+                                    ? (() => {
+                                        const parsedDate = parseDate(data.date_lease_ending_on_buildium);
+                                        return parsedDate ? format(parsedDate, 'PPP') : 'Pick a date';
+                                    })()
+                                    : 'Pick a date'}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={parseDate(data.date_lease_ending_on_buildium)}
+                                onSelect={(date) => handleDateSelect(date, 'date_lease_ending_on_buildium')}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                    {data.date_lease_ending_on_buildium && data.date_lease_ending_on_buildium.trim() !== '' && (
                         <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Clear date"
+                            onClick={() => onDataChange('date_lease_ending_on_buildium', '')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2"
                         >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {data.date_lease_ending_on_buildium && data.date_lease_ending_on_buildium.trim() !== ''
-                                ? (() => {
-                                    const parsedDate = parseDate(data.date_lease_ending_on_buildium);
-                                    return parsedDate ? format(parsedDate, 'PPP') : 'Pick a date';
-                                })()
-                                : 'Pick a date'}
+                            <X className="h-4 w-4" />
                         </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={parseDate(data.date_lease_ending_on_buildium)}
-                            onSelect={(date) => handleDateSelect(date, 'date_lease_ending_on_buildium')}
-                            initialFocus
-                        />
-                    </PopoverContent>
-                </Popover>
+                    )}
+                </div>
                 {errors.date_lease_ending_on_buildium && <p className="mt-1 text-sm text-red-600">{errors.date_lease_ending_on_buildium}</p>}
             </div>
 
-            {/* Date Utility Put Under Our Name */}
-            <div className="rounded-lg border-l-4 border-l-pink-500 p-4">
-                <div className="mb-2">
-                    <Label htmlFor="date_utility_put_under_our_name" className="text-base font-semibold">
-                        Date Utility Put Under Our Name
-                    </Label>
-                </div>
-                <Popover open={calendarStates.date_utility_put_under_our_name} onOpenChange={() => handleCalendarToggle('date_utility_put_under_our_name')}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                        >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {data.date_utility_put_under_our_name && data.date_utility_put_under_our_name.trim() !== ''
-                                ? (() => {
-                                    const parsedDate = parseDate(data.date_utility_put_under_our_name);
-                                    return parsedDate ? format(parsedDate, 'PPP') : 'Pick a date';
-                                })()
-                                : 'Pick a date'}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="single"
-                            selected={parseDate(data.date_utility_put_under_our_name)}
-                            onSelect={(date) => handleDateSelect(date, 'date_utility_put_under_our_name')}
-                            initialFocus
-                        />
-                    </PopoverContent>
-                </Popover>
-                {errors.date_utility_put_under_our_name && <p className="mt-1 text-sm text-red-600">{errors.date_utility_put_under_our_name}</p>}
-            </div>
+            
         </>
     );
 }

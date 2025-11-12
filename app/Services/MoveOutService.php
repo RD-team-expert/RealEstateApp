@@ -8,16 +8,22 @@ use App\Models\Unit;
 use App\Models\PropertyInfoWithoutInsurance;
 use App\Models\Cities;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class MoveOutService
 {
-    public function getAllMoveOuts(int $perPage = 15): LengthAwarePaginator
+    public function getAllMoveOuts(int|string $perPage = 15): LengthAwarePaginator|Collection
     {
-        return MoveOut::with(['unit.property.city'])
-                      ->orderBy('move_out_date', 'desc')
-                      ->orderBy('created_at', 'desc')
-                      ->paginate($perPage);
+        $query = MoveOut::with(['unit.property.city'])
+                        ->orderBy('move_out_date', 'desc')
+                        ->orderBy('created_at', 'desc');
+
+        if (is_string($perPage) && strtolower(trim($perPage)) === 'all') {
+            return $query->get();
+        }
+
+        return $query->paginate((int) $perPage);
     }
 
     public function searchMoveOuts(string $search, int $perPage = 15): LengthAwarePaginator
@@ -52,7 +58,25 @@ class MoveOutService
         // Remove display-only fields that shouldn't be stored
         unset($data['unit_name'], $data['property_name'], $data['city_name']);
         
-        return MoveOut::create($data);
+        return DB::transaction(function () use ($data) {
+            $moveOut = MoveOut::create($data);
+
+            // If lease status ended, mark the related unit as vacant and clear tenants
+            $status = isset($data['lease_status']) ? strtolower(trim($data['lease_status'])) : null;
+            if ($status === 'ended' && $moveOut->unit_id) {
+                $unit = Unit::find($moveOut->unit_id);
+                if ($unit) {
+                    $unit->tenants = null;
+                    $unit->is_new_lease = null;
+                    $unit->vacant = 'Yes';
+                    $unit->listed = 'No';
+                    $unit->total_applications = 0;
+                    $unit->saveQuietly();
+                }
+            }
+
+            return $moveOut;
+        });
     }
 
     public function updateMoveOut(MoveOut $moveOut, array $data): bool
@@ -60,7 +84,27 @@ class MoveOutService
         // Remove display-only fields that shouldn't be stored
         unset($data['unit_name'], $data['property_name'], $data['city_name']);
         
-        return $moveOut->update($data);
+        return DB::transaction(function () use ($moveOut, $data) {
+            $updated = $moveOut->update($data);
+
+            if ($updated) {
+                $leaseStatus = $data['lease_status'] ?? $moveOut->lease_status;
+                $status = isset($leaseStatus) ? strtolower(trim($leaseStatus)) : null;
+                if ($status === 'ended' && $moveOut->unit_id) {
+                    $unit = Unit::find($moveOut->unit_id);
+                    if ($unit) {
+                        $unit->tenants = null;
+                        $unit->is_new_lease = null;
+                        $unit->vacant = 'Yes';
+                        $unit->listed = 'No';
+                        $unit->total_applications = 0;
+                        $unit->saveQuietly();
+                    }
+                }
+            }
+
+            return $updated;
+        });
     }
 
     public function deleteMoveOut(MoveOut $moveOut): bool
@@ -89,15 +133,10 @@ class MoveOutService
 
     public function getDropdownData(): array
     {
-        // Get cities
         $cities = Cities::orderBy('city')->get();
-        
-        // Get properties with city relationships
         $properties = PropertyInfoWithoutInsurance::with('city')
                      ->orderBy('property_name')
                      ->get();
-        
-        // Get units with their relationships for dropdowns
         $units = Unit::with(['property.city'])
                     ->orderBy('unit_name')
                     ->get();
@@ -158,6 +197,10 @@ class MoveOutService
             ];
         });
 
+        $filterCities = $cities->pluck('city')->unique()->values()->all();
+        $filterProperties = $properties->pluck('property_name')->unique()->values()->all();
+        $filterUnits = $units->pluck('unit_name')->unique()->values()->all();
+
         return [
             'cities' => $cities,
             'properties' => $properties,
@@ -165,7 +208,10 @@ class MoveOutService
             'unitsByPropertyId' => $unitsByPropertyId,
             'tenantsByUnitId' => $tenantsByUnitId,
             'allUnits' => $allUnits,
-            'tenantsData' => $tenantsData
+            'tenantsData' => $tenantsData,
+            'filterCities' => $filterCities,
+            'filterProperties' => $filterProperties,
+            'filterUnits' => $filterUnits,
         ];
     }
 
@@ -180,31 +226,79 @@ class MoveOutService
     /**
      * Search move-outs with filters using ID-based filtering
      */
-    public function searchMoveOutsWithFilters(array $filters, int $perPage = 15): LengthAwarePaginator
+    public function searchMoveOutsWithFilters(array $filters, int|string $perPage = 15): LengthAwarePaginator|Collection
     {
         $query = MoveOut::with(['unit.property.city']);
 
-        // Apply unit filter by ID
-        if (!empty($filters['unit_id'])) {
-            $query->where('unit_id', $filters['unit_id']);
-        }
-
-        // Apply city filter by ID
-        if (!empty($filters['city_id'])) {
-            $query->whereHas('unit.property', function ($propertyQuery) use ($filters) {
-                $propertyQuery->where('city_id', $filters['city_id']);
+        if (!empty($filters['unit'])) {
+            $value = trim($filters['unit']);
+            $query->whereHas('unit', function ($unitQuery) use ($value) {
+                $unitQuery->where('unit_name', 'like', "%{$value}%");
             });
         }
 
-        // Apply property filter by ID
-        if (!empty($filters['property_id'])) {
-            $query->whereHas('unit', function ($unitQuery) use ($filters) {
-                $unitQuery->where('property_id', $filters['property_id']);
+        if (!empty($filters['city'])) {
+            $value = trim($filters['city']);
+            $query->whereHas('unit.property.city', function ($cityQuery) use ($value) {
+                $cityQuery->where('city', 'like', "%{$value}%");
             });
         }
 
-        return $query->orderBy('move_out_date', 'desc')
-                    ->orderBy('created_at', 'desc')
-                    ->paginate($perPage);
+        if (!empty($filters['property'])) {
+            $value = trim($filters['property']);
+            $query->whereHas('unit.property', function ($propertyQuery) use ($value) {
+                $propertyQuery->where('property_name', 'like', "%{$value}%");
+            });
+        }
+
+        $query = $query->orderBy('move_out_date', 'desc')
+                       ->orderBy('created_at', 'desc');
+
+        if (is_string($perPage) && strtolower(trim($perPage)) === 'all') {
+            return $query->get();
+        }
+
+        return $query->paginate((int) $perPage);
+    }
+
+    public function getAdjacentMoveOutIds(int $currentId, array $filters): array
+    {
+        $query = MoveOut::with(['unit.property.city']);
+
+        if (!empty($filters['unit'])) {
+            $value = trim($filters['unit']);
+            $query->whereHas('unit', function ($unitQuery) use ($value) {
+                $unitQuery->where('unit_name', 'like', "%{$value}%");
+            });
+        }
+
+        if (!empty($filters['city'])) {
+            $value = trim($filters['city']);
+            $query->whereHas('unit.property.city', function ($cityQuery) use ($value) {
+                $cityQuery->where('city', 'like', "%{$value}%");
+            });
+        }
+
+        if (!empty($filters['property'])) {
+            $value = trim($filters['property']);
+            $query->whereHas('unit.property', function ($propertyQuery) use ($value) {
+                $propertyQuery->where('property_name', 'like', "%{$value}%");
+            });
+        }
+
+        $items = $query->orderBy('move_out_date', 'desc')
+                       ->orderBy('created_at', 'desc')
+                       ->orderBy('id', 'desc')
+                       ->get(['id', 'move_out_date', 'created_at']);
+
+        $ids = $items->pluck('id')->values()->all();
+        $index = array_search($currentId, $ids, true);
+        if ($index === false) {
+            return ['prevId' => null, 'nextId' => null];
+        }
+        $prevId = $index > 0 ? $ids[$index - 1] : null;
+        $nextId = $index < count($ids) - 1 ? $ids[$index + 1] : null;
+
+        return ['prevId' => $prevId, 'nextId' => $nextId];
     }
 }

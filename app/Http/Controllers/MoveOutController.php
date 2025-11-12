@@ -27,54 +27,124 @@ class MoveOutController extends Controller
 
     public function index(Request $request): Response
     {
-        // Get filters from request using ID-based filtering
+        $perPageInput = $request->input('perPage');
+        $perPage = 15;
+        if (is_string($perPageInput)) {
+            $val = strtolower(trim($perPageInput));
+            if ($val === 'all') {
+                $perPage = 'all';
+            } elseif (in_array($val, ['15','30','50'], true)) {
+                $perPage = (int) $val;
+            }
+        }
+
         $filters = [
-            'unit_id' => $request->get('unit_id'),
-            'city_id' => $request->get('city_id'),
-            'property_id' => $request->get('property_id'),
+            'unit' => ($u = $request->input('unit')) && is_string($u) ? trim($u) : null,
+            'city' => ($c = $request->input('city')) && is_string($c) ? trim($c) : null,
+            'property' => ($p = $request->input('property')) && is_string($p) ? trim($p) : null,
         ];
 
-        // Use filtered search if any filters are provided
-        $moveOuts = array_filter($filters) 
-            ? $this->moveOutService->searchMoveOutsWithFilters($filters)
-            : $this->moveOutService->getAllMoveOuts();
+        $moveOutsRaw = array_filter($filters)
+            ? $this->moveOutService->searchMoveOutsWithFilters($filters, $perPage)
+            : $this->moveOutService->getAllMoveOuts($perPage);
 
         // Transform move-outs data to include relationship data as direct properties
-        $moveOuts->getCollection()->transform(function ($moveOut) {
-            return [
-                'id' => $moveOut->id,
-                'unit_id' => $moveOut->unit_id,
-                'unit_name' => $moveOut->unit ? $moveOut->unit->unit_name : null,
-                'property_name' => $moveOut->unit && $moveOut->unit->property 
-                    ? $moveOut->unit->property->property_name : null,
-                'city_name' => $moveOut->unit && $moveOut->unit->property && $moveOut->unit->property->city 
-                    ? $moveOut->unit->property->city->city : null,
-                'move_out_date' => $moveOut->move_out_date?->format('Y-m-d'),
-                'lease_status' => $moveOut->lease_status,
-                'date_lease_ending_on_buildium' => $moveOut->date_lease_ending_on_buildium?->format('Y-m-d'),
-                'keys_location' => $moveOut->keys_location,
-                'utilities_under_our_name' => $moveOut->utilities_under_our_name,
-                'date_utility_put_under_our_name' => $moveOut->date_utility_put_under_our_name?->format('Y-m-d'),
-                'walkthrough' => $moveOut->walkthrough,
-                'repairs' => $moveOut->repairs,
-                'send_back_security_deposit' => $moveOut->send_back_security_deposit,
-                'notes' => $moveOut->notes,
-                'cleaning' => $moveOut->cleaning,
-                'list_the_unit' => $moveOut->list_the_unit,
-                'move_out_form' => $moveOut->move_out_form,
-                'tenants' => $moveOut->tenants,
-                'utility_type' => $moveOut->utility_type,
-                'created_at' => $moveOut->created_at,
-                'updated_at' => $moveOut->updated_at,
+        if ($moveOutsRaw instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            $moveOutsRaw->getCollection()->transform(function ($moveOut) {
+                return [
+                    'id' => $moveOut->id,
+                    'unit_id' => $moveOut->unit_id,
+                    'unit_name' => $moveOut->unit ? $moveOut->unit->unit_name : null,
+                    'property_name' => $moveOut->unit && $moveOut->unit->property 
+                        ? $moveOut->unit->property->property_name : null,
+                    'city_name' => $moveOut->unit && $moveOut->unit->property && $moveOut->unit->property->city 
+                        ? $moveOut->unit->property->city->city : null,
+                    'move_out_date' => $moveOut->move_out_date?->format('Y-m-d'),
+                    'lease_status' => $moveOut->lease_status,
+                    'date_lease_ending_on_buildium' => $moveOut->date_lease_ending_on_buildium?->format('Y-m-d'),
+                    'keys_location' => $moveOut->keys_location,
+                    'utilities_under_our_name' => $moveOut->utilities_under_our_name,
+                    'date_utility_put_under_our_name' => $moveOut->date_utility_put_under_our_name?->format('Y-m-d'),
+                    'walkthrough' => $moveOut->walkthrough,
+                    'all_the_devices_are_off' => $moveOut->all_the_devices_are_off,
+                    'repairs' => $moveOut->repairs,
+                    'send_back_security_deposit' => $moveOut->send_back_security_deposit,
+                    'notes' => $moveOut->notes,
+                    'cleaning' => $moveOut->cleaning,
+                    'list_the_unit' => $moveOut->list_the_unit,
+                    'renter' => $moveOut->renter,
+                    'move_out_form' => $moveOut->move_out_form,
+                    'tenants' => $moveOut->tenants,
+                    'utility_type' => $moveOut->utility_type,
+                    'created_at' => $moveOut->created_at,
+                    'updated_at' => $moveOut->updated_at,
+                ];
+            });
+            $arr = $moveOutsRaw->toArray();
+            $moveOuts = [
+                'data' => $arr['data'] ?? [],
+                'links' => $arr['links'] ?? [],
+                'meta' => [
+                    'from' => $arr['from'] ?? 0,
+                    'to' => $arr['to'] ?? 0,
+                    'total' => $arr['total'] ?? 0,
+                    'current_page' => $arr['current_page'] ?? 1,
+                    'last_page' => $arr['last_page'] ?? 1,
+                    'per_page' => $arr['per_page'] ?? count($arr['data'] ?? []),
+                ],
             ];
-        });
+        } else {
+            $data = $moveOutsRaw->map(function ($moveOut) {
+                return [
+                    'id' => $moveOut->id,
+                    'unit_id' => $moveOut->unit_id,
+                    'unit_name' => $moveOut->unit ? $moveOut->unit->unit_name : null,
+                    'property_name' => $moveOut->unit && $moveOut->unit->property 
+                        ? $moveOut->unit->property->property_name : null,
+                    'city_name' => $moveOut->unit && $moveOut->unit->property && $moveOut->unit->property->city 
+                        ? $moveOut->unit->property->city->city : null,
+                    'move_out_date' => $moveOut->move_out_date?->format('Y-m-d'),
+                    'lease_status' => $moveOut->lease_status,
+                    'date_lease_ending_on_buildium' => $moveOut->date_lease_ending_on_buildium?->format('Y-m-d'),
+                    'keys_location' => $moveOut->keys_location,
+                    'utilities_under_our_name' => $moveOut->utilities_under_our_name,
+                    'date_utility_put_under_our_name' => $moveOut->date_utility_put_under_our_name?->format('Y-m-d'),
+                    'walkthrough' => $moveOut->walkthrough,
+                    'all_the_devices_are_off' => $moveOut->all_the_devices_are_off,
+                    'repairs' => $moveOut->repairs,
+                    'send_back_security_deposit' => $moveOut->send_back_security_deposit,
+                    'notes' => $moveOut->notes,
+                    'cleaning' => $moveOut->cleaning,
+                    'list_the_unit' => $moveOut->list_the_unit,
+                    'renter' => $moveOut->renter,
+                    'move_out_form' => $moveOut->move_out_form,
+                    'tenants' => $moveOut->tenants,
+                    'utility_type' => $moveOut->utility_type,
+                    'created_at' => $moveOut->created_at,
+                    'updated_at' => $moveOut->updated_at,
+                ];
+            })->values();
 
-        // Get dropdown data for the create/edit drawers
+            $total = $data->count();
+            $moveOuts = [
+                'data' => $data,
+                'links' => [],
+                'meta' => [
+                    'from' => $total > 0 ? 1 : 0,
+                    'to' => $total,
+                    'total' => $total,
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $total,
+                ],
+            ];
+        }
+
         $dropdownData = $this->moveOutService->getDropdownData();
 
         return Inertia::render('MoveOut/Index', [
             'moveOuts' => $moveOuts,
-            'unit_id' => $filters['unit_id'],
+            'unit' => $filters['unit'],
             'cities' => $dropdownData['cities'],
             'properties' => $dropdownData['properties'],
             'propertiesByCityId' => $dropdownData['propertiesByCityId'],
@@ -82,21 +152,10 @@ class MoveOutController extends Controller
             'tenantsByUnitId' => $dropdownData['tenantsByUnitId'],
             'allUnits' => $dropdownData['allUnits'],
             'tenantsData' => $dropdownData['tenantsData'],
-        ]);
-    }
-
-    public function create(): Response
-    {
-        $dropdownData = $this->moveOutService->getDropdownData();
-
-        return Inertia::render('MoveOut/Create', [
-            'cities' => $dropdownData['cities'],
-            'properties' => $dropdownData['properties'],
-            'propertiesByCityId' => $dropdownData['propertiesByCityId'],
-            'unitsByPropertyId' => $dropdownData['unitsByPropertyId'],
-            'tenantsByUnitId' => $dropdownData['tenantsByUnitId'],
-            'allUnits' => $dropdownData['allUnits'],
-            'tenantsData' => $dropdownData['tenantsData'],
+            'filterCities' => $dropdownData['filterCities'],
+            'filterProperties' => $dropdownData['filterProperties'],
+            'filterUnits' => $dropdownData['filterUnits'],
+            'perPage' => is_string($perPage) ? $perPage : (string) $perPage,
         ]);
     }
 
@@ -112,11 +171,13 @@ class MoveOutController extends Controller
             'utilities_under_our_name' => 'nullable|in:Yes,No',
             'date_utility_put_under_our_name' => 'nullable|date',
             'walkthrough' => 'nullable|string',
+            'all_the_devices_are_off' => 'nullable|in:Yes,No',
             'repairs' => 'nullable|string',
             'send_back_security_deposit' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'cleaning' => 'nullable|in:cleaned,uncleaned',
             'list_the_unit' => 'nullable|string|max:255',
+            'renter' => 'nullable|in:Yes,No',
             'move_out_form' => 'nullable|in:filled,not filled',
             'tenants' => 'nullable|string|max:255',
             'utility_type' => 'nullable|string',
@@ -125,17 +186,28 @@ class MoveOutController extends Controller
         // Create the move-out record
         $this->moveOutService->createMoveOut($validatedData);
 
+        $redirectParams = [];
+        $city = $request->input('redirect_city');
+        $property = $request->input('redirect_property');
+        $unit = $request->input('redirect_unit');
+        $page = $request->input('redirect_page');
+        $perPage = $request->input('redirect_perPage');
+
+        if (!empty($city)) $redirectParams['city'] = $city;
+        if (!empty($property)) $redirectParams['property'] = $property;
+        if (!empty($unit)) $redirectParams['unit'] = $unit;
+        if (!empty($page)) $redirectParams['page'] = $page;
+        if (!empty($perPage)) $redirectParams['perPage'] = $perPage;
+
         return redirect()
-            ->route('move-out.index')
+            ->route('move-out.index', $redirectParams)
             ->with('success', 'Move-out record created successfully.');
     }
 
-    public function show(MoveOut $moveOut): Response
+    public function show(Request $request, MoveOut $moveOut): Response
     {
-        // Load the move-out with relationships
         $moveOutWithRelations = $this->moveOutService->getMoveOutWithRelations($moveOut->id);
 
-        // Transform the data to include relationship properties
         $transformedMoveOut = [
             'id' => $moveOutWithRelations->id,
             'unit_id' => $moveOutWithRelations->unit_id,
@@ -151,11 +223,13 @@ class MoveOutController extends Controller
             'utilities_under_our_name' => $moveOutWithRelations->utilities_under_our_name,
             'date_utility_put_under_our_name' => $moveOutWithRelations->date_utility_put_under_our_name?->format('Y-m-d'),
             'walkthrough' => $moveOutWithRelations->walkthrough,
+            'all_the_devices_are_off' => $moveOutWithRelations->all_the_devices_are_off,
             'repairs' => $moveOutWithRelations->repairs,
             'send_back_security_deposit' => $moveOutWithRelations->send_back_security_deposit,
             'notes' => $moveOutWithRelations->notes,
             'cleaning' => $moveOutWithRelations->cleaning,
             'list_the_unit' => $moveOutWithRelations->list_the_unit,
+            'renter' => $moveOutWithRelations->renter,
             'move_out_form' => $moveOutWithRelations->move_out_form,
             'tenants' => $moveOutWithRelations->tenants,
             'utility_type' => $moveOutWithRelations->utility_type,
@@ -163,55 +237,31 @@ class MoveOutController extends Controller
             'updated_at' => $moveOutWithRelations->updated_at,
         ];
 
-        return Inertia::render('MoveOut/Show', [
-            'moveOut' => $transformedMoveOut
-        ]);
-    }
-
-    public function edit(MoveOut $moveOut): Response
-    {
-        $dropdownData = $this->moveOutService->getDropdownData();
-
-        // Load the move-out with relationships
-        $moveOutWithRelations = $this->moveOutService->getMoveOutWithRelations($moveOut->id);
-
-        // Transform the data for editing
-        $transformedMoveOut = [
-            'id' => $moveOutWithRelations->id,
-            'tenant_id' => $moveOutWithRelations->tenant_id,
-            'tenants_name' => $moveOutWithRelations->tenant ? $moveOutWithRelations->tenant->full_name : null,
-            'units_name' => $moveOutWithRelations->tenant && $moveOutWithRelations->tenant->unit 
-                ? $moveOutWithRelations->tenant->unit->unit_name : null,
-            'property_name' => $moveOutWithRelations->tenant && $moveOutWithRelations->tenant->unit && $moveOutWithRelations->tenant->unit->property 
-                ? $moveOutWithRelations->tenant->unit->property->property_name : null,
-            'city_name' => $moveOutWithRelations->tenant && $moveOutWithRelations->tenant->unit && $moveOutWithRelations->tenant->unit->property && $moveOutWithRelations->tenant->unit->property->city 
-                ? $moveOutWithRelations->tenant->unit->property->city->city : null,
-            'move_out_date' => $moveOutWithRelations->move_out_date?->format('Y-m-d'),
-            'lease_status' => $moveOutWithRelations->lease_status,
-            'date_lease_ending_on_buildium' => $moveOutWithRelations->date_lease_ending_on_buildium?->format('Y-m-d'),
-            'keys_location' => $moveOutWithRelations->keys_location,
-            'utilities_under_our_name' => $moveOutWithRelations->utilities_under_our_name,
-            'date_utility_put_under_our_name' => $moveOutWithRelations->date_utility_put_under_our_name?->format('Y-m-d'),
-            'walkthrough' => $moveOutWithRelations->walkthrough,
-            'repairs' => $moveOutWithRelations->repairs,
-            'send_back_security_deposit' => $moveOutWithRelations->send_back_security_deposit,
-            'notes' => $moveOutWithRelations->notes,
-            'cleaning' => $moveOutWithRelations->cleaning,
-            'list_the_unit' => $moveOutWithRelations->list_the_unit,
-            'move_out_form' => $moveOutWithRelations->move_out_form,
-            'tenants' => $moveOutWithRelations->tenants,
-            'utility_type' => $moveOutWithRelations->utility_type,
+        $filters = [
+            'unit' => ($u = $request->input('unit')) && is_string($u) ? trim($u) : null,
+            'city' => ($c = $request->input('city')) && is_string($c) ? trim($c) : null,
+            'property' => ($p = $request->input('property')) && is_string($p) ? trim($p) : null,
         ];
 
-        return Inertia::render('MoveOut/Edit', [
+        $adjacent = $this->moveOutService->getAdjacentMoveOutIds($moveOut->id, $filters);
+
+        $perPageInput = $request->input('perPage');
+        $perPage = '15';
+        if (is_string($perPageInput)) {
+            $val = strtolower(trim($perPageInput));
+            if ($val === 'all') {
+                $perPage = 'all';
+            } elseif (in_array($val, ['15','30','50'], true)) {
+                $perPage = (string) ((int) $val);
+            }
+        }
+
+        return Inertia::render('MoveOut/Show', [
             'moveOut' => $transformedMoveOut,
-            'cities' => $dropdownData['cities'],
-            'properties' => $dropdownData['properties'],
-            'propertiesByCityId' => $dropdownData['propertiesByCityId'],
-            'unitsByPropertyId' => $dropdownData['unitsByPropertyId'],
-            'tenantsByUnitId' => $dropdownData['tenantsByUnitId'],
-            'allUnits' => $dropdownData['allUnits'],
-            'tenantsData' => $dropdownData['tenantsData'],
+            'filters' => $filters,
+            'prevId' => $adjacent['prevId'] ?? null,
+            'nextId' => $adjacent['nextId'] ?? null,
+            'perPage' => $perPage,
         ]);
     }
 
@@ -227,11 +277,13 @@ class MoveOutController extends Controller
             'utilities_under_our_name' => 'nullable|in:Yes,No',
             'date_utility_put_under_our_name' => 'nullable|date',
             'walkthrough' => 'nullable|string',
+            'all_the_devices_are_off' => 'nullable|in:Yes,No',
             'repairs' => 'nullable|string',
             'send_back_security_deposit' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'cleaning' => 'nullable|in:cleaned,uncleaned',
             'list_the_unit' => 'nullable|string|max:255',
+            'renter' => 'nullable|in:Yes,No',
             'move_out_form' => 'nullable|in:filled,not filled',
             'tenants' => 'nullable|string|max:255',
             'utility_type' => 'nullable|string',
@@ -240,8 +292,21 @@ class MoveOutController extends Controller
         // Update the move-out record
         $this->moveOutService->updateMoveOut($moveOut, $validatedData);
 
+        $redirectParams = [];
+        $city = $request->input('redirect_city');
+        $property = $request->input('redirect_property');
+        $unit = $request->input('redirect_unit');
+        $page = $request->input('redirect_page');
+        $perPage = $request->input('redirect_perPage');
+
+        if (!empty($city)) $redirectParams['city'] = $city;
+        if (!empty($property)) $redirectParams['property'] = $property;
+        if (!empty($unit)) $redirectParams['unit'] = $unit;
+        if (!empty($page)) $redirectParams['page'] = $page;
+        if (!empty($perPage)) $redirectParams['perPage'] = $perPage;
+
         return redirect()
-            ->route('move-out.index')
+            ->route('move-out.index', $redirectParams)
             ->with('success', 'Move-out record updated successfully.');
     }
 
@@ -249,8 +314,21 @@ class MoveOutController extends Controller
     {
         $this->moveOutService->deleteMoveOut($moveOut);
 
+        $redirectParams = [];
+        $city = request()->input('redirect_city');
+        $property = request()->input('redirect_property');
+        $unit = request()->input('redirect_unit');
+        $page = request()->input('redirect_page');
+        $perPage = request()->input('redirect_perPage');
+
+        if (!empty($city)) $redirectParams['city'] = $city;
+        if (!empty($property)) $redirectParams['property'] = $property;
+        if (!empty($unit)) $redirectParams['unit'] = $unit;
+        if (!empty($page)) $redirectParams['page'] = $page;
+        if (!empty($perPage)) $redirectParams['perPage'] = $perPage;
+
         return redirect()
-            ->route('move-out.index')
+            ->route('move-out.index', $redirectParams)
             ->with('success', 'Move-out record deleted successfully.');
     }
 }

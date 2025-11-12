@@ -2,6 +2,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup } from '@/components/ui/radioGroup';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon, X } from 'lucide-react';
+import { format, parse, isValid } from 'date-fns';
+import { useState } from 'react';
 import { MoveOutFormData } from '@/types/move-out';
 
 interface MoveOutDetailsFieldsProps {
@@ -11,6 +17,27 @@ interface MoveOutDetailsFieldsProps {
 }
 
 export function MoveOutDetailsFields({ data, errors, onDataChange }: MoveOutDetailsFieldsProps) {
+    const [isDateUtilityOpen, setIsDateUtilityOpen] = useState(false);
+
+    const parseDate = (dateString: string | null | undefined): Date | undefined => {
+        if (!dateString || dateString.trim() === '') {
+            return undefined;
+        }
+        try {
+            const parsedDate = parse(dateString, 'yyyy-MM-dd', new Date());
+            if (isValid(parsedDate)) {
+                return parsedDate;
+            }
+            const directDate = new Date(dateString);
+            if (isValid(directDate)) {
+                return directDate;
+            }
+            return undefined;
+        } catch (error) {
+            return undefined;
+        }
+    };
+
     return (
         <>
             {/* Lease Status */}
@@ -54,14 +81,66 @@ export function MoveOutDetailsFields({ data, errors, onDataChange }: MoveOutDeta
                 </div>
                 <RadioGroup
                     value={data.utilities_under_our_name}
-                    onValueChange={(value) => onDataChange('utilities_under_our_name', value as "" | "Yes" | "No")}
+                    onValueChange={(value) => onDataChange('utilities_under_our_name', value as '' | 'Yes' | 'No')}
                     name="utilities_under_our_name"
                     options={[
                         { value: 'Yes', label: 'Yes' },
-                        { value: 'No', label: 'No' }
+                        { value: 'No', label: 'No' },
                     ]}
                 />
                 {errors.utilities_under_our_name && <p className="mt-1 text-sm text-red-600">{errors.utilities_under_our_name}</p>}
+            </div>
+
+            <div className="rounded-lg border-l-4 border-l-pink-500 p-4">
+                <div className="mb-2">
+                    <Label htmlFor="date_utility_put_under_our_name" className="text-base font-semibold">
+                        Date Utility Put Under Our Name
+                    </Label>
+                </div>
+                <div className="relative">
+                    <Popover open={isDateUtilityOpen} onOpenChange={() => setIsDateUtilityOpen(!isDateUtilityOpen)}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal"
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {data.date_utility_put_under_our_name && data.date_utility_put_under_our_name.trim() !== ''
+                                    ? (() => {
+                                        const parsedDate = parseDate(data.date_utility_put_under_our_name);
+                                        return parsedDate ? format(parsedDate, 'PPP') : 'Pick a date';
+                                    })()
+                                    : 'Pick a date'}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={parseDate(data.date_utility_put_under_our_name)}
+                                onSelect={(date) => {
+                                    if (date && isValid(date)) {
+                                        onDataChange('date_utility_put_under_our_name', format(date, 'yyyy-MM-dd'));
+                                        setIsDateUtilityOpen(false);
+                                    }
+                                }}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                    {data.date_utility_put_under_our_name && data.date_utility_put_under_our_name.trim() !== '' && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Clear date"
+                            onClick={() => onDataChange('date_utility_put_under_our_name', '')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+                {errors.date_utility_put_under_our_name && <p className="mt-1 text-sm text-red-600">{errors.date_utility_put_under_our_name}</p>}
             </div>
 
             {/* Utility Type */}
@@ -90,14 +169,33 @@ export function MoveOutDetailsFields({ data, errors, onDataChange }: MoveOutDeta
                 </div>
                 <RadioGroup
                     value={data.walkthrough}
-                    onValueChange={(value) => onDataChange('walkthrough', value as "" | "Yes" | "No")}
+                    onValueChange={(value) => onDataChange('walkthrough', value as '' | 'Yes' | 'No')}
                     name="walkthrough"
                     options={[
                         { value: 'Yes', label: 'Yes' },
-                        { value: 'No', label: 'No' }
+                        { value: 'No', label: 'No' },
                     ]}
                 />
                 {errors.walkthrough && <p className="mt-1 text-sm text-red-600">{errors.walkthrough}</p>}
+            </div>
+
+            {/* All The Devices Are Off */}
+            <div className="rounded-lg border-l-4 border-l-emerald-500 p-4">
+                <div className="mb-2">
+                    <Label htmlFor="all_the_devices_are_off" className="text-base font-semibold">
+                        All The Devices Are Off
+                    </Label>
+                </div>
+                <RadioGroup
+                    value={data.all_the_devices_are_off}
+                    onValueChange={(value) => onDataChange('all_the_devices_are_off', value as '' | 'Yes' | 'No')}
+                    name="all_the_devices_are_off"
+                    options={[
+                        { value: 'Yes', label: 'Yes' },
+                        { value: 'No', label: 'No' },
+                    ]}
+                />
+                {errors.all_the_devices_are_off && <p className="mt-1 text-sm text-red-600">{errors.all_the_devices_are_off}</p>}
             </div>
 
             {/* Repairs */}

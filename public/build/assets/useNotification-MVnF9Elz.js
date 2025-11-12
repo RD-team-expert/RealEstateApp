@@ -1,0 +1,1 @@
+import{r as t}from"./app-Y5k3mklr.js";import"./app-BZFxL5VY.js";const l=()=>{const[i,o]=t.useState(null),n=t.useCallback((c,s)=>{o({type:c,message:s})},[]),a=t.useCallback(()=>{o(null)},[]);return{notification:i,showNotification:n,hideNotification:a}};export{l as useNotification};

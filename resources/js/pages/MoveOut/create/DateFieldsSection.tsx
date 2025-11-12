@@ -39,6 +39,9 @@ export default function DateFieldsSection({
                             onCalendarToggle('move_out_date');
                         }
                     }}
+                    onClear={() => {
+                        onDataChange('move_out_date', '');
+                    }}
                 />
             </FormField>
 
@@ -57,26 +60,13 @@ export default function DateFieldsSection({
                             onCalendarToggle('date_lease_ending_on_buildium');
                         }
                     }}
-                />
-            </FormField>
-
-            <FormField
-                label="Date Utility Put Under Our Name"
-                borderColor="pink"
-                error={errors.date_utility_put_under_our_name}
-            >
-                <DatePickerField
-                    value={data.date_utility_put_under_our_name}
-                    isOpen={calendarStates.date_utility_put_under_our_name}
-                    onOpenChange={() => onCalendarToggle('date_utility_put_under_our_name')}
-                    onDateSelect={(date) => {
-                        if (date) {
-                            onDataChange('date_utility_put_under_our_name', format(date, 'yyyy-MM-dd'));
-                            onCalendarToggle('date_utility_put_under_our_name');
-                        }
+                    onClear={() => {
+                        onDataChange('date_lease_ending_on_buildium', '');
                     }}
                 />
             </FormField>
+
+            
         </>
     );
 }

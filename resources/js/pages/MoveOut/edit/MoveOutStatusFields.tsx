@@ -21,11 +21,11 @@ export function MoveOutStatusFields({ data, errors, onDataChange }: MoveOutStatu
                 </div>
                 <RadioGroup
                     value={data.cleaning}
-                    onValueChange={(value) => onDataChange('cleaning', value as "" | "cleaned" | "uncleaned")}
+                    onValueChange={(value) => onDataChange('cleaning', value as '' | 'cleaned' | 'uncleaned')}
                     name="cleaning"
                     options={[
                         { value: 'cleaned', label: 'Cleaned' },
-                        { value: 'uncleaned', label: 'Uncleaned' }
+                        { value: 'uncleaned', label: 'Uncleaned' },
                     ]}
                 />
                 {errors.cleaning && <p className="mt-1 text-sm text-red-600">{errors.cleaning}</p>}
@@ -47,6 +47,25 @@ export function MoveOutStatusFields({ data, errors, onDataChange }: MoveOutStatu
                 {errors.list_the_unit && <p className="mt-1 text-sm text-red-600">{errors.list_the_unit}</p>}
             </div>
 
+            {/* Renter */}
+            <div className="rounded-lg border-l-4 border-l-sky-500 p-4">
+                <div className="mb-2">
+                    <Label htmlFor="renter" className="text-base font-semibold">
+                        Renter
+                    </Label>
+                </div>
+                <RadioGroup
+                    value={data.renter}
+                    onValueChange={(value) => onDataChange('renter', value as '' | 'Yes' | 'No')}
+                    name="renter"
+                    options={[
+                        { value: 'Yes', label: 'Yes' },
+                        { value: 'No', label: 'No' },
+                    ]}
+                />
+                {errors.renter && <p className="mt-1 text-sm text-red-600">{errors.renter}</p>}
+            </div>
+
             {/* Move Out Form */}
             <div className="rounded-lg border-l-4 border-l-fuchsia-500 p-4">
                 <div className="mb-2">
@@ -56,11 +75,11 @@ export function MoveOutStatusFields({ data, errors, onDataChange }: MoveOutStatu
                 </div>
                 <RadioGroup
                     value={data.move_out_form}
-                    onValueChange={(value) => onDataChange('move_out_form', value as "" | "filled" | "not filled")}
+                    onValueChange={(value) => onDataChange('move_out_form', value as '' | 'filled' | 'not filled')}
                     name="move_out_form"
                     options={[
                         { value: 'filled', label: 'Filled' },
-                        { value: 'not filled', label: 'Not Filled' }
+                        { value: 'not filled', label: 'Not Filled' },
                     ]}
                 />
                 {errors.move_out_form && <p className="mt-1 text-sm text-red-600">{errors.move_out_form}</p>}

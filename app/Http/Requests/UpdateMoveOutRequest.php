@@ -28,11 +28,13 @@ class UpdateMoveOutRequest extends FormRequest
             'utilities_under_our_name' => ['sometimes', 'nullable', Rule::in(['Yes', 'No'])],
             'date_utility_put_under_our_name' => ['sometimes', 'nullable', 'date'],
             'walkthrough' => ['sometimes', 'nullable', 'string'],
+            'all_the_devices_are_off' => ['sometimes', 'nullable', Rule::in(['Yes', 'No'])],
             'repairs' => ['sometimes', 'nullable', 'string'],
             'send_back_security_deposit' => ['sometimes', 'nullable', 'string', 'max:255'],
             'notes' => ['sometimes', 'nullable', 'string'],
             'cleaning' => ['sometimes', 'nullable', Rule::in(['cleaned', 'uncleaned'])],
             'list_the_unit' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'renter' => ['sometimes', 'nullable', Rule::in(['Yes', 'No'])],
             'move_out_form' => ['sometimes', 'nullable', Rule::in(['filled', 'not filled'])],
             'tenants' => ['sometimes', 'nullable', 'string', 'max:255'],
             'utility_type' => ['sometimes', 'nullable', 'string'],
@@ -48,8 +50,10 @@ class UpdateMoveOutRequest extends FormRequest
             'date_lease_ending_on_buildium.date' => 'The lease ending date must be a valid date.',
             'date_utility_put_under_our_name.date' => 'The utility date must be a valid date.',
             'utilities_under_our_name.in' => 'The utilities under our name field must be either Yes or No.',
+            'all_the_devices_are_off.in' => 'The all the devices are off field must be either Yes or No.',
             'cleaning.in' => 'The cleaning field must be either cleaned or uncleaned.',
             'move_out_form.in' => 'The move out form field must be either filled or not filled.',
+            'renter.in' => 'The renter field must be either Yes or No.',
         ];
     }
 

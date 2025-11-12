@@ -13,6 +13,7 @@ interface MoveOutTableRowProps {
     hasAllPermissions: (permissions: string[]) => boolean;
     onEdit: (moveOut: MoveOut) => void;
     onDelete: (moveOut: MoveOut) => void;
+    filters?: { city?: string | null; property?: string | null; unit?: string | null; perPage?: string };
 }
 
 export default function MoveOutTableRow({
@@ -23,6 +24,7 @@ export default function MoveOutTableRow({
     hasAllPermissions,
     onEdit,
     onDelete,
+    filters,
 }: MoveOutTableRowProps) {
     const getYesNoBadge = (value: 'Yes' | 'No' | null) => {
         if (value === null) return <Badge variant="outline">N/A</Badge>;
@@ -133,6 +135,9 @@ export default function MoveOutTableRow({
                 )}
             </TableCell>
             <TableCell className="border border-border text-center">
+                {getYesNoBadge(moveOut.all_the_devices_are_off)}
+            </TableCell>
+            <TableCell className="border border-border text-center">
                 {moveOut.repairs ? (
                     <div className="max-w-24 truncate" title={moveOut.repairs}>
                         {moveOut.repairs}
@@ -160,6 +165,9 @@ export default function MoveOutTableRow({
                 {moveOut.list_the_unit || <span className="text-muted-foreground">N/A</span>}
             </TableCell>
             <TableCell className="border border-border text-center">
+                {getYesNoBadge(moveOut.renter)}
+            </TableCell>
+            <TableCell className="border border-border text-center">
                 {getFormBadge(moveOut.move_out_form)}
             </TableCell>
             
@@ -167,7 +175,15 @@ export default function MoveOutTableRow({
                 <TableCell className="border border-border text-center">
                     <div className="flex gap-1">
                         {hasPermission('move-out.show') && (
-                            <Link href={route('move-out.show', moveOut.id)}>
+                            <Link
+                                href={route('move-out.show', moveOut.id)}
+                                data={{
+                                    city: filters?.city ?? undefined,
+                                    property: filters?.property ?? undefined,
+                                    unit: filters?.unit ?? undefined,
+                                    perPage: filters?.perPage ?? undefined,
+                                }}
+                            >
                                 <Button variant="outline" size="sm">
                                     <Eye className="h-4 w-4" />
                                 </Button>
