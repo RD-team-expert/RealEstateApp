@@ -46,13 +46,25 @@ interface Props {
 export default function VendorTasksInformation({ vendorTasks, selectedUnitId }: Props) {
     const [openTasks, setOpenTasks] = useState<{ [key: number]: boolean }>({});
 
-    const formatPhoneNumber = (phone: string) => {
-        if (!phone) return '';
-        const cleaned = phone.replace(/\D/g, '');
+    const formatPhoneNumber = (phone: string | number | string[] | null | undefined): string => {
+        if (Array.isArray(phone)) {
+            const formatted: string[] = phone
+                .filter(p => typeof p === 'string' && p.length > 0)
+                .map(p => formatPhoneNumber(p))
+                .filter(p => typeof p === 'string' && p.length > 0);
+            return formatted.join(', ');
+        }
+        if (phone === null || phone === undefined) return '';
+        const str = String(phone);
+        if (!str) return '';
+        const cleaned = str.replace(/\D/g, '');
         if (cleaned.length === 10) {
             return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
         }
-        return phone;
+        if (cleaned.length === 11 && cleaned.startsWith('1')) {
+            return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+        }
+        return str;
     };
 
     const toggleTask = (taskId: number) => {

@@ -335,15 +335,30 @@ export interface Application {
     id: number;
     unit_id?: number;
     name: string;
-    co_signer: string;
+    co_signer?: string | null; // ✅ Now nullable
     status?: string;
+    applicant_applied_from?: string | null; // ✅ NEW field
     date?: string;
     date_formatted?: string;
     stage_in_progress?: string;
     notes?: string;
-    attachment_name?: string;
-    attachment_path?: string;
-    attachment_url?: string;
+
+    // ✅ CHANGED: These are now arrays
+    attachment_name?: string[];
+    attachment_path?: string[];
+
+    // ✅ NEW: Formatted attachments array
+    attachments?: Array<{
+        index: number;
+        name: string;
+        path: string;
+        url: string;
+        download_url: string;
+    }>;
+
+    // ✅ DEPRECATED: Remove these single-value fields
+    // attachment_url?: string;
+
     has_attachment?: boolean;
     is_archived: boolean;
     created_at: string;

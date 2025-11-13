@@ -18,8 +18,7 @@ class DashboardController extends Controller
      */
     public function index(Request $request): Response
     {
-        $cities = $this->dashboardService->getAllCities();
-        $properties = [];
+        $properties = $this->dashboardService->getAllProperties();
         $units = [];
         $unitInfo = null;
         $tenants = [];
@@ -31,11 +30,6 @@ class DashboardController extends Controller
         $applications = [];
         $offersAndRenewals = [];
         $noticesAndEvictions = [];
-
-        // Load properties if city is selected
-        if ($request->has('city_id') && $request->city_id) {
-            $properties = $this->dashboardService->getPropertiesByCity((int)$request->city_id);
-        }
 
         // Load units if property is selected
         if ($request->has('property_id') && $request->property_id) {
@@ -57,7 +51,6 @@ class DashboardController extends Controller
         }
 
         return Inertia::render('dashboard', [
-            'cities' => $cities,
             'properties' => $properties,
             'units' => $units,
             'unitInfo' => $unitInfo,
@@ -70,7 +63,6 @@ class DashboardController extends Controller
             'applications' => $applications,
             'offersAndRenewals' => $offersAndRenewals,
             'noticesAndEvictions' => $noticesAndEvictions,
-            'selectedCityId' => $request->city_id ? (int)$request->city_id : null,
             'selectedPropertyId' => $request->property_id ? (int)$request->property_id : null,
             'selectedUnitId' => $request->unit_id ? (int)$request->unit_id : null,
         ]);
@@ -81,10 +73,6 @@ class DashboardController extends Controller
      */
     public function getProperties(Request $request): Response
     {
-        $request->validate([
-            'city_id' => 'required|integer|exists:cities,id'
-        ]);
-
         return $this->index($request);
     }
 
@@ -94,8 +82,7 @@ class DashboardController extends Controller
     public function getUnits(Request $request): Response
     {
         $request->validate([
-            'property_id' => 'required|integer|exists:property_info_without_insurance,id',
-            'city_id' => 'required|integer|exists:cities,id'
+            'property_id' => 'required|integer|exists:property_info_without_insurance,id'
         ]);
 
         return $this->index($request);
@@ -108,8 +95,7 @@ class DashboardController extends Controller
     {
         $request->validate([
             'unit_id' => 'required|integer|exists:units,id',
-            'property_id' => 'required|integer|exists:property_info_without_insurance,id',
-            'city_id' => 'required|integer|exists:cities,id'
+            'property_id' => 'required|integer|exists:property_info_without_insurance,id'
         ]);
 
         return $this->index($request);

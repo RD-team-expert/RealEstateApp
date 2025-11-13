@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { type BreadcrumbItem } from '@/types';
 import {
     Application,
-    City,
     MoveIn,
     MoveOut,
     NoticeAndEviction,
@@ -25,7 +24,6 @@ import {
     Tenant,
     Unit,
     VendorTask,
-    
 } from '@/types/dashboard';
 
 import { Head, router } from '@inertiajs/react';
@@ -34,9 +32,11 @@ import { useCallback, useState } from 'react';
 // Import shadcn/ui components
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Separator } from '@/components/ui/separator';
-import { Building2, Calendar, DollarSign, Hash, Home, MapPin, Shield, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { Building2, Calendar, DollarSign, Hash, Home, Shield, Zap, ChevronDown, ChevronUp, ChevronsUpDown, Check, MapPin } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // Import for collapsible section (shadcn/ui)
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
@@ -45,7 +45,6 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 import { format, parseISO } from 'date-fns';
 
 interface Props {
-    cities: City[];
     properties: Property[];
     units: Unit[];
     unitInfo: Unit | null;
@@ -58,7 +57,6 @@ interface Props {
     applications: Application[];
     offersAndRenewals: OffersAndRenewal[];
     noticesAndEvictions: NoticeAndEviction[];
-    selectedCityId: number | null;
     selectedPropertyId: number | null;
     selectedUnitId: number | null;
 }
@@ -73,7 +71,6 @@ function formatDate(dateStr?: string): string {
 }
 
 export default function DashboardIndex({
-    cities,
     properties,
     units,
     unitInfo,
@@ -86,28 +83,18 @@ export default function DashboardIndex({
     applications,
     offersAndRenewals,
     noticesAndEvictions,
-    selectedCityId,
     selectedPropertyId,
     selectedUnitId,
 }: Props) {
     // Define breadcrumbs based on current selection
     const getBreadcrumbs = useCallback((): BreadcrumbItem[] => {
         const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
-        if (selectedCityId) {
-            const selectedCity = cities.find((city) => city.id === selectedCityId);
-            if (selectedCity) {
-                breadcrumbs.push({
-                    title: selectedCity.city,
-                    href: `/dashboard?city_id=${selectedCityId}`,
-                });
-            }
-        }
         if (selectedPropertyId) {
             const selectedProperty = properties.find((property) => property.id === selectedPropertyId);
             if (selectedProperty) {
                 breadcrumbs.push({
                     title: selectedProperty.property_name,
-                    href: `/dashboard?city_id=${selectedCityId}&property_id=${selectedPropertyId}`,
+                    href: `/dashboard?property_id=${selectedPropertyId}`,
                 });
             }
         }
@@ -116,38 +103,18 @@ export default function DashboardIndex({
             if (selectedUnit) {
                 breadcrumbs.push({
                     title: selectedUnit.unit_name,
-                    href: `/dashboard?city_id=${selectedCityId}&property_id=${selectedPropertyId}&unit_id=${selectedUnitId}`,
+                    href: `/dashboard?property_id=${selectedPropertyId}&unit_id=${selectedUnitId}`,
                 });
             }
         }
         return breadcrumbs;
-    }, [selectedCityId, selectedPropertyId, selectedUnitId, cities, properties, units]);
-
-    const handleCityChange = useCallback((cityId: string) => {
-        if (!cityId) {
-            router.get('/dashboard');
-            return;
-        }
-        router.get(
-            '/dashboard',
-            { city_id: parseInt(cityId) },
-            {
-                preserveState: true,
-                preserveScroll: true,
-            },
-        );
-    }, []);
+    }, [selectedPropertyId, selectedUnitId, properties, units]);
 
     const handlePropertyChange = useCallback(
         (propertyId: string) => {
-            if (!propertyId || !selectedCityId) {
-                router.get('/dashboard', { city_id: selectedCityId });
-                return;
-            }
             router.get(
                 '/dashboard',
                 {
-                    city_id: selectedCityId,
                     property_id: parseInt(propertyId),
                 },
                 {
@@ -156,22 +123,14 @@ export default function DashboardIndex({
                 },
             );
         },
-        [selectedCityId],
+        [],
     );
 
     const handleUnitChange = useCallback(
         (unitId: string) => {
-            if (!unitId || !selectedCityId || !selectedPropertyId) {
-                router.get('/dashboard', {
-                    city_id: selectedCityId,
-                    property_id: selectedPropertyId,
-                });
-                return;
-            }
             router.get(
                 '/dashboard',
                 {
-                    city_id: selectedCityId,
                     property_id: selectedPropertyId,
                     unit_id: parseInt(unitId),
                 },
@@ -181,7 +140,7 @@ export default function DashboardIndex({
                 },
             );
         },
-        [selectedCityId, selectedPropertyId],
+        [selectedPropertyId],
     );
 
     // For Collapsible state
@@ -202,7 +161,7 @@ export default function DashboardIndex({
                             <div>
                                 <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">Property Management Dashboard</CardTitle>
                                 <CardDescription className="mt-1 text-gray-600 dark:text-gray-400">
-                                    Select a city, property, and unit to view comprehensive tenant information and analytics.
+                                    Select a property and unit to view comprehensive tenant information and analytics.
                                 </CardDescription>
                             </div>
                         </div>
@@ -220,48 +179,45 @@ export default function DashboardIndex({
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                                {/* City Selection */}
-                                <div className="space-y-1">
-                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                        <MapPin className="h-4 w-4" />
-                                        City
-                                    </label>
-                                    <Select value={selectedCityId?.toString() || ''} onValueChange={handleCityChange}>
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select a city..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {cities.map((city) => (
-                                                <SelectItem key={city.id} value={city.id.toString()}>
-                                                    {city.city}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
                                 {/* Property Selection */}
                                 <div className="space-y-2">
                                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                                         <Building2 className="h-4 w-4" />
                                         Property
                                     </label>
-                                    <Select
-                                        value={selectedPropertyId?.toString() || ''}
-                                        onValueChange={handlePropertyChange}
-                                        disabled={!selectedCityId}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select a property..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {properties.map((property) => (
-                                                <SelectItem key={property.id} value={property.id.toString()}>
-                                                    {property.property_name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" role="combobox" className="w-full justify-between text-left font-normal">
+                                                {selectedPropertyId ? properties.find((p) => p.id === selectedPropertyId)?.property_name : 'Select a property...'}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                            <Command>
+                                                <CommandInput placeholder="Search property..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No property found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {properties.map((property) => (
+                                                            <CommandItem
+                                                                key={property.id}
+                                                                value={property.property_name}
+                                                                onSelect={() => handlePropertyChange(property.id.toString())}
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        'mr-2 h-4 w-4',
+                                                                        selectedPropertyId === property.id ? 'opacity-100' : 'opacity-0'
+                                                                    )}
+                                                                />
+                                                                {property.property_name}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
 
                                 {/* Unit Selection */}
@@ -270,26 +226,58 @@ export default function DashboardIndex({
                                         <Home className="h-4 w-4" />
                                         Unit
                                     </label>
-                                    <Select value={selectedUnitId?.toString() || ''} onValueChange={handleUnitChange} disabled={!selectedPropertyId}>
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select a unit..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {units.map((unit) => (
-                                                <SelectItem key={unit.id} value={unit.id.toString()}>
-                                                    <div className="flex w-full items-center justify-between">
-                                                        <span>{unit.unit_name}</span>
-                                                        <div className="ml-2 flex items-center gap-2">
-                                                            <Badge variant={unit.vacant === 'Yes' ? 'default' : 'secondary'}>
-                                                                {unit.vacant === 'Yes' ? 'Vacant' : 'Occupied'}
-                                                            </Badge>
-                                                            {unit.monthly_rent && <span className="text-sm text-gray-500">${unit.monthly_rent}</span>}
-                                                        </div>
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className="w-full justify-between text-left font-normal"
+                                                disabled={!selectedPropertyId || units.length === 0}
+                                            >
+                                                {selectedUnitId
+                                                    ? units.find((u) => u.id === selectedUnitId)?.unit_name
+                                                    : !selectedPropertyId
+                                                        ? 'Select property first'
+                                                        : units.length === 0
+                                                            ? 'No units available'
+                                                            : 'Select a unit...'}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                            <Command>
+                                                <CommandInput placeholder="Search unit..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No unit found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {units.map((unit) => (
+                                                            <CommandItem
+                                                                key={unit.id}
+                                                                value={unit.unit_name}
+                                                                onSelect={() => handleUnitChange(unit.id.toString())}
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        'mr-2 h-4 w-4',
+                                                                        selectedUnitId === unit.id ? 'opacity-100' : 'opacity-0'
+                                                                    )}
+                                                                />
+                                                                <div className="flex w-full items-center justify-between">
+                                                                    <span>{unit.unit_name}</span>
+                                                                    <div className="ml-2 flex items-center gap-2">
+                                                                        <Badge variant={unit.vacant === 'Yes' ? 'default' : 'secondary'}>
+                                                                            {unit.vacant === 'Yes' ? 'Vacant' : 'Occupied'}
+                                                                        </Badge>
+                                                                        {unit.monthly_rent && <span className="text-sm text-gray-500">${unit.monthly_rent}</span>}
+                                                                    </div>
+                                                                </div>
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                             </div>
                         </CardContent>
@@ -342,12 +330,14 @@ export default function DashboardIndex({
                                 Basic Details
                             </h3>
                             <div className="space-y-3">
-                                <Card className="bg-gray-50 p-4 dark:bg-gray-900">
-                                    <div className="mb-1 text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
-                                        Listed Status
-                                    </div>
-                                    <Badge variant={unitInfo.listed === 'Yes' ? 'default' : 'secondary'}>{unitInfo.listed || 'No'}</Badge>
-                                </Card>
+                                {unitInfo.vacant === 'Yes' && (
+                                    <Card className="bg-gray-50 p-4 dark:bg-gray-900">
+                                        <div className="mb-1 text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+                                            Listed Status
+                                        </div>
+                                        <Badge variant={unitInfo.listed === 'Yes' ? 'default' : 'secondary'}>{unitInfo.listed || 'No'}</Badge>
+                                    </Card>
+                                )}
                             </div>
                         </div>
                         {/* Unit Details */}
@@ -548,7 +538,9 @@ export default function DashboardIndex({
                 <PaymentPlanInformation paymentPlans={paymentPlans} selectedUnitId={selectedUnitId} />
 
                 {/* Applications Information Display */}
-                <ApplicationInformation applications={applications} selectedUnitId={selectedUnitId} />
+                {unitInfo?.vacant === 'Yes' && (
+                    <ApplicationInformation applications={applications} selectedUnitId={selectedUnitId} />
+                )}
 
                 {/* Offers and Renewals Information Display */}
                 <OffersAndRenewalsInformation offersAndRenewals={offersAndRenewals} selectedUnitId={selectedUnitId} />
