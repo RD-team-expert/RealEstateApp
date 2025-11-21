@@ -355,6 +355,121 @@ class VendorTaskTrackerService
         ];
     }
 
+    public function getDrawerDropdownData(): array
+    {
+        $cities = Cities::select('id', 'city')->orderBy('city')->get();
+
+        $properties = PropertyInfoWithoutInsurance::with('city')
+            ->select('id', 'property_name', 'city_id')
+            ->orderBy('property_name')
+            ->get();
+
+        $units = Unit::with(['property.city'])
+            ->select('id', 'unit_name', 'property_id')
+            ->orderBy('unit_name')
+            ->get();
+
+        $vendors = VendorInfo::with('city')
+            ->select('id', 'vendor_name', 'city_id')
+            ->orderBy('vendor_name')
+            ->get();
+
+        $propertiesByCity = [];
+        foreach ($properties as $property) {
+            if ($property->city) {
+                $cityName = $property->city->city;
+                if (!isset($propertiesByCity[$cityName])) {
+                    $propertiesByCity[$cityName] = [];
+                }
+                $propertiesByCity[$cityName][] = [
+                    'id' => $property->id,
+                    'property_name' => $property->property_name,
+                ];
+            }
+        }
+
+        $unitsByProperty = [];
+        foreach ($units as $unit) {
+            if ($unit->property && $unit->property->city) {
+                $cityName = $unit->property->city->city;
+                $propertyName = $unit->property->property_name;
+                if (!isset($unitsByProperty[$cityName])) {
+                    $unitsByProperty[$cityName] = [];
+                }
+                if (!isset($unitsByProperty[$cityName][$propertyName])) {
+                    $unitsByProperty[$cityName][$propertyName] = [];
+                }
+                $unitsByProperty[$cityName][$propertyName][] = [
+                    'id' => $unit->id,
+                    'unit_name' => $unit->unit_name,
+                ];
+            }
+        }
+
+        $unitsByCity = [];
+        foreach ($units as $unit) {
+            if ($unit->property && $unit->property->city) {
+                $cityName = $unit->property->city->city;
+                if (!isset($unitsByCity[$cityName])) {
+                    $unitsByCity[$cityName] = [];
+                }
+                $unitsByCity[$cityName][] = [
+                    'id' => $unit->id,
+                    'unit_name' => $unit->unit_name,
+                ];
+            }
+        }
+
+        $vendorsByCity = [];
+        foreach ($vendors as $vendor) {
+            if ($vendor->city) {
+                $cityName = $vendor->city->city;
+                if (!isset($vendorsByCity[$cityName])) {
+                    $vendorsByCity[$cityName] = [];
+                }
+                $vendorsByCity[$cityName][] = [
+                    'id' => $vendor->id,
+                    'vendor_name' => $vendor->vendor_name,
+                ];
+            }
+        }
+
+        return [
+            'cities' => $cities->map(function ($city) {
+                return [
+                    'id' => $city->id,
+                    'city' => $city->city,
+                ];
+            })->toArray(),
+            'properties' => $properties->map(function ($property) {
+                return [
+                    'id' => $property->id,
+                    'property_name' => $property->property_name,
+                    'city' => $property->city ? $property->city->city : null,
+                ];
+            })->toArray(),
+            'units' => $units->map(function ($unit) {
+                return [
+                    'id' => $unit->id,
+                    'unit_name' => $unit->unit_name,
+                    'property_name' => $unit->property ? $unit->property->property_name : null,
+                    'city' => $unit->property && $unit->property->city ? $unit->property->city->city : null,
+                ];
+            })->toArray(),
+            'vendors' => $vendors->map(function ($vendor) {
+                return [
+                    'id' => $vendor->id,
+                    'vendor_name' => $vendor->vendor_name,
+                    'city' => $vendor->city ? $vendor->city->city : null,
+                ];
+            })->toArray(),
+            'propertiesByCity' => $propertiesByCity,
+            'unitsByProperty' => $unitsByProperty,
+            'unitsByCity' => $unitsByCity,
+            'vendorsByCity' => $vendorsByCity,
+        ];
+    }
+
     /**
      * Convert names to IDs for database storage
      */

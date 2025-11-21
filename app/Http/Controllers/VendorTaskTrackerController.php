@@ -81,6 +81,7 @@ class VendorTaskTrackerController extends Controller
         }
 
         $dropdownData = $this->vendorTaskTrackerService->getDropdownData();
+        $drawerData = $this->vendorTaskTrackerService->getDrawerDropdownData();
 
         return Inertia::render('VendorTaskTracker/Index', [
             'tasks' => $tasksPayload,
@@ -93,6 +94,14 @@ class VendorTaskTrackerController extends Controller
             'propertiesByCity' => $dropdownData['propertiesByCity'],
             'unitsByProperty' => $dropdownData['unitsByProperty'],
             'vendorsByCity' => $dropdownData['vendorsByCity'],
+            'drawerCities' => $drawerData['cities'],
+            'drawerProperties' => $drawerData['properties'],
+            'drawerUnits' => $drawerData['units'],
+            'drawerVendors' => $drawerData['vendors'],
+            'drawerUnitsByCity' => $drawerData['unitsByCity'],
+            'drawerPropertiesByCity' => $drawerData['propertiesByCity'],
+            'drawerUnitsByProperty' => $drawerData['unitsByProperty'],
+            'drawerVendorsByCity' => $drawerData['vendorsByCity'],
         ]);
     }
 

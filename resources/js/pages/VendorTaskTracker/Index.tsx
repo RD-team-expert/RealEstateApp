@@ -130,10 +130,14 @@ interface Props {
     properties: PropertyOption[];
     units: UnitOption[];
     vendors: VendorOption[];
-    unitsByCity: Record<string, UnitOption[]>;
-    propertiesByCity: Record<string, PropertyOption[]>;
-    unitsByProperty: Record<string, Record<string, UnitOption[]>>;
-    vendorsByCity: Record<string, VendorOption[]>;
+    drawerCities: CityOption[];
+    drawerProperties: PropertyOption[];
+    drawerUnits: UnitOption[];
+    drawerVendors: VendorOption[];
+    drawerUnitsByCity: Record<string, UnitOption[]>;
+    drawerPropertiesByCity: Record<string, PropertyOption[]>;
+    drawerUnitsByProperty: Record<string, Record<string, UnitOption[]>>;
+    drawerVendorsByCity: Record<string, VendorOption[]>;
 }
 
 
@@ -143,11 +147,15 @@ export default function Index({
     units,
     cities,
     properties,
-    unitsByCity,
-    propertiesByCity,
-    unitsByProperty,
-    vendorsByCity,
     vendors,
+    drawerCities,
+    drawerProperties,
+    drawerUnits,
+    drawerVendors,
+    drawerUnitsByCity,
+    drawerPropertiesByCity,
+    drawerUnitsByProperty,
+    drawerVendorsByCity,
 }: Props) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
 
@@ -376,14 +384,14 @@ export default function Index({
 
             {/* Vendor Task Tracker Create Drawer */}
             <VendorTaskTrackerCreateDrawer
-                cities={cities}
-                properties={properties}
-                units={units}
-                vendors={vendors}
-                unitsByCity={unitsByCity}
-                propertiesByCity={propertiesByCity}
-                unitsByProperty={unitsByProperty}
-                vendorsByCity={vendorsByCity}
+                cities={drawerCities}
+                properties={drawerProperties}
+                units={drawerUnits}
+                vendors={drawerVendors}
+                unitsByCity={drawerUnitsByCity}
+                propertiesByCity={drawerPropertiesByCity}
+                unitsByProperty={drawerUnitsByProperty}
+                vendorsByCity={drawerVendorsByCity}
                 filters={filters}
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
@@ -394,14 +402,14 @@ export default function Index({
             {selectedTask && (
                 <VendorTaskTrackerEditDrawer
                     task={selectedTask}
-                    cities={cities}
-                    properties={properties}
-                    units={units}
-                    vendors={vendors}
-                    unitsByCity={unitsByCity}
-                    propertiesByCity={propertiesByCity}
-                    unitsByProperty={unitsByProperty}
-                    vendorsByCity={vendorsByCity}
+                    cities={drawerCities}
+                    properties={drawerProperties}
+                    units={drawerUnits}
+                    vendors={drawerVendors}
+                    unitsByCity={drawerUnitsByCity}
+                    propertiesByCity={drawerPropertiesByCity}
+                    unitsByProperty={drawerUnitsByProperty}
+                    vendorsByCity={drawerVendorsByCity}
                     filters={filters}
                     open={isEditDrawerOpen}
                     onOpenChange={setIsEditDrawerOpen}
